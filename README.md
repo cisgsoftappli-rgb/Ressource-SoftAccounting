@@ -14,3 +14,7 @@ Ne pas écraser deploy/index.html à la main : c'est un fichier construit.
 - Une branche par personne ou par écran : `git switch -c lieu-affectation`, commits fréquents, pull request vers `main`.
 - Avant de commencer : `git pull`. Fichiers partagés qui entrent en conflit : `build.cjs`, `ecrans/barre_actions.js`, `ecrans/assistant_aide.js` (une ligne par écran ; garder les deux côtés).
 - Publication : une seule personne, depuis `main` à jour (voir plus haut). Le dépôt de publication (`deploy/`) est un autre dépôt, ignoré ici.
+
+## Publication : toujours fusionner avec le dépôt de publication
+Dépôt de publication : https://github.com/cisgsoftappli-rgb/maquette-SoftAccounting.git (dossier `deploy/`).
+Avant de publier : `git pull` des sources, reconstruire, puis dans `deploy/` : `git fetch` et, si `origin/main` a avancé, `git merge origin/main` (garder la version reconstruite depuis les sources fusionnées) avant `git push`. Jamais de `--force`.
