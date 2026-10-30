@@ -1,0 +1,252 @@
+<!--
+  Écran « Gestion des contrats › Suivi et historique › Détail d'un contrat » — pop-up de critères (Centre de saisie, Code du contrat, Période du … et …, Choix de la monnaie : locale ou de rapport),
+  puis le détail du contrat : identification (centre de saisie, numéro, désignation, adjudicataire, types de marché et de passation, dates de signature et d'ordre de service, RC, NIF, N° statistique,
+  domiciliation bancaire), montants (initial, avenant, total) en monnaie locale et de rapport, total payé / facturé et soldes, puis la liste des décomptes (Site, Numéro, N° décompte, dates,
+  libellé comptable, Travaux, Avances, Retenues de garantie, Primes, Pénalités) avec total, recherche, export Excel et pagination. Contrats : window.CONTRATS (« Fiche contrat ») ; décomptes simulés ;
+  conversion par window.COURS_API. Préfixe dc / data-dc. Ne pas nommer de fonction « $$ » (build.cjs).
+-->
+<style>
+[data-dc]{width:100%;color:#353944;font-size:12px}
+[data-dc] .sc-eyebrow{margin:0 0 4px;font-size:12px;font-weight:600;letter-spacing:.08em;text-transform:uppercase;color:#706000}
+[data-dc] .sc-pan{background:#fff;border:1px solid #E9EBF0;border-radius:12px;margin-bottom:16px}
+[data-dc] .sc-pan>h2{margin:0;padding:12px 16px;border-bottom:1px solid #E9EBF0;font-family:var(--font-heading);font-size:14px;font-weight:600;color:#0B1332;display:flex;justify-content:space-between;align-items:center}
+[data-dc] .sc-pan>h2 small{font:400 12px var(--font-sans);color:#5B606D}
+[data-dc] .sc-pan[hidden]{display:none}
+[data-dc] .sc-g{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:16px;padding:16px}[data-dc] .sc-g .w{grid-column:1/-1}
+@media (max-width:760px){[data-dc] .sc-g{grid-template-columns:1fr}}
+[data-dc] .sc-c{display:flex;flex-direction:column;gap:4px;min-width:0}
+[data-dc] .sc-c>span,[data-dc] .sc-lab{font-size:12px;font-weight:600;color:#474C58}
+[data-dc] .sc-in,[data-dc] .sc-sel{width:100%;box-sizing:border-box;height:36px;border:1px solid #878D9A;border-radius:8px;background:#fff;color:#353944;font:inherit;font-size:12px;padding:0 12px}
+[data-dc] .sc-in:focus-visible,[data-dc] .sc-sel:focus-visible,[data-dc] .sc-msb:focus-visible{outline:3px solid #2E427B;outline-offset:2px}
+[data-dc] .sc-an{display:grid;gap:0}[data-dc] .sc-an+.sc-an{border-top:1px solid #F1F2F5}[data-dc] .sc-an>b{padding:12px 16px 0;font-size:12px;color:#0B1332;text-transform:uppercase}[data-dc] .sc-an .sc-g{padding:8px 16px 12px}
+[data-dc] .sc-ms{position:relative}
+[data-dc] .sc-msb{display:flex;align-items:center;justify-content:space-between;gap:8px;width:100%;height:36px;padding:0 12px;border:1px solid #878D9A;border-radius:8px;background:#fff;font:inherit;font-size:12px;color:#353944;cursor:pointer;text-align:left}
+[data-dc] .sc-msb .ph{color:#747A88}[data-dc] .sc-msb .n{margin-left:auto;color:#5B606D;font-size:11px}
+[data-dc] .sc-msp{position:absolute;z-index:30;left:0;right:0;top:calc(100% + 4px);max-height:220px;overflow:auto;border:1px solid #D6D9E0;border-radius:8px;background:#fff;box-shadow:0 8px 24px rgba(11,19,50,.15);padding:6px}
+[data-dc] .sc-msp[hidden]{display:none}
+[data-dc] .sc-msp label{display:flex;align-items:center;gap:8px;padding:6px 8px;border-radius:6px;font-size:12px;color:#353944;cursor:pointer}[data-dc] .sc-msp label:hover{background:#F5F7F9}
+[data-dc] .sc-msp input{width:16px;height:16px;accent-color:#2E427B;margin:0}
+[data-dc] .sc-msp .t{display:flex;gap:12px;padding:4px 8px 6px;border-bottom:1px solid #E9EBF0;margin-bottom:4px}[data-dc] .sc-msp .t button{border:0;background:none;color:#2E427B;font:600 12px var(--font-sans);cursor:pointer;min-height:0!important;padding:0}
+[data-dc] .sc-ov{position:fixed;inset:0;z-index:50;background:rgba(11,19,50,.5);display:flex;align-items:center;justify-content:center;padding:16px}[data-dc] .sc-ov[hidden]{display:none}
+[data-dc] .sc-dlg{width:100%;max-width:1100px;max-height:calc(100vh - 32px);display:flex;flex-direction:column;background:#fff;border-radius:12px;box-shadow:0 12px 32px -8px rgba(11,19,50,.3)}
+[data-dc] .sc-dh{display:flex;justify-content:flex-end;padding:8px 12px 0}
+[data-dc] .sc-dh h2{margin:0;font-family:var(--font-heading);font-size:18px;font-weight:600;color:#0B1332}.sc-dsub{margin:4px 0 0;color:#5B606D}
+[data-dc] .sc-x{width:36px;height:36px;border:0;border-radius:8px;background:none;color:#474C58;font-size:16px;cursor:pointer}[data-dc] .sc-x:hover{background:#E9EBF0}
+[data-dc] .sc-db{overflow:auto;padding:16px 20px;display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1fr);gap:16px;align-items:start}[data-dc] .sc-col{display:grid;gap:16px;min-width:0}@media (max-width:900px){[data-dc] .sc-db{grid-template-columns:1fr}}[data-dc] .sc-db .sc-pan{margin:0}
+[data-dc] .sc-df{display:flex;justify-content:flex-end;gap:8px;padding:12px 20px;border-top:1px solid #E9EBF0}
+[data-dc] .sc-b{display:inline-flex;align-items:center;justify-content:center;gap:6px;height:36px;padding:0 14px;border:1px solid #D6D9E0;border-radius:8px;background:#fff;color:#474C58;font:inherit;font-size:12px;font-weight:700;cursor:pointer}
+[data-dc] .sc-b:hover{background:#E9EBF0}[data-dc] .sc-b.pri{background:#2E427B;border-color:#2E427B;color:#fff}[data-dc] .sc-b.pri:hover{background:#243569}
+[data-dc] .sc-b:focus-visible,[data-dc] .sc-x:focus-visible{outline:3px solid #2E427B;outline-offset:2px}
+[data-dc] .sc-vide{padding:48px 16px;text-align:center;color:#5B606D;font-size:14px}[data-dc] .sc-vide[hidden]{display:none}
+[data-dc] .sc-titre{padding:16px;text-align:center;border-bottom:1px solid #E9EBF0}[data-dc] .sc-titre h3{margin:0;font-family:var(--font-heading);font-size:18px;font-weight:600;color:#0B1332}[data-dc] .sc-titre p{margin:2px 0 0;color:#5B606D}
+[data-dc] .sc-scroll{overflow:auto}
+[data-dc] .sc-tb{width:100%;border-collapse:collapse}
+[data-dc] .sc-tb th{padding:8px 12px;background:#F5F7F9;border-bottom:1px solid #E9EBF0;text-align:left;font-size:12px;font-weight:600;color:#0B1332;white-space:nowrap}
+[data-dc] .sc-tb td{padding:8px 12px;border-bottom:1px solid #E9EBF0;font-size:13px;color:#353944}
+[data-dc] .sc-tb th.r,[data-dc] .sc-tb td.r{text-align:right;font-variant-numeric:tabular-nums;white-space:nowrap}
+[data-dc] .sc-tb tr.sc-sub td{background:#F5F7F9;font-weight:700}[data-dc] .sc-tb tr.sc-tot td{background:#E8ECF6;font-weight:700;color:#243569}
+[data-dc] .sc-novide{padding:22px;text-align:center;color:#747A88;font-size:13px}
+[data-dc] .sc-ok{font-size:12px;color:#2E427B;margin-left:8px}
+
+[data-dc] .sc-dlg{max-width:640px}[data-dc] .sc-db{grid-template-columns:1fr}
+[data-dc] .sc-rad{display:grid;gap:10px;padding:16px}[data-dc] .sc-rad label{display:flex;align-items:center;gap:8px;font-size:12px;color:#353944;cursor:pointer}[data-dc] .sc-rad input{width:16px;height:16px;accent-color:#2E427B;margin:0}
+[data-dc] .sc-per{display:flex;align-items:center;gap:12px;flex-wrap:wrap}[data-dc] .sc-per .sc-in{width:160px}
+[data-dc] .sc-fg{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:12px 24px;padding:16px}
+@media (max-width:900px){[data-dc] .sc-fg{grid-template-columns:1fr}}
+[data-dc] .sc-fr{display:grid;grid-template-columns:150px minmax(0,1fr);gap:8px;align-items:center}[data-dc] .sc-fr>span{font-size:12px;font-weight:600;color:#474C58}
+[data-dc] .sc-ro{min-height:36px;display:flex;align-items:center;padding:0 12px;border:1px solid #D6D9E0;border-radius:8px;background:#F5F7F9;color:#353944;font-size:12px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+[data-dc] .sc-ro.r{justify-content:flex-end;font-variant-numeric:tabular-nums}
+[data-dc] .sc-mt{display:grid;grid-template-columns:150px repeat(2,minmax(0,1fr));gap:8px 12px;align-items:center;padding:12px 16px;margin:0 16px 16px;border:1px solid #E9EBF0;border-radius:8px}
+[data-dc] .sc-mt>b{font-size:12px;text-align:right;color:#0B1332}
+[data-dc] .sc-sd{display:grid;grid-template-columns:150px minmax(0,1fr) 120px minmax(0,1fr);gap:8px 12px;align-items:center;padding:0 16px 16px}[data-dc] .sc-sd>span{font-size:12px;font-weight:600;color:#474C58}
+@media (max-width:900px){[data-dc] .sc-sd{grid-template-columns:150px minmax(0,1fr)}}
+[data-dc] .sc-tools{display:flex;align-items:center;justify-content:flex-end;gap:8px;padding:12px 16px}
+[data-dc] .sc-tools .sc-in{width:240px}
+[data-dc] .sc-ib{display:inline-grid;place-items:center;width:36px;height:36px;border:1px solid #D6D9E0;border-radius:8px;background:#fff;color:#2E427B;font-size:16px;cursor:pointer}[data-dc] .sc-ib:hover{background:#E9EBF0}
+[data-dc] .sc-pg{display:flex;align-items:center;justify-content:space-between;gap:12px;flex-wrap:wrap;padding:12px 16px;border-top:1px solid #E9EBF0}
+[data-dc] .sc-pg .t{display:flex;gap:6px}[data-dc] .sc-pg button{min-width:36px;height:32px;padding:0 10px;border:1px solid #D6D9E0;border-radius:6px;background:#fff;color:#474C58;font:inherit;font-size:12px;cursor:pointer}[data-dc] .sc-pg button.on{background:#2E427B;border-color:#2E427B;color:#fff}[data-dc] .sc-pg button:disabled{opacity:.4;cursor:not-allowed}
+[data-dc] .sc-tb td.neg{color:#B63132}
+
+[data-dc] .dc-top{display:grid;grid-template-columns:minmax(0,1.7fr) minmax(0,1fr);gap:16px;padding:12px 16px;align-items:start}
+@media (max-width:1100px){[data-dc] .dc-top{grid-template-columns:1fr}}
+[data-dc] .dc-id{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:8px 12px}
+[data-dc] .dc-f{display:flex;flex-direction:column;gap:2px;min-width:0}[data-dc] .dc-f>span,[data-dc] .dc-mt>span,[data-dc] .dc-sd>span{font-size:11px;font-weight:600;color:#474C58}
+[data-dc] .dc-top .sc-ro{min-height:28px;padding:0 10px;font-size:12px}
+[data-dc] .dc-mo{display:grid;gap:10px}
+[data-dc] .dc-mt{display:grid;grid-template-columns:96px repeat(2,minmax(0,1fr));gap:4px 8px;align-items:center}[data-dc] .dc-mt>b{font-size:11px;text-align:right;color:#0B1332}
+[data-dc] .dc-sd{display:grid;grid-template-columns:auto minmax(0,1fr) auto minmax(0,1fr);gap:4px 8px;align-items:center}
+[data-dc] .sc-tools{padding:6px 16px}[data-dc] .sc-tb th,[data-dc] .sc-tb td{padding:4px 8px}[data-dc] .dc-mt .sc-ro.r:empty{visibility:hidden}[data-dc] .sc-tb td:nth-child(6){max-width:190px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+[data-dc] .sc-tb th,[data-dc] .sc-tb td{padding:4px 12px}
+[data-dc] .sc-pan>h2{padding:8px 16px}[data-dc] .sc-pg{padding:8px 16px}
+</style>
+
+<div class="bp-root" data-dc>
+  <h1 style="position:absolute;width:1px;height:1px;overflow:hidden;clip-path:inset(50%);margin:0">Détail d'un contrat</h1>
+
+  <div class="no-print" data-dc-actions>
+    <button type="button" data-dc-criteres>Critères</button>
+    <button type="button" data-dc-pdf>PDF</button>
+    <button type="button" data-dc-xlsx>Excel (XLSX)</button>
+    <span class="sc-ok" data-dc-msg role="status"></span>
+  </div>
+
+  <div class="sc-ov" data-dc-ov hidden>
+    <div class="sc-dlg" role="dialog" aria-modal="true" aria-label="Critères d'édition — Détail d'un contrat">
+      <div class="sc-dh"><span></span><button type="button" class="sc-x" data-dc-fermer aria-label="Fermer"><i class="ti ti-x"></i></button></div>
+      <div class="sc-db">
+        <section class="sc-pan" aria-label="Détails d'un contrat"><h2>Détails d'un contrat</h2>
+          <div class="sc-g">
+            <label class="sc-c w"><span>Centre de saisie</span><select class="sc-sel" data-c="site"></select></label>
+            <label class="sc-c w"><span>Code du contrat <b style="color:#B63132">*</b></span><select class="sc-sel" data-c="contrat"></select><span class="sc-er" data-dc-er hidden style="color:#B63132;font-size:12px"></span></label>
+            <div class="sc-c w"><span>Période du</span><div class="sc-per"><input class="sc-in" type="date" data-c="du"><span>et</span><input class="sc-in" type="date" data-c="au"></div></div>
+          </div></section>
+        <section class="sc-pan" aria-label="Choix de la monnaie"><h2>Choix de la monnaie</h2>
+          <div class="sc-rad"><label><input type="radio" name="dc-mon" value="locale" data-c="mon" checked> <span data-dc-lib-loc>Monnaie locale MGA</span></label><label><input type="radio" name="dc-mon" value="rapport" data-c="mon"> <span data-dc-lib-rap>Monnaie Rapport USD</span></label></div></section>
+      </div>
+      <div class="sc-df"><button type="button" class="sc-b" data-dc-reset><i class="ti ti-refresh"></i>Réinitialiser</button><button type="button" class="sc-b" data-dc-fermer>Annuler</button><button type="button" class="sc-b pri" data-dc-consulter><i class="ti ti-search"></i>Rechercher</button></div>
+    </div>
+  </div>
+
+  <div class="sc-vide" data-dc-vide>Aucun contrat affiché. Utilisez « Critères » pour choisir un contrat.</div>
+
+  <div data-dc-res hidden>
+    <section class="sc-pan" aria-label="Détail d'un contrat"><h2>Détail d'un contrat <small data-dc-info></small></h2>
+      <div class="dc-top">
+        <div class="dc-id">
+          <div class="dc-f"><span>Centre de saisie</span><div class="sc-ro" data-r="site"></div></div><div class="dc-f"><span>Numéro du contrat</span><div class="sc-ro" data-r="num"></div></div><div class="dc-f"><span>Désignation</span><div class="sc-ro" data-r="designation"></div></div>
+          <div class="dc-f"><span>Adjudicataire</span><div class="sc-ro" data-r="tiers"></div></div><div class="dc-f"><span>Type de marché</span><div class="sc-ro" data-r="typeMarche"></div></div><div class="dc-f"><span>Type de passation</span><div class="sc-ro" data-r="typePassation"></div></div>
+          <div class="dc-f"><span>Date signature</span><div class="sc-ro" data-r="dateSign"></div></div><div class="dc-f"><span>Date ordre de service</span><div class="sc-ro" data-r="dateOS"></div></div><div class="dc-f"><span>Numéro R.C.</span><div class="sc-ro" data-r="rc"></div></div>
+          <div class="dc-f"><span>N.I.F.</span><div class="sc-ro" data-r="nif"></div></div><div class="dc-f"><span>N° statistique</span><div class="sc-ro" data-r="stat"></div></div><div class="dc-f"><span>Dom. bancaire</span><div class="sc-ro" data-r="banque"></div></div>
+        </div>
+        <div class="dc-mo">
+          <div class="dc-mt">
+            <span></span><b data-r="m1">MGA</b><b data-r="m2">USD</b>
+            <span>Montant initial</span><div class="sc-ro r" data-r="ini1"></div><div class="sc-ro r" data-r="ini2"></div>
+            <span>Avenant</span><div class="sc-ro r" data-r="ave1"></div><div class="sc-ro r" data-r="ave2"></div>
+            <span>Montant total</span><div class="sc-ro r" data-r="tot1"></div><div class="sc-ro r" data-r="tot2"></div>
+          </div>
+          <div class="dc-sd">
+            <span>Total payé</span><div class="sc-ro r" data-r="paye"></div><span>Solde à payer</span><div class="sc-ro r" data-r="sap"></div>
+            <span>Total facturé</span><div class="sc-ro r" data-r="fact"></div><span>Solde à facturer</span><div class="sc-ro r" data-r="saf"></div>
+          </div>
+        </div>
+      </div>
+    </section>
+    <section class="sc-pan" aria-label="Décomptes"><h2>Décomptes <small data-dc-n></small></h2>
+      <div class="sc-tools no-print"><input class="sc-in" type="search" placeholder="Recherche…" data-dc-q aria-label="Rechercher dans les décomptes"></div>
+      <div class="sc-scroll"><table class="sc-tb" data-dc-table data-no-tf></table></div>
+      <div class="sc-pg"><div class="t" data-dc-taille></div><span data-dc-pginfo></span><div class="t"><button type="button" data-dc-prec aria-label="Page précédente"><i class="ti ti-chevron-left"></i></button><button type="button" class="on" data-dc-page>1</button><button type="button" data-dc-suiv aria-label="Page suivante"><i class="ti ti-chevron-right"></i></button></div></div>
+    </section>
+  </div>
+</div>
+
+<script>
+(function () {
+  var root = document.querySelector('[data-dc]'); if (!root) return;
+  function q(s) { return root.querySelector(s); } function qa(s) { return [].slice.call(root.querySelectorAll(s)); }
+  function esc(s) { return String(s == null ? '' : s).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;'); }
+  function nb(v) { return Number(v || 0).toLocaleString('fr-FR', { minimumFractionDigits: 2, maximumFractionDigits: 2 }); }
+  function dt(d) { return d ? d.split('-').reverse().join('/') : ''; }
+  function msg(t) { q('[data-dc-msg]').textContent = t || ''; }
+  function c(n) { return q('[data-c="' + n + '"]'); }
+  function maj(s) { if (s && s.__combo && s.__combo.maj) s.__combo.maj(); }
+  var TIERS = { F001: 'FOURNISSEUR A', F002: 'FOURNISSEUR B', F003: 'FOURNISSEUR C', F101: 'ENTREPRISE DE TRAVAUX 1', F102: 'ENTREPRISE DE TRAVAUX 2' };
+  var etat = null, taille = 10, page = 1, recherche = '';
+  function sites() { var l = ((window.PLANS_REF || {}).sites || []).filter(function (x) { return x[0] !== '00'; }).map(function (x) { return [x[0], x[0] + ' - ' + x[1]]; }); return l.length ? l : [['01', '01 - Siège']]; }
+  function nomSite(code) { var s = sites().filter(function (x) { return x[0] === code; })[0]; return s ? s[1] : code; }
+  function devRapport() { var d = (window.DEVISES || []).filter(function (x) { return x.actif !== false && x.code !== 'MGA'; })[0]; return d ? d.code : 'USD'; }
+  function contrats() { return window.CONTRATS || []; }
+  function montants(k) { var ini = 0, ave = 0; (k.vent || []).forEach(function (v) { var m = Number((v.mt || {}).MGA) || 0; if (v.avenant) ave += m; else ini += m; }); return { ini: ini, ave: ave, tot: ini + ave }; }
+  function hash(s) { var h = 0; for (var i = 0; i < s.length; i++) h = (h * 31 + s.charCodeAt(i)) % 1000; return h / 1000; }
+  function addMois(iso, n) { var d = new Date((iso || '2026-01-15') + 'T00:00:00'); d.setMonth(d.getMonth() + n); return d.getFullYear() + '-' + ('0' + (d.getMonth() + 1)).slice(-2) + '-' + ('0' + Math.min(d.getDate(), 28)).slice(-2); }
+  function decomptes(k) {
+    var M = montants(k).tot, r = hash(k.num), n = 3 + Math.round(r * 4), part = .55 + r * .4, L = [];
+    for (var i = 0; i < n && M; i++) {
+      var tr = Math.round(M * part / n), dd = addMois(k.dateSign, i + 1), pen = i === n - 1 && r > .5 ? -Math.round(tr * .02) : 0;
+      L.push({ site: k.site, num: k.num, dec: 'DEC-' + ('0' + (i + 1)).slice(-2) + '/' + (k.dateSign || '2026').slice(2, 4), dateDec: dd, datePai: addMois(dd, 0).slice(0, 8) + '28', lib: 'Paiement décompte ' + (i + 1) + ' — ' + k.designation, travaux: tr, avances: i ? 0 : -Math.round(tr * .1), retenues: -Math.round(tr * .05), primes: 0, penalites: pen });
+    }
+    return L;
+  }
+  function net(d) { return d.travaux + d.avances + d.retenues + d.primes + d.penalites; }
+
+  // ---------- pop-up de critères
+  var ov = q('[data-dc-ov]');
+  function remplir() {
+    c('site').innerHTML = sites().map(function (s) { return '<option value="' + esc(s[0]) + '">' + esc(s[1]) + '</option>'; }).join('');
+    var cur = c('contrat').value;
+    c('contrat').innerHTML = '<option value=""></option>' + contrats().map(function (k) { return '<option value="' + esc(k.num) + '">' + esc(k.num) + ' — ' + esc(k.designation) + '</option>'; }).join('');
+    c('contrat').value = cur; maj(c('site')); maj(c('contrat'));
+    q('[data-dc-lib-loc]').textContent = 'Monnaie locale MGA'; q('[data-dc-lib-rap]').textContent = 'Monnaie Rapport ' + devRapport();
+  }
+  function ouvrir() { remplir(); ov.hidden = false; c('contrat').focus(); }
+  function fermer() { ov.hidden = true; }
+  qa('[data-dc-fermer]').forEach(function (b) { b.addEventListener('click', fermer); });
+  q('[data-dc-criteres]').addEventListener('click', ouvrir);
+  root.addEventListener('keydown', function (e) { if (e.key === 'Escape' && !ov.hidden) fermer(); });
+  function initDates() { c('du').value = '2026-01-01'; c('au').value = '2026-12-31'; }
+  q('[data-dc-reset]').addEventListener('click', function () { c('contrat').value = ''; maj(c('contrat')); initDates(); root.querySelector('[data-c="mon"][value="locale"]').checked = true; etat = null; q('[data-dc-res]').hidden = true; q('[data-dc-vide]').hidden = false; var e = q('[data-dc-er]'); e.hidden = true; msg(''); });
+
+  // ---------- consultation
+  function consulter() {
+    var e = q('[data-dc-er]'), num = c('contrat').value; e.hidden = true; c('contrat').classList.remove('err');
+    if (!num) { e.textContent = 'Le code du contrat est obligatoire.'; e.hidden = false; c('contrat').classList.add('err'); return; }
+    var k = contrats().filter(function (x) { return x.num === num; })[0]; if (!k) return;
+    var rap = root.querySelector('[data-c="mon"]:checked').value === 'rapport', dev = devRapport(), taux = null;
+    if (rap) { taux = window.COURS_API ? window.COURS_API.taux(dev, c('au').value) : null; if (!taux) { msg('Aucun cours en vigueur pour ' + dev + ' : édition en monnaie de rapport impossible.'); return; } }
+    var du = c('du').value, au = c('au').value;
+    var L = decomptes(k).filter(function (d) { return (!du || d.dateDec >= du) && (!au || d.dateDec <= au); });
+    etat = { k: k, rap: rap, dev: dev, taux: taux, L: L, m: montants(k) }; page = 1; recherche = ''; q('[data-dc-q]').value = '';
+    afficher(); fermer(); q('[data-dc-vide]').hidden = true; q('[data-dc-res]').hidden = false; msg('');
+  }
+  q('[data-dc-consulter]').addEventListener('click', consulter);
+  function conv(v) { return etat.rap ? v / etat.taux : v; }
+  function afficher() {
+    var k = etat.k, m = etat.m, L = etat.L, paye = 0, fact = 0;
+    L.forEach(function (d) { paye += net(d); fact += d.travaux; });
+    var R = function (n) { return q('[data-r="' + n + '"]'); };
+    R('site').textContent = nomSite(k.site); R('num').textContent = k.num; R('designation').textContent = k.designation; R('tiers').textContent = k.tiers ? k.tiers + ' — ' + (TIERS[k.tiers] || '') : '';
+    R('typeMarche').textContent = k.typeMarche || ''; R('typePassation').textContent = k.typePassation || ''; R('dateSign').textContent = dt(k.dateSign); R('dateOS').textContent = dt((k.exec || {}).dateOS);
+    ['rc', 'nif', 'stat', 'banque'].forEach(function (x) { R(x).textContent = ''; });
+    R('m1').textContent = 'MGA'; R('m2').textContent = etat.rap ? etat.dev : '';
+    var dbl = function (a, b, v) { R(a).textContent = nb(v); R(b).textContent = etat.rap ? nb(conv(v)) : ''; };
+    dbl('ini1', 'ini2', m.ini); dbl('ave1', 'ave2', m.ave); dbl('tot1', 'tot2', m.tot);
+    var u = etat.rap ? ' (' + etat.dev + ')' : ' (MGA)';
+    R('paye').textContent = nb(conv(paye)); R('fact').textContent = nb(conv(fact)); R('sap').textContent = nb(conv(m.tot - paye)); R('saf').textContent = nb(conv(m.tot - fact));
+    q('[data-dc-info]').textContent = etat.rap ? 'Monnaie de rapport ' + etat.dev + ' (cours ' + nb(etat.taux) + ')' : 'Monnaie locale MGA';
+    liste();
+  }
+  var TETE = ['Site', 'Numéro contrat', 'N° décompte', 'Date décompte', 'Date paiement', 'Libellé comptable', 'Travaux', 'Avances', 'Retenues de garantie', 'Primes', 'Pénalités'];
+  function ligne(d) { return [d.site, d.num, d.dec, dt(d.dateDec), dt(d.datePai), d.lib, conv(d.travaux), conv(d.avances), conv(d.retenues), conv(d.primes), conv(d.penalites)]; }
+  function filtre() { var s = recherche.toLowerCase(); return etat.L.filter(function (d) { return !s || ligne(d).slice(0, 6).join(' ').toLowerCase().indexOf(s) >= 0; }); }
+  function liste() {
+    var F = filtre(), n = F.length, tp = taille === 0 ? n : taille, np = Math.max(1, Math.ceil(n / (tp || 1)));
+    if (page > np) page = np; var debut = taille === 0 ? 0 : (page - 1) * taille, P = taille === 0 ? F : F.slice(debut, debut + taille);
+    var tot = [0, 0, 0, 0, 0]; F.forEach(function (d) { var l = ligne(d); for (var i = 0; i < 5; i++) tot[i] += l[6 + i]; });
+    q('[data-dc-table]').innerHTML = '<thead><tr>' + TETE.map(function (h, i) { return '<th' + (i >= 6 ? ' class="r"' : '') + '>' + esc(h) + '</th>'; }).join('') + '</tr></thead><tbody>' +
+      (P.length ? P.map(function (d) { return '<tr>' + ligne(d).map(function (x, i) { return '<td' + (i >= 6 ? ' class="r' + (x < 0 ? ' neg' : '') + '"' : '') + '>' + (i >= 6 ? nb(x) : esc(x)) + '</td>'; }).join('') + '</tr>'; }).join('') : '<tr><td colspan="11" class="sc-novide">Aucun enregistrement trouvé</td></tr>') +
+      (P.length ? '<tr class="sc-tot"><td colspan="6">Total</td>' + tot.map(function (x) { return '<td class="r">' + nb(x) + '</td>'; }).join('') + '</tr>' : '') + '</tbody>';
+    q('[data-dc-n]').textContent = n + ' élément(s)';
+    q('[data-dc-taille]').innerHTML = [10, 20, 50, 0].map(function (t) { return '<button type="button" class="' + (t === taille ? 'on' : '') + '" data-t="' + t + '">' + (t || 'Tous') + '</button>'; }).join('');
+    q('[data-dc-pginfo]').textContent = 'Page ' + page + ' sur ' + np + ' (' + n + ' éléments)';
+    q('[data-dc-page]').textContent = page; q('[data-dc-prec]').disabled = page <= 1; q('[data-dc-suiv]').disabled = page >= np;
+  }
+  q('[data-dc-taille]').addEventListener('click', function (e) { var b = e.target.closest('[data-t]'); if (!b) return; taille = +b.dataset.t; page = 1; liste(); });
+  q('[data-dc-prec]').addEventListener('click', function () { page--; liste(); }); q('[data-dc-suiv]').addEventListener('click', function () { page++; liste(); });
+  q('[data-dc-q]').addEventListener('input', function (e) { recherche = e.target.value; page = 1; liste(); });
+
+  // ---------- exports
+  function exporter(k) {
+    if (!etat) { ouvrir(); msg('Choisissez d\u2019abord un contrat (Critères).'); return; }
+    var X = window.EXPORT_TABLEAU; if (!X) { msg('Module d\u2019export indisponible.'); return; }
+    var F = filtre(); if (!F.length) { msg('Rien à exporter.'); return; }
+    var lignes = F.map(function (d) { return ligne(d).map(function (x, i) { return i >= 6 ? nb(x) : x; }); }), nom = 'Détail du contrat ' + etat.k.num;
+    if (k === 'pdf') X.pdf('detail_contrat.pdf', nom, F.length + ' décompte(s)', TETE, lignes); else X.xlsx('detail_contrat.xlsx', nom, TETE, lignes);
+    msg('Export ' + (k === 'pdf' ? 'PDF' : 'Excel (XLSX)') + ' généré : ' + F.length + ' décompte(s).');
+  }
+  q('[data-dc-pdf]').addEventListener('click', function () { exporter('pdf'); }); q('[data-dc-xlsx]').addEventListener('click', function () { exporter('xlsx'); });
+
+  function auto() { if (location.hash === '#detailcontrat' && ov.hidden && !etat) setTimeout(ouvrir, 60); }
+  window.addEventListener('hashchange', auto);
+  initDates(); remplir(); auto();
+})();
+</script>

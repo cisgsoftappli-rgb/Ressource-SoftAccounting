@@ -7,17 +7,21 @@
 -->
 <style>
 .dd{display:flex;flex-direction:column;gap:16px;color:#26312d;font-size:13px}
-.dd-bar{display:flex;flex-wrap:wrap;align-items:center;justify-content:space-between;gap:12px;background:#fff;border:1px solid #e3ddd0;border-radius:14px;padding:12px 16px}
+.dd-bar{display:flex;flex-wrap:wrap;align-items:center;justify-content:space-between;gap:12px;background:#fff;border:1px solid #E9EBF0;border-radius:12px;padding:12px 16px}
 .dd-left{display:flex;align-items:center;gap:12px;min-width:0}
-.dd-title{font-size:15px;font-weight:700;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;max-width:300px}
-.dd-back{display:inline-flex;align-items:center;gap:6px;border:1px solid #e3ddd0;border-radius:8px;background:#fff;color:#4b5675;padding:6px 12px;font:inherit;font-size:12px;font-weight:600;cursor:pointer}
-.dd-back:hover{background:#f8fafc}
-.dd-tabs{display:flex;gap:4px;background:#f1ede4;padding:4px;border-radius:11px}
-.dd-tab{border:0;background:transparent;padding:6px 14px;border-radius:8px;font:inherit;font-size:13px;font-weight:600;color:#7c8078;cursor:pointer;white-space:nowrap}
-.dd-tab:hover{background:#0000000d}
-.dd-tab.on{background:#fff;color:#26312d;box-shadow:0 1px 3px #00000014}
-.dd-save{display:inline-flex;align-items:center;gap:6px;border:0;border-radius:12px;background:#1c3934;color:#fff;padding:8px 16px;font:inherit;font-size:14px;font-weight:700;cursor:pointer}
-.dd-save:hover{background:#254842}
+.dd-title{display:block;margin:0;font-size:18px;font-weight:700;color:#0B1332;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;max-width:420px}
+.dd-sum{display:block;margin:2px 0 0;font-size:12px;color:#5B606D;max-width:520px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.dd-back{display:inline-flex;align-items:center;gap:6px;border:1px solid #D5DBE5;border-radius:6px;background:#fff;color:#353944;padding:6px 12px;font:inherit;font-size:12px;font-weight:600;cursor:pointer}
+.dd-back:hover{background:#F5F7F9}
+.dd-ico{display:inline-flex;align-items:center;justify-content:center;width:28px;height:28px;border:1px solid #D5DBE5;border-radius:8px;background:#fff;color:#353944;cursor:pointer;flex-shrink:0}.dd-ico:hover{background:#F5F7F9}
+.dd-tools{display:flex;flex:1 1 auto;min-width:0;flex-wrap:wrap;align-items:center;gap:8px}.dd-spacer{flex:1 1 auto}
+.dd-tabs{display:flex;gap:6px;flex-wrap:wrap}
+.dd-tg .dd-in{width:auto;min-width:150px;padding:6px 10px;font-size:12px;border-color:#D5DBE5;background:#fff}.dd-tg .dd-btn{padding:6px 12px;font-size:12px;border-radius:8px;background:#fff;color:#353944;border:1px solid #D5DBE5;font-weight:600}.dd-tg .dd-btn:hover{background:#F5F7F9}.dd-tl{white-space:nowrap}
+.dd-tab{display:inline-flex;align-items:center;border:1px solid #D5DBE5;border-radius:8px;background:#fff;padding:6px 12px;font:inherit;font-size:12px;font-weight:600;color:#353944;cursor:pointer;white-space:nowrap}
+.dd-tab:hover{background:#F5F7F9}
+.dd-tab.on{border-color:#2E427B;background:#E8ECF6;color:#243569}
+.dd-save{display:inline-flex;align-items:center;gap:6px;border:0;border-radius:8px;background:#2E427B;color:#fff;padding:8px 16px;font:inherit;font-size:12px;font-weight:600;cursor:pointer}
+.dd-save:hover{background:#243569}
 .dd-main{display:grid;grid-template-columns:minmax(0,1fr) 320px;gap:20px;align-items:start}
 @media(max-width:900px){.dd-main{grid-template-columns:1fr}}
 .dd-col{display:flex;flex-direction:column;gap:20px;min-width:0}
@@ -31,8 +35,8 @@
 .dd-act{display:flex;gap:6px;flex-shrink:0}
 .dd-ib{display:inline-flex;align-items:center;justify-content:center;width:32px;height:32px;border-radius:8px;border:1px solid #e3ddd0;background:#fff;color:#7c8078;cursor:pointer}
 .dd-ib:hover{background:#fef2f2;border-color:#fca5a5;color:#ef4444}
-.dd-ib.ed{background:#fff4e6;border-color:#fdd0a2;color:#c25e00}
-.dd-ib.ed:hover{background:#ffe5b8;color:#c25e00;border-color:#fdd0a2}
+.dd-ib.ed{background:#E3EBFE;border-color:#B7C6F2;color:#2E427B}
+.dd-ib.ed:hover{background:#D3DEFB;color:#243569;border-color:#B7C6F2}
 .dd-add{border-top:1px dashed #e3ddd0;padding-top:14px;margin-top:6px}
 .dd-grid3{display:grid;grid-template-columns:130px 1fr 1fr;gap:10px;margin-bottom:14px}
 @media(max-width:600px){.dd-grid3{grid-template-columns:1fr}}
@@ -50,6 +54,15 @@
 .dd-stage{background:#e9e4d7;border-radius:14px;padding:36px;display:flex;justify-content:center;min-height:400px}
 .dd-sheet{background:#fff;width:794px;box-shadow:0 10px 30px #0000001f;padding:14px;min-height:1123px;position:relative;box-sizing:border-box;flex:0 0 auto}
 .dd-stage{overflow:auto;justify-content:flex-start}
+.dd-tbar{display:flex;align-items:center;gap:8px;margin-bottom:12px;flex-wrap:wrap}.dd-tbar .dd-in{width:auto;min-width:150px}.dd-tl{font-size:12px;font-weight:700;color:#474C58}.dd-pft{display:flex;gap:6px;margin:8px 0 12px}.dd-pft button{flex:1;height:34px;border:1px solid #D6D9E0;border-radius:8px;background:#fff;color:#474C58;font:inherit;font-size:13px;font-weight:600;cursor:pointer}.dd-pft button.on{background:#2E427B;border-color:#2E427B;color:#fff}.dd-pfs{display:flex;flex-wrap:wrap;gap:6px 16px;margin-top:12px}.dd-pfs .dd-chk{margin:0}.dd-sub{margin:0;font-size:12px;color:#474C58}
+.dd-dz{display:grid;grid-template-columns:minmax(0,1fr) 360px;gap:16px;align-items:start}
+.dd-side{position:sticky;top:8px;max-height:calc(100vh - 150px);overflow:auto;min-width:0;padding-right:2px}
+.dd-sidec{display:flex;flex-direction:column;gap:12px}
+.dd-side .dd-card{padding:14px;border-color:#D6D9E0;border-radius:10px}.dd-side .dd-card h4{color:#0B1332}
+.dd-side .dd-grid3{grid-template-columns:1fr;gap:8px}.dd-side .dd-g4{grid-template-columns:repeat(2,minmax(0,1fr))}.dd-side .dd-g2{grid-template-columns:1fr}
+.dd-g1{display:grid;gap:10px}.dd-pfb{display:flex;justify-content:flex-end;gap:8px;margin-top:12px}
+.dd-side .dd-item.edit{border-color:#2E427B;background:#F5F7FD}
+@media(max-width:1100px){.dd-dz{grid-template-columns:1fr}.dd-side{position:static;max-height:none}}
 .dd-guides{position:absolute;z-index:2;border:1px dashed #c5c0b4;pointer-events:none}
 .dd-zn{position:relative;z-index:3}.dd-zb{position:relative}
 .dd-el{position:absolute;overflow:hidden;cursor:move;box-sizing:border-box;user-select:none;font-size:13px;color:#26312d;white-space:pre-wrap}
@@ -80,6 +93,7 @@
 .dn-wrap .bp-tb tbody tr.sel td{background:#E3EBFE}.dn-wrap .bp-tb tbody tr.t-titre td:nth-child(2){font-weight:700}
 .dn-wrap .bp-tb input[type=checkbox]{pointer-events:none}
 .dn-er{font-size:12px;color:#B63132}
+.dn-bt .dn-act{display:flex;align-items:center;gap:8px;margin-left:auto;flex-wrap:wrap;justify-content:flex-end}.dn-ok{font-size:12px;color:#2E427B}.dn-bt .bp-chk{display:flex}
 .dn-ax{display:grid;grid-template-columns:190px minmax(0,1fr);border:1px solid #D6D9E0;border-radius:8px;overflow:hidden;background:#fff;min-height:260px}
 .dn-axl{display:flex;flex-direction:column;gap:6px;padding:8px;background:#F5F7F9;border-right:1px solid #E9EBF0}
 .dn-axl button{display:flex;align-items:center;justify-content:space-between;gap:6px;height:34px;padding:0 10px;border:1px solid #E9EBF0;border-radius:6px;background:#fff;color:#474C58;font:inherit;font-size:12px;font-weight:600;cursor:pointer;text-align:left}
@@ -135,48 +149,38 @@
   <div class="dd-bar">
     <div class="dd-left">
       <button type="button" class="dd-back" data-dd-back><i class="ti ti-arrow-left"></i> Retour</button>
-      <span class="dd-title" data-dd-title>DECLARATION — Déclaration</span><button type="button" class="dd-back" data-dd-params title="Paramètres du modèle d'état"><i class="ti ti-settings"></i> Paramètres</button><button type="button" class="dd-back" data-dd-dup title="Dupliquer le modèle"><i class="ti ti-copy"></i> Dupliquer</button><span data-dd-sum style="font-size:11px;color:#64748b;max-width:420px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap"></span>
+      <div style="min-width:0"><span class="dd-title" data-dd-title>DECLARATION — Déclaration</span><span class="dd-sum" data-dd-sum></span></div>
+      <button type="button" class="dd-ico" data-dd-params title="Paramètres du modèle d'état"><i class="ti ti-pencil"></i></button><button type="button" class="dd-ico" data-dd-dup title="Dupliquer le modèle"><i class="ti ti-copy"></i></button>
     </div>
+    <div class="dd-tools">
+        <div class="dd-tg" data-dd-tools style="display:flex;align-items:center;gap:8px;flex-wrap:wrap"><span class="dd-tl">Ajouter un élément</span><select class="dd-in" data-dd-addz aria-label="Zone"><option value="entete">En-tête</option><option value="pied">Pied de page</option></select><button type="button" class="dd-btn sec" data-dd-addt><i class="ti ti-typography"></i> Texte</button><button type="button" class="dd-btn sec" data-dd-addi><i class="ti ti-photo"></i> Image</button></div>
+      <div class="dd-spacer"></div>
     <div class="dd-tabs">
-      <button type="button" class="dd-tab" data-dd-tab="designer">Designer</button>
+      <button type="button" class="dd-tab on" data-dd-tab="designer">Designer</button>
       <button type="button" class="dd-tab" data-dd-tab="grille">Grille</button>
       <button type="button" class="dd-tab" data-dd-tab="donnees">Données</button>
-      <button type="button" class="dd-tab on" data-dd-tab="hf">En-tête &amp; pied de page</button>
-      <button type="button" class="dd-tab" data-dd-tab="doc">Document</button>
       <button type="button" class="dd-tab" data-dd-tab="json">JSON</button>
     </div>
     <button type="button" class="dd-save" data-dd-save><i class="ti ti-device-floppy"></i> Sauvegarder</button>
+    </div>
   </div>
 
-  <div data-dd-view="hf">
-    <div class="dd-main">
-      <div class="dd-col">
-        <div class="dd-card" data-dd-zone="entete">
-          <h4><i class="ti ti-tag" style="color:#f59e0b"></i> En-tête</h4>
-          <p class="dd-desc">Champs affichés dans la zone d'en-tête de l'onglet Designer. Variables : numero, dateDebut, dateFin, page.</p>
-          <div data-dd-list></div>
-          <div class="dd-add">
-            <div class="dd-grid3">
-              <div><label class="dd-lab">Type de champ</label><select class="dd-in" data-dd-f="type"><option value="texte">Texte</option><option value="image">Image</option></select></div>
-              <div><label class="dd-lab">Nom du champ</label><input class="dd-in" data-dd-f="nom" placeholder="Ex : Titre"></div>
-              <div><label class="dd-lab">Contenu</label><input class="dd-in" data-dd-f="contenu" placeholder="Texte affiché"></div>
-            </div>
-            <button type="button" class="dd-btn" data-dd-add><i class="ti ti-plus"></i> Ajouter le champ</button>
-          </div>
-        </div>
-        <div class="dd-card" data-dd-zone="pied">
-          <h4><i class="ti ti-tag" style="color:#f59e0b"></i> Pied de page</h4>
-          <p class="dd-desc">Champs affichés dans la zone de pied de page de l'onglet Designer.</p>
-          <div data-dd-list></div>
-          <div class="dd-add">
-            <div class="dd-grid3">
-              <div><label class="dd-lab">Type de champ</label><select class="dd-in" data-dd-f="type"><option value="texte">Texte</option><option value="image">Image</option></select></div>
-              <div><label class="dd-lab">Nom du champ</label><input class="dd-in" data-dd-f="nom" placeholder="Ex : Titre"></div>
-              <div><label class="dd-lab">Contenu</label><input class="dd-in" data-dd-f="contenu" placeholder="Texte affiché"></div>
-            </div>
-            <button type="button" class="dd-btn" data-dd-add><i class="ti ti-plus"></i> Ajouter le champ</button>
-          </div>
-        </div>
+  <div data-dd-view="designer">
+    <div class="dd-dz">
+    <div class="dd-stage"><div class="dd-sheet" data-dd-sheet>
+      <div class="wm" data-dd-wm style="display:none"></div>
+      <div class="dd-guides" data-dd-guides></div>
+      <div class="dd-zn" data-dd-zh></div>
+      <div class="dd-zb" data-dd-zb></div>
+      <div class="dd-zn" data-dd-zf></div>
+      <div class="dd-lay" data-dd-grid-layer></div>
+    </div></div>
+    <aside class="dd-side no-print" data-dd-side>
+      <div class="dd-sidec" data-dd-pdoc>
+        <div class="dd-card"><h4><i class="ti ti-file-text" style="color:#2E427B"></i> Document</h4>
+    <div class="dd-g4"><div><label class="dd-lab">Haut (px)</label><input class="dd-in" type="number" data-dd-doc="mt" value="14"></div><div><label class="dd-lab">Bas (px)</label><input class="dd-in" type="number" data-dd-doc="mb" value="14"></div><div><label class="dd-lab">Gauche (px)</label><input class="dd-in" type="number" data-dd-doc="ml" value="14"></div><div><label class="dd-lab">Droite (px)</label><input class="dd-in" type="number" data-dd-doc="mr" value="14"></div></div>
+    <div class="dd-g4"><div><label class="dd-lab">Hauteur en-tête (px)</label><input class="dd-in" type="number" data-dd-doc="hh" value="70"></div><div><label class="dd-lab">Hauteur pied de page (px)</label><input class="dd-in" type="number" data-dd-doc="fh" value="44"></div></div>
+    <label class="dd-lab">Format</label><select class="dd-in" data-dd-fmt><option value="p">A4 — Portrait (794 × 1123)</option><option value="l">A4 — Paysage (1123 × 794)</option></select></div>
         <div class="dd-card">
           <h4><i class="ti ti-droplet" style="color:#3b82f6"></i> Filigrane</h4>
           <label class="dd-chk"><input type="checkbox" data-dd-wm-on> Activer un filigrane sur le document</label>
@@ -186,27 +190,30 @@
           </div>
         </div>
       </div>
+      <div class="dd-card" data-dd-pfld hidden>
+        <h4>Propriétés</h4><p class="dd-sub" data-pf-t></p>
+        <div class="dd-pft"><button type="button" class="on" data-pf-tab="c"></button><button type="button" data-pf-tab="f"></button><button type="button" data-pf-tab="m">Position</button></div>
+        <div data-pf-g="c"><div class="dd-g1"><div><label class="dd-lab">Nom de l'élément</label><input class="dd-in" data-pf="nom"></div>
+          <div data-pf-t1><label class="dd-lab">Contenu</label><textarea class="dd-in" rows="3" data-pf="contenu"></textarea></div>
+          <div data-pf-i1><label class="dd-lab">Image</label><select class="dd-in" data-pf="src"><option value="logo-soft-appli.png">Logo SoftAppli</option><option value="qr-code.png">QR code</option><option value="pied-soft-accounting.png">Bandeau de pied de page</option><option value="">Autre fichier…</option></select></div>
+          <div data-pf-i1><label class="dd-lab">Fichier</label><input class="dd-in" data-pf="contenu2"></div></div></div>
+        <div data-pf-g="f" hidden>
+          <div data-pf-t1><div class="dd-g1"><div><label class="dd-lab">Police</label><select class="dd-in" data-pf="ff"><option value="">Par défaut</option><option value="Arial,sans-serif">Arial</option><option value="Calibri,sans-serif">Calibri</option><option value="Verdana,sans-serif">Verdana</option><option value="'Times New Roman',serif">Times New Roman</option><option value="'Courier New',monospace">Courier New</option></select></div></div>
+            <div class="dd-g4" style="margin-top:12px"><div><label class="dd-lab">Taille (px)</label><input class="dd-in" type="number" min="6" max="60" data-pf="fs"></div><div><label class="dd-lab">Couleur</label><input class="dd-in" type="color" data-pf="color" style="padding:2px;height:38px"></div><div><label class="dd-lab">Alignement</label><select class="dd-in" data-pf="align"><option value="left">Gauche</option><option value="center">Centré</option><option value="right">Droite</option></select></div><div><label class="dd-lab">Vertical</label><select class="dd-in" data-pf="valign"><option value="flex-start">Haut</option><option value="center">Milieu</option><option value="flex-end">Bas</option></select></div></div>
+            <div class="dd-pfs"><label class="dd-chk"><input type="checkbox" data-pf="bold"> Gras</label><label class="dd-chk"><input type="checkbox" data-pf="italic"> Italique</label><label class="dd-chk"><input type="checkbox" data-pf="under"> Souligné</label></div></div>
+          <div data-pf-i1><div class="dd-g4"><div><label class="dd-lab">Largeur</label><input class="dd-in" type="number" data-pf="w"></div><div><label class="dd-lab">Hauteur</label><input class="dd-in" type="number" data-pf="h"></div></div>
+            <div class="dd-g1" style="margin-top:12px"><div><label class="dd-lab">Ajustement</label><select class="dd-in" data-pf="fit"><option value="contain">Contenir (proportions conservées)</option><option value="cover">Couvrir (rognage)</option><option value="fill">Étirer</option></select></div></div>
+            <div class="dd-pfs"><label class="dd-chk"><input type="checkbox" data-pf="ratio"> Conserver les proportions au redimensionnement</label></div></div></div>
+        <div data-pf-g="m" hidden><div class="dd-g4"><div><label class="dd-lab">X</label><input class="dd-in" type="number" data-pf="x"></div><div><label class="dd-lab">Y</label><input class="dd-in" type="number" data-pf="y"></div><div data-pf-t1><label class="dd-lab">Largeur</label><input class="dd-in" type="number" data-pf="w2"></div><div data-pf-t1><label class="dd-lab">Hauteur</label><input class="dd-in" type="number" data-pf="h2"></div></div></div>
+        <div class="dd-pfb"><button type="button" class="dd-btn sec" data-pf-del><i class="ti ti-trash"></i> Supprimer</button><button type="button" class="dd-btn" data-pf-back>Document</button></div>
+      </div>
+    </aside>
     </div>
-  </div>
-
-  <div data-dd-view="designer" style="display:none">
-    <div class="dd-stage"><div class="dd-sheet" data-dd-sheet>
-      <div class="wm" data-dd-wm style="display:none"></div>
-      <div class="dd-guides" data-dd-guides></div>
-      <div class="dd-zn" data-dd-zh></div>
-      <div class="dd-zb" data-dd-zb></div>
-      <div class="dd-zn" data-dd-zf></div>
-      <div class="dd-lay" data-dd-grid-layer></div>
-    </div></div>
   </div>
   <div data-dd-view="grille" style="display:none"><div data-dg-root></div>
   </div>
   <div data-dd-view="donnees" style="display:none"><div data-dn-root></div>
   </div>
-  <div data-dd-view="doc" style="display:none"><div class="dd-card" style="max-width:720px"><h4>Document</h4><p class="dd-desc">Format de la feuille, marges (repères en pointillés) et hauteur des zones d'en-tête et de pied de page, en pixels.</p>
-    <div class="dd-g4"><div><label class="dd-lab">Haut (px)</label><input class="dd-in" type="number" data-dd-doc="mt" value="14"></div><div><label class="dd-lab">Bas (px)</label><input class="dd-in" type="number" data-dd-doc="mb" value="14"></div><div><label class="dd-lab">Gauche (px)</label><input class="dd-in" type="number" data-dd-doc="ml" value="14"></div><div><label class="dd-lab">Droite (px)</label><input class="dd-in" type="number" data-dd-doc="mr" value="14"></div></div>
-    <div class="dd-g4"><div><label class="dd-lab">Hauteur en-tête (px)</label><input class="dd-in" type="number" data-dd-doc="hh" value="70"></div><div><label class="dd-lab">Hauteur pied de page (px)</label><input class="dd-in" type="number" data-dd-doc="fh" value="44"></div></div>
-    <label class="dd-lab">Format</label><select class="dd-in" data-dd-fmt><option value="p">A4 — Portrait (794 × 1123)</option><option value="l">A4 — Paysage (1123 × 794)</option></select></div></div>
   <div data-dd-view="json" style="display:none"><pre class="dd-json" data-dd-json></pre></div>
 </div>
 <script>
@@ -246,7 +253,7 @@
     return data[k].map(function (f, i) {
       var on = selF && selF.k === k && selF.i === i;
       var M = window.__MASQUE || {}, nm = String(f.contenu || '').toLowerCase(), src = f.type === 'image' ? (/logo/.test(nm) ? M.logo : /qr/.test(nm) ? M.qr : /pied/.test(nm) ? M.pied : '') : '';
-      var inner = src ? '<img src="' + src + '" alt="' + esc(f.nom).replace(/"/g, '&quot;') + '" draggable="false" style="width:100%;height:100%;object-fit:' + (/pied/.test(nm) ? 'fill' : 'contain') + ';object-position:left center;pointer-events:none">' : esc(sub(f.contenu || f.nom));
+      var inner = src ? '<img src="' + src + '" alt="' + esc(f.nom).replace(/"/g, '&quot;') + '" draggable="false" style="width:100%;height:100%;object-fit:' + (f.fit || (/pied/.test(nm) ? 'fill' : 'contain')) + ';object-position:left center;pointer-events:none">' : esc(sub(f.contenu || f.nom));
       return '<div class="dd-el' + (on ? ' sel' : '') + '" data-dd-fid="' + k + ',' + i + '" style="left:' + f.x + 'px;top:' + f.y + 'px;width:' + f.w + 'px;height:' + f.h + 'px;' + (f.st || '') + '">' + inner + (on ? '<span class="dd-rs" data-rs></span>' : '') + '</div>';
     }).join('');
   }
@@ -255,43 +262,75 @@
     q('[data-dd-zb]').style.height = Math.max(0, mb + 10 - (DOC.mt + DOC.hh)) + 'px';
   }
   window.__ddSpacer = spacer;
+  /* panneau de droite : propriétés du champ sélectionné, sinon du document */
+  function stGet(f, p) { var r = ''; String(f.st || '').split(';').forEach(function (x) { var i = x.indexOf(':'); if (i > 0 && x.slice(0, i).trim() === p) r = x.slice(i + 1).trim(); }); return r; }
+  function stSet(f, p, v) {
+    var l = String(f.st || '').split(';').map(function (x) { return x.trim(); }).filter(Boolean), ok = false;
+    l = l.map(function (x) { if (x.slice(0, x.indexOf(':')).trim() === p) { ok = true; return v === '' ? '' : p + ':' + v; } return x; }).filter(Boolean);
+    if (!ok && v !== '') l.push(p + ':' + v); f.st = l.join(';');
+  }
+  function rgb(c) { var m = /^#([0-9a-f]{3})$/i.exec(c); if (m) return '#' + m[1].split('').map(function (x) { return x + x; }).join(''); return /^#[0-9a-f]{6}$/i.test(c) ? c : '#000000'; }
+  var pfTab = 'c';
+  function pfTabs() {
+    var o = selF ? data[selF.k][selF.i] : null, img = o && o.type === 'image', tb = qa('[data-pf-tab]');
+    tb[0].textContent = img ? 'Source' : 'Contenu'; tb[1].textContent = img ? 'Dimensionnement' : 'Mise en forme';
+    tb.forEach(function (b) { b.classList.toggle('on', b.dataset.pfTab === pfTab); });
+    qa('[data-pf-g]').forEach(function (g) { g.hidden = g.dataset.pfG !== pfTab; });
+    qa('[data-pf-t1]').forEach(function (e) { e.style.display = img ? 'none' : ''; }); qa('[data-pf-i1]').forEach(function (e) { e.style.display = img ? '' : 'none'; });
+  }
+  function majSide() {
+    var pd = q('[data-dd-pdoc]'), pf = q('[data-dd-pfld]'); if (!pd || !pf) return;
+    var o = selF ? data[selF.k][selF.i] : null; pd.hidden = !!o; pf.hidden = !o; if (!o) return;
+    var img = o.type === 'image', ae = document.activeElement;
+    q('[data-pf-t]').textContent = 'Élément — ' + (img ? 'image' : 'texte') + ' (' + o.nom + ') · ' + (selF.k === 'entete' ? 'en-tête' : 'pied de page'); pfTabs();
+    var src = o.contenu, known = ['logo-soft-appli.png', 'qr-code.png', 'pied-soft-accounting.png'].indexOf(src) >= 0;
+    var v = { nom: o.nom, contenu: o.contenu, contenu2: o.contenu, src: known ? src : '', x: o.x, y: o.y, w: o.w, h: o.h, w2: o.w, h2: o.h, ff: stGet(o, 'font-family'), fs: parseInt(stGet(o, 'font-size'), 10) || 13, color: rgb(stGet(o, 'color') || '#26312d'), align: stGet(o, 'text-align') || 'left', valign: stGet(o, 'align-items') || 'flex-start', bold: /^(700|bold)$/.test(stGet(o, 'font-weight')), italic: stGet(o, 'font-style') === 'italic', under: stGet(o, 'text-decoration') === 'underline', fit: o.fit || (/pied/.test(String(o.contenu).toLowerCase()) ? 'fill' : 'contain'), ratio: !!o.ratio };
+    qa('[data-pf]').forEach(function (i) { if (i === ae) return; var k = i.dataset.pf; if (i.type === 'checkbox') i.checked = !!v[k]; else i.value = v[k] == null ? '' : v[k]; });
+  }
+  function pfEdit(e) {
+    var i = e.target.closest('[data-pf]'); if (!i || !selF) return; var o = data[selF.k][selF.i], k = i.dataset.pf, val = i.value;
+    if (k === 'w2') k = 'w'; if (k === 'h2') k = 'h';
+    if (k === 'nom') o.nom = val; else if (k === 'contenu' || k === 'contenu2') o.contenu = val;
+    else if (k === 'src') { if (val) o.contenu = val; else { o.contenu = ''; } }
+    else if (k === 'x' || k === 'y') { if (val !== '') o[k] = Math.max(0, +val); }
+    else if (k === 'w' || k === 'h') {
+      if (val !== '') { var n = Math.max(1, +val); if (o.ratio && o.ar) { if (k === 'w') { o.w = n; o.h = Math.max(1, Math.round(n * o.ar)); } else { o.h = n; o.w = Math.max(1, Math.round(n / o.ar)); } } else o[k] = n; }
+    }
+    else if (k === 'fit') o.fit = val;
+    else if (k === 'ratio') { o.ratio = i.checked; if (o.ratio) o.ar = o.h / o.w; }
+    else if (k === 'ff') stSet(o, 'font-family', val);
+    else if (k === 'fs') stSet(o, 'font-size', Math.max(6, +val || 13) + 'px');
+    else if (k === 'color') stSet(o, 'color', val);
+    else if (k === 'bold') stSet(o, 'font-weight', i.checked ? '700' : '400');
+    else if (k === 'italic') stSet(o, 'font-style', i.checked ? 'italic' : '');
+    else if (k === 'under') stSet(o, 'text-decoration', i.checked ? 'underline' : '');
+    else if (k === 'align') { stSet(o, 'display', 'flex'); stSet(o, 'text-align', val); stSet(o, 'justify-content', val === 'center' ? 'center' : val === 'right' ? 'flex-end' : 'flex-start'); }
+    else if (k === 'valign') { stSet(o, 'display', 'flex'); stSet(o, 'align-items', val); }
+    if (e.type === 'change' && (k === 'nom' || k === 'contenu' || k === 'contenu2' || k === 'src')) { render(); return; }
+    paintSheet();
+  }
+  q('[data-dd-side]').addEventListener('input', pfEdit); q('[data-dd-side]').addEventListener('change', pfEdit);
+  qa('[data-pf-tab]').forEach(function (b) { b.addEventListener('click', function () { pfTab = b.dataset.pfTab; pfTabs(); }); });
+  function ajoutElt(type) {
+    var k = q('[data-dd-addz]').value, n = data[k].filter(function (x) { return x.type === type; }).length + 1;
+    data[k].push(type === 'image' ? { nom: 'Image ' + n, type: 'image', contenu: 'logo-soft-appli.png', x: 4, y: 4, w: 120, h: 60 } : { nom: 'Texte ' + n, type: 'texte', contenu: 'Texte', x: 166, y: 4 + 6 * (n - 1), w: 300, h: 24 });
+    selF = { k: k, i: data[k].length - 1 }; render();
+  }
+  q('[data-dd-addt]').addEventListener('click', function () { ajoutElt('texte'); }); q('[data-dd-addi]').addEventListener('click', function () { ajoutElt('image'); });
+  q('[data-pf-back]').addEventListener('click', function () { selF = null; render(); });
+  q('[data-pf-del]').addEventListener('click', function () { if (!selF) return; data[selF.k].splice(selF.i, 1); selF = null; render(); });
   function paintSheet() {
     normF();
     var sh = q('[data-dd-sheet]'); sh.style.width = DOC.pw + 'px'; sh.style.minHeight = DOC.ph + 'px'; sh.style.padding = DOC.mt + 'px ' + DOC.mr + 'px ' + DOC.mb + 'px ' + DOC.ml + 'px';
     q('[data-dd-guides]').style.inset = DOC.mt + 'px ' + DOC.mr + 'px ' + DOC.mb + 'px ' + DOC.ml + 'px';
     var zh = q('[data-dd-zh]'), zf = q('[data-dd-zf]'); zh.style.height = DOC.hh + 'px'; zh.innerHTML = fieldsHtml('entete'); zf.style.height = DOC.fh + 'px'; zf.style.position = 'absolute'; zf.style.left = DOC.ml + 'px'; zf.style.right = DOC.mr + 'px'; zf.style.bottom = DOC.mb + 'px'; zf.innerHTML = fieldsHtml('pied');
-    if (window.__ddGrid) window.__ddGrid.paint(); spacer();
+    if (window.__ddGrid) window.__ddGrid.paint(); spacer(); majSide();
   }
   function render() {
-    ['entete', 'pied'].forEach(function (k) {
-      var list = zone(k).querySelector('[data-dd-list]'); list.innerHTML = '';
-      data[k].forEach(function (it, i) {
-        var d = document.createElement('div'); d.className = 'dd-item' + (editing[k] === i ? ' edit' : '');
-        if (editing[k] === i) {
-          d.innerHTML = '<div style="flex:1;display:flex;flex-direction:column;gap:8px"><div style="display:flex;gap:8px"><input class="dd-in" data-e="nom" value="' + esc(it.nom).replace(/"/g, '&quot;') + '"><input class="dd-in" data-e="contenu" value="' + esc(it.contenu).replace(/"/g, '&quot;') + '"></div><div style="display:grid;grid-template-columns:repeat(4,1fr);gap:8px">' + ['x', 'y', 'w', 'h'].map(function (p) { return '<input class="dd-in" type="number" title="' + ({ x: 'X', y: 'Y', w: 'Largeur', h: 'Hauteur' })[p] + '" placeholder="' + p.toUpperCase() + '" data-e="' + p + '" value="' + (it[p] == null ? '' : it[p]) + '">'; }).join('') + '</div></div>' +
-            '<div class="dd-act"><button type="button" class="dd-btn" data-ok style="padding:6px 12px;font-size:12px">OK</button></div>';
-          d.querySelector('[data-ok]').addEventListener('click', function () { it.nom = d.querySelector('[data-e="nom"]').value.trim() || it.nom; it.contenu = d.querySelector('[data-e="contenu"]').value; ['x', 'y', 'w', 'h'].forEach(function (p) { var v = d.querySelector('[data-e="' + p + '"]').value; if (v !== '') it[p] = +v; }); editing[k] = -1; render(); });
-        } else {
-          d.innerHTML = '<div style="flex:1;min-width:0"><div class="dd-name">' + esc(it.nom) + '</div><div class="dd-cont">' + (it.type === 'image' ? 'Image' : 'Texte') + ' — ' + esc(it.contenu) + '</div></div>' +
-            '<div class="dd-act"><button type="button" class="dd-ib ed" title="Modifier" data-ed><i class="ti ti-pencil"></i></button><button type="button" class="dd-ib" title="Supprimer" data-rm><i class="ti ti-trash"></i></button></div>';
-          d.querySelector('[data-ed]').addEventListener('click', function () { editing[k] = i; render(); });
-          d.querySelector('[data-rm]').addEventListener('click', function () { data[k].splice(i, 1); editing[k] = -1; render(); });
-        }
-        list.appendChild(d);
-      });
-    });
     paintSheet();
     var on = q('[data-dd-wm-on]').checked, w = q('[data-dd-wm]');
     w.style.display = on ? '' : 'none'; w.textContent = q('[data-dd-wm-text]').value; w.style.opacity = (Math.min(60, Math.max(5, +q('[data-dd-wm-op]').value || 15)) / 100);
   }
-  qa('[data-dd-zone]').forEach(function (z) {
-    var k = z.dataset.ddZone;
-    z.querySelector('[data-dd-add]').addEventListener('click', function () {
-      var nom = z.querySelector('[data-dd-f="nom"]'), c = z.querySelector('[data-dd-f="contenu"]'), t = z.querySelector('[data-dd-f="type"]');
-      if (!nom.value.trim()) { nom.focus(); return; }
-      data[k].push({ nom: nom.value.trim(), type: t.value, contenu: c.value }); nom.value = c.value = ''; render();
-    });
-  });
   ['[data-dd-wm-on]', '[data-dd-wm-text]', '[data-dd-wm-op]'].forEach(function (s) { q(s).addEventListener('input', render); });
   qa('[data-dd-doc]').forEach(function (i) { i.addEventListener('input', function () { DOC[i.dataset.ddDoc] = Math.max(0, +i.value || 0); paintSheet(); }); });
   q('[data-dd-fmt]').addEventListener('change', function (e) { var l = e.target.value === 'l'; DOC.pw = l ? 1123 : 794; DOC.ph = l ? 794 : 1123; paintSheet(); });
@@ -334,6 +373,7 @@
     b.addEventListener('click', function () {
       qa('[data-dd-tab]').forEach(function (x) { x.classList.toggle('on', x === b); });
       qa('[data-dd-view]').forEach(function (v) { v.style.display = v.dataset.ddView === b.dataset.ddTab ? '' : 'none'; });
+      var tg = q('[data-dd-tools]'); if (tg) tg.style.display = b.dataset.ddTab === 'designer' ? 'flex' : 'none';
       if (b.dataset.ddTab === 'designer') paintSheet();
       if (b.dataset.ddTab === 'json') q('[data-dd-json]').textContent = JSON.stringify({ numero: model.code, nom: model.nom, tableaux: window.__ddGrid ? window.__ddGrid.data() : [], entete: data.entete, piedDePage: data.pied, filigrane: { actif: q('[data-dd-wm-on]').checked, texte: q('[data-dd-wm-text]').value, opacite: +q('[data-dd-wm-op]').value } }, null, 2);
     });
@@ -356,7 +396,7 @@
     if (m.code !== model.code) { data = DEF(); editing = {}; if (window.__ddGrid) window.__ddGrid.reset(); DOC.hh = 70; selF = null; if (/RECAPCAT/.test(m.code) || /r.capitulatif par cat/i.test(String(m.base || ''))) { data = CAT(); DOC.hh = 180; if (window.__ddGrid) window.__ddGrid.presetCAT(); } if (m.code === 'EJCD') { data = EJ(); DOC.hh = 180; if (window.__ddGrid) window.__ddGrid.presetEJCD(); } if (m.code === 'TMP_DECLARATION') { data = TMP(); DOC.hh = 150; if (window.__ddGrid) window.__ddGrid.presetTMP(); } var hi = q('[data-dd-doc="hh"]'); if (hi) hi.value = DOC.hh; }
     model = m; q('[data-dd-title]').textContent = m.nom || '—'; sum(); render();
   });
-  render();
+  render(); setTimeout(paintSheet, 400); window.addEventListener('load', function () { setTimeout(paintSheet, 100); });
 })();
 </script>
 <script>
@@ -456,14 +496,14 @@
   function build() {
     host.innerHTML = '<div class="dg-grille"><div class="dg-left" data-dg-left></div><div class="dg-props" data-dg-props></div></div>';
     leftBox = host.querySelector('[data-dg-left]'); propsBox = host.querySelector('[data-dg-props]');
-    dnHost.innerHTML = '<div class="dn-wrap"><div class="dn-bt no-print"><button type="button" class="bp-b" data-dn-new>Ajouter</button><button type="button" class="bp-b" data-dn-edit>Modifier</button><button type="button" class="bp-b" data-dn-vider>Supprimer</button>' +
-      '<label class="bp-champ" data-dn-tblw hidden><span>Tableau</span><select class="bp-sel" data-dn-tbl></select></label><label class="bp-chk" style="margin-left:auto"><label><input type="checkbox" data-dn-txt> Afficher les titres et libellés (textes)</label></label></div>' +
+    dnHost.innerHTML = '<div class="dn-wrap"><div class="dn-bt no-print"><label class="bp-chk" data-dn-txtw><label><input type="checkbox" data-dn-txt> Afficher les titres et libellés (textes)</label></label><span class="dn-ok" data-dn-ok role="status"></span>' +
+      '<span class="dn-act"><label class="bp-champ" data-dn-tblw hidden><span>Tableau</span><select class="bp-sel" data-dn-tbl></select></label><button type="button" class="bp-b" data-dn-new>Ajouter</button><button type="button" class="bp-b" data-dn-edit>Modifier</button><button type="button" class="bp-b" data-dn-vider>Supprimer</button><button type="button" class="bp-b pri" data-dn-save>Enregistrer</button><button type="button" class="bp-b" data-dn-cancel>Annuler</button></span></div>' +
       '<div class="bp-tabs" role="tablist"><button type="button" role="tab" data-dn-tab="saisie">Saisie</button><button type="button" role="tab" class="on" data-dn-tab="liste">Liste <span class="bp-n" data-dn-n></span></button></div>' +
-      '<div data-dn-pan="liste"><section class="bp-pan"><h2>Rubriques du tableau <small>Double-clic ou « Modifier » pour ouvrir la rubrique en saisie</small></h2>' +
-      '<div style="overflow:auto;max-height:560px"><table class="bp-tb"><thead><tr><th>Cellule</th><th>Libellé</th><th>Nature</th><th>Type</th><th>Type de mouvement</th><th>Rupture</th></tr>' +
-      '<tr class="flt"><th><input class="bp-in" data-dn-fc="0" aria-label="Filtrer Cellule"></th><th><input class="bp-in" data-dn-fc="1" aria-label="Filtrer Libellé"></th><th><input class="bp-in" data-dn-fc="2" aria-label="Filtrer Nature"></th><th><input class="bp-in" data-dn-fc="3" aria-label="Filtrer Type"></th><th><input class="bp-in" data-dn-fc="4" aria-label="Filtrer Type de mouvement"></th><th><select class="bp-sel" data-dn-fc="5" aria-label="Filtrer Rupture"><option value=""></option><option value="oui">Oui</option><option value="non">Non</option></select></th></tr></thead><tbody data-dn-rows></tbody></table></div>' +
+      '<div data-dn-pan="liste"><section class="bp-pan"><h2>Rubriques du tableau</h2>' +
+      '<div style="overflow:auto;max-height:560px"><table class="bp-tb"><thead><tr><th>Cellule</th><th>Libellé</th><th>Nature</th><th>Type</th><th>Type de mouvement</th></tr>' +
+      '<tr class="flt"><th><input class="bp-in" data-dn-fc="0" aria-label="Filtrer Cellule"></th><th><input class="bp-in" data-dn-fc="1" aria-label="Filtrer Libellé"></th><th><input class="bp-in" data-dn-fc="2" aria-label="Filtrer Nature"></th><th><input class="bp-in" data-dn-fc="3" aria-label="Filtrer Type"></th><th><input class="bp-in" data-dn-fc="4" aria-label="Filtrer Type de mouvement"></th></tr></thead><tbody data-dn-rows></tbody></table></div>' +
       '<div class="bp-vide" data-dn-vide hidden>Aucune rubrique : utilisez « Ajouter ».</div></section></div>' +
-      '<div data-dn-pan="saisie" hidden><section class="bp-pan"><h2>Saisie <small>Chaque rubrique correspond à une cellule de la grille</small></h2><div data-dg-props data-dn-ed></div></section></div></div>';
+      '<div data-dn-pan="saisie" hidden><section class="bp-pan"><h2>Saisie</h2><div data-dg-props data-dn-ed></div></section></div></div>';
     dnList = dnHost.querySelector('[data-dn-pan="liste"]'); dnEd = dnHost.querySelector('[data-dn-ed]'); setDnTab(dnTab);
     renderLeft(); renderProps();
   }
@@ -526,12 +566,13 @@
     dnTab = n; if (!dnHost) return;
     [].forEach.call(dnHost.querySelectorAll('[data-dn-tab]'), function (x) { x.classList.toggle('on', x.dataset.dnTab === n); });
     [].forEach.call(dnHost.querySelectorAll('[data-dn-pan]'), function (p) { p.hidden = p.dataset.dnPan !== n; });
-    var sl = n === 'liste'; [].forEach.call(dnHost.querySelectorAll('[data-dn-new],[data-dn-edit],[data-dn-vider]'), function (x) { x.disabled = !sl && x.hasAttribute('data-dn-new'); });
+    var sl = n === 'liste', q1 = function (k) { return dnHost.querySelector('[data-dn-' + k + ']'); };
+    ['new', 'edit', 'vider', 'tblw'].forEach(function (k) { var x = q1(k); if (x && k !== 'tblw') x.disabled = !sl; }); ['save', 'cancel'].forEach(function (k) { q1(k).disabled = sl; }); q1('txtw').style.visibility = sl ? '' : 'hidden';
     majBoutons();
   }
   function majBoutons() {
     if (!dnHost) return; var t = cur(), cl = cell(t, anchor.r, anchor.c), ok = !!cl && (cl.type !== 'texte' || String(cl.text || '').trim());
-    var e = dnHost.querySelector('[data-dn-edit]'), v = dnHost.querySelector('[data-dn-vider]'); if (e) e.disabled = !ok || dnTab === 'saisie'; if (v) v.disabled = !ok;
+    var e = dnHost.querySelector('[data-dn-edit]'), v = dnHost.querySelector('[data-dn-vider]'); if (e) e.disabled = !ok || dnTab === 'saisie'; if (v) v.disabled = !ok || dnTab === 'saisie';
   }
   function filtrerDn() {
     var F = [].map.call(dnHost.querySelectorAll('[data-dn-fc]'), function (e) { return e.value.trim().toLowerCase(); });
@@ -550,7 +591,7 @@
     w.hidden = T.length < 2; tb.innerHTML = T.map(function (x, i) { return '<option value="' + i + '"' + (i === ai ? ' selected' : '') + '>' + esc(x.name) + '</option>'; }).join('');
     dnHost.querySelector('[data-dn-rows]').innerHTML = rows.map(function (o) {
       var cl = o.cl, nat = natOf(cl), sol = cl.type === 'solde', on = o.r === anchor.r && o.c === anchor.c;
-      return '<tr data-dn-cell="' + o.r + ',' + o.c + '" class="t-' + nat + (on ? ' sel' : '') + '"><td>' + addr(o.r, o.c) + '</td><td>' + esc(libelleOf(t, o.r, o.c, cl)) + '</td><td>' + (NATLAB[nat] || '') + '</td><td>' + (sol ? esc(cl.typ) : '') + '</td><td>' + (sol ? esc(cl.mouv) : '') + '</td><td class="c" data-v="' + (cl.rupture ? 'oui' : 'non') + '"><input type="checkbox" tabindex="-1" aria-label="Rupture"' + (cl.rupture ? ' checked' : '') + '></td></tr>';
+      return '<tr data-dn-cell="' + o.r + ',' + o.c + '" class="t-' + nat + (on ? ' sel' : '') + '"><td>' + addr(o.r, o.c) + '</td><td>' + esc(libelleOf(t, o.r, o.c, cl)) + '</td><td>' + (NATLAB[nat] || '') + '</td><td>' + (sol ? esc(cl.typ) : '') + '</td><td>' + (sol ? esc(cl.mouv) : '') + '</td></tr>';
     }).join('');
     dnHost.querySelector('[data-dn-vide]').hidden = rows.length > 0;
     dnHost.querySelector('[data-dn-n]').textContent = rows.filter(function (o) { return o.cl.type !== 'texte'; }).length || '';
@@ -581,7 +622,7 @@
     h += '<div class="dn-axr"><div class="dn-axt"><strong>Axe : ' + esc(lab) + '</strong><span class="dn-axb"><button type="button" data-dn-rgadd title="Ajouter une fourchette" aria-label="Ajouter une fourchette"><i class="ti ti-plus"></i></button><button type="button" data-dn-axsave title="Enregistrer les fourchettes" aria-label="Enregistrer les fourchettes"><i class="ti ti-device-floppy"></i></button><button type="button" data-dn-axundo title="Annuler les modifications" aria-label="Annuler les modifications"><i class="ti ti-arrow-back-up"></i></button></span></div>';
     if (ax && ax.ranges.length) h += '<table class="dn-axtb"><thead><tr><th>Min</th><th>Max</th><th>Sens</th><th></th></tr></thead><tbody>' + ax.ranges.map(function (rg, ri) { return '<tr><td>' + champ(rg.a, 'a').replace('@', ri) + '</td><td>' + champ(rg.b, 'b').replace('@', ri) + '</td><td><select class="dg-in" title="Sens" data-dg-rg="' + ix + ',' + ri + ',s"><option value="">S</option>' + selOpts(['C', 'D', 'S'], rg.s) + '</select></td><td><button type="button" class="dn-x" style="width:30px;height:30px;border:1px solid #E6B8B8;border-radius:6px;background:#fff;color:#B63132;cursor:pointer" data-dn-rgdel="' + ix + ',' + ri + '" title="Supprimer la fourchette" aria-label="Supprimer la fourchette"><i class="ti ti-trash"></i></button></td></tr>'; }).join('') + '</tbody></table>';
     else h += '<div class="dn-axe0">Aucun enregistrement trouvé</div>';
-    h += '</div></div><p class="bp-note">Choisissez un axe dans la liste, puis ajoutez ses fourchettes (Min / Max). Le croisement des axes est évalué côté backend ; le nombre de fourchettes de chaque axe s’affiche à côté de son nom.</p></div>';
+    h += '</div></div></div>';
     return h;
   }
   function soldeZone(cl) {
@@ -592,7 +633,7 @@
     if (cl.per === 'decalage_unite') h += '<div class="dn-r3"><label class="bp-champ"><span>Unité</span><select class="bp-sel" data-dg-k="unit">' + selOpts(['jour', 'mois', 'trimestre', 'année'], cl.unit) + '</select></label><label class="bp-champ"><span>Décalage</span><input class="bp-in" type="number" data-dg-k="shift" value="' + cl.shift + '"></label></div>';
     if (cl.per === 'fourchette_mois') h += '<div class="dn-r3"><label class="bp-champ"><span>Mois début</span><input class="bp-in" type="number" min="1" max="12" data-dg-k="m1" value="' + cl.m1 + '"></label><label class="bp-champ"><span>Mois fin</span><input class="bp-in" type="number" min="1" max="12" data-dg-k="m2" value="' + cl.m2 + '"></label></div>';
     if (cl.per === 'periode_fixe') h += '<div class="dn-r3"><label class="bp-champ"><span>Du</span><input class="bp-in" type="date" data-dg-k="d1" value="' + attr(cl.d1) + '"></label><label class="bp-champ"><span>Au</span><input class="bp-in" type="date" data-dg-k="d2" value="' + attr(cl.d2) + '"></label></div>';
-    h += '<p class="bp-note">Période appliquée : <b>' + PERLAB[cl.per] + '</b> — réglage universel pour toutes les tables de données.</p><p class="bp-aide" data-dg-prevval style="margin:0;padding:10px 12px;border-left:3px solid #2E427B;background:#F5F7F9">Aperçu <b>' + nf(soldeVal(cl)) + '</b></p></div>';
+    h += '<p class="bp-aide" data-dg-prevval style="margin:0;padding:10px 12px;border-left:3px solid #2E427B;background:#F5F7F9">Aperçu <b>' + nf(soldeVal(cl)) + '</b></p></div>';
     return h;
   }
   function renderDnEd() {
@@ -600,25 +641,37 @@
     var t = cur(), cl = cell(t, anchor.r, anchor.c), nat = natOf(cl), sol = nat === 'grille', ty = cl ? cl.type : '', h = '';
     var radios = Object.keys(NATLAB).map(function (k) { return '<label><input type="radio" name="dn-nat" data-dn-nat value="' + k + '"' + (k === nat ? ' checked' : '') + '>' + NATLAB[k] + '</label>'; }).join('');
     h += '<form class="bp-form" onsubmit="return false">';
-    h += '<div class="dn-2"><div><label class="bp-champ"><span>Cellule (correspondance) <b>*</b></span><input class="bp-in" data-dn-addr value="' + addr(anchor.r, anchor.c) + '" maxlength="6" style="max-width:140px" aria-label="Adresse de la cellule"><span class="dn-er" data-dn-msg style="display:none"></span></label>';
-    h += '<label class="bp-champ"><span>Libellé <b>*</b></span><input class="bp-in" data-dn-lib value="' + attr(libelleOf(t, anchor.r, anchor.c, cl)) + '"></label></div>';
-    h += '<div>' + (T.length > 1 ? '<label class="bp-champ"><span>Tableau</span><select class="bp-sel" data-dn-tbl>' + T.map(function (x, i) { return '<option value="' + i + '"' + (i === ai ? ' selected' : '') + '>' + esc(x.name) + '</option>'; }).join('') + '</select></label>' : '') + '<p class="bp-note">Saisissez l’adresse de la cellule de la grille (ex. D2) : la rubrique lui est rattachée. Le libellé est écrit dans la cellule voisine de gauche.</p></div></div>';
+    var cov = covered(t), copts = '';
+    for (var rr = 0; rr < t.rows; rr++) for (var cc = 0; cc < t.cols; cc++) { if (cov[rr + ',' + cc]) continue; var ad = addr(rr, cc); copts += '<option value="' + ad + '"' + (rr === anchor.r && cc === anchor.c ? ' selected' : '') + '>' + ad + ' — ' + esc(libelleOf(t, rr, cc, cell(t, rr, cc)) || '(libre)') + '</option>'; }
+    h += '<div class="dn-r3" style="grid-template-columns:minmax(0,1fr) minmax(0,2fr)' + (T.length > 1 ? ' minmax(0,1fr)' : '') + '"><label class="bp-champ"><span>Cellule (correspondance) <b>*</b></span><select class="bp-sel" data-dn-addr aria-label="Cellule de la grille">' + copts + '</select></label>';
+    h += '<label class="bp-champ"><span>Libellé <b>*</b></span><input class="bp-in" data-dn-lib value="' + attr(libelleOf(t, anchor.r, anchor.c, cl)) + '"></label>' + (T.length > 1 ? '<label class="bp-champ"><span>Tableau</span><select class="bp-sel" data-dn-tbl>' + T.map(function (x, i) { return '<option value="' + i + '"' + (i === ai ? ' selected' : '') + '>' + esc(x.name) + '</option>'; }).join('') + '</select></label>' : '') + '</div><span class="dn-er" data-dn-msg style="display:none"></span>';
     h += '<div class="dn-2"><fieldset class="dn-box"><legend>Nature</legend><div class="bp-radios">' + radios + '</div></fieldset>';
     h += '<fieldset class="dn-box"' + (nat ? '' : ' disabled') + '><legend>Style</legend><div class="bp-chk"><label><input type="checkbox" data-dn-c="b"' + (cl && cl.b ? ' checked' : '') + '>Gras</label><label><input type="checkbox" data-dn-c="i"' + (cl && cl.i ? ' checked' : '') + '>Italique</label><label><input type="checkbox" data-dn-c="vide"' + (cl && cl.vide ? ' checked' : '') + '>Ligne vide</label></div></fieldset></div>';
     h += '<div class="dn-r3"><label class="bp-champ"><span>Type</span><select class="bp-sel" data-dg-k="typ"' + (sol ? '' : ' disabled') + '>' + (sol ? selOpts(TYP, cl.typ) : '<option></option>') + '</select></label>';
     h += '<label class="bp-champ"><span>Type de mouvement</span><select class="bp-sel" data-dg-k="mouv"' + (sol ? '' : ' disabled') + '>' + (sol ? selOpts(MOUV, cl.mouv) : '<option></option>') + '</select></label>';
     h += '<label class="bp-champ"><span>Sens</span><select class="bp-sel" data-dg-k="sens"' + (sol ? '' : ' disabled') + '>' + (sol ? selOpts(SENS, cl.sens) : '<option></option>') + '</select></label></div>';
-    h += '<div class="bp-chk"><label><input type="checkbox" data-dn-c="rupture"' + (cl && cl.rupture ? ' checked' : '') + (nat === 'regroupement' ? '' : ' disabled') + '>Ajout d’une ligne de rupture contenant le montant total du regroupement</label></div>';
+
     if (sol) h += soldeZone(cl);
-    if (nat === 'formule' || nat === 'regroupement') h += '<label class="bp-champ"><span>Formule</span><input class="bp-in" data-dg-k="formula" value="' + attr(cl.formula || '') + '" placeholder="' + (nat === 'regroupement' ? '=SUM(D2:D5)' : '=D2-D3') + '"></label><p class="bp-note">Références de cellules (ex. D2) et SUM(D2:D5) ; opérateurs + - * / et parenthèses.</p>';
-    if (nat === 'constante') h += '<div class="dn-2"><label class="bp-champ"><span>Valeur</span><input class="bp-in" data-dg-k="value" value="' + attr(cl.value == null ? '' : cl.value) + '" placeholder="Nombre ou variable"></label><label class="bp-champ"><span>Variable d’édition</span><select class="bp-sel" data-dg-cvar><option value="">— Valeur fixe —</option>' + selOpts(EDITVARS, cl.value) + '</select></label></div>';
-    if (nat && nat !== 'titre') h += '<div class="dn-r3" style="grid-template-columns:repeat(2,minmax(0,1fr))"><label class="bp-champ"><span>Format d’affichage</span><input class="bp-in" data-dg-k="fmt" list="dg-fmts" value="' + attr(cl.fmt || 'Général') + '" placeholder="Général"><datalist id="dg-fmts">' + FMTS.map(function (x) { return '<option value="' + attr(x) + '">'; }).join('') + '</datalist></label><label class="bp-champ"><span>Monnaie cible</span><select class="bp-sel" data-dg-k="monnaie">' + selOpts([['locale', 'Monnaie locale'], ['devise1', 'Devise 1'], ['devise2', 'Devise 2'], ['devise3', 'Devise 3']], cl.monnaie || 'locale') + '</select></label></div>';
+    if (nat === 'formule' || nat === 'regroupement') h += '<label class="bp-champ"><span>Formule</span><input class="bp-in" data-dg-k="formula" value="' + attr(cl.formula || '') + '"></label>';
+    if (nat === 'constante') h += '<div class="dn-2"><label class="bp-champ"><span>Valeur</span><input class="bp-in" data-dg-k="value" value="' + attr(cl.value == null ? '' : cl.value) + '"></label><label class="bp-champ"><span>Variable d’édition</span><select class="bp-sel" data-dg-cvar><option value="">— Valeur fixe —</option>' + selOpts(EDITVARS, cl.value) + '</select></label></div>';
+    if (nat && nat !== 'titre') h += '<div class="dn-r3" style="grid-template-columns:repeat(2,minmax(0,1fr))"><label class="bp-champ"><span>Format d’affichage</span><input class="bp-in" data-dg-k="fmt" list="dg-fmts" value="' + attr(cl.fmt || 'Général') + '"><datalist id="dg-fmts">' + FMTS.map(function (x) { return '<option value="' + attr(x) + '">'; }).join('') + '</datalist></label><label class="bp-champ"><span>Monnaie cible</span><select class="bp-sel" data-dg-k="monnaie">' + selOpts([['locale', 'Monnaie locale'], ['devise1', 'Devise 1'], ['devise2', 'Devise 2'], ['devise3', 'Devise 3']], cl.monnaie || 'locale') + '</select></label></div>';
     h += '</form>';
     dnEd.innerHTML = h;
   }
+  var snapR = null;
+  function priseSnap(r, c) {
+    var t = cur(), k = r + ',' + c, lk = labelKey(t, r, c), lt = c > 0 ? r + ',' + (c - 1) : '';
+    return { ai: ai, k: k, kj: t.cells[k] ? JSON.stringify(t.cells[k]) : null, lk: lk || lt, lj: (lk || lt) && t.cells[lk || lt] ? JSON.stringify(t.cells[lk || lt]) : null };
+  }
+  function restaure(sn) {
+    if (!sn) return; var t = T[sn.ai]; if (!t) return;
+    if (sn.kj === null) delete t.cells[sn.k]; else t.cells[sn.k] = JSON.parse(sn.kj);
+    if (sn.lk) { if (sn.lj === null) delete t.cells[sn.lk]; else t.cells[sn.lk] = JSON.parse(sn.lj); }
+  }
+  function dnOk(txt) { var o = dnHost.querySelector('[data-dn-ok]'); if (!o) return; o.textContent = txt; clearTimeout(dnOk.t); dnOk.t = setTimeout(function () { o.textContent = ''; }, 2400); }
   function dnMsg(txt) { var m = dnEd && dnEd.querySelector('[data-dn-msg]'); if (m) { m.textContent = txt; m.style.display = ''; } }
-  function aller(r, c) { sel = { r1: r, c1: c, r2: r, c2: c }; anchor = { r: r, c: c }; renderLeft(); renderProps(); }
-  function ouvrirSaisie(r, c) { aller(r, c); setDnTab('saisie'); }
+  function aller(r, c) { sel = { r1: r, c1: c, r2: r, c2: c }; anchor = { r: r, c: c }; if (dnTab === 'saisie') snapR = priseSnap(r, c); renderLeft(); renderProps(); }
+  function ouvrirSaisie(r, c) { snapR = priseSnap(r, c); aller(r, c); setDnTab('saisie'); }
   function dnClick(e) {
     var el, t = cur();
     if ((el = e.target.closest('[data-dn-tab]'))) { setDnTab(el.dataset.dnTab); return; }
@@ -632,6 +685,13 @@
       ouvrirSaisie(r0, c0); return;
     }
     if (e.target.closest('[data-dn-edit]')) { ouvrirSaisie(anchor.r, anchor.c); return; }
+    if (e.target.closest('[data-dn-cancel]')) { restaure(snapR); snapR = null; renderLeft(); renderProps(); setDnTab('liste'); return; }
+    if (e.target.closest('[data-dn-save]')) {
+      var cl0 = cell(t, anchor.r, anchor.c), nat0 = natOf(cl0);
+      if (!nat0) { dnMsg('Choisissez la nature de la rubrique.'); return; }
+      var lv = dnEd.querySelector('[data-dn-lib]'); if (!String(lv ? lv.value : libelleOf(t, anchor.r, anchor.c, cl0)).trim()) { dnMsg('Le libellé est obligatoire.'); return; }
+      snapR = null; renderLeft(); setDnTab('liste'); dnOk('Rubrique enregistrée.'); return;
+    }
     var cl;
     if ((el = e.target.closest('[data-dn-axe]'))) { dnAxe = el.dataset.dnAxe; renderDnEd(); return; }
     if (e.target.closest('[data-dn-rgadd]')) {
@@ -716,7 +776,7 @@
       h += '<div class="dg-hs">Le solde officiel est calculé par le moteur serveur (écritures, sens, mouvement, périodicité, formules).</div><div class="dg-hs" data-dg-prevval>Aperçu <b>' + nf(soldeVal(cl)) + '</b></div>';
     }
     if (ty !== 'texte') {
-      h += '<div class="dg-f"><label class="dg-lab">Format d’affichage</label><div style="display:flex;gap:6px"><input class="dg-in" data-dg-k="fmt" list="dg-fmts" value="' + attr(cl.fmt || 'Général') + '" placeholder="Général"><datalist id="dg-fmts">' + FMTS.map(function (f) { return '<option value="' + attr(f) + '">'; }).join('') + '</datalist></div></div>';
+      h += '<div class="dg-f"><label class="dg-lab">Format d’affichage</label><div style="display:flex;gap:6px"><input class="dg-in" data-dg-k="fmt" list="dg-fmts" value="' + attr(cl.fmt || 'Général') + '"><datalist id="dg-fmts">' + FMTS.map(function (f) { return '<option value="' + attr(f) + '">'; }).join('') + '</datalist></div></div>';
       h += '<div class="dg-f"><label class="dg-lab">Monnaie cible</label><select class="dg-in" data-dg-k="monnaie">' + selOpts([['locale', 'Monnaie locale (Devise tenue de compte / Monnaie 1)'], ['devise1', 'Devise 1'], ['devise2', 'Devise 2'], ['devise3', 'Devise 3']], cl.monnaie || 'locale') + '</select></div>';
     }
     var content = h.slice(cut1), dc = anchor.c, dr = anchor.r;

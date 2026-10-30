@@ -69,6 +69,7 @@
 .ds-g3{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:10px;margin-top:6px}.ds-g2{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:10px;margin-top:6px}
 .ds-in{width:100%;border:1px solid #D5DBE5;border-radius:8px;padding:6px 9px;font:inherit;font-size:12.5px;background:#fff}.ds-in:disabled{background:#F5F7F9;color:#5B606D}
 .ds-lab{display:block;margin:6px 0 3px;font-size:11.5px;font-weight:600;color:#5B606D}
+.ds-st{display:flex;gap:4px;border-bottom:1px solid #E9EBF0;margin:10px 0 14px}.ds-st button{height:34px;padding:0 16px;border:0;border-bottom:2px solid transparent;background:none;font:inherit;font-size:12px;font-weight:600;color:#5B606D;cursor:pointer}.ds-st button.on{color:#2E427B;border-bottom-color:#2E427B}.ds-act{display:flex;gap:8px;justify-content:flex-end}.ds-btn.ds-sec{background:#fff;color:#353944;border:1px solid #D5DBE5}
 .ds-btn{border:0;border-radius:8px;background:#2E427B;color:#fff;padding:7px 14px;font:inherit;font-size:12px;font-weight:600;cursor:pointer;margin-top:10px}
 .ds-scroll{margin-top:12px;overflow-x:auto;border:1px solid #E9EBF0;border-radius:8px}
 .ds-tb{width:100%;min-width:640px;border-collapse:collapse;font-size:12px}.ds-tb th{background:#fdf6e3;color:#44403c;font-size:10px;letter-spacing:.05em;text-transform:uppercase;text-align:left;padding:8px 10px;border-bottom:2px solid #e7e5e4;white-space:nowrap}
@@ -88,7 +89,13 @@
 .pv-sec{position:relative}.pv-t{border-collapse:collapse;table-layout:fixed}.pv-t th{background:#E9EBF0;border:1px solid #94a3b8;padding:3px 4px;text-align:left;vertical-align:bottom}.pv-t td{border:1px solid #D5DBE5;padding:3px 4px;vertical-align:top}
 @media(max-width:1100px){.ds{grid-template-columns:1fr}.ds-g3{grid-template-columns:repeat(2,minmax(0,1fr))}}
 @media(max-width:1100px){.df-layout{grid-template-columns:1fr}}
-.df-modes{display:flex;gap:4px;border-bottom:1px solid #E9EBF0}.df-modes button{height:36px;padding:0 16px;border:0;border-bottom:2px solid transparent;background:none;font:inherit;font-size:12px;font-weight:600;color:#5B606D;cursor:pointer;min-height:0!important}.df-modes button:hover{color:#2E427B}.df-modes button.on{color:#2E427B;border-bottom-color:#2E427B}
+.df-modes{display:flex;gap:6px;flex-wrap:wrap}.df-modes button{display:inline-flex;align-items:center;border:1px solid #D5DBE5;border-radius:8px;background:#fff;color:#353944;padding:6px 12px;font:inherit;font-size:12px;font-weight:600;cursor:pointer;min-height:0!important}.df-modes button:hover{background:#F5F7F9}.df-modes button.on{border-color:#2E427B;background:#E8ECF6;color:#243569}
+
+/* charte : champs et boutons de saisie */
+.ds-in:not(.ds-h){height:36px;border-color:#878D9A;padding:0 12px;font-size:12px;color:#353944}.ds-in:focus-visible,.ds-btn:focus-visible{outline:3px solid #2E427B;outline-offset:2px}.ds-in:disabled{border-color:#D6D9E0;color:#747A88;cursor:not-allowed}
+.ds-lab{font-size:12px;color:#474C58;margin:0 0 4px}.ds-g3,.ds-g2{gap:12px 16px}
+.ds-btn{height:36px;padding:0 14px;margin-top:0;font-size:12px;font-weight:700;display:inline-flex;align-items:center}.ds-btn:hover{background:#243569}.ds-btn.ds-sec{border-color:#D6D9E0;color:#474C58}.ds-btn.ds-sec:hover{background:#E9EBF0}.ds-act{margin-top:16px}
+.ds-st{margin:12px 0 16px}
 </style>
 <app-modele-etat-designer>
 <div class="df" data-df-root>
@@ -122,15 +129,17 @@
         <button type="button" class="df-btn danger" data-df-del title="Supprimer l'élément sélectionné" disabled><i class="ti ti-trash"></i></button>
       </div>
       <div class="df-spacer"></div>
+      <div class="df-modes" role="tablist">
+    <button type="button" role="tab" class="on" data-df-mode="designer">Designer</button>
+    <button type="button" role="tab" data-df-mode="sources">Données</button>
+    <button type="button" role="tab" data-df-mode="mep">Mise en page</button>
+    <button type="button" role="tab" data-df-mode="json">JSON</button>
+    <button type="button" role="tab" data-df-mode="apercu">Aperçu live</button>
+      </div>
+      <div class="df-spacer"></div>
       <button type="button" class="df-save" data-df-save>Enregistrer</button>
     </div>
   </header>
-  <div class="df-modes" role="tablist">
-    <button type="button" role="tab" class="on" data-df-mode="designer">Designer</button>
-    <button type="button" role="tab" data-df-mode="sources">Sources &amp; mise en page</button>
-    <button type="button" role="tab" data-df-mode="json">JSON</button>
-    <button type="button" role="tab" data-df-mode="apercu">Aperçu live</button>
-  </div>
 
   <div class="df-layout">
     <main class="df-ws">
@@ -145,6 +154,7 @@
         </div>
       </div></div>
       <div data-df-view="sources" data-df-src style="display:none;padding:16px"></div>
+      <div data-df-view="mep" data-df-mep style="display:none;padding:16px"></div>
       <div data-df-view="json" style="display:none;padding:16px"><pre class="df-pre" data-df-json></pre></div>
       <div data-df-view="apercu" style="display:none;padding:16px"><div class="df-card"><h2>Aperçu live</h2><p style="margin:0;color:#64748b">L'aperçu avec les données réelles n'est pas inclus dans la maquette.</p></div></div>
     </main>
@@ -389,11 +399,11 @@
     select(null); q('[data-df-ptitle]').textContent = 'Document — Mise en page';
     q('[data-df-pbody]').innerHTML = '<div class="df-prop"><span>Format</span><span>' + paper + ' ' + (orient === 'landscape' ? 'paysage' : 'portrait') + '</span></div><div class="df-prop"><span>Taille</span><span>' + PW + ' × ' + PH + ' px</span></div>' +
       '<div class="df-prop"><span>Marges (h / b / g / d)</span><span>' + mT + ' / ' + mB + ' / ' + mL + ' / ' + mR + '</span></div><div class="df-prop"><span>Sections</span><span>' + qa('[data-df-zone]').length + '</span></div>' +
-      '<p class="df-note">Modifiez le format, l’orientation, les marges et les hauteurs de sections dans l’onglet « Sources &amp; mise en page ».</p>';
+      '<p class="df-note">Modifiez le format, l’orientation, les marges et les hauteurs de sections dans l’onglet « Mise en page ».</p>';
   });
 
-  /* ---------- onglet Sources & mise en page ---------- */
-  var srcCols = [], TABLES = { DECAISSEMENTS: 'Décaissements', ENGAGEMENTS: 'Engagements', JUSTIFICATIONS: 'Justifications de dépense', ECRITURES: 'Écritures comptables', CONTRATS: 'Contrats et marchés', BUDGET: 'Budget', IMMOBILISATIONS: 'Immobilisations', 'Demande de remboursement': 'Demandes de remboursement', RAPPROCHEMENT: 'Rapprochement bancaire' };
+  /* ---------- onglets Données et Mise en page ---------- */
+  var srcTab = 'liste', srcCols = [], TABLES = { DECAISSEMENTS: 'Décaissements', ENGAGEMENTS: 'Engagements', JUSTIFICATIONS: 'Justifications de dépense', ECRITURES: 'Écritures comptables', CONTRATS: 'Contrats et marchés', BUDGET: 'Budget', IMMOBILISATIONS: 'Immobilisations', 'Demande de remboursement': 'Demandes de remboursement', RAPPROCHEMENT: 'Rapprochement bancaire' };
   var COLCHOICES = ['Date comptable', 'N° pièce', 'Libellé', 'Montant', 'Devise', 'Bénéficiaire', 'Statut'];
   function opts(list, s) { return list.map(function (o) { return '<option value="' + esc(o[0]) + '"' + (o[0] === s ? ' selected' : '') + '>' + esc(o[1]) + '</option>'; }).join(''); }
   function zoneFields(zid) {
@@ -415,42 +425,47 @@
     }).join('');
     var colsHtml = srcCols.length ? '<div class="ds-scroll"><table class="ds-tb"><thead><tr><th style="width:44px;text-align:center">Ordre</th><th>Table</th><th>Source</th><th>Nom</th><th>Type</th><th style="text-align:right">Actions</th></tr></thead><tbody>' +
       srcCols.map(function (c, k) { return '<tr><td style="text-align:center">' + (k + 1) + '</td><td style="font-family:monospace;font-size:11px;color:#78716c;text-transform:uppercase">' + esc(c.t) + '</td><td>' + esc(c.s) + '</td><td><b>' + esc(c.n) + '</b></td><td><span class="ds-badge ' + (c.d ? 'd' : 't') + '">' + (c.d ? 'Données' : 'Texte') + '</span></td><td style="text-align:right"><button type="button" class="ds-ico" data-ds-del="' + k + '" title="Supprimer"><i class="ti ti-trash"></i></button></td></tr>'; }).join('') +
-      '</tbody></table></div>' : '<p class="ds-hint" style="margin-top:10px">Ajoutez un élément Tableau dans le canevas (zone Corps) pour configurer ses colonnes.</p>';
+      '</tbody></table></div>' : '<p class="ds-hint" style="margin-top:14px;font-size:13px">Aucun enregistrement trouvé</p>';
     box.innerHTML = '<div class="ds">' +
-      '<section class="ds-card ds-full"><h2>Sources de données</h2><p class="ds-hint">Combinez librement des colonnes issues de plusieurs sources. Les colonnes ajoutées ici peuvent être reprises dans un tableau (bouton « Depuis les sources »).</p>' +
+      '<section class="ds-card ds-full"><h2>Sources de données</h2><div class="ds-st" role="tablist"><button type="button" role="tab" class="' + (srcTab === 'liste' ? 'on' : '') + '" data-ds-stab="liste">Liste' + (srcCols.length ? ' (' + srcCols.length + ')' : '') + '</button><button type="button" role="tab" class="' + (srcTab === 'saisie' ? 'on' : '') + '" data-ds-stab="saisie">Saisie</button></div>' +
+      (srcTab === 'saisie' ? '<div data-ds-saisie>' + "" +
       '<div class="ds-g3"><div><label class="ds-lab">Table</label><select class="ds-in" data-ds-table><option value="">— Choisir —</option>' + Object.keys(TABLES).map(function (k) { return '<option value="' + k + '">' + esc(TABLES[k]) + '</option>'; }).join('') + '</select></div>' +
       '<div><label class="ds-lab">Colonne</label><select class="ds-in" data-ds-col disabled><option value="">— Choisir —</option></select></div>' +
       '<div><label class="ds-lab">Nom du colonne (personnalisé)</label><input class="ds-in" data-ds-nom placeholder="Nom affiché dans le tableau"></div>' +
       '<div><label class="ds-lab">Type</label><select class="ds-in" data-ds-type><option value="texte">Texte</option><option value="donnees">Données / Montant</option></select></div></div>' +
-      '<button type="button" class="ds-btn" data-ds-add>+ Ajouter</button>' + colsHtml + '</section>' +
-      '<div class="ds-col"><section class="ds-card"><h2>Mise en page du document</h2><p class="ds-hint">Format, orientation, marges et hauteurs des zones du canevas.</p>' +
+      '<div class="ds-act"><button type="button" class="ds-btn" data-ds-add>Enregistrer</button><button type="button" class="ds-btn ds-sec" data-ds-cancel>Annuler</button></div></div>' : colsHtml) + '</section>' +
+      '<section class="ds-card ds-full"><h3>Regroupement et niveau de détail</h3><div class="ds-g2"><div><label class="ds-lab">Axe de rupture</label><select class="ds-in">' + opts([['', '— Aucun —'], ['1', 'PC — PLAN COMPTABLE'], ['3', 'PLAN1 — ACTIVITE'], ['4', 'PLAN2 — POSTE BUDGETAIRE'], ['5', 'PLAN3 — FINANCEMENT'], ['6', 'PLAN4 — GEOGRAPHIQUE']], zone('GroupHeader1') ? '5' : '') + '</select></div>' +
+      '<div><label class="ds-lab">Niveau d’analyse</label><select class="ds-in"' + (zone('GroupHeader1') ? '' : ' disabled') + '><option>— Aucun —</option>' + (zone('GroupHeader1') ? '<option selected>Catégorie</option>' : '') + '</select></div></div>' +
+      '<label class="ds-lab">Niveau de détail</label><select class="ds-in"><option>— Aucun —</option>' + srcCols.map(function (c) { return '<option>' + esc(c.n) + '</option>'; }).join('') + '</select></section>' +
+      '</div>';
+    var bm = q('[data-df-mep]'); if (bm) bm.innerHTML = '<div class="ds">' +
+      '<div class="ds-col"><section class="ds-card"><h2>Mise en page du document</h2>' +
       '<div class="ds-g2"><div><label class="ds-lab">Taille du papier</label><select class="ds-in" data-ds-paper>' + Object.keys(PAPERS).map(function (k) { return '<option' + (k === paper ? ' selected' : '') + '>' + k + '</option>'; }).join('') + '</select></div>' +
       '<div><label class="ds-lab">Orientation</label><select class="ds-in" data-ds-orient><option value="portrait"' + (orient === 'portrait' ? ' selected' : '') + '>Portrait</option><option value="landscape"' + (orient === 'landscape' ? ' selected' : '') + '>Paysage</option></select></div>' +
       '<div><label class="ds-lab">Marge gauche (px)</label><input class="ds-in" type="number" data-ds-m="l" value="' + mL + '"></div><div><label class="ds-lab">Marge droite (px)</label><input class="ds-in" type="number" data-ds-m="r" value="' + mR + '"></div></div>' +
       '<div class="ds-sec"><div style="display:flex;justify-content:space-between"><span class="ds-lab" style="margin:0">Sections</span><span class="ds-hint" style="margin:0">page ' + PW + ' x ' + PH + ' px</span></div>' + secs + '</div>' +
       '<p class="ds-hint">Detail1 prend la hauteur restante. Ajoutez ou supprimez des sections depuis la barre d’outils (« + Section ») ou le panneau de propriétés de la section.</p></section>' +
       '<section class="ds-card"><h3>Filigrane</h3><label style="display:flex;gap:8px;align-items:center;margin-top:8px;font-size:13px"><input type="checkbox"> Activer un filigrane sur le document</label>' +
-      '<div class="ds-g2" style="grid-template-columns:minmax(0,1fr) 110px"><div><label class="ds-lab">Texte du filigrane</label><input class="ds-in" placeholder="Ex. BROUILLON"></div><div><label class="ds-lab">Opacité (%)</label><input class="ds-in" type="number" min="0" max="100"></div></div><p class="ds-hint">Visible en aperçu sur l’onglet Designer.</p></section></div>' +
-      '<div class="ds-col"><section class="ds-card"><h3>Regroupement et niveau de détail</h3><div class="ds-g2"><div><label class="ds-lab">Axe de rupture</label><select class="ds-in">' + opts([['', '— Aucun —'], ['1', 'PC — PLAN COMPTABLE'], ['3', 'PLAN1 — ACTIVITE'], ['4', 'PLAN2 — POSTE BUDGETAIRE'], ['5', 'PLAN3 — FINANCEMENT'], ['6', 'PLAN4 — GEOGRAPHIQUE']], zone('GroupHeader1') ? '5' : '') + '</select></div>' +
-      '<div><label class="ds-lab">Niveau d’analyse</label><select class="ds-in"' + (zone('GroupHeader1') ? '' : ' disabled') + '><option>— Aucun —</option>' + (zone('GroupHeader1') ? '<option selected>Catégorie</option>' : '') + '</select></div></div>' +
-      '<p class="ds-hint">Le regroupement se règle aussi dans la section « GroupHeader1 ».</p>' +
-      '<label class="ds-lab">Niveau de détail</label><select class="ds-in"><option>— Aucun —</option>' + srcCols.map(function (c) { return '<option>' + esc(c.n) + '</option>'; }).join('') + '</select></section>' +
-      '<section class="ds-card"><h3>En-tête</h3><p class="ds-hint">Champs affichés dans la zone d’en-tête du rapport.</p>' + zoneFields('ReportHeader1') + fieldForm('ReportHeader1') + '</section>' +
-      '<section class="ds-card"><h3>Pied de page</h3><p class="ds-hint">Champs affichés dans la zone de pied de page.</p>' + zoneFields('PageFooter1') + fieldForm('PageFooter1') + '</section></div></div>';
+      '<div class="ds-g2" style="grid-template-columns:minmax(0,1fr) 110px"><div><label class="ds-lab">Texte du filigrane</label><input class="ds-in" placeholder="Ex. BROUILLON"></div><div><label class="ds-lab">Opacité (%)</label><input class="ds-in" type="number" min="0" max="100"></div></div></section></div>' +
+      '<div class="ds-col">' +
+      '<section class="ds-card"><h3>En-tête</h3>' + zoneFields('ReportHeader1') + fieldForm('ReportHeader1') + '</section>' +
+      '<section class="ds-card"><h3>Pied de page</h3>' + zoneFields('PageFooter1') + fieldForm('PageFooter1') + '</section></div></div>';
   }
   var src = q('[data-df-src]');
-  src.addEventListener('change', function (e) {
+  src.parentNode.addEventListener('change', function (e) {
     var t = e.target;
     if (t.matches('[data-ds-table]')) { var c = q('[data-ds-col]'); c.disabled = !t.value; c.innerHTML = '<option value="">— Choisir —</option>' + (t.value ? COLCHOICES.map(function (x) { return '<option>' + x + '</option>'; }).join('') : ''); }
     else if (t.matches('[data-ds-paper]') || t.matches('[data-ds-orient]')) { setPaper(q('[data-ds-paper]').value, q('[data-ds-orient]').value); renderSources(); }
     else if (t.dataset.dsM) { var v = Math.max(0, num(t.value, 0)); if (t.dataset.dsM === 't') mT = v; else if (t.dataset.dsM === 'b') mB = v; else if (t.dataset.dsM === 'l') mL = v; else mR = v; fitDetail(); renderSources(); }
     else if (t.dataset.dsH) { zone(t.dataset.dsH).style.minHeight = Math.max(10, num(t.value, 40)) + 'px'; fitDetail(); renderSources(); }
   });
-  src.addEventListener('click', function (e) {
+  src.parentNode.addEventListener('click', function (e) {
     var d = e.target.closest('[data-ds-del]'); if (d) { srcCols.splice(+d.dataset.dsDel, 1); renderSources(); return; }
+    var stb = e.target.closest('[data-ds-stab]'); if (stb) { srcTab = stb.dataset.dsStab; renderSources(); return; }
+    if (e.target.closest('[data-ds-cancel]')) { srcTab = 'liste'; renderSources(); return; }
     if (e.target.closest('[data-ds-add]')) {
       var t = q('[data-ds-table]').value, c = q('[data-ds-col]').value; if (!t || !c) return;
-      srcCols.push({ t: t, s: c, n: q('[data-ds-nom]').value || c, d: q('[data-ds-type]').value === 'donnees' }); renderSources(); return;
+      srcCols.push({ t: t, s: c, n: q('[data-ds-nom]').value || c, d: q('[data-ds-type]').value === 'donnees' }); srcTab = 'liste'; renderSources(); return;
     }
     var af = e.target.closest('[data-ds-addfield]');
     if (af) {
@@ -617,7 +632,7 @@
       qa('[data-df-view]').forEach(function (v) { v.style.display = v.dataset.dfView === b.dataset.dfMode ? '' : 'none'; });
       if (b.dataset.dfMode === 'json') q('[data-df-json]').textContent = json();
       if (b.dataset.dfMode === 'designer') applyZoom();
-      if (b.dataset.dfMode === 'sources') renderSources();
+      if (b.dataset.dfMode === 'sources' || b.dataset.dfMode === 'mep') renderSources();
       if (b.dataset.dfMode === 'apercu') renderPreview();
     });
   });

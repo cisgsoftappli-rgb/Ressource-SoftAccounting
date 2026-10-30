@@ -1,0 +1,249 @@
+<!--
+  Écran « Gestion des contrats › Suivi et historique › Suivi des contrats » — état de suivi des marchés, présenté comme les états comptables (charte) :
+  barre d'actions (Critères, PDF, Excel), critères d'édition dans une pop-up (Critères de sélection : Exercices, Code marché, Site en choix multiples, Axe de rupture, Date d'état,
+  Type de passation, Type de marché, Compte fournisseur ; Choix de la monnaie ; Axes analytiques Du / Au selon les plans activés dans l'entité et PCG), puis l'état :
+  Site, Code marché, Libellé, Bénéficiaire, Statut, Montant du marché, Montant facturé, Solde, % Facturé, Montant payé, % Payé, % (Payé/Facturé), avec sous-totaux par axe de rupture et total.
+  Données : contrats de « Fiche contrat » (window.CONTRATS) et marchés d'exemple fictifs ; facturé / payé simulés. Préfixe sc / data-sc. Ne pas nommer de fonction « $$ » (build.cjs).
+-->
+<style>
+[data-sc]{width:100%;color:#353944;font-size:12px}
+[data-sc] .sc-eyebrow{margin:0 0 4px;font-size:12px;font-weight:600;letter-spacing:.08em;text-transform:uppercase;color:#706000}
+[data-sc] .sc-pan{background:#fff;border:1px solid #E9EBF0;border-radius:12px;margin-bottom:16px}
+[data-sc] .sc-pan>h2{margin:0;padding:12px 16px;border-bottom:1px solid #E9EBF0;font-family:var(--font-heading);font-size:14px;font-weight:600;color:#0B1332;display:flex;justify-content:space-between;align-items:center}
+[data-sc] .sc-pan>h2 small{font:400 12px var(--font-sans);color:#5B606D}
+[data-sc] .sc-pan[hidden]{display:none}
+[data-sc] .sc-g{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:16px;padding:16px}[data-sc] .sc-g .w{grid-column:1/-1}
+@media (max-width:760px){[data-sc] .sc-g{grid-template-columns:1fr}}
+[data-sc] .sc-c{display:flex;flex-direction:column;gap:4px;min-width:0}
+[data-sc] .sc-c>span,[data-sc] .sc-lab{font-size:12px;font-weight:600;color:#474C58}
+[data-sc] .sc-in,[data-sc] .sc-sel{width:100%;box-sizing:border-box;height:36px;border:1px solid #878D9A;border-radius:8px;background:#fff;color:#353944;font:inherit;font-size:12px;padding:0 12px}
+[data-sc] .sc-in:focus-visible,[data-sc] .sc-sel:focus-visible,[data-sc] .sc-msb:focus-visible{outline:3px solid #2E427B;outline-offset:2px}
+[data-sc] .sc-an{display:grid;gap:0}[data-sc] .sc-an+.sc-an{border-top:1px solid #F1F2F5}[data-sc] .sc-an>b{padding:12px 16px 0;font-size:12px;color:#0B1332;text-transform:uppercase}[data-sc] .sc-an .sc-g{padding:8px 16px 12px}
+[data-sc] .sc-ms{position:relative}
+[data-sc] .sc-msb{display:flex;align-items:center;justify-content:space-between;gap:8px;width:100%;height:36px;padding:0 12px;border:1px solid #878D9A;border-radius:8px;background:#fff;font:inherit;font-size:12px;color:#353944;cursor:pointer;text-align:left}
+[data-sc] .sc-msb .ph{color:#747A88}[data-sc] .sc-msb .n{margin-left:auto;color:#5B606D;font-size:11px}
+[data-sc] .sc-msp{position:absolute;z-index:30;left:0;right:0;top:calc(100% + 4px);max-height:220px;overflow:auto;border:1px solid #D6D9E0;border-radius:8px;background:#fff;box-shadow:0 8px 24px rgba(11,19,50,.15);padding:6px}
+[data-sc] .sc-msp[hidden]{display:none}
+[data-sc] .sc-msp label{display:flex;align-items:center;gap:8px;padding:6px 8px;border-radius:6px;font-size:12px;color:#353944;cursor:pointer}[data-sc] .sc-msp label:hover{background:#F5F7F9}
+[data-sc] .sc-msp input{width:16px;height:16px;accent-color:#2E427B;margin:0}
+[data-sc] .sc-msp .t{display:flex;gap:12px;padding:4px 8px 6px;border-bottom:1px solid #E9EBF0;margin-bottom:4px}[data-sc] .sc-msp .t button{border:0;background:none;color:#2E427B;font:600 12px var(--font-sans);cursor:pointer;min-height:0!important;padding:0}
+[data-sc] .sc-ov{position:fixed;inset:0;z-index:50;background:rgba(11,19,50,.5);display:flex;align-items:center;justify-content:center;padding:16px}[data-sc] .sc-ov[hidden]{display:none}
+[data-sc] .sc-dlg{width:100%;max-width:1100px;max-height:calc(100vh - 32px);display:flex;flex-direction:column;background:#fff;border-radius:12px;box-shadow:0 12px 32px -8px rgba(11,19,50,.3)}
+[data-sc] .sc-dh{display:flex;justify-content:flex-end;padding:8px 12px 0}
+[data-sc] .sc-dh h2{margin:0;font-family:var(--font-heading);font-size:18px;font-weight:600;color:#0B1332}.sc-dsub{margin:4px 0 0;color:#5B606D}
+[data-sc] .sc-x{width:36px;height:36px;border:0;border-radius:8px;background:none;color:#474C58;font-size:16px;cursor:pointer}[data-sc] .sc-x:hover{background:#E9EBF0}
+[data-sc] .sc-db{overflow:auto;padding:16px 20px;display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1fr);gap:16px;align-items:start}[data-sc] .sc-col{display:grid;gap:16px;min-width:0}@media (max-width:900px){[data-sc] .sc-db{grid-template-columns:1fr}}[data-sc] .sc-db .sc-pan{margin:0}
+[data-sc] .sc-df{display:flex;justify-content:flex-end;gap:8px;padding:12px 20px;border-top:1px solid #E9EBF0}
+[data-sc] .sc-b{display:inline-flex;align-items:center;justify-content:center;gap:6px;height:36px;padding:0 14px;border:1px solid #D6D9E0;border-radius:8px;background:#fff;color:#474C58;font:inherit;font-size:12px;font-weight:700;cursor:pointer}
+[data-sc] .sc-b:hover{background:#E9EBF0}[data-sc] .sc-b.pri{background:#2E427B;border-color:#2E427B;color:#fff}[data-sc] .sc-b.pri:hover{background:#243569}
+[data-sc] .sc-b:focus-visible,[data-sc] .sc-x:focus-visible{outline:3px solid #2E427B;outline-offset:2px}
+[data-sc] .sc-vide{padding:48px 16px;text-align:center;color:#5B606D;font-size:14px}[data-sc] .sc-vide[hidden]{display:none}
+[data-sc] .sc-titre{padding:16px;text-align:center;border-bottom:1px solid #E9EBF0}[data-sc] .sc-titre h3{margin:0;font-family:var(--font-heading);font-size:18px;font-weight:600;color:#0B1332}[data-sc] .sc-titre p{margin:2px 0 0;color:#5B606D}
+[data-sc] .sc-scroll{overflow:auto}
+[data-sc] .sc-tb{width:100%;border-collapse:collapse}
+[data-sc] .sc-tb th{padding:8px 12px;background:#F5F7F9;border-bottom:1px solid #E9EBF0;text-align:left;font-size:12px;font-weight:600;color:#0B1332;white-space:nowrap}
+[data-sc] .sc-tb td{padding:8px 12px;border-bottom:1px solid #E9EBF0;font-size:13px;color:#353944}
+[data-sc] .sc-tb th.r,[data-sc] .sc-tb td.r{text-align:right;font-variant-numeric:tabular-nums;white-space:nowrap}
+[data-sc] .sc-tb tr.sc-sub td{background:#F5F7F9;font-weight:700}[data-sc] .sc-tb tr.sc-tot td{background:#E8ECF6;font-weight:700;color:#243569}
+[data-sc] .sc-novide{padding:22px;text-align:center;color:#747A88;font-size:13px}
+[data-sc] .sc-ok{font-size:12px;color:#2E427B;margin-left:8px}
+</style>
+
+<div class="bp-root" data-sc>
+  <h1 style="position:absolute;width:1px;height:1px;overflow:hidden;clip-path:inset(50%);margin:0">Suivi des contrats</h1>
+
+  <div class="no-print" data-sc-actions>
+    <button type="button" data-sc-criteres>Critères</button>
+    <button type="button" data-sc-pdf>PDF</button>
+    <button type="button" data-sc-xlsx>Excel (XLSX)</button>
+    <span class="sc-ok" data-sc-msg role="status"></span>
+  </div>
+
+  <div class="sc-ov" data-sc-ov hidden>
+    <div class="sc-dlg" role="dialog" aria-modal="true" aria-label="Critères d'édition — Suivi des contrats">
+      <div class="sc-dh"><span></span>
+        <button type="button" class="sc-x" data-sc-fermer aria-label="Fermer"><i class="ti ti-x"></i></button></div>
+      <div class="sc-db">
+        <div class="sc-col">
+        <section class="sc-pan" aria-label="Critères de sélection"><h2>Critères de sélection</h2>
+          <div class="sc-g">
+            <div class="w"><span class="sc-lab">Exercices</span><div class="sc-ms" data-ms="exercices" data-ph="Tous les exercices"></div></div>
+            <div class="w"><span class="sc-lab">Code marché</span><div class="sc-ms" data-ms="marches" data-ph="Tous les marchés"></div></div>
+            <div class="w"><span class="sc-lab">Site</span><div class="sc-ms" data-ms="sites" data-ph="Tous les sites"></div></div>
+            <label class="sc-c"><span>Axe de rupture</span><select class="sc-sel" data-c="rupture"></select></label>
+            <label class="sc-c"><span>Date d'état</span><input class="sc-in" type="date" data-c="dateEtat"></label>
+            <label class="sc-c"><span>Type de passation</span><select class="sc-sel" data-c="passation"></select></label>
+            <label class="sc-c"><span>Type de marché</span><select class="sc-sel" data-c="typeMarche"></select></label>
+            <label class="sc-c w"><span>Compte fournisseur</span><select class="sc-sel" data-c="compte"></select></label>
+          </div></section>
+        <section class="sc-pan" aria-label="Choix de la monnaie">          <div class="sc-g"><label class="sc-c"><span>Monnaie d'édition</span><select class="sc-sel" data-c="monnaie"></select></label></div></section>
+        </div>
+        <section class="sc-pan" aria-label="Axes analytiques"><h2>Axes analytiques</h2><div data-sc-axes></div></section>
+      </div>
+      <div class="sc-df"><button type="button" class="sc-b" data-sc-reset><i class="ti ti-refresh"></i>Réinitialiser</button><button type="button" class="sc-b" data-sc-fermer>Annuler</button><button type="button" class="sc-b pri" data-sc-consulter><i class="ti ti-search"></i>Rechercher</button></div>
+    </div>
+  </div>
+
+  <div class="sc-vide" data-sc-vide>Aucun état édité. Utilisez « Critères » pour lancer l'édition.</div>
+  <section class="sc-pan" aria-label="Résultat" data-sc-res hidden>
+    <h2>Suivi des contrats <small data-sc-info></small></h2>
+    <div class="sc-titre"><h3>SUIVI DES CONTRATS</h3><p data-sc-meta></p></div>
+    <div class="sc-scroll"><table class="sc-tb" data-sc-table></table></div>
+  </section>
+</div>
+
+<script>
+(function () {
+  var root = document.querySelector('[data-sc]'); if (!root) return;
+  function q(s) { return root.querySelector(s); } function qa(s) { return [].slice.call(root.querySelectorAll(s)); }
+  function esc(s) { return String(s == null ? '' : s).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;'); }
+  function nb(v) { return Number(v || 0).toLocaleString('fr-FR', { minimumFractionDigits: 2, maximumFractionDigits: 2 }); }
+  function pc(v) { return nb(v) + ' %'; }
+  function msg(t) { q('[data-sc-msg]').textContent = t || ''; }
+  var MARCHES = ['Travaux', 'Fournitures', 'Services courants', 'Prestations intellectuelles'], PASSATIONS = ['Appel d’offres ouvert', 'Appel d’offres restreint', 'Consultation de fournisseurs', 'Gré à gré'];
+  var TIERS = { F001: ['401000', 'FOURNISSEUR A'], F002: ['401000', 'FOURNISSEUR B'], F003: ['401000', 'FOURNISSEUR C'], F101: ['404000', 'ENTREPRISE DE TRAVAUX 1'], F102: ['404000', 'ENTREPRISE DE TRAVAUX 2'] };
+  var EXEMPLES = [
+    { code: 'MP-2025-004', lib: 'Acquisition de véhicules utilitaires', benef: 'F003', statut: 'Actif', marche: 210000000, fact: 1, paye: .9, tm: 'Fournitures', tp: 'Appel d’offres ouvert', site: '01', date: '2025-04-14' },
+    { code: 'MP-2025-009', lib: 'Étude de faisabilité — réhabilitation de bâtiments', benef: 'F002', statut: 'Actif', marche: 64000000, fact: .75, paye: .5, tm: 'Prestations intellectuelles', tp: 'Consultation de fournisseurs', site: '01', date: '2025-07-02' },
+    { code: 'MP-2025-012', lib: 'Travaux de voirie — lot 1', benef: 'F102', statut: 'Inactif', marche: 380000000, fact: 1, paye: 1, tm: 'Travaux', tp: 'Appel d’offres restreint', site: '01', date: '2025-09-23' },
+    { code: 'MP-2026-005', lib: 'Maintenance du parc informatique', benef: 'F001', statut: 'Actif', marche: 36000000, fact: .4, paye: .25, tm: 'Services courants', tp: 'Gré à gré', site: '01', date: '2026-01-19' }
+  ];
+  function montantC(c) { return (c.vent || []).reduce(function (a, v) { return a + (Number((v.mt || {}).MGA) || 0); }, 0); }
+  function hash(s) { var h = 0; for (var i = 0; i < s.length; i++) h = (h * 31 + s.charCodeAt(i)) % 1000; return h / 1000; }
+  function marches() {
+    var l = (window.CONTRATS || []).map(function (c) {
+      var m = montantC(c), r = hash(c.num), fact = .3 + r * .6;
+      return { code: c.num, lib: c.designation, benef: c.tiers, statut: c.statut || 'Actif', marche: m, fact: fact, paye: fact * (.5 + r * .5), tm: c.typeMarche, tp: c.typePassation, site: c.site, date: c.dateSign, ana: ((c.vent || [])[0] || {}).ana || {}, pcg: ((c.vent || [])[0] || {}).pcg || '' };
+    });
+    return EXEMPLES.concat(l).map(function (x) {
+      var tr = TIERS[x.benef] || ['', x.benef || ''], mt = x.marche, f = Math.round(mt * x.fact), p = Math.round(mt * x.paye);
+      return { site: x.site, code: x.code, lib: x.lib, benef: x.benef, nomBenef: (x.benef ? x.benef + ' — ' + tr[1] : ''), compte: tr[0], statut: x.statut, marche: mt, fact: f, paye: Math.min(p, f || p), tm: x.tm, tp: x.tp, date: x.date, exo: (x.date || '').slice(0, 4), ana: x.ana || {}, pcg: x.pcg || '' };
+    });
+  }
+  function sites() { var l = ((window.PLANS_REF || {}).sites || []).filter(function (x) { return x[0] !== '00'; }).map(function (x) { return [x[0], x[0] + ' — ' + x[1]]; }); return l.length ? l : [['01', '01 — Siège']]; }
+  function nomSite(c) { var s = sites().filter(function (x) { return x[0] === c; })[0]; return s ? s[1] : c; }
+  var REFPLAN = { PLAN1: 'activite', PLAN2: 'budget', PLAN4: 'geo' };
+  function plansAna() {
+    var act = window.PLANS_ACTIFS ? window.PLANS_ACTIFS() : ['PC', 'PLAN1', 'PLAN2', 'PLAN3', 'PLAN4'];
+    var l = act.filter(function (c) { return c !== 'PC'; }).map(function (c) {
+      var cfg = (window.PLANS_CFG || []).filter(function (p) { return p.code === c; })[0] || {}, L = window.PLANS_LIGNES && window.PLANS_LIGNES[c], rows;
+      if (L && L.rows && L.rows.length) rows = L.rows.filter(function (x) { return x.actif !== false; }).map(function (x) { return [x.code, x.code + ' — ' + x.libelle]; });
+      else rows = ((window.PLANS_REF || {})[REFPLAN[c]] || []).map(function (x) { return [x[0], x[0] + ' — ' + x[1]]; });
+      return { code: c, lib: cfg.libelle || cfg.abrev || c, rows: rows };
+    });
+    var pc = window.PLAN_COMPTABLE || [], rows = pc.filter(function (r) { return /^[26]/.test(r.code) && !pc.some(function (x) { return x.parent === r.code; }); }).map(function (r) { return [r.code, r.code + ' — ' + r.libelle]; });
+    l.push({ code: 'PCG', lib: 'PCG', rows: rows });
+    return l;
+  }
+  function opts(l, vide) { return '<option value="">' + (vide || '') + '</option>' + l.map(function (x) { var c = Array.isArray(x) ? x[0] : x, t = Array.isArray(x) ? x[1] : x; return '<option value="' + esc(c) + '">' + esc(t) + '</option>'; }).join(''); }
+  function maj(s) { if (s && s.__combo && s.__combo.maj) s.__combo.maj(); }
+
+  // ---------- listes à choix multiples
+  var sel = { exercices: [], marches: [], sites: [] };
+  function choix(k) {
+    if (k === 'exercices') { var a = {}; marches().forEach(function (m) { if (m.exo) a[m.exo] = 1; }); a['2026'] = 1; return Object.keys(a).sort().reverse().map(function (x) { return [x, x]; }); }
+    if (k === 'marches') return marches().map(function (m) { return [m.code, m.code]; });
+    return sites();
+  }
+  function msDessin(k) {
+    var h = q('[data-ms="' + k + '"]'), L = choix(k), n = sel[k].length;
+    h.innerHTML = '<button type="button" class="sc-msb" aria-haspopup="listbox"><span class="' + (n ? '' : 'ph') + '">' + (n ? esc(sel[k].slice(0, 3).join(', ')) + (n > 3 ? '…' : '') : esc(h.dataset.ph)) + '</span><span class="n">' + n + '/' + L.length + '</span><i class="ti ti-chevron-down"></i></button>' +
+      '<div class="sc-msp" hidden><div class="t"><button type="button" data-all>Tout sélectionner</button><button type="button" data-none>Aucun</button></div>' + L.map(function (x) { return '<label><input type="checkbox" value="' + esc(x[0]) + '"' + (sel[k].indexOf(x[0]) >= 0 ? ' checked' : '') + '> ' + esc(x[1]) + '</label>'; }).join('') + '</div>';
+  }
+  root.addEventListener('click', function (e) {
+    var b = e.target.closest('.sc-msb'), ms = e.target.closest('[data-ms]');
+    if (b) { var p0 = ms.querySelector('.sc-msp'), ouvert = !p0.hidden; msDessin(ms.dataset.ms); var p = ms.querySelector('.sc-msp'); qa('.sc-msp').forEach(function (x) { x.hidden = true; }); p.hidden = ouvert; return; }
+    if (ms && e.target.closest('[data-all],[data-none]')) { var k = ms.dataset.ms; sel[k] = e.target.closest('[data-all]') ? choix(k).map(function (x) { return x[0]; }) : []; msDessin(k); ms.querySelector('.sc-msp').hidden = false; return; }
+    if (!ms) qa('.sc-msp').forEach(function (x) { x.hidden = true; });
+  });
+  root.addEventListener('change', function (e) {
+    var ms = e.target.closest('[data-ms]'); if (!ms || e.target.type !== 'checkbox') return; var k = ms.dataset.ms;
+    sel[k] = [].slice.call(ms.querySelectorAll('input:checked')).map(function (i) { return i.value; }); var ouvert = true; msDessin(k); ms.querySelector('.sc-msp').hidden = !ouvert;
+  });
+  document.addEventListener('click', function (e) { if (!root.contains(e.target)) qa('.sc-msp').forEach(function (x) { x.hidden = true; }); });
+
+  // ---------- critères
+  function aujourdhui() { var d = new Date(); return d.getFullYear() + '-' + ('0' + (d.getMonth() + 1)).slice(-2) + '-' + ('0' + d.getDate()).slice(-2); }
+  function init() {
+    ['exercices', 'marches', 'sites'].forEach(msDessin);
+    var rup = [['site', 'Site'], ['typeMarche', 'Type de marché'], ['passation', 'Type de passation'], ['benef', 'Bénéficiaire']];
+    q('[data-c="rupture"]').innerHTML = opts(rup, 'Aucun');
+    q('[data-c="passation"]').innerHTML = opts(PASSATIONS, 'Tous'); q('[data-c="typeMarche"]').innerHTML = opts(MARCHES, 'Tous');
+    var cf = {}; Object.keys(TIERS).forEach(function (k) { cf[TIERS[k][0]] = 1; });
+    q('[data-c="compte"]').innerHTML = opts(Object.keys(cf).map(function (c) { return [c, c]; }), 'Tous');
+    var dv = (window.DEVISES || []).filter(function (x) { return x.actif !== false && x.code !== 'MGA'; }).map(function (x) { return [x.code, x.code + (x.libelle ? ' — ' + x.libelle : '')]; });
+    q('[data-c="monnaie"]').innerHTML = '<option value="">Monnaie locale (MGA)</option>' + dv.map(function (x) { return '<option value="' + esc(x[0]) + '">' + esc(x[1]) + '</option>'; }).join('');
+    q('[data-c="dateEtat"]').value = aujourdhui();
+    q('[data-sc-axes]').innerHTML = plansAna().map(function (p) { return '<div class="sc-an"><b>' + esc(p.lib) + '</b><div class="sc-g"><label class="sc-c"><span>Du</span><select class="sc-sel" data-an="' + p.code + '" data-b="du">' + opts(p.rows, '') + '</select></label><label class="sc-c"><span>Au</span><select class="sc-sel" data-an="' + p.code + '" data-b="au">' + opts(p.rows, '') + '</select></label></div></div>'; }).join('');
+    qa('[data-c] , [data-an]').forEach(maj);
+  }
+
+  // ---------- onglets
+  var ov = q('[data-sc-ov]');
+  function ouvrir() { ['exercices', 'marches', 'sites'].forEach(msDessin); ov.hidden = false; var f = q('[data-c="rupture"]'); if (f) f.focus(); }
+  function fermer() { ov.hidden = true; qa('.sc-msp').forEach(function (x) { x.hidden = true; }); }
+  function tab(n) { if (n === 'criteres') ouvrir(); else fermer(); }
+  qa('[data-sc-fermer]').forEach(function (b) { b.addEventListener('click', fermer); });
+  q('[data-sc-criteres]').addEventListener('click', ouvrir);
+  root.addEventListener('keydown', function (e) { if (e.key === 'Escape' && !ov.hidden) fermer(); });
+
+  // ---------- résultat
+  var resultat = null, TETE = ['Site', 'Code marché', 'Libellé', 'Bénéficiaire', 'Statut', 'Montant du marché', 'Montant facturé', 'Solde', '% Facturé', 'Montant payé', '% Payé', '% (Payé/Facturé)'];
+  function c(n) { return q('[data-c="' + n + '"]').value; }
+  function filtrer() {
+    var de = c('dateEtat'), axes = {};
+    qa('[data-an]').forEach(function (s) { var k = s.dataset.an; (axes[k] || (axes[k] = {}))[s.dataset.b] = s.value; });
+    return marches().filter(function (m) {
+      if (sel.exercices.length && sel.exercices.indexOf(m.exo) < 0) return false;
+      if (sel.marches.length && sel.marches.indexOf(m.code) < 0) return false;
+      if (sel.sites.length && sel.sites.indexOf(m.site) < 0) return false;
+      if (c('passation') && m.tp !== c('passation')) return false;
+      if (c('typeMarche') && m.tm !== c('typeMarche')) return false;
+      if (c('compte') && m.compte !== c('compte')) return false;
+      if (de && m.date && m.date > de) return false;
+      return Object.keys(axes).every(function (k) {
+        var b = axes[k], v = k === 'PCG' ? m.pcg : (m.ana || {})[k]; if (!b.du && !b.au) return true; if (!v) return false;
+        return (!b.du || v >= b.du) && (!b.au || v <= b.au);
+      });
+    });
+  }
+  function ligne(m) { var solde = m.marche - m.fact; return [nomSite(m.site), m.code, m.lib, m.nomBenef, m.statut, m.marche, m.fact, solde, m.marche ? m.fact * 100 / m.marche : 0, m.paye, m.marche ? m.paye * 100 / m.marche : 0, m.fact ? m.paye * 100 / m.fact : 0]; }
+  function somme(L) { var r = { marche: 0, fact: 0, paye: 0 }; L.forEach(function (m) { r.marche += m.marche; r.fact += m.fact; r.paye += m.paye; }); return r; }
+  function cumul(lbl, s) { return [lbl, '', '', '', '', s.marche, s.fact, s.marche - s.fact, s.marche ? s.fact * 100 / s.marche : 0, s.paye, s.marche ? s.paye * 100 / s.marche : 0, s.fact ? s.paye * 100 / s.fact : 0]; }
+  function consulter() {
+    if (c('monnaie')) { msg('Aucun cours en vigueur pour la devise choisie : édition impossible.'); return; }
+    var L = filtrer(), rup = c('rupture'), rows = [];
+    if (rup) {
+      var g = {}, ordre = []; L.forEach(function (m) { var k = rup === 'site' ? nomSite(m.site) : rup === 'typeMarche' ? m.tm : rup === 'passation' ? m.tp : m.nomBenef; k = k || '—'; if (!g[k]) { g[k] = []; ordre.push(k); } g[k].push(m); });
+      ordre.sort().forEach(function (k) { g[k].forEach(function (m) { rows.push({ t: 'l', v: ligne(m) }); }); rows.push({ t: 's', v: cumul('Sous-total — ' + k, somme(g[k])) }); });
+    } else L.forEach(function (m) { rows.push({ t: 'l', v: ligne(m) }); });
+    if (L.length) rows.push({ t: 't', v: cumul('Total général', somme(L)) });
+    resultat = { rows: rows, nb: L.length };
+    dessiner(); fermer(); q('[data-sc-vide]').hidden = true; q('[data-sc-res]').hidden = false;
+    q('[data-sc-info]').textContent = L.length + ' marché(s)';
+    q('[data-sc-meta]').textContent = 'État au ' + c('dateEtat').split('-').reverse().join('/') + ' — Monnaie : MGA' + (rup ? ' — Rupture : ' + q('[data-c="rupture"] option:checked').textContent : '');
+    msg(L.length + ' marché(s).');
+  }
+  function fmt(v, i) { return typeof v === 'number' ? (i === 8 || i === 10 || i === 11 ? pc(v) : nb(v)) : esc(v); }
+  function dessiner() {
+    var t = q('[data-sc-table]');
+    t.innerHTML = '<thead><tr>' + TETE.map(function (h, i) { return '<th' + (i >= 5 ? ' class="r"' : '') + '>' + esc(h) + '</th>'; }).join('') + '</tr></thead><tbody>' +
+      (resultat.nb ? resultat.rows.map(function (r) { return '<tr' + (r.t === 's' ? ' class="sc-sub"' : r.t === 't' ? ' class="sc-tot"' : '') + '>' + r.v.map(function (x, i) { return '<td' + (i >= 5 ? ' class="r"' : '') + '>' + fmt(x, i) + '</td>'; }).join('') + '</tr>'; }).join('') : '<tr><td colspan="12" class="sc-novide">Aucun enregistrement trouvé</td></tr>') + '</tbody>';
+  }
+  function exporter(k) {
+    if (!resultat) { ouvrir(); msg('Lancez d\u2019abord l\u2019édition (Critères).'); return; } if (!resultat.nb) { msg('Rien à exporter.'); return; }
+    var X = window.EXPORT_TABLEAU; if (!X) { msg('Module d’export indisponible.'); return; }
+    var lignes = resultat.rows.map(function (r) { return r.v.map(function (x, i) { return typeof x === 'number' ? (i === 8 || i === 10 || i === 11 ? pc(x) : nb(x)) : x; }); });
+    if (k === 'pdf') X.pdf('suivi_des_contrats.pdf', 'Suivi des contrats', resultat.nb + ' marché(s) — état au ' + c('dateEtat').split('-').reverse().join('/'), TETE, lignes); else X.xlsx('suivi_des_contrats.xlsx', 'Suivi des contrats', TETE, lignes);
+    msg('Export ' + (k === 'pdf' ? 'PDF' : 'Excel (XLSX)') + ' généré : ' + resultat.nb + ' marché(s).');
+  }
+  q('[data-sc-consulter]').addEventListener('click', consulter);
+  q('[data-sc-pdf]').addEventListener('click', function () { exporter('pdf'); }); q('[data-sc-xlsx]').addEventListener('click', function () { exporter('xlsx'); });
+  q('[data-sc-reset]').addEventListener('click', function () { sel = { exercices: [], marches: [], sites: [] }; init(); resultat = null; q('[data-sc-res]').hidden = true; q('[data-sc-vide]').hidden = false; msg(''); });
+  window.addEventListener('contrats-changed', function () { ['exercices', 'marches', 'sites'].forEach(msDessin); });
+  function auto() { if (location.hash === '#suivicontrats' && ov.hidden && !resultat) setTimeout(ouvrir, 60); }
+  window.addEventListener('hashchange', auto);
+
+  init(); auto();
+})();
+</script>
