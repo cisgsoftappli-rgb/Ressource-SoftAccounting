@@ -550,3 +550,4 @@ A nouveau : colonnes montants selon les monnaies de Administration de lentite (M
 - Module Gestion des selections SUPPRIME (menus Parametres financiers et Projets & Bailleurs, ecrans gestsel/gestsel2, fichier gestion_selections.html, droits d'acces, traces, aide assistant). L'axe de la convention n'existe plus ; les selections sont dans Procedures financieres > Selection. patch_suppr_gestsel.cjs. Non pousse.
 - Devis programme : titre de page (eyebrow + h1), bandeau 'Devis programme / Projet', pastille Consultation et etat Gestion des DP supprimes (data-sans-titre ignore par charte_titres.js). patch_dp_entete.cjs. Non pousse.
 - Procedures financieres > Selection : journaux en tableau Code | Libelle avec filtre par colonne et selection par ligne (patch_pf_journaux.cjs). Non pousse.
+- PUSH sources 069dddd + publication cba80ca (fusion avec le commit de publication du binome 58b1790, build complet reconstruit).
