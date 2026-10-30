@@ -1,0 +1,309 @@
+<!--
+  Écran « Lieu d'affectation » (Immobilisations › Paramétrages › Lieu d'affectation) — structure hiérarchique et codification des
+  localisations physiques des immobilisations. Onglets « Lieux d'affectation » (arbre + saisie) et « Structure & codification » (niveaux :
+  libellé, longueur du segment de code). Code complet = code du parent + « . » + segment du niveau. Boutons dans la barre d'actions
+  (Ajouter, Modifier, Supprimer, Enregistrer, Annuler, Imprimer, PDF, Excel). Données en mémoire ; lieux actifs exposés en
+  window.LIEUX_AFFECTATION (événement « lieux-affectation-changed »). Styles bp-* de « Paramétrage du bilan ». Pas de fonction « $$ » (build.cjs).
+-->
+<style>
+.la-badge{display:inline-flex;align-items:center;padding:2px 10px;border:1px solid;border-radius:6px;font-size:12px;font-weight:600}
+.la-badge.on{background:#ECFDF5;border-color:#A7F3D0;color:#047857}.la-badge.off{background:#F5F7F9;border-color:#D6D9E0;color:#5B606D}
+.la-code{font-family:ui-monospace,Consolas,monospace;font-weight:600}
+.la-help{font-size:12px;color:#5B606D}
+.la-er{display:none;font-size:12px;color:#B63132}.la-er.show{display:block}
+.bp-in.err,.bp-sel.err{border-color:#B63132}
+.la-kpis{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:12px;margin-bottom:12px}
+.la-kpi{border:1px solid #D6D9E0;border-radius:12px;padding:12px 16px;background:#fff}
+.la-kpi b{display:block;font-size:24px;line-height:1.2;color:#18244F}.la-kpi span{font-size:12px;color:#5B606D}
+.la-kpi.ok b{color:#047857}.la-kpi.warn b{color:#B45309}
+.la-tg{width:22px;height:22px;min-height:22px!important;padding:0!important;border:1px solid #D6D9E0;border-radius:6px;background:#fff;cursor:pointer;font-size:12px;line-height:1}
+.la-tg[disabled]{visibility:hidden}
+.la-nom{display:flex;align-items:center;gap:8px}
+.la-opt{display:flex;align-items:center;gap:12px;margin-bottom:8px;flex-wrap:wrap}
+.la-niv{width:90px}
+[data-la] [hidden]{display:none!important}
+[data-la] .bp-champ>span:first-child{text-transform:uppercase;letter-spacing:.04em;font-size:12px;font-weight:600}
+@media (max-width:900px){.la-kpis{grid-template-columns:repeat(2,minmax(0,1fr))}}
+</style>
+
+<div class="bp-root" data-la>
+  <h1 style="position:absolute;width:1px;height:1px;overflow:hidden;clip-path:inset(50%);margin:0">Lieu d'affectation</h1>
+
+  <div class="no-print" data-la-actions>
+    <button type="button" data-la-ajouter>Ajouter</button>
+    <button type="button" data-la-modifier>Modifier</button>
+    <button type="button" data-la-supprimer>Supprimer</button>
+    <button type="button" data-la-enregistrer>Enregistrer</button>
+    <button type="button" data-la-annuler>Annuler</button>
+    <button type="button" data-la-imprimer>Imprimer</button>
+    <button type="button" data-la-pdf>PDF</button>
+    <button type="button" data-la-xlsx>Excel (XLSX)</button>
+  </div>
+
+  <p class="la-help" style="margin:0 0 12px">Structure hiérarchique et codification des localisations physiques des immobilisations.</p>
+
+  <div class="la-kpis" data-la-kpis>
+    <div class="la-kpi"><b data-la-k="niveaux">0</b><span>Niveaux configurés</span></div>
+    <div class="la-kpi"><b data-la-k="total">0</b><span>Lieux d'affectation au total</span></div>
+    <div class="la-kpi ok"><b data-la-k="actifs">0</b><span>Actifs</span></div>
+    <div class="la-kpi warn"><b data-la-k="inactifs">0</b><span>Inactifs</span></div>
+  </div>
+
+  <div class="bp-tabs" role="tablist">
+    <button type="button" role="tab" class="on" data-la-tab="lieux">Lieux d'affectation</button>
+    <button type="button" role="tab" data-la-tab="structure">Structure &amp; codification</button>
+  </div>
+
+  <div class="bp-grid">
+    <section class="bp-pan" aria-label="Lieux d'affectation" data-la-pan="lieux">
+      <form class="bp-form" data-la-form onsubmit="return false" novalidate hidden style="margin-bottom:16px">
+        <div style="display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:12px">
+          <label class="bp-champ"><span>Niveau <b>*</b></span><select class="bp-sel" data-f="niveau"></select><span class="la-help" data-la-niv-aide></span><span class="la-er" data-er="niveau"></span></label>
+          <label class="bp-champ"><span>Lieu parent</span><select class="bp-sel" data-f="parent"></select><span class="la-er" data-er="parent"></span></label>
+          <label class="bp-champ"><span>Code <b>*</b></span><input class="bp-in la-code" data-f="seg" autocomplete="off"><span class="la-help" data-la-code-aide></span><span class="la-er" data-er="seg"></span></label>
+          <label class="bp-champ"><span>Nom du lieu d'affectation <b>*</b></span><input class="bp-in" data-f="lib" maxlength="80" autocomplete="off" placeholder="Bâtiment administratif"><span class="la-er" data-er="lib"></span></label>
+          <div class="bp-chk" style="align-self:end"><label><input type="checkbox" data-f="actif" checked>Actif</label><span class="la-help" style="display:block">Un lieu inactif n'est plus proposé à l'affectation d'une immobilisation.</span></div>
+        </div>
+      </form>
+
+      <div class="la-opt">
+        <label class="bp-chk"><input type="checkbox" data-la-inactifs>Afficher les lieux inactifs</label>
+        <span class="la-help">« + » pour développer — clic sur une ligne pour la sélectionner, double-clic pour la modifier</span>
+      </div>
+      <div style="overflow:auto;max-height:520px">
+        <table class="bp-tb" style="min-width:600px"><thead>
+          <tr><th>Code</th><th>Nom du lieu d'affectation</th><th>Niveau</th><th>Statut</th></tr>
+          <tr class="flt"><th><input class="bp-in" data-fc="0" aria-label="Filtrer Code"></th><th><input class="bp-in" data-fc="1" aria-label="Filtrer Nom"></th>
+            <th><select class="bp-sel" data-fc="2" aria-label="Filtrer Niveau" data-la-fniv></select></th>
+            <th><select class="bp-sel" data-fc="3" aria-label="Filtrer Statut"><option value=""></option><option value="actif">Actif</option><option value="inactif">Inactif</option></select></th></tr>
+        </thead><tbody data-la-lignes></tbody></table>
+      </div>
+      <div class="bp-vide" data-la-vide hidden></div>
+    </section>
+
+    <section class="bp-pan" aria-label="Structure et codification" data-la-pan="structure" hidden>
+      <h2>Niveaux de la structure <small>Le code complet d'un lieu est celui de son parent suivi du segment de son niveau, séparés par un point.</small></h2>
+      <div style="overflow:auto">
+        <table class="bp-tb" style="min-width:520px;max-width:760px"><thead>
+          <tr><th class="la-niv">Niveau</th><th>Libellé du niveau</th><th>Longueur du code</th><th>Exemple de code</th></tr>
+        </thead><tbody data-la-niveaux></tbody></table>
+      </div>
+      <div style="display:flex;gap:8px;margin-top:12px;flex-wrap:wrap">
+        <button type="button" class="bp-btn" data-la-addniv>Ajouter un niveau</button>
+        <button type="button" class="bp-btn" data-la-delniv>Retirer le dernier niveau</button>
+      </div>
+      <p class="la-help" data-la-niv-msg style="margin-top:8px"></p>
+    </section>
+  </div>
+  <div class="bp-toast" role="status" hidden data-la-toast></div>
+</div>
+
+<script>
+(function () {
+  var root = document.querySelector('[data-la]'); if (!root) return;
+  function q(s) { return root.querySelector(s); } function qa(s) { return [].slice.call(root.querySelectorAll(s)); }
+  var niveaux = [
+    { lib: 'Site', lg: 2 }, { lib: 'Bâtiment', lg: 2 }, { lib: 'Étage', lg: 1 }, { lib: 'Bureau / salle', lg: 3 }
+  ];
+  // id unique par lieu ; code complet recalculé à partir des parents
+  var data = [
+    { id: 1, n: 1, p: 0, seg: '01', lib: 'Siège Antananarivo', actif: true },
+    { id: 2, n: 2, p: 1, seg: '01', lib: 'Bâtiment administratif', actif: true },
+    { id: 3, n: 3, p: 2, seg: '0', lib: 'Rez-de-chaussée', actif: true },
+    { id: 4, n: 4, p: 3, seg: '001', lib: 'Accueil', actif: true },
+    { id: 5, n: 4, p: 3, seg: '002', lib: 'Comptabilité', actif: true },
+    { id: 6, n: 3, p: 2, seg: '1', lib: '1er étage', actif: true },
+    { id: 7, n: 4, p: 6, seg: '101', lib: 'Direction', actif: true },
+    { id: 8, n: 2, p: 1, seg: '02', lib: 'Entrepôt', actif: false },
+    { id: 9, n: 1, p: 0, seg: '02', lib: 'Antenne Toamasina', actif: true }
+  ];
+  var nextId = 10, sel = 0, mode = 'consultation', ouverts = {}, parentFixe = 0;
+  function esc(s) { return String(s == null ? '' : s).replace(/[&<>"]/g, function (c) { return { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c]; }); }
+  function toast(m) { var t = q('[data-la-toast]'); t.textContent = m; t.hidden = false; clearTimeout(toast.t); toast.t = setTimeout(function () { t.hidden = true; }, 2500); }
+  function err(k, m) { var e = q('[data-er="' + k + '"]'); e.textContent = m || ''; e.classList.toggle('show', !!m); var f = q('[data-f="' + k + '"]'); if (f) f.classList.toggle('err', !!m); }
+  function par(id) { for (var i = 0; i < data.length; i++) if (data[i].id === id) return data[i]; return null; }
+  function code(l) { var c = [], x = l; while (x) { c.unshift(x.seg); x = par(x.p); } return c.join('.'); }
+  function enfants(id) { return data.filter(function (l) { return l.p === id; }); }
+  function descendants(id) { var r = []; enfants(id).forEach(function (e) { r.push(e); r = r.concat(descendants(e.id)); }); return r; }
+  function nivLib(n) { return niveaux[n - 1] ? niveaux[n - 1].lib : 'Niveau ' + n; }
+  function publier() {
+    window.LIEUX_AFFECTATION = data.filter(function (l) { return l.actif; }).map(function (l) { return { code: code(l), libelle: l.lib, niveau: nivLib(l.n) }; });
+    window.dispatchEvent(new Event('lieux-affectation-changed'));
+  }
+  function kpis() {
+    var a = data.filter(function (l) { return l.actif; }).length;
+    q('[data-la-k=niveaux]').textContent = niveaux.length; q('[data-la-k=total]').textContent = data.length;
+    q('[data-la-k=actifs]').textContent = a; q('[data-la-k=inactifs]').textContent = data.length - a;
+  }
+  function selectNiveaux() {
+    var o = niveaux.map(function (n, i) { return '<option value="' + (i + 1) + '">' + (i + 1) + ' — ' + esc(n.lib) + '</option>'; }).join('');
+    q('[data-f=niveau]').innerHTML = o;
+    q('[data-la-fniv]').innerHTML = '<option value=""></option>' + niveaux.map(function (n, i) { return '<option value="' + (i + 1) + '">' + esc(n.lib) + '</option>'; }).join('');
+  }
+  // ordre d'affichage : arbre dans l'ordre des codes ; ligne masquée si un ancêtre est replié ou inactif (selon l'option)
+  function visibles() {
+    var inact = q('[data-la-inactifs]').checked, out = [];
+    (function rec(pid) {
+      enfants(pid).sort(function (a, b) { return a.seg < b.seg ? -1 : a.seg > b.seg ? 1 : 0; }).forEach(function (l) {
+        if (!l.actif && !inact) return;
+        out.push(l); if (ouverts[l.id]) rec(l.id);
+      });
+    })(0);
+    return out;
+  }
+  function filtrer() {
+    var F = []; qa('[data-fc]').forEach(function (e) { F[+e.dataset.fc] = e.value.trim().toLowerCase(); });
+    qa('[data-la-lignes] tr').forEach(function (tr) { tr.hidden = F.some(function (v, k) { if (!v) return false; var td = tr.children[k]; var t = (td.dataset.v || td.textContent).toLowerCase(); return k >= 2 ? t !== v : t.indexOf(v) < 0; }); });
+  }
+  qa('[data-fc]').forEach(function (e) { e.addEventListener('input', filtrer); e.addEventListener('change', filtrer); });
+  q('[data-la-inactifs]').addEventListener('change', function () { liste(); });
+  function liste() {
+    kpis();
+    var L = visibles();
+    // un filtre actif révèle aussi les lignes repliées
+    var filtre = qa('[data-fc]').some(function (e) { return e.value.trim(); });
+    if (filtre) { L = []; var inact = q('[data-la-inactifs]').checked; (function rec(pid) { enfants(pid).sort(function (a, b) { return a.seg < b.seg ? -1 : 1; }).forEach(function (l) { if (l.actif || inact) { L.push(l); rec(l.id); } }); })(0); }
+    var v = q('[data-la-vide]');
+    v.hidden = L.length > 0;
+    v.textContent = niveaux.length ? (data.length ? 'Aucun lieu à afficher.' : 'Aucun lieu d’affectation : utilisez « Ajouter ».') : 'Aucun lieu d’affectation. Créez d’abord la structure (onglet « Structure & codification »), puis ajoutez des lieux.';
+    q('[data-la-lignes]').innerHTML = L.map(function (l) {
+      var k = enfants(l.id).length;
+      return '<tr data-i="' + l.id + '"' + (l.id === sel ? ' class="sel"' : '') + '><td><span class="la-nom" style="padding-left:' + ((l.n - 1) * 20) + 'px">' +
+        '<button type="button" class="la-tg" data-tg="' + l.id + '"' + (k ? '' : ' disabled') + ' aria-label="Développer ou replier">' + (ouverts[l.id] ? '−' : '+') + '</button>' +
+        '<span class="la-code">' + esc(code(l)) + '</span></span></td><td>' + esc(l.lib) + '</td><td data-v="' + l.n + '">' + esc(nivLib(l.n)) + '</td>' +
+        '<td class="c" data-v="' + (l.actif ? 'actif' : 'inactif') + '"><span class="la-badge ' + (l.actif ? 'on' : 'off') + '">' + (l.actif ? 'Actif' : 'Inactif') + '</span></td></tr>';
+    }).join(''); filtrer();
+  }
+  function parentsPossibles(n, exclure) {
+    if (n <= 1) return [];
+    var ex = exclure ? descendants(exclure).map(function (d) { return d.id; }).concat([exclure]) : [];
+    return data.filter(function (l) { return l.n === n - 1 && ex.indexOf(l.id) < 0; });
+  }
+  function majParent(n, valeur, exclure) {
+    var s = q('[data-f=parent]'), P = parentsPossibles(n, exclure);
+    s.innerHTML = n <= 1 ? '<option value="0">— Aucun (niveau 1) —</option>' : '<option value="0">— Sélectionner —</option>' + P.map(function (l) { return '<option value="' + l.id + '">' + esc(code(l)) + ' — ' + esc(l.lib) + '</option>'; }).join('');
+    s.value = valeur ? String(valeur) : '0'; s.disabled = n <= 1 || mode === 'consultation';
+  }
+  function aides() {
+    var n = +q('[data-f=niveau]').value, lg = niveaux[n - 1] ? niveaux[n - 1].lg : 0, p = +q('[data-f=parent]').value, pl = par(p);
+    q('[data-la-code-aide]').textContent = lg ? 'Segment de ' + lg + ' caractère' + (lg > 1 ? 's' : '') + ' (lettres et chiffres)' + (pl ? ' — code complet : ' + code(pl) + '.…' : '') + '. Non modifiable après création.' : '';
+    q('[data-f=seg]').maxLength = lg || 10;
+    q('[data-la-niv-aide]').textContent = n > 1 ? 'Le parent doit être un lieu de niveau ' + (n - 1) + ' (' + nivLib(n - 1) + ').' : '';
+  }
+  function form(l) {
+    l = l || { n: 1, p: 0, seg: '', lib: '', actif: true };
+    q('[data-f=niveau]').value = l.n; majParent(l.n, l.p, l.id); q('[data-f=seg]').value = l.seg; q('[data-f=lib]').value = l.lib; q('[data-f=actif]').checked = l.actif !== false;
+    ['niveau', 'parent', 'seg', 'lib'].forEach(function (k) { err(k); }); aides();
+  }
+  function etat() {
+    var ed = mode !== 'consultation';
+    q('[data-la-form]').hidden = !ed;
+    qa('[data-la-form] input,[data-la-form] select').forEach(function (e) { e.disabled = !ed; });
+    q('[data-f=niveau]').disabled = mode !== 'creation'; q('[data-f=seg]').disabled = mode !== 'creation';
+    q('[data-f=parent]').disabled = !ed || +q('[data-f=niveau]').value <= 1 || mode !== 'creation';
+    var a = q('[data-la-actions]'), vide = !data.length, onSt = q('[data-la-pan=structure]').hidden === false;
+    a.querySelector('[data-la-ajouter]').disabled = ed || !niveaux.length; a.querySelector('[data-la-modifier]').disabled = ed || !par(sel); a.querySelector('[data-la-supprimer]').disabled = ed || !par(sel);
+    a.querySelector('[data-la-enregistrer]').disabled = !ed; a.querySelector('[data-la-annuler]').disabled = !ed;
+    ['imprimer', 'pdf', 'xlsx'].forEach(function (k) { a.querySelector('[data-la-' + k + ']').disabled = vide; });
+  }
+  function onglet(n) { qa('[data-la-pan]').forEach(function (p) { p.hidden = p.dataset.laPan !== n; }); qa('[data-la-tab]').forEach(function (t) { var on = t.dataset.laTab === n; t.classList.toggle('on', on); t.setAttribute('aria-selected', on); }); etat(); }
+  qa('[data-la-tab]').forEach(function (t) { t.addEventListener('click', function () { onglet(t.dataset.laTab); }); });
+
+  function choisir(id) { if (mode !== 'consultation') return; sel = id; var l = par(id); liste(); form(l); etat(); }
+  var tb = q('[data-la-lignes]');
+  tb.addEventListener('click', function (e) {
+    var tg = e.target.closest('[data-tg]');
+    if (tg) { var id = +tg.dataset.tg; ouverts[id] = !ouverts[id]; liste(); return; }
+    var tr = e.target.closest('tr[data-i]'); if (tr) choisir(+tr.dataset.i);
+  });
+  tb.addEventListener('dblclick', function (e) { var tr = e.target.closest('tr[data-i]'); if (tr && mode === 'consultation') { choisir(+tr.dataset.i); mode = 'edition'; etat(); q('[data-f=lib]').focus(); } });
+  q('[data-f=niveau]').addEventListener('change', function () { majParent(+this.value, 0); etat(); aides(); });
+  q('[data-f=parent]').addEventListener('change', aides);
+  q('[data-f=seg]').addEventListener('input', function () { this.value = this.value.toUpperCase().replace(/[^A-Z0-9]/g, ''); });
+
+  function enregistrer() {
+    var l = mode === 'edition' ? par(sel) : null, n = +q('[data-f=niveau]').value, p = +q('[data-f=parent]').value;
+    var seg = q('[data-f=seg]').value.trim(), lib = q('[data-f=lib]').value.trim(), ok = true, lg = niveaux[n - 1] ? niveaux[n - 1].lg : 0;
+    ['niveau', 'parent', 'seg', 'lib'].forEach(function (k) { err(k); });
+    if (mode === 'creation') {
+      if (n > 1 && !p) { err('parent', 'Choisissez le lieu parent (niveau ' + (n - 1) + ').'); ok = false; }
+      if (!seg) { err('seg', 'Le code est obligatoire.'); ok = false; }
+      else if (seg.length !== lg) { err('seg', 'Le code doit comporter exactement ' + lg + ' caractère' + (lg > 1 ? 's' : '') + '.'); ok = false; }
+      else if (data.some(function (x) { return x.p === p && x.seg === seg; })) { err('seg', 'Ce code existe déjà sous ce parent.'); ok = false; }
+    }
+    if (!lib) { err('lib', 'Le nom du lieu est obligatoire.'); ok = false; }
+    if (!ok) return;
+    var actif = q('[data-f=actif]').checked;
+    if (l) { l.lib = lib; l.actif = actif; if (!actif) descendants(l.id).forEach(function (d) { d.actif = false; }); }
+    else { l = { id: nextId++, n: n, p: p, seg: seg, lib: lib, actif: actif }; data.push(l); if (p) ouverts[p] = true; }
+    sel = l.id; var edit = mode === 'edition'; mode = 'consultation'; liste(); form(l); etat(); publier(); toast(edit ? 'Lieu d’affectation modifié.' : 'Lieu d’affectation enregistré.');
+  }
+
+  // Structure & codification
+  function exemple(i) { var s = []; for (var k = 0; k <= i; k++) s.push(new Array(niveaux[k].lg + 1).join(k === 0 ? '0' : '0').replace(/0$/, '1')); return s.join('.'); }
+  function niveauxUtilises(i) { return data.some(function (l) { return l.n === i + 1; }); }
+  function tabNiveaux() {
+    q('[data-la-niveaux]').innerHTML = niveaux.map(function (n, i) {
+      return '<tr><td class="c">' + (i + 1) + '</td><td><input class="bp-in" data-nl="' + i + '" value="' + esc(n.lib) + '" maxlength="40" aria-label="Libellé du niveau ' + (i + 1) + '"></td>' +
+        '<td><input class="bp-in" type="number" min="1" max="10" data-ng="' + i + '" value="' + n.lg + '" ' + (niveauxUtilises(i) ? 'disabled title="Des lieux existent à ce niveau : longueur figée"' : '') + ' aria-label="Longueur du code du niveau ' + (i + 1) + '"></td>' +
+        '<td><span class="la-code">' + esc(exemple(i)) + '</span></td></tr>';
+    }).join('');
+    q('[data-la-delniv]').disabled = !niveaux.length || niveauxUtilises(niveaux.length - 1);
+    q('[data-la-niv-msg]').textContent = niveaux.length ? 'Une longueur n’est modifiable que tant qu’aucun lieu n’existe à ce niveau ; le dernier niveau ne peut être retiré que s’il est vide.' : 'Aucun niveau : ajoutez au moins un niveau pour pouvoir créer des lieux.';
+    selectNiveaux(); kpis();
+  }
+  q('[data-la-niveaux]').addEventListener('input', function (e) {
+    var t = e.target;
+    if (t.hasAttribute('data-nl')) { niveaux[+t.dataset.nl].lib = t.value.trim() || 'Niveau ' + (+t.dataset.nl + 1); }
+    else if (t.hasAttribute('data-ng')) { var v = Math.max(1, Math.min(10, parseInt(t.value, 10) || 1)); niveaux[+t.dataset.ng].lg = v; }
+    var foc = t.dataset.nl != null ? '[data-nl="' + t.dataset.nl + '"]' : '[data-ng="' + t.dataset.ng + '"]', pos = t.selectionStart;
+    var tr = t.closest('tr'); tr.lastElementChild.innerHTML = '<span class="la-code">' + esc(exemple([].indexOf.call(tr.parentNode.children, tr))) + '</span>';
+    selectNiveaux(); liste(); publier();
+  });
+  q('[data-la-addniv]').addEventListener('click', function () { if (niveaux.length >= 10) { toast('10 niveaux au plus.'); return; } niveaux.push({ lib: 'Niveau ' + (niveaux.length + 1), lg: 2 }); tabNiveaux(); liste(); etat(); toast('Niveau ajouté.'); });
+  q('[data-la-delniv]').addEventListener('click', function () { if (!niveaux.length || niveauxUtilises(niveaux.length - 1)) return; niveaux.pop(); tabNiveaux(); liste(); etat(); toast('Dernier niveau retiré.'); });
+
+  // exports : arbre complet filtré par les filtres de la liste
+  function table() {
+    var L = visibles(); var rows = qa('[data-la-lignes] tr');
+    var ids = rows.filter(function (tr) { return !tr.hidden; }).map(function (tr) { return +tr.dataset.i; });
+    L = (ids.length ? ids.map(par) : []).filter(Boolean);
+    return { tete: ['Code', 'Nom du lieu d’affectation', 'Niveau', 'Statut'], lignes: L.map(function (l) { return [code(l), l.lib, nivLib(l.n), l.actif ? 'Actif' : 'Inactif']; }) };
+  }
+  function exporter(k) {
+    var X = window.EXPORT_TABLEAU, t = table(); if (!X) { toast('Module d’export indisponible.'); return; } if (!t.lignes.length) { toast('Rien à exporter.'); return; }
+    if (k === 'pdf') X.pdf('lieux_affectation.pdf', 'Lieux d’affectation', t.lignes.length + ' ligne(s)', t.tete, t.lignes); else X.xlsx('lieux_affectation.xlsx', 'Lieux d’affectation', t.tete, t.lignes);
+    toast('Export ' + (k === 'pdf' ? 'PDF' : 'Excel (XLSX)') + ' généré : ' + t.lignes.length + ' ligne(s).');
+  }
+  function imprimer() {
+    var t = table(), w = window.open('', '_blank'); if (!w) { toast('Autorisez les fenêtres pop-up pour imprimer.'); return; }
+    w.document.write('<!doctype html><meta charset="utf-8"><title>Lieux d’affectation</title><style>body{font:13px system-ui,sans-serif;color:#0B1332;margin:24px}h1{font-size:18px}table{border-collapse:collapse;width:100%}th{background:#2E427B;color:#fff;text-align:left;padding:8px 10px;font-size:11px;text-transform:uppercase;-webkit-print-color-adjust:exact;print-color-adjust:exact}td{padding:8px 10px;border-bottom:1px solid #D6D9E0}</style><h1>Lieux d’affectation</h1><table><thead><tr>' +
+      t.tete.map(function (h) { return '<th>' + esc(h) + '</th>'; }).join('') + '</tr></thead><tbody>' + t.lignes.map(function (r) { return '<tr>' + r.map(function (c) { return '<td>' + esc(c) + '</td>'; }).join('') + '</tr>'; }).join('') + '</tbody></table>');
+    w.document.close(); w.focus(); setTimeout(function () { w.print(); }, 300);
+  }
+  root.addEventListener('click', function (e) {
+    var b = e.target.closest('button'); if (!b || b.disabled) return;
+    if (b.hasAttribute('data-la-ajouter')) {
+      onglet('lieux'); var l0 = par(sel); mode = 'creation';
+      // depuis une ligne sélectionnée : proposer le niveau suivant avec ce lieu pour parent (au dernier niveau : frère)
+      var n = 1, p = 0; if (l0) { if (l0.n < niveaux.length) { n = l0.n + 1; p = l0.id; } else { n = l0.n; p = l0.p; } }
+      form({ n: n, p: p, seg: '', lib: '', actif: true }); etat(); q('[data-f=seg]').focus(); return;
+    }
+    if (b.hasAttribute('data-la-modifier')) { onglet('lieux'); mode = 'edition'; etat(); q('[data-f=lib]').focus(); return; }
+    if (b.hasAttribute('data-la-annuler')) { mode = 'consultation'; liste(); form(par(sel)); etat(); return; }
+    if (b.hasAttribute('data-la-enregistrer')) { enregistrer(); return; }
+    if (b.hasAttribute('data-la-supprimer')) {
+      var l = par(sel); if (!l) return;
+      var d = descendants(l.id);
+      if (d.length) { toast('Suppression impossible : ce lieu contient ' + d.length + ' lieu(x) rattaché(s).'); return; }
+      if (!window.confirm('Supprimer le lieu d’affectation « ' + l.lib + ' » ? Cette action est définitive.')) return;
+      data.splice(data.indexOf(l), 1); sel = 0; liste(); form(null); etat(); publier(); tabNiveaux(); toast('Lieu d’affectation supprimé.'); return;
+    }
+    if (b.hasAttribute('data-la-imprimer')) { imprimer(); return; }
+    if (b.hasAttribute('data-la-pdf')) { exporter('pdf'); return; }
+    if (b.hasAttribute('data-la-xlsx')) { exporter('xlsx'); return; }
+  });
+  ouverts[1] = true; ouverts[2] = true;
+  selectNiveaux(); tabNiveaux(); liste(); form(null); etat(); onglet('lieux'); publier();
+})();
+</script>
