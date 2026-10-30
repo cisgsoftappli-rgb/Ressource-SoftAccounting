@@ -201,7 +201,8 @@
     IDA: ['Formulaire 2F', 'Formulaire 3F', 'Formulaire 4F', 'EJCD', 'État récapitulatif par catégorie'],
     FIDA: ['101', '102', '103', '104', '105', '106'],
     FED: ['Rapport financier', 'Demande de paiement', 'État des dépenses', 'Prévisions de trésorerie'],
-    FM: ['PU/DR (rapport d\'avancement et demande de décaissement)', 'Budget détaillé', 'État des dépenses par module']
+    FM: ['PU/DR (rapport d\'avancement et demande de décaissement)', 'Budget détaillé', 'État des dépenses par module'],
+    BAD: ['Demande de décaissement', 'Rapport d\'avancement du projet', 'État des dépenses', 'Plan de passation des marchés']
   };
   var mon = q('[data-pf-mon]');
   // Monnaies proposées = celles de « Administration de l’entité › Monnaies » (monnaie locale, devises 1 à 3).
@@ -237,6 +238,13 @@
     box.innerHTML = '<div class="pf-all"><span>' + l.length + ' modèles disponibles pour ' + esc(proc.value) + '</span><button type="button" class="pf-link" data-pf-all>Tout sélectionner</button></div>' +
       l.map(function (m) { return '<label class="pf-model"><input type="checkbox" value="' + esc(m) + '"><span>' + esc(m) + '</span></label>'; }).join('');
   }
+  // Procédures proposées = celles activées dans Administration de l'entité › Personnalisation
+  function majProcs() {
+    var act = window.PROCEDURES_ACTIVES ? window.PROCEDURES_ACTIVES() : ['IDA', 'FIDA', 'FED', 'FM'], cur = proc.value;
+    proc.innerHTML = '<option value="">— Sélectionner une procédure —</option>' + act.map(function (p) { return '<option value="' + p + '">' + p + '</option>'; }).join('');
+    proc.value = act.indexOf(cur) >= 0 ? cur : ''; if (cur && !proc.value) renderModels();
+  }
+  window.addEventListener('entite-options-changed', majProcs); window.addEventListener('hashchange', majProcs); majProcs();
   mon.addEventListener('change', function () { mon.classList.remove('pf-bad'); say(''); });
   proc.addEventListener('change', function () { proc.classList.remove('pf-bad'); box.classList.remove('pf-bad'); say(''); renderModels(); });
   conv.addEventListener('change', function () { conv.classList.remove('pf-bad'); say(''); });

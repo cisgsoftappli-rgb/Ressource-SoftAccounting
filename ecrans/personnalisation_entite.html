@@ -18,6 +18,11 @@
 <div class="ig-f ig-s3"><label class="ig-l">Devise 2</label><select class="form-input ig-in"><option value="">-- Aucune --</option><option value="EUR">EUR — Euro</option><option value="MUR">MUR — ROUPIE</option><option value="XOF">XOF — FRANC CFA</option></select></div>
 <div class="ig-f ig-s3"><label class="ig-l">Devise 3</label><select class="form-input ig-in"><option value="">-- Aucune --</option><option value="MUR">MUR — ROUPIE</option><option value="XOF">XOF — FRANC CFA</option></select></div>
 </div></div>
+<div class="ig-sec"><span class="ig-t">Procédures financières</span><div class="ig-g">
+<div class="ig-f" style="grid-column:1/-1"><label class="ig-l">Procédures financières activées</label>
+<div class="ig-procs" data-ig-procs><label class="ig-pr"><span class="ig-sw"><input type="checkbox" role="switch" data-ig-proc="IDA" aria-label="Activer la procédure IDA"></span> IDA</label><label class="ig-pr"><span class="ig-sw"><input type="checkbox" role="switch" data-ig-proc="FIDA" aria-label="Activer la procédure FIDA"></span> FIDA</label><label class="ig-pr"><span class="ig-sw"><input type="checkbox" role="switch" data-ig-proc="FED" aria-label="Activer la procédure FED"></span> FED</label><label class="ig-pr"><span class="ig-sw"><input type="checkbox" role="switch" data-ig-proc="FM" aria-label="Activer la procédure FM"></span> FM</label><label class="ig-pr"><span class="ig-sw"><input type="checkbox" role="switch" data-ig-proc="BAD" aria-label="Activer la procédure BAD"></span> BAD</label></div>
+<span style="display:block;margin-top:6px;font-size:12px;color:#5B606D">Une procédure activée est proposée dans Paramétrages financiers › Procédures financières et ajoute son module (Paramétrages, Saisie, Traitement) dans Comptabilité Projets &amp; Bailleurs.</span></div>
+</div></div>
 </div>
 <div class="ig-ft"><button type="button" class="ig-bt">Annuler</button><button type="button" class="ig-bt ig-ok">Enregistrer</button></div>
 </div></div>
@@ -27,3 +32,10 @@
 <script>(function(){var b=document.querySelector("[data-ig-gestiondp]");if(!b)return;var l=document.querySelector("[data-ig-gestiondp-l]");window.ENTITE_OPTIONS=window.ENTITE_OPTIONS||{checklistCloture:true};try{var sv=localStorage.getItem("softcompta.gestionDP");window.ENTITE_OPTIONS.gestionDP=sv==="1";}catch(e){window.ENTITE_OPTIONS.gestionDP=false;}
 function maj(){var a=!!window.ENTITE_OPTIONS.gestionDP;document.documentElement.classList.toggle("sans-dp",!a);if(!a&&location.hash==="#dp")location.hash="#entite";b.checked=a;l.textContent=a?"Activée : le champ DP est proposé dans la saisie des écritures et les états.":"Désactivée : le champ DP n'apparaît pas dans la saisie des écritures.";}
 b.addEventListener("change",function(){window.ENTITE_OPTIONS.gestionDP=b.checked;try{localStorage.setItem("softcompta.gestionDP",window.ENTITE_OPTIONS.gestionDP?"1":"0");}catch(e){}maj();window.dispatchEvent(new Event("entite-options-changed"));});maj();})();</script>
+<style>.ig-procs{display:flex;flex-wrap:wrap;gap:10px 28px;padding:6px 0}.ig-pr{display:inline-flex;align-items:center;gap:10px;font-size:14px;font-weight:600;color:#0B1332;cursor:pointer}
+html.sans-proc-IDA [data-proc="IDA"]{display:none!important}html.sans-proc-FIDA [data-proc="FIDA"]{display:none!important}html.sans-proc-FED [data-proc="FED"]{display:none!important}html.sans-proc-FM [data-proc="FM"]{display:none!important}html.sans-proc-BAD [data-proc="BAD"]{display:none!important}</style>
+<script>(function(){var cs=[].slice.call(document.querySelectorAll("[data-ig-proc]"));if(!cs.length)return;var L=["IDA","FIDA","FED","FM","BAD"];window.ENTITE_OPTIONS=window.ENTITE_OPTIONS||{checklistCloture:true};
+var o={IDA:true,FIDA:true,FED:false,FM:false,BAD:false};try{var sv=JSON.parse(localStorage.getItem("softcompta.procedures")||"null");if(sv&&typeof sv==="object")L.forEach(function(p){if(typeof sv[p]==="boolean")o[p]=sv[p];});}catch(e){}
+window.ENTITE_OPTIONS.procedures=o;window.PROCEDURES_ACTIVES=function(){return L.filter(function(p){return o[p];});};
+function maj(){cs.forEach(function(c){c.checked=!!o[c.getAttribute("data-ig-proc")];});L.forEach(function(p){document.documentElement.classList.toggle("sans-proc-"+p,!o[p]);});}
+cs.forEach(function(c){c.addEventListener("change",function(){o[c.getAttribute("data-ig-proc")]=c.checked;try{localStorage.setItem("softcompta.procedures",JSON.stringify(o));}catch(e){}maj();window.dispatchEvent(new Event("entite-options-changed"));});});maj();})();</script>
