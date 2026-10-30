@@ -1,0 +1,210 @@
+<!--
+  Écran « Gestion des cours › Conversion » (Comptabilité générale) — conversion en devises des montants à partir des cours saisis dans « Gestion des cours › Saisie » (window.COURS).
+  Disposition : période du / au, Site et Journaux (sélections multiples de la charte : panneau avec filtres Code et Libellé, case à cocher par ligne et option « Tous » ;
+  pastilles « Tous sélectionnés (n) »), « Choix des fichiers » (écritures comptables, à-nouveaux, immobilisations, marchés : case + zone de synthèse), « Monnaies »
+  (monnaie des rapports = Devise 1 de l'entité ; « Convertir uniquement les montants nuls »). Toutes les devises de l'entité (Devise 1 à 3) sont converties.
+  « Convertir » (barre d'actions, CFG « conversion ») contrôle la saisie, vérifie qu'un cours existe pour chaque devise à la fin de période, demande confirmation, affiche le résultat
+  (volumes simulés) et l'ajoute à l'historique (localStorage softcompta.conversions). Préfixe cv- / data-cv. S'appuie sur les styles bp-* et cb-* (combo_plans.js). Ne pas nommer de fonction « $$ » (build.cjs).
+-->
+<style>
+[data-cv] .cv-card{background:#fff;border:1px solid #E9EBF0;border-radius:12px;padding:16px 24px 20px;margin-bottom:14px}
+[data-cv] .cv-h{display:block;margin:18px 0 14px;padding:0 0 6px;border-bottom:1px solid #2E427B;font:600 17px var(--font-heading);color:#2E427B}
+[data-cv] .cv-h:first-child{margin-top:0}
+[data-cv] .cv-row{display:grid;grid-template-columns:220px minmax(0,1fr);gap:8px 20px;align-items:start;padding:7px 0}
+[data-cv] .cv-row>label,[data-cv] .cv-row>.cv-l{font-size:13px;color:#353944;padding-top:7px}
+@media (max-width:760px){[data-cv] .cv-row{grid-template-columns:1fr}[data-cv] .cv-row>label,[data-cv] .cv-row>.cv-l{padding-top:0}}
+[data-cv] .cv-per{display:flex;align-items:center;gap:14px;flex-wrap:wrap}
+[data-cv] .cv-per input{height:34px;border:1px solid #D6D9E0;border-radius:8px;padding:0 10px;font:inherit;font-size:13px;color:#353944;background:#fff;min-width:150px}
+[data-cv] .cv-per input:focus-visible{outline:3px solid #2E427B;outline-offset:2px}
+[data-cv] .cv-ms{max-width:460px}
+[data-cv] .cv-chips{position:relative;min-height:56px;box-sizing:border-box;padding:6px 36px 6px 8px;border:1px solid #D6D9E0;border-radius:8px;background:#fff;display:flex;flex-wrap:wrap;gap:6px;align-content:flex-start;cursor:pointer;font-size:12px}
+[data-cv] .cv-chips:focus-visible{outline:3px solid #2E427B;outline-offset:2px}[data-cv] .cv-chips[aria-expanded="true"]{border-color:#2E427B}
+[data-cv] .cv-chip{display:inline-flex;align-items:center;gap:8px;height:26px;padding:0 8px 0 10px;border-radius:4px;background:#E3E6EC;color:#0B1332}
+[data-cv] .cv-chip button{border:0;background:none;color:#8A90A0;cursor:pointer;padding:0;font-size:12px;line-height:1;min-height:0!important}[data-cv] .cv-chip button:hover{color:#B63132}
+[data-cv] .cv-vide{color:#8A8F9C;padding:5px 2px}[data-cv] .cv-alerte{position:absolute;right:10px;top:50%;transform:translateY(-50%);color:#B63132;font-size:20px;display:none}
+[data-cv] .cv-chips.vide .cv-alerte{display:block}[data-cv] .cv-chips.vide{border-color:#B63132}
+[data-cv] .cv-ck{width:22px;height:22px;margin:7px 0 0;accent-color:#2E427B;cursor:pointer}
+[data-cv] .cv-fich{display:grid;grid-template-columns:34px minmax(0,1fr);gap:12px;align-items:center;max-width:620px}
+[data-cv] .cv-fich input[type=text]{height:30px;box-sizing:border-box;border:1px solid #DADDE5;border-radius:4px;background:#F0F1F4;padding:0 10px;font:inherit;font-size:12px;color:#5B606D}
+[data-cv] .cv-fich .cv-ck{margin:0}
+[data-cv] .cv-mon{display:inline-flex;align-items:center;justify-content:center;min-width:148px;height:32px;box-sizing:border-box;border:1px solid #DADDE5;border-radius:4px;background:#F0F1F4;font-weight:700;font-size:13px;color:#353944}
+[data-cv] .cv-res table{width:100%;border-collapse:collapse;font-size:13px}[data-cv] .cv-res th{padding:8px 10px;background:#F5F7F9;border-bottom:1px solid #E9EBF0;text-align:left;font-size:11px;text-transform:uppercase;letter-spacing:.04em;color:#5B606D}
+[data-cv] .cv-res td{padding:8px 10px;border-bottom:1px solid #F1F2F5}[data-cv] .cv-res .r{text-align:right;font-variant-numeric:tabular-nums}
+[data-cv] .cv-note{margin:8px 0 0;font-size:12px;color:#5B606D}[data-cv] .cv-er{margin:0 0 10px;font-size:13px;font-weight:600;color:#B63132}[data-cv] .cv-wa{color:#9A6B00;font-weight:600}
+.cb-pan.cv-pan .cb-tb td:first-child,.cb-pan.cv-pan .cb-tb th:first-child{text-align:center;padding-left:6px;padding-right:6px}
+.cb-pan.cv-pan input[type=checkbox]{width:16px;height:16px;margin:0;accent-color:#2E427B;cursor:pointer;vertical-align:middle}
+.cb-pan.cv-pan tr.cv-tous td{font-weight:700;background:#F5F7F9;position:sticky;top:67px;z-index:1}
+</style>
+
+<div class="bp-root" data-cv>
+  <h1 style="position:absolute;width:1px;height:1px;overflow:hidden;clip-path:inset(50%);margin:0">Gestion des cours — Conversion</h1>
+
+  <div class="no-print">
+    <button type="button" data-cv-reinit>Réinitialiser</button>
+    <button type="button" data-cv-convertir>Convertir</button>
+  </div>
+
+  <div class="cv-card">
+    <p class="cv-er" data-cv-err role="alert" hidden></p>
+    <div class="cv-row"><label for="cv-du">Du</label><div class="cv-per"><input type="date" id="cv-du" data-cv-du><span>au</span><input type="date" data-cv-au aria-label="Au"></div></div>
+    <div class="cv-row"><span class="cv-l">Site</span><div class="cv-ms" data-cv-ms="site"><div class="cv-chips" tabindex="0" role="combobox" aria-haspopup="listbox" aria-expanded="false" aria-label="Sélection des sites"></div></div></div>
+    <div class="cv-row"><span class="cv-l">Journaux</span><div class="cv-ms" data-cv-ms="journaux"><div class="cv-chips" tabindex="0" role="combobox" aria-haspopup="listbox" aria-expanded="false" aria-label="Sélection des journaux"></div></div></div>
+
+    <h2 class="cv-h">Choix des fichiers</h2>
+    <div class="cv-row"><label for="cv-el-compta">Comptabilité générale</label><div class="cv-fich"><input class="cv-ck" type="checkbox" id="cv-el-compta" data-cv-el="compta" checked><input type="text" readonly tabindex="-1" data-cv-info="compta" aria-label="Synthèse comptabilité générale"></div></div>
+    <div class="cv-row"><label for="cv-el-an">A Nouveau</label><div class="cv-fich"><input class="cv-ck" type="checkbox" id="cv-el-an" data-cv-el="anouveaux"><input type="text" readonly tabindex="-1" data-cv-info="anouveaux" aria-label="Synthèse à nouveau"></div></div>
+    <div class="cv-row"><label for="cv-el-im">Immobilisations</label><div class="cv-fich"><input class="cv-ck" type="checkbox" id="cv-el-im" data-cv-el="immo"><input type="text" readonly tabindex="-1" data-cv-info="immo" aria-label="Synthèse immobilisations"></div></div>
+    <div class="cv-row"><label for="cv-el-ma">Marchés</label><div class="cv-fich"><input class="cv-ck" type="checkbox" id="cv-el-ma" data-cv-el="marches"><input type="text" readonly tabindex="-1" data-cv-info="marches" aria-label="Synthèse marchés"></div></div>
+
+    <h2 class="cv-h">Monnaies</h2>
+    <div class="cv-row"><span class="cv-l">Monnaie des rapports</span><div><span class="cv-mon" data-cv-monrap></span></div></div>
+    <div class="cv-row"><label for="cv-nuls">Convertir uniquement les montants nuls</label><div><input class="cv-ck" style="margin-top:4px" type="checkbox" id="cv-nuls" data-cv-nuls checked></div></div>
+  </div>
+
+  <div class="cv-card cv-res" data-cv-res hidden>
+    <h2 class="cv-h">Résultat de la conversion</h2>
+    <div data-cv-resb></div>
+  </div>
+
+  <div class="cv-card cv-res" data-cv-hist hidden>
+    <h2 class="cv-h">Historique des conversions</h2>
+    <table><thead><tr><th>Date</th><th>Période</th><th>Éléments</th><th class="r">Lignes converties</th></tr></thead><tbody data-cv-histb></tbody></table>
+  </div>
+  <div class="bp-toast" role="status" hidden data-cv-toast></div>
+</div>
+
+<script>
+(function () {
+  var root = document.querySelector('[data-cv]'); if (!root) return;
+  function q(s) { return root.querySelector(s); } function qa(s) { return [].slice.call(root.querySelectorAll(s)); }
+  function esc(s) { return String(s == null ? '' : s).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;'); }
+  var EL = { compta: 'Comptabilité générale (écritures de la période)', anouveaux: 'À-nouveaux', immo: 'Mouvements des immobilisations', marches: 'Ventilations de fiches marchés' };
+  var CLE = 'softcompta.conversions', hist = [];
+  try { var sv = JSON.parse(localStorage.getItem(CLE) || 'null'); if (Array.isArray(sv)) hist = sv; } catch (e) {}
+  function nb(v) { return Math.round(v).toLocaleString('fr-FR'); }
+  function date(d) { return d ? d.split('-').reverse().join('/') : ''; }
+  function toast(m) { var t = q('[data-cv-toast]'); t.textContent = m; t.hidden = false; clearTimeout(toast.t); toast.t = setTimeout(function () { t.hidden = true; }, 3200); }
+
+  // ---------- Sélections multiples (sites, journaux) : panneau de la charte, filtres Code / Libellé, cases à cocher, « Tous » ----------
+  var MS = {}, ouvert = null;
+  function sources() {
+    var sites = ((window.PLANS_REF && window.PLANS_REF.sites) || []).filter(function (s) { return s[0] !== '00'; }).map(function (s) { return [s[0], s[1]]; });
+    var jr = (window.JOURNAUX_PLAN || []).filter(function (j) { return j.actif !== false; }).map(function (j) { return [j.code, j.libelle || '']; });
+    return { site: sites.length ? sites : [['01', 'Site principal']], journaux: jr };
+  }
+  function nbSel(o) { return o.items.filter(function (i) { return o.sel[i[0]]; }).length; }
+  function msDessiner(o) {
+    var n = nbSel(o), tot = o.items.length, chips = o.box.querySelector('.cv-chips');
+    chips.classList.toggle('vide', !n);
+    chips.innerHTML = (!n ? '<span class="cv-vide">Sélection…</span>' : n === tot ? '<span class="cv-chip">Tous sélectionnés (' + tot + ')<button type="button" data-k="*" aria-label="Tout désélectionner">&#10006;</button></span>' :
+      o.items.filter(function (i) { return o.sel[i[0]]; }).map(function (i) { return '<span class="cv-chip" title="' + esc(i[1]) + '">' + esc(i[0]) + '<button type="button" data-k="' + esc(i[0]) + '" aria-label="Retirer ' + esc(i[0] + ' ' + i[1]) + '">&#10006;</button></span>'; }).join('')) +
+      '<i class="ti ti-alert-circle-filled cv-alerte" aria-hidden="true"></i>';
+    infos();
+  }
+  function fermer() { if (!ouvert) return; ouvert.pan.remove(); ouvert.o.box.querySelector('.cv-chips').setAttribute('aria-expanded', 'false'); ouvert = null; document.removeEventListener('mousedown', hors, true); document.removeEventListener('keydown', clavier, true); window.removeEventListener('resize', fermer); window.removeEventListener('scroll', fermer, true); }
+  function hors(e) { if (ouvert && !ouvert.pan.contains(e.target) && !ouvert.o.box.contains(e.target)) fermer(); }
+  function clavier(e) { if (ouvert && e.key === 'Escape') { e.preventDefault(); var b = ouvert.o.box.querySelector('.cv-chips'); fermer(); b.focus(); } }
+  function etatTous(o, pan) { var n = nbSel(o), t = pan.querySelector('[data-all]'); t.checked = n === o.items.length; t.indeterminate = n > 0 && n < o.items.length; }
+  function ouvrirMs(o) {
+    if (ouvert) { var meme = ouvert.o === o; fermer(); if (meme) return; }
+    var chips = o.box.querySelector('.cv-chips'), r = chips.getBoundingClientRect(), larg = Math.max(r.width, 460), bas = window.innerHeight - r.bottom - 12, haut = r.top - 12, dessous = bas >= 260 || bas >= haut, h = Math.min(400, Math.max(200, dessous ? bas : haut));
+    var pan = document.createElement('div'); pan.className = 'cb-pan cv-pan'; pan.style.width = Math.min(larg, window.innerWidth - 16) + 'px'; pan.style.left = Math.max(8, Math.min(r.left, window.innerWidth - larg - 8)) + 'px'; pan.style.maxHeight = h + 'px';
+    if (dessous) pan.style.top = (r.bottom + 4) + 'px'; else pan.style.bottom = (window.innerHeight - r.top + 4) + 'px';
+    pan.innerHTML = '<div class="cb-sc"><table class="cb-tb"><colgroup><col style="width:38px"><col style="width:32%"><col></colgroup><thead><tr><th></th><th>Code</th><th>Libellé</th></tr>' +
+      '<tr class="cb-f"><th></th><th><span class="cb-in"><i class="ti ti-search"></i><input data-cb="0" placeholder="Rechercher…" aria-label="Filtrer par code" autocomplete="off"></span></th><th><span class="cb-in"><i class="ti ti-search"></i><input data-cb="1" placeholder="Rechercher…" aria-label="Filtrer par libellé" autocomplete="off"></span></th></tr></thead><tbody></tbody></table><div class="cb-vide" hidden>Aucun résultat</div></div>';
+    var tb = pan.querySelector('tbody');
+    tb.innerHTML = '<tr class="cv-tous"><td><input type="checkbox" data-all aria-label="Tous"></td><td colspan="2">Tous</td></tr>' + o.items.map(function (i) { return '<tr data-k="' + esc(i[0]) + '"><td><input type="checkbox" data-k="' + esc(i[0]) + '"' + (o.sel[i[0]] ? ' checked' : '') + ' aria-label="' + esc(i[0] + ' ' + i[1]) + '"></td><td title="' + esc(i[0]) + '">' + esc(i[0]) + '</td><td title="' + esc(i[1]) + '">' + esc(i[1]) + '</td></tr>'; }).join('');
+    function visibles() { return [].slice.call(tb.rows).filter(function (tr) { return tr.dataset.k && !tr.hidden; }); }
+    function filtrer() {
+      var f = [].slice.call(pan.querySelectorAll('[data-cb]')).map(function (i) { return i.value.trim().toLowerCase(); }), n = 0;
+      [].slice.call(tb.rows).forEach(function (tr) { if (!tr.dataset.k) return; var ok = (!f[0] || tr.cells[1].textContent.toLowerCase().indexOf(f[0]) >= 0) && (!f[1] || tr.cells[2].textContent.toLowerCase().indexOf(f[1]) >= 0); tr.hidden = !ok; if (ok) n++; });
+      pan.querySelector('.cb-vide').hidden = n > 0;
+    }
+    pan.addEventListener('input', function (e) { if (e.target.matches('[data-cb]')) filtrer(); });
+    pan.addEventListener('change', function (e) {
+      var c = e.target; if (!c.matches('input[type=checkbox]')) return;
+      if (c.hasAttribute('data-all')) visibles().forEach(function (tr) { o.sel[tr.dataset.k] = c.checked; tr.querySelector('input').checked = c.checked; }); else o.sel[c.dataset.k] = c.checked;
+      msDessiner(o); etatTous(o, pan);
+    });
+    pan.addEventListener('click', function (e) { var tr = e.target.closest('tbody tr'); if (!tr || e.target.closest('input')) return; var c = tr.querySelector('input'); c.checked = !c.checked; c.dispatchEvent(new Event('change', { bubbles: true })); });
+    document.body.appendChild(pan); chips.setAttribute('aria-expanded', 'true'); ouvert = { o: o, pan: pan }; etatTous(o, pan);
+    document.addEventListener('mousedown', hors, true); document.addEventListener('keydown', clavier, true); window.addEventListener('resize', fermer); window.addEventListener('scroll', fermer, true);
+    pan.querySelector('[data-cb="0"]').focus();
+  }
+  function msInit(nom) {
+    var box = q('[data-cv-ms="' + nom + '"]'), items = sources()[nom], sel = {};
+    items.forEach(function (i) { sel[i[0]] = true; });
+    if (MS[nom]) { MS[nom].items = items; MS[nom].sel = sel; msDessiner(MS[nom]); return MS[nom]; }   // déjà câblé : on ne fait que recharger les éléments
+    var o = { box: box, items: items, sel: sel, nom: nom }; MS[nom] = o; msDessiner(o);
+    var chips = box.querySelector('.cv-chips');
+    chips.addEventListener('click', function (e) { if (e.target.closest('.cv-chip button')) return; ouvrirMs(o); });
+    chips.addEventListener('keydown', function (e) { if (e.key === 'Enter' || e.key === ' ' || e.key === 'ArrowDown') { e.preventDefault(); ouvrirMs(o); } });
+    box.addEventListener('click', function (e) { var b = e.target.closest('.cv-chip button'); if (!b) return; var k = b.dataset.k; if (k === '*') o.items.forEach(function (i) { o.sel[i[0]] = false; }); else o.sel[k] = false; msDessiner(o); });
+    return o;
+  }
+
+  // ---------- Devises de l'entité, cours, synthèses ----------
+  function locale() { var l = 'MGA'; [].slice.call(document.querySelectorAll('.ig-f')).forEach(function (x) { var a = x.querySelector('.ig-l'), s = x.querySelector('select'); if (a && s && a.textContent.trim() === 'Monnaie locale' && s.value) l = s.value; }); return l; }
+  function devisesEntite() {
+    var m = {}; [].slice.call(document.querySelectorAll('.ig-f')).forEach(function (x) { var a = x.querySelector('.ig-l'), s = x.querySelector('select'); if (a && s) m[a.textContent.trim()] = s.value; });
+    if (!('Devise 1' in m)) { m['Devise 1'] = 'USD'; m['Devise 2'] = 'MUR'; }
+    return ['Devise 1', 'Devise 2', 'Devise 3'].map(function (k) { return m[k]; }).filter(Boolean);
+  }
+  function coursA(dev, d) { var r = null; (window.COURS || []).forEach(function (x) { if (x.devise === dev && (!d || x.date <= d) && (!r || x.date > r.date)) r = x; }); return r; }
+  function infos() {
+    var an = Object.keys(window.A_NOUVEAUX || {}).length, du = q('[data-cv-du]').value, au = q('[data-cv-au]').value, txt = {
+      compta: MS.journaux ? 'Écritures du ' + date(du) + ' au ' + date(au) + ' · ' + nbSel(MS.journaux) + ' journal(aux)' : '',
+      anouveaux: an + ' jeu(x) d’à-nouveaux en mémoire', immo: 'Mouvements des immobilisations de la période', marches: 'Ventilations des fiches marchés de la période' };
+    qa('[data-cv-info]').forEach(function (i) { var c = q('[data-cv-el="' + i.dataset.cvInfo + '"]'); i.value = c && c.checked ? txt[i.dataset.cvInfo] : ''; });
+    q('[data-cv-monrap]').textContent = devisesEntite()[0] || '';
+  }
+
+  function aujourdhui() { return new Date(); }
+  function defauts() {
+    var y = aujourdhui().getFullYear(); q('[data-cv-du]').value = y + '-01-01'; q('[data-cv-au]').value = y + '-12-31';
+    qa('[data-cv-el]').forEach(function (c) { c.checked = c.dataset.cvEl === 'compta'; }); q('[data-cv-nuls]').checked = true;
+    ['site', 'journaux'].forEach(function (n) { msInit(n); });
+    q('[data-cv-err]').hidden = true; q('[data-cv-res]').hidden = true; infos();
+  }
+  function erreur(m) { var e = q('[data-cv-err]'); e.textContent = m || ''; e.hidden = !m; }
+  function volumes(du, au, els, nuls) {
+    var jours = Math.max(1, Math.round((new Date(au) - new Date(du)) / 864e5) + 1), fs = nbSel(MS.site) / MS.site.items.length, fj = nbSel(MS.journaux) / (MS.journaux.items.length || 1), an = 0;
+    Object.keys(window.A_NOUVEAUX || {}).forEach(function (k) { an += (window.A_NOUVEAUX[k].lignes || []).length; });
+    var base = { compta: jours * 14 * fs * fj, anouveaux: an * fs, immo: jours * 0.6 * fs, marches: jours * 0.25 * fs };
+    return els.map(function (e) { var tot = Math.round(base[e]), conv = nuls ? Math.round(tot * 0.18) : tot; return { el: e, total: tot, conv: conv, ign: tot - conv }; });
+  }
+  function convertir() {
+    erreur();
+    var els = qa('[data-cv-el]:checked').map(function (c) { return c.dataset.cvEl; }), du = q('[data-cv-du]').value, au = q('[data-cv-au]').value, nuls = q('[data-cv-nuls]').checked;
+    if (!els.length) { erreur('Sélectionnez au moins un fichier à convertir.'); return; }
+    if (!du || !au) { erreur('La période (du / au) est obligatoire.'); return; }
+    if (au < du) { erreur('La fin de période précède le début.'); return; }
+    if (!nbSel(MS.site)) { erreur('Sélectionnez au moins un site.'); return; }
+    if (els.indexOf('compta') >= 0 && !nbSel(MS.journaux)) { erreur('Sélectionnez au moins un journal.'); return; }
+    var loc = locale(), cours = devisesEntite().map(function (d) { return { dev: d, c: coursA(d, au) }; }), manque = cours.filter(function (x) { return !x.c; });
+    if (manque.length) { erreur('Aucun cours à la date du ' + date(au) + ' (ou avant) pour : ' + manque.map(function (x) { return x.dev + loc; }).join(', ') + '. Saisissez-les dans Gestion des cours › Saisie.'); return; }
+    if (!window.confirm('Convertir ' + els.map(function (e) { return EL[e]; }).join(', ') + ' du ' + date(du) + ' au ' + date(au) + ' ?')) return;
+    var v = volumes(du, au, els, nuls), total = v.reduce(function (s, x) { return s + x.conv; }, 0);
+    q('[data-cv-resb]').innerHTML = '<table><thead><tr><th>Élément</th><th class="r">Lignes examinées</th><th class="r">Converties</th><th class="r">Ignorées</th></tr></thead><tbody>' +
+      v.map(function (x) { return '<tr><td>' + esc(EL[x.el]) + '</td><td class="r">' + nb(x.total) + '</td><td class="r"><b>' + nb(x.conv) + '</b></td><td class="r">' + nb(x.ign) + (nuls && x.ign ? ' <span class="cv-wa">(montants non nuls)</span>' : '') + '</td></tr>'; }).join('') + '</tbody></table>' +
+      '<table style="margin-top:12px"><thead><tr><th>Devise</th><th>Paire</th><th>Cours appliqué</th><th class="r">Parité</th></tr></thead><tbody>' + cours.map(function (x) { return '<tr><td>' + esc(x.dev) + '</td><td>' + esc(x.dev + loc) + '</td><td>' + date(x.c.date) + '</td><td class="r">' + x.c.parite.toLocaleString('fr-FR', { maximumFractionDigits: 6 }) + '</td></tr>'; }).join('') + '</tbody></table>' +
+      '<p class="cv-note">Volumes simulés dans la maquette : aucune écriture n’est réellement modifiée.</p>';
+    q('[data-cv-res]').hidden = false;
+    var d = aujourdhui(); hist.unshift({ le: ('0' + d.getDate()).slice(-2) + '/' + ('0' + (d.getMonth() + 1)).slice(-2) + '/' + d.getFullYear() + ' ' + ('0' + d.getHours()).slice(-2) + ':' + ('0' + d.getMinutes()).slice(-2), du: du, au: au, els: els, n: total });
+    hist = hist.slice(0, 20); try { localStorage.setItem(CLE, JSON.stringify(hist)); } catch (e) {}
+    histo(); toast(nb(total) + ' ligne(s) convertie(s).');
+  }
+  function histo() {
+    q('[data-cv-hist]').hidden = !hist.length;
+    q('[data-cv-histb]').innerHTML = hist.map(function (h) { return '<tr><td>' + esc(h.le) + '</td><td>' + date(h.du) + ' – ' + date(h.au) + '</td><td>' + h.els.map(function (e) { return esc(EL[e]); }).join(', ') + '</td><td class="r">' + nb(h.n) + '</td></tr>'; }).join('');
+  }
+  root.addEventListener('click', function (e) {
+    var b = e.target.closest('button'); if (!b || b.disabled) return;
+    if (b.hasAttribute('data-cv-convertir')) convertir(); else if (b.hasAttribute('data-cv-reinit')) { defauts(); toast('Critères réinitialisés.'); }
+  });
+  root.addEventListener('change', function (e) { if (e.target.matches('[data-cv-el],[data-cv-du],[data-cv-au]')) infos(); });
+  window.addEventListener('hashchange', function () { if (location.hash === '#conversion') { ['site', 'journaux'].forEach(function (n) { if (!MS[n] || MS[n].items.length !== sources()[n].length) msInit(n); }); infos(); } else fermer(); });
+  defauts(); histo();
+  [600, 2000].forEach(function (t) { setTimeout(function () { ['site', 'journaux'].forEach(function (n) { if (!MS[n] || MS[n].items.length !== sources()[n].length) msInit(n); }); infos(); }, t); });
+})();
+</script>

@@ -1,0 +1,27 @@
+/* Balance auxiliaire : critères (styles etf partagés) + résultat */
+.bx-large{grid-column:span 2}
+.bx-multi{position:relative}
+.bx-multi > button{display:flex;align-items:center;justify-content:space-between;gap:8px;width:100%;height:32px;padding:0 9px;border:1px solid #cbd5e1;border-radius:7px;background:#fff;font-size:12.5px;color:#0f172a;cursor:pointer;text-align:left}
+.bx-multi > button .v{overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.bx-multi > button .v.vide{color:#94a3b8}
+.bx-multi > button small{color:#64748b;font-size:11px;white-space:nowrap}
+.bx-multi .pop{display:none;position:absolute;z-index:30;left:0;right:0;top:36px;max-height:220px;overflow:auto;background:#fff;border:1px solid #cbd5e1;border-radius:8px;box-shadow:0 12px 28px rgba(15,23,42,.14);padding:4px}
+.bx-multi.ouvert .pop{display:block}
+.bx-multi .pop label{display:flex;align-items:center;gap:8px;padding:5px 8px;border-radius:6px;font-size:12.5px;cursor:pointer}
+.bx-multi .pop label:hover{background:#eff6ff}
+.bx-multi .pop input{accent-color:#2563eb}
+.bx-toolbar{display:flex;justify-content:space-between;align-items:center;gap:12px;margin-bottom:12px}
+.bx-bar{display:flex;flex-wrap:wrap;align-items:center;justify-content:space-between;gap:12px;margin-bottom:10px}
+.bx-titre{margin:0;font-size:13px;font-weight:700;letter-spacing:.04em;text-transform:uppercase;color:#0f172a}
+.bx-search{width:min(18rem,100%)}
+.bx-wrap{overflow:auto;background:#fff;border:1px solid #e2e8f0;border-radius:12px;max-height:calc(100vh - 330px)}
+.bx-table{width:100%;border-collapse:collapse;font-size:13px;min-width:980px}
+.bx-table th,.bx-table td{padding:7px 10px;border-bottom:1px solid #eef2f7;white-space:nowrap}
+.bx-table th{background:#0c4a6e;color:#fff;font-size:11px;font-weight:700;letter-spacing:.04em;text-transform:uppercase;text-align:left;position:sticky;top:0;z-index:1}
+.bx-table .n{text-align:right;font-variant-numeric:tabular-nums}
+.bx-table tbody tr{cursor:pointer}
+.bx-table tbody tr:hover{background:#eff6ff}
+.bx-table tfoot td{font-weight:700;background:#eff6ff;color:#1e40af;position:sticky;bottom:0}
+.bx-vide{text-align:center;color:#64748b;padding:24px!important;white-space:normal!important}
+.bx-hint{margin:8px 0 0;font-size:12px;color:#64748b}
+@media print{.bx-crit,.bx-toolbar,.bx-search,.bx-hint{display:none!important}.bx-wrap{max-height:none;overflow:visible}}

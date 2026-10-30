@@ -1,0 +1,213 @@
+<!--
+  Écran « Configuration des plans » (Paramétrages › Gestion des plans › Configuration des plans) — onglets Saisie / Liste. Pas d'ajout ni de suppression de plan : on modifie seulement les plans existants. Les niveaux ont aussi leurs onglets Saisie / Liste avec des icônes d'action.
+  Liste : Code, Libellé du plan, Abréviation, Nombre de niveaux (l'abréviation est celle affichée dans les autres modules). Saisie : Code (non modifiable en modification), Libellé, Abréviation du plan,
+  puis les niveaux du plan (Niveau automatique, Libellé du niveau, Format de codification : Numérique / Alphabétique / Alphanumérique).
+  Remplace la reprise de capture. Données en mémoire. Plans de la maquette : plan comptable, Activité, Budget, Géo, Financier, Plan 5 à Plan 10.
+  Chaque niveau porte aussi un nombre de caractères (1 à 20).
+  S'appuie sur les styles bp-* de l'écran « Paramétrage du bilan » (présents dans la page). Ne pas nommer de fonction « $$ » (build.cjs).
+-->
+<style>
+.pc-er{display:none;font-size:12px;color:#B63132}.pc-er.show{display:block}
+.bp-in.err,.bp-sel.err{border-color:#B63132}
+.pc-niv{min-width:0}.pc-niv tbody tr:hover td{cursor:pointer}
+.pc-nbar{display:flex;align-items:flex-end;justify-content:space-between;gap:12px;margin-top:18px;flex-wrap:wrap}
+.pc-nbar .bp-tabs{margin:0}
+.pc-ics{display:flex;gap:6px;padding-bottom:4px}
+.pc-ic{display:inline-flex;align-items:center;justify-content:center;width:36px;height:36px;border:1px solid #D6D9E0;border-radius:8px;background:#fff;color:#2E427B;font-size:18px;cursor:pointer;padding:0}
+.pc-ic:hover:not(:disabled){background:#F4F7FE;border-color:#2E427B}.pc-ic:disabled{opacity:.45;cursor:default}
+.pc-sec{margin:18px 0 0;font-size:14px;font-weight:600;color:#2E427B}
+</style>
+
+<div class="bp-root" data-pc>
+  <h1 style="position:absolute;width:1px;height:1px;overflow:hidden;clip-path:inset(50%);margin:0">Configuration des plans</h1>
+
+  <div class="no-print" data-pc-actions>
+    <button type="button" data-pc-modifier>Modifier</button>
+    <button type="button" data-pc-enregistrer>Enregistrer</button>
+    <button type="button" data-pc-annuler>Annuler</button>
+    <button type="button" data-pc-imprimer>Imprimer</button>
+    <button type="button" data-pc-exporter>Exporter</button>
+  </div>
+
+  <div class="bp-tabs" role="tablist">
+    <button type="button" role="tab" class="on" data-pc-tab="saisie">Saisie</button>
+    <button type="button" role="tab" data-pc-tab="liste">Liste <span class="bp-n" data-pc-compte></span></button>
+  </div>
+
+  <div class="bp-grid">
+    <section class="bp-pan" aria-label="Liste des plans" data-pc-pan="liste" hidden>
+      <h2>Configuration des plans <small>Double-clic ou « Modifier » pour ouvrir la ligne en saisie</small></h2>
+      <div style="overflow:auto;max-height:560px">
+        <table class="bp-tb" style="min-width:600px"><thead>
+          <tr><th>Code</th><th>Libellé du plan</th><th>Abréviation</th><th class="c">Nombre de niveaux</th></tr>
+          <tr class="flt">
+            <th><input class="bp-in" data-fc="0" aria-label="Filtrer Code"></th>
+            <th><input class="bp-in" data-fc="1" aria-label="Filtrer Libellé du plan"></th>
+            <th><input class="bp-in" data-fc="2" aria-label="Filtrer Abréviation"></th>
+            <th><input class="bp-in" data-fc="3" aria-label="Filtrer Nombre de niveaux"></th>
+          </tr>
+          </thead><tbody data-pc-lignes></tbody></table>
+      </div>
+    </section>
+
+    <section class="bp-pan" aria-label="Saisie d'un plan" data-pc-pan="saisie">
+      <form class="bp-form" data-pc-form onsubmit="return false" novalidate>
+        <div class="bp-l3">
+          <label class="bp-champ"><span>Code</span><input class="bp-in" data-f="code" disabled></label>
+          <label class="bp-champ bp-span2"><span>Libellé <b>*</b></span><input class="bp-in" data-f="libelle" maxlength="80" autocomplete="off"><span class="pc-er" data-er="libelle"></span></label>
+          <label class="bp-champ"><span>Abréviation du plan <b>*</b></span><input class="bp-in" data-f="abrev" maxlength="10" autocomplete="off"><span class="pc-er" data-er="abrev"></span></label>
+        </div>
+
+        <div class="pc-sec">Niveaux du plan</div>
+        <div class="pc-nbar">
+          <div class="bp-tabs" role="tablist">
+            <button type="button" role="tab" class="on" data-pc-ntab="saisie">Saisie</button>
+            <button type="button" role="tab" data-pc-ntab="liste">Liste <span class="bp-n" data-pc-ncompte></span></button>
+          </div>
+          <div class="pc-ics no-print">
+            <button type="button" class="pc-ic" data-pc-n="ajouter" title="Ajouter un niveau" aria-label="Ajouter un niveau"><i class="ti ti-plus"></i></button>
+            <button type="button" class="pc-ic" data-pc-n="modifier" title="Modifier le niveau sélectionné" aria-label="Modifier le niveau sélectionné"><i class="ti ti-pencil"></i></button>
+            <button type="button" class="pc-ic" data-pc-n="valider" title="Valider le niveau" aria-label="Valider le niveau"><i class="ti ti-check"></i></button>
+            <button type="button" class="pc-ic" data-pc-n="supprimer" title="Supprimer le niveau sélectionné" aria-label="Supprimer le niveau sélectionné"><i class="ti ti-trash"></i></button>
+          </div>
+        </div>
+
+        <div data-pc-npan="saisie" style="margin-top:12px">
+          <div class="bp-l3">
+            <label class="bp-champ"><span>Niveau</span><input class="bp-in" data-nf="niveau" disabled style="text-align:center"></label>
+            <label class="bp-champ"><span>Libellé du niveau <b>*</b></span><input class="bp-in" data-nf="libelle" maxlength="40" autocomplete="off"><span class="pc-er" data-er="nlibelle"></span></label>
+            <label class="bp-champ"><span>Format de codification</span><select class="bp-sel" data-nf="format"><option>Numérique</option><option>Alphabétique</option><option>Alphanumérique</option></select></label>
+            <label class="bp-champ"><span>Nombre de caractères <b>*</b></span><input class="bp-in" data-nf="car" type="number" min="1" max="20" step="1"><span class="pc-er" data-er="ncar"></span></label>
+          </div>
+        </div>
+        <div data-pc-npan="liste" style="margin-top:12px" hidden>
+          <div style="overflow:auto"><table class="bp-tb pc-niv"><thead><tr><th class="c">Niveau</th><th>Libellé du niveau</th><th>Format de codification</th><th class="c">Nombre de caractères</th></tr></thead><tbody data-pc-niveaux></tbody></table></div>
+        </div>
+        <span class="pc-er" data-er="niveaux"></span>
+      </form>
+    </section>
+  </div>
+  <div class="bp-toast" role="status" hidden data-pc-toast></div>
+</div>
+
+<script>
+(function () {
+  var root = document.querySelector('[data-pc]'); if (!root) return;
+  function q(s) { return root.querySelector(s); } function qa(s) { return [].slice.call(root.querySelectorAll(s)); }
+  var CAR = { 'Niveau 2': 3 }; // nombre de caractères de démonstration (2 par défaut)
+  function nv(l, f, c) { return { libelle: l, format: f, car: c || CAR[l] || 2 }; }
+  // Codes = ceux des plans analytiques de l'entité (Administration de l'entité › Analytique). L'abréviation des plans 5 à 10 est renseignée ici.
+  var data = [
+    { code: 'PC', libelle: 'Plan comptable', abrev: 'PC', niveaux: [nv('Classe', 'Numérique', 1), nv('Sous-classe', 'Numérique', 1), nv('Compte', 'Numérique', 1), nv('Sous-compte', 'Numérique', 3)] },
+    { code: 'PLAN1', libelle: 'Activité', abrev: 'ACT', niveaux: [nv('Composante', 'Numérique', 1), nv('Sous-composante', 'Numérique', 1), nv('Activité', 'Numérique', 2), nv('Sous-activité', 'Numérique', 2)] },
+    { code: 'PLAN2', libelle: 'Budget', abrev: 'BUD', niveaux: [nv('Catégorie', 'Numérique', 2), nv('Sous-catégorie', 'Numérique', 1), nv('Nature', 'Numérique', 1), nv('Ligne budgétaire', 'Numérique', 1)] },
+    { code: 'PLAN3', libelle: 'Financier', abrev: 'FIN', niveaux: [nv('Source de financement', 'Numérique'), nv('Catégorie', 'Alphanumérique')] },
+    { code: 'PLAN4', libelle: 'Géographique', abrev: 'GEO', niveaux: [nv('Groupe', 'Alphanumérique', 4), nv('AGMO', 'Alphanumérique', 3)] }
+  ];
+  for (var n = 5; n <= 10; n++) data.push({ code: 'PLAN' + n, libelle: 'Plan ' + n, abrev: '', niveaux: [nv('Niveau 1', 'Alphanumérique'), nv('Niveau 2', 'Alphanumérique')] });
+  window.PLANS_CFG = data; // partagé avec l'onglet Analytique (activation des plans) : libellés et abréviations viennent d'ici
+  window.addEventListener('plans-actifs', function () { if (mode === 'consultation') { if (sel >= 0 && window.PLANS_ACTIFS().indexOf(data[sel].code) < 0) { sel = -1; form(null); } liste(); etat(); } });
+  function diffuser() { window.dispatchEvent(new Event('plans-changed')); }
+  var sel = -1, mode = 'consultation', niv = [], nsel = -1, nmode = 'aucun'; // nmode : aucun | ajout | edition (niveau en cours de saisie)
+  function esc(s) { return String(s == null ? '' : s).replace(/[&<>"]/g, function (c) { return { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c]; }); }
+  function toast(m) { var t = q('[data-pc-toast]'); t.textContent = m; t.hidden = false; clearTimeout(toast.t); toast.t = setTimeout(function () { t.hidden = true; }, 2800); }
+  function err(k, m) { var e = q('[data-er="' + k + '"]'); e.textContent = m || ''; e.classList.toggle('show', !!m); var f = q('[data-f=' + k + ']') || q('[data-nf=' + k.replace(/^n/, '') + ']'); if (f) f.classList.toggle('err', !!m); }
+  function filtrer() {
+    var F = []; qa('[data-fc]').forEach(function (e) { F[+e.dataset.fc] = e.value.trim().toLowerCase(); });
+    qa('[data-pc-lignes] tr').forEach(function (tr) { tr.hidden = F.some(function (v, k) { return v && tr.children[k].textContent.toLowerCase().indexOf(v) < 0; }); });
+  }
+  qa('[data-fc]').forEach(function (e) { e.addEventListener('input', filtrer); });
+  function liste() {
+    var act = window.PLANS_ACTIFS ? window.PLANS_ACTIFS() : null; // seuls les plans activés dans l'entité (onglet Analytique) sont configurables
+    var vus = data.filter(function (r) { return !act || act.indexOf(r.code) >= 0; });
+    q('[data-pc-compte]').textContent = vus.length + (vus.length > 1 ? ' plans' : ' plan');
+    q('[data-pc-lignes]').innerHTML = data.map(function (r, i) {
+      if (act && act.indexOf(r.code) < 0) return '';
+      return '<tr data-i="' + i + '"' + (i === sel ? ' class="sel"' : '') + '><td>' + esc(r.code) + '</td><td>' + esc(r.libelle) + '</td><td>' + (r.abrev ? esc(r.abrev) : '—') + '</td><td class="c">' + r.niveaux.length + '</td></tr>';
+    }).join(''); filtrer();
+  }
+  function niveaux() {
+    q('[data-pc-ncompte]').textContent = niv.length ? niv.length : '';
+    q('[data-pc-niveaux]').innerHTML = niv.map(function (l, i) {
+      return '<tr data-n="' + i + '"' + (i === nsel ? ' class="sel"' : '') + '><td class="c">' + (i + 1) + '</td><td>' + esc(l.libelle) + '</td><td>' + esc(l.format) + '</td><td class="c">' + esc(l.car) + '</td></tr>';
+    }).join('');
+  }
+  function formNiveau() {
+    var l = nsel >= 0 ? niv[nsel] : (nmode === 'ajout' ? { libelle: '', format: 'Numérique', car: 2 } : null);
+    q('[data-nf=niveau]').value = nmode === 'ajout' ? niv.length + 1 : (nsel >= 0 ? nsel + 1 : '');
+    q('[data-nf=libelle]').value = l ? l.libelle : ''; q('[data-nf=format]').value = l ? l.format : 'Numérique'; q('[data-nf=car]').value = l ? l.car : '';
+    err('nlibelle'); err('ncar');
+  }
+  function form(r) {
+    r = r || { code: '', libelle: '', abrev: '', niveaux: [] };
+    q('[data-f=code]').value = r.code; q('[data-f=libelle]').value = r.libelle; q('[data-f=abrev]').value = r.abrev;
+    niv = r.niveaux.map(function (l) { return { libelle: l.libelle, format: l.format, car: l.car }; }); nsel = -1; nmode = 'aucun';
+    err('libelle'); err('abrev'); err('niveaux'); niveaux(); formNiveau();
+  }
+  function etat() {
+    var ed = mode === 'edition', ns = nmode !== 'aucun';
+    q('[data-f=libelle]').disabled = !ed; q('[data-f=abrev]').disabled = !ed;
+    qa('[data-nf]').forEach(function (e) { e.disabled = !(ed && ns) || e.dataset.nf === 'niveau'; });
+    var ic = function (k) { return q('[data-pc-n=' + k + ']'); };
+    ic('ajouter').disabled = !ed || ns; ic('modifier').disabled = !ed || ns || nsel < 0; ic('valider').disabled = !ed || !ns; ic('supprimer').disabled = !ed || ns || nsel < 0 || niv.length < 2;
+    var a = q('[data-pc-actions]');
+    a.querySelector('[data-pc-modifier]').disabled = ed || sel < 0;
+    a.querySelector('[data-pc-enregistrer]').disabled = !ed; a.querySelector('[data-pc-annuler]').disabled = !ed; a.querySelector('[data-pc-imprimer]').disabled = false; a.querySelector('[data-pc-exporter]').disabled = false;
+  }
+  function onglet(n) { qa('[data-pc-pan]').forEach(function (p) { p.hidden = p.dataset.pcPan !== n; }); qa('[data-pc-tab]').forEach(function (t) { var on = t.dataset.pcTab === n; t.classList.toggle('on', on); t.setAttribute('aria-selected', on); }); }
+  function nonglet(n) { qa('[data-pc-npan]').forEach(function (p) { p.hidden = p.dataset.pcNpan !== n; }); qa('[data-pc-ntab]').forEach(function (t) { var on = t.dataset.pcNtab === n; t.classList.toggle('on', on); t.setAttribute('aria-selected', on); }); }
+  function choisir(i) { if (mode !== 'consultation') return; sel = i; liste(); form(data[i]); etat(); }
+  qa('[data-pc-tab]').forEach(function (t) { t.addEventListener('click', function () { onglet(t.dataset.pcTab); }); });
+  qa('[data-pc-ntab]').forEach(function (t) { t.addEventListener('click', function () { nonglet(t.dataset.pcNtab); }); });
+  var tb = q('[data-pc-lignes]');
+  tb.addEventListener('click', function (e) { var tr = e.target.closest('tr[data-i]'); if (tr) choisir(+tr.dataset.i); });
+  tb.addEventListener('dblclick', function (e) { var tr = e.target.closest('tr[data-i]'); if (tr) { choisir(+tr.dataset.i); onglet('saisie'); } });
+  q('[data-pc-niveaux]').addEventListener('click', function (e) {
+    var tr = e.target.closest('tr[data-n]'); if (!tr || nmode !== 'aucun') return;
+    nsel = +tr.dataset.n; niveaux(); formNiveau(); etat();
+  });
+  q('[data-pc-niveaux]').addEventListener('dblclick', function (e) { var tr = e.target.closest('tr[data-n]'); if (tr && mode === 'edition' && nmode === 'aucun') { nsel = +tr.dataset.n; nmode = 'edition'; niveaux(); formNiveau(); etat(); nonglet('saisie'); } });
+
+  function validerNiveau() {
+    var l = q('[data-nf=libelle]').value.trim(), c = +q('[data-nf=car]').value, ok = true;
+    err('nlibelle'); err('ncar');
+    if (!l) { err('nlibelle', 'Le libellé du niveau est obligatoire.'); ok = false; }
+    if (!(c >= 1 && c <= 20 && c === Math.floor(c))) { err('ncar', 'Entier de 1 à 20.'); ok = false; }
+    if (!ok) return;
+    var rec = { libelle: l, format: q('[data-nf=format]').value, car: c };
+    var ajout = nmode === 'ajout';
+    if (ajout) { niv.push(rec); nsel = niv.length - 1; } else niv[nsel] = rec;
+    toast('Niveau ' + (nsel + 1) + (ajout ? ' ajouté.' : ' modifié.'));
+    nmode = 'aucun'; niveaux(); formNiveau(); etat(); nonglet('liste');
+  }
+  function enregistrer() {
+    var l = q('[data-f=libelle]').value.trim(), ab = q('[data-f=abrev]').value.trim(), ok = true;
+    err('libelle'); err('abrev'); err('niveaux');
+    if (!l) { err('libelle', 'Le libellé est obligatoire.'); ok = false; }
+    if (!ab) { err('abrev', "L'abréviation est obligatoire."); ok = false; }
+    else if (data.some(function (x, i) { return i !== sel && x.abrev && x.abrev.toUpperCase() === ab.toUpperCase(); })) { err('abrev', 'Cette abréviation est déjà utilisée par un autre plan.'); ok = false; }
+    if (nmode !== 'aucun') { err('niveaux', 'Validez ou annulez le niveau en cours de saisie.'); ok = false; }
+    if (!niv.length) { err('niveaux', 'Un plan doit comporter au moins un niveau.'); ok = false; }
+    if (!ok) return;
+    data[sel] = { code: data[sel].code, libelle: l, abrev: ab.toUpperCase(), niveaux: niv.map(function (x) { return { libelle: x.libelle, format: x.format, car: x.car }; }) };
+    mode = 'consultation'; liste(); form(data[sel]); etat(); onglet('liste'); toast('Plan modifié.'); diffuser();
+  }
+  root.addEventListener('click', function (e) {
+    var b = e.target.closest('button'); if (!b || b.disabled) return;
+    var k = b.getAttribute('data-pc-n');
+    if (k === 'ajouter') { nmode = 'ajout'; nsel = -1; formNiveau(); etat(); nonglet('saisie'); q('[data-nf=libelle]').focus(); return; }
+    if (k === 'modifier') { nmode = 'edition'; formNiveau(); etat(); nonglet('saisie'); q('[data-nf=libelle]').focus(); return; }
+    if (k === 'valider') { validerNiveau(); return; }
+    if (k === 'supprimer') {
+      if (!window.confirm('Supprimer le niveau ' + (nsel + 1) + ' « ' + niv[nsel].libelle + ' » ?')) return;
+      niv.splice(nsel, 1); nsel = -1; niveaux(); formNiveau(); etat(); toast('Niveau supprimé.'); return;
+    }
+    if (b.hasAttribute('data-pc-modifier')) { onglet('saisie'); mode = 'edition'; etat(); q('[data-f=libelle]').focus(); return; }
+    if (b.hasAttribute('data-pc-annuler')) { mode = 'consultation'; form(sel >= 0 ? data[sel] : null); etat(); return; }
+    if (b.hasAttribute('data-pc-enregistrer')) { enregistrer(); return; }
+    if (b.hasAttribute('data-pc-imprimer')) { window.print(); return; }
+    if (b.hasAttribute('data-pc-exporter')) { toast('Export des plans (maquette)'); return; }
+  });
+  liste(); form(null); etat(); onglet('liste'); nonglet('saisie'); diffuser();
+})();
+</script>

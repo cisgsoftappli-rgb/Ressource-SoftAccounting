@@ -1,0 +1,493 @@
+<!--
+  Écran « À nouveaux provisoires » (Comptabilité générale › Travaux périodiques › À nouveaux provisoires) — génération, sur l'exercice suivant, des à nouveaux provisoires issus d'un exercice non
+  encore clôturé (comptes de bilan, classes 1 à 5 ; reprise des tiers selon Paramétrages › Clôture comptable : window.CLOTURE_CFG.reprise), fusionnée avec la consultation des à nouveaux :
+  totaux débit / crédit par devise, grille détaillée filtrable par colonne, pagination et export Excel.
+  Montants d'exemple (simulés, déterministes, équilibrés). Boutons Générer / Supprimer relayés par la barre d'actions de page (CFG « anouveaux »).
+  État partagé : window.A_NOUVEAUX = { 'site|exercice' : { le, mode, lignes } } (exercice = celui qui reçoit les à nouveaux, issus de l'exercice précédent). Colonne « Plan de regroupement » masquée si le plan de regroupement n'est pas activé (data-regr).
+  Ne pas nommer de fonction « $$ » (build.cjs).
+-->
+<style>
+.an4-bar{display:flex;flex-wrap:wrap;align-items:end;gap:16px;margin:0 0 14px}.an4-bar label{display:grid;gap:4px;font-size:12px;color:#5B606D;min-width:180px}
+.an4-info{font-size:13px;color:#474C58;margin:0 0 12px}.an4-info b{color:#0B1332}.an4-ko{color:#B63132}
+.an4-head{display:flex;justify-content:space-between;align-items:flex-start;gap:24px;flex-wrap:wrap;margin:0 0 6px}.an4-gauche{flex:1 1 560px;min-width:0}.an4-tot{flex:0 1 620px;min-width:360px}
+.an4-tot{border:1px solid #E9EBF0;border-radius:8px;background:#fff;padding:10px 14px;align-self:start}
+.an4-tot table{width:100%;border-collapse:collapse;font-size:13px}.an4-tot th{padding:4px 8px;text-align:center;font-size:12px;font-weight:700;color:#2E427B}.an4-tot td{padding:4px 8px;font-variant-numeric:tabular-nums}.an4-tot td.r{text-align:right;background:#F5F7F9;border:1px solid #E9EBF0;border-radius:4px}.an4-tot td.m{font-weight:700;color:#0B1332}
+.an4-tools{display:flex;align-items:center;justify-content:flex-end;gap:10px;margin:0 0 8px}.an4-q{position:relative}.an4-q i{position:absolute;left:8px;top:50%;transform:translateY(-50%);color:#8A8F9C;font-size:14px}
+.an4-q input{height:34px;width:240px;padding:0 8px 0 28px;border:1px solid #D6D9E0;border-radius:6px;font-size:13px}
+.an4-xl{display:inline-flex;align-items:center;justify-content:center;width:34px;height:34px;border:1px solid #A7F3D0;border-radius:6px;background:#ECFDF5;color:#047857;font-size:17px;cursor:pointer}.an4-xl:hover{background:#D1FAE5}.an4-xl[disabled]{opacity:.45;cursor:not-allowed}
+.an4-tb td.r,.an4-tb th.r{text-align:right;font-variant-numeric:tabular-nums}.an4-tb td.c,.an4-tb th.c{text-align:center}
+.an4-tb tr.flt th{background:#fff;padding:4px 6px}.an4-tb tr.flt input{width:100%;height:28px;padding:0 6px;border:1px solid #D6D9E0;border-radius:4px;font-size:12px}
+.an4-pg{display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:10px;padding:10px 4px 0;font-size:13px;color:#5B606D}
+.an4-pg button{min-width:30px;height:30px;padding:0 8px;border:1px solid #D6D9E0;border-radius:6px;background:#fff;color:#0B1332;font-size:13px;cursor:pointer}.an4-pg button.on{background:#2E427B;border-color:#2E427B;color:#fff}.an4-pg button[disabled]{opacity:.4;cursor:default}
+.an4-sz{display:flex;gap:4px}.an4-pgs{display:flex;align-items:center;gap:4px;flex-wrap:wrap}
+.an4-ov{position:fixed;inset:0;z-index:2500;display:flex;align-items:center;justify-content:center;padding:16px;background:rgba(11,19,50,.55)}.an4-ov[hidden]{display:none}
+.an4-md{display:flex;flex-direction:column;width:min(560px,100%);max-height:calc(100vh - 32px);border-radius:12px;background:#fff;box-shadow:0 28px 70px rgba(11,19,50,.35)}
+.an4-md h2{margin:0;padding:16px 20px;border-bottom:1px solid #E9EBF0;font-size:18px}.an4-mb{display:grid;gap:16px;padding:18px 20px;overflow:auto}
+.an4-mg{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:14px}.an4-mb label{display:grid;gap:4px;font-size:12px;color:#5B606D}
+.an4-cp{border:1px solid #E9EBF0;border-radius:8px;overflow:hidden}.an4-cp h3{margin:0;padding:8px 12px;background:#F5F7F9;border-bottom:1px solid #E9EBF0;font-size:12px;font-weight:700;letter-spacing:.04em;text-transform:uppercase;color:#2E427B}
+.an4-cp div{display:grid;grid-template-columns:minmax(0,1fr) auto;gap:12px;padding:9px 12px;border-bottom:1px solid #F1F2F5;font-size:13px;color:#353944}.an4-cp div:last-child{border-bottom:0}.an4-cp b{color:#0B1332}
+.an4-mn{margin:0;font-size:12px;color:#5B606D}.an4-mf{display:flex;justify-content:flex-end;gap:10px;padding:14px 20px;border-top:1px solid #E9EBF0}
+.an4-mf button{min-height:38px;padding:0 16px;border:1px solid #2E427B;border-radius:8px;background:#fff;color:#2E427B;font-weight:600;font-size:14px;cursor:pointer}.an4-mf button.p{background:#2E427B;color:#fff}.an4-mf button[disabled]{opacity:.45;cursor:not-allowed}.an4-mb label[hidden]{display:none}.an4-mf button.d{border-color:#B63132;color:#B63132}.an4-mf button[hidden]{display:none}
+.an4-tb tbody tr[data-k]{cursor:pointer}.an4-tb tbody tr[data-k]:hover td{background:#F4F7FE}
+.an4-md.lg{width:min(1180px,100%)}
+.an4-kp{display:flex;flex-wrap:wrap;gap:10px}.an4-kp div{flex:1 1 180px;padding:10px 14px;border:1px solid #E9EBF0;border-radius:8px;background:#fff}.an4-kp small{display:block;font-size:11px;font-weight:700;letter-spacing:.04em;text-transform:uppercase;color:#5B606D}.an4-kp b{display:block;margin-top:2px;font-size:16px;color:#0B1332;font-variant-numeric:tabular-nums}.an4-kp .ko b{color:#B63132}.an4-kp .wa{background:#FBF3C7;border-color:#E1C340}.an4-kp .wa b{color:#706000}
+.an4-tabs{display:flex;gap:4px;border-bottom:1px solid #E9EBF0;margin-top:2px}.an4-tabs button{padding:9px 14px;border:0;border-bottom:2px solid transparent;background:none;color:#5B606D;font-size:14px;font-weight:600;cursor:pointer}.an4-tabs button.on{color:#2E427B;border-bottom-color:#2E427B}.an4-tabs button[hidden]{display:none}
+.an4-n{display:inline-block;min-width:20px;padding:0 6px;margin-left:4px;border-radius:10px;background:#E9EBF0;color:#353944;font-size:12px;text-align:center}.an4-tabs button.on .an4-n{background:#E3EBFE;color:#2E427B}
+.an4-sc{max-height:300px;overflow:auto;border:1px solid #E9EBF0;border-radius:8px}.an4-sc[hidden]{display:none}.an4-it{width:100%;border-collapse:collapse;font-size:12.5px}.an4-it th{position:sticky;top:0;background:#2E427B;color:#fff;text-align:left;padding:8px 10px;font-size:12px;text-transform:uppercase;white-space:nowrap}.an4-it td{padding:7px 10px;border-bottom:1px solid #F1F2F5;white-space:nowrap}.an4-it td.r{text-align:right;font-variant-numeric:tabular-nums}.an4-it td.c{text-align:center}.an4-it td.m{color:#B63132;white-space:normal;min-width:240px}
+.an4-vd{padding:24px;text-align:center;color:#5B606D;font-size:13px}.an4-mode{display:flex;gap:24px;flex-wrap:wrap}.an4-mode label{display:flex;align-items:center;gap:8px;font-size:13px;color:#353944}
+</style>
+
+<div class="bp-root" data-an4>
+  <h1 style="position:absolute;width:1px;height:1px;overflow:hidden;clip-path:inset(50%);margin:0">À nouveau</h1>
+  <div class="no-print" data-an4-actions>
+    <button type="button" data-an4-generer>Générer les à nouveaux provisoires</button>
+    <button type="button" data-an4-saisie><i class="ti ti-edit"></i>Saisie manuelle</button>
+    <button type="button" data-an4-importer>Importer</button>
+    <button type="button" data-an4-supprimer>Supprimer les à nouveaux</button>
+    <button type="button" data-an4-pdf>PDF</button>
+    <button type="button" data-an4-xlsx>Excel (XLSX)</button>
+  </div>
+  <div class="bp-grid"><section class="bp-pan" aria-label="À nouveau">
+    <div class="an4-head"><div class="an4-gauche">
+    <div class="an4-bar">
+      <label>Site<select class="bp-sel" data-an4-site data-no-combo><option value="01">01 - Siège</option><option value="02">02 - Toamasina</option></select></label>
+      <label>Exercice<select class="bp-sel" data-an4-ex data-no-combo></select></label>
+    </div>
+    <p class="an4-info" data-an4-info></p>
+    </div>
+        <div class="an4-tot" data-an4-totbox hidden><table><thead><tr><th></th><th>Total Débit</th><th>Total Crédit</th></tr></thead><tbody data-an4-tot></tbody></table></div>
+    </div>
+
+    <div data-an4-conso hidden>
+      <div class="an4-tools">
+        <span class="an4-q"><i class="ti ti-search" aria-hidden="true"></i><input data-an4-q placeholder="Recherche…" autocomplete="off"></span></div>
+      <div style="overflow:auto"><table class="bp-tb an4-tb" style="min-width:1180px"><thead data-an4-th></thead><tbody data-an4-lignes></tbody></table></div>
+      <div class="bp-vide" data-an4-vide2 hidden>Aucune ligne ne correspond aux filtres.</div>
+      <div class="an4-pg"><div class="an4-sz" data-an4-sz></div><span data-an4-pginfo></span><div class="an4-pgs" data-an4-pgs></div></div>
+    </div>
+    <div class="bp-vide" data-an4-vide>Aucun à nouveau généré pour ce site et cet exercice : utilisez « Générer les à nouveaux provisoires ».</div>
+  </section></div>
+  <div class="an4-ov" data-an4-ov hidden><div class="an4-md" role="dialog" aria-modal="true" aria-label="Générer les à nouveaux provisoires">
+    <h2>Générer les à nouveaux provisoires</h2>
+    <div class="an4-mb">
+      <div class="an4-mg">
+        <label>Exercice source<select class="bp-sel" data-an4-msrc data-no-combo></select></label>
+        <label>Exercice cible (N+1)<input class="bp-in" data-an4-mcib readonly></label>
+      </div>
+      <div class="an4-cp" data-an4-mcpt></div>
+      <p class="an4-mn" data-an4-mnote></p>
+    </div>
+    <div class="an4-mf"><button type="button" data-an4-mx>Annuler</button><button type="button" class="p" data-an4-mok>Générer</button></div>
+  </div></div>
+  <input type="file" accept=".xlsx,.csv,.txt" data-an4-fichier style="display:none">
+
+  <div class="an4-ov" data-an4-sov hidden><div class="an4-md" role="dialog" aria-modal="true" aria-label="Saisie d'une ligne d'à nouveau">
+    <h2 data-an4-stitre>Saisie manuelle d'une ligne d'à nouveau</h2>
+    <div class="an4-mb">
+      <div class="an4-mg">
+        <label>Site<input class="bp-in" data-an4-sf="site" readonly></label>
+        <label>Exercice<input class="bp-in" data-an4-sf="ex" readonly></label>
+        <label data-regr>Plan de regroupement<input class="bp-in" data-an4-sf="axe" autocomplete="off"></label>
+        <label><span>Compte général <b>*</b></span><select class="bp-sel" data-an4-sf="compte"></select></label>
+        <label>Compte auxiliaire<input class="bp-in" data-an4-sf="aux" autocomplete="off" placeholder="Ex : T00001"></label>
+        <label><span>Sens (D/C) <b>*</b></span><select class="bp-sel" data-an4-sf="sens" data-no-combo><option value="D">D — Débit</option><option value="C">C — Crédit</option></select></label>
+        <label><span data-an4-slocal>Montant local</span> <b>*</b><input class="bp-in" type="number" step="0.01" min="0" data-an4-sf="local"></label>
+        <label data-an4-sd="1"><span data-an4-sdt="1">Montant devise 1</span><input class="bp-in" type="number" step="0.01" min="0" data-an4-sf="d1"></label>
+        <label data-an4-sd="2"><span data-an4-sdt="2">Montant devise 2</span><input class="bp-in" type="number" step="0.01" min="0" data-an4-sf="d2"></label>
+        <label data-an4-sd="3" hidden><span data-an4-sdt="3">Montant devise 3</span><input class="bp-in" type="number" step="0.01" min="0" data-an4-sf="d3"></label>
+      </div>
+      <p class="an4-mn" style="color:#B63132" data-an4-serr></p>
+    </div>
+    <div class="an4-mf"><button type="button" class="d" data-an4-ssup hidden>Supprimer la ligne</button><span style="flex:1"></span><button type="button" data-an4-sx>Annuler</button><button type="button" data-an4-snew>Enregistrer et ajouter</button><button type="button" class="p" data-an4-sok>Enregistrer</button></div>
+  </div></div>
+
+  <div class="an4-ov" data-an4-iov hidden><div class="an4-md lg" role="dialog" aria-modal="true" aria-label="Importation des à nouveaux">
+    <h2>Importer des à nouveaux depuis Excel</h2>
+    <div class="an4-mb">
+      <p class="an4-mn" data-an4-ifich></p>
+      <div class="an4-kp" data-an4-ikpi></div>
+      <div class="an4-tabs" role="tablist">
+        <button type="button" role="tab" class="on" data-an4-itab="ok">Lignes retenues <span class="an4-n" data-an4-nok></span></button>
+        <button type="button" role="tab" data-an4-itab="ko">Lignes rejetées <span class="an4-n" data-an4-nko></span></button>
+        <button type="button" role="tab" data-an4-itab="an" data-an4-tabAn hidden>Anomalies <span class="an4-n" data-an4-nan></span></button>
+      </div>
+      <div class="an4-sc" data-an4-ipan="ok"></div>
+      <div class="an4-sc" data-an4-ipan="ko" hidden></div>
+      <div class="an4-sc" data-an4-ipan="an" hidden></div>
+      <div class="an4-mode">
+        <label><input type="radio" name="an4-mode" value="remplacer" checked> Remplacer les lignes existantes</label>
+        <label><input type="radio" name="an4-mode" value="ajouter"> Ajouter aux lignes existantes</label>
+      </div>
+      <p class="an4-mn">Colonnes attendues : Site, Plan de regroupement, Compte, Compte auxiliaire, Sens (D/C), Montant local et un montant par devise de l'entité (Montant devise 1, 2, 3). <a href="#" data-an4-modele style="color:#2E427B;font-weight:600">Télécharger le modèle</a></p>
+    </div>
+    <div class="an4-mf"><button type="button" data-an4-ix>Annuler</button><button type="button" class="p" data-an4-iok>Importer les lignes retenues</button></div>
+  </div></div>
+  <div class="bp-toast" role="status" hidden data-an4-toast></div>
+</div>
+
+<script>
+(function () {
+  var root = document.querySelector('[data-an4]'); if (!root) return;
+  function q(s) { return root.querySelector(s); } function qa(s) { return [].slice.call(root.querySelectorAll(s)); }
+  var G = window.A_NOUVEAUX = window.A_NOUVEAUX || {};
+  var C = [], rech = '', page = 1, taille = 20, sigEnt = '';
+  function esc(s) { return String(s == null ? '' : s).replace(/[&<>"]/g, function (c) { return { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c]; }); }
+  function toast(m) { var t = q('[data-an4-toast]'); t.textContent = m; t.hidden = false; clearTimeout(toast.t); toast.t = setTimeout(function () { t.hidden = true; }, 2500); }
+  function nb(n) { return n == null ? '' : n.toFixed(2).replace('.', ',').replace(/\B(?=(\d{3})+(?!\d))/g, ' '); }
+  function exercices() { return (window.EXERCICES_API && window.EXERCICES_API.liste()) || []; }
+  function exo() { var v = q('[data-an4-ex]').value; return exercices().filter(function (e) { return e.annee === v; })[0]; }
+  function prec(e) { return e ? exercices().filter(function (x) { return +x.annee === +e.annee - 1; })[0] : null; }
+  function cle(e) { return q('[data-an4-site]').value + '|' + (e ? e.annee : ''); }
+
+  // ---------- monnaies : monnaie locale et devises 1 à 3 paramétrées dans Administration de l'entité ----------
+  var TAUX = { MGA: 1, USD: 4000, EUR: 4400, GBP: 5100, MUR: 100, XOF: 6.6, CNY: 560 };   // valeur d'une unité en MGA (taux d'exemple)
+  function taux(c) { return TAUX[c] || 1000; }
+  function monnaies() {
+    var m = {}, M = { loc: 'MGA', dev: [] };
+    [].slice.call(document.querySelectorAll('.ig-f')).forEach(function (f) { var l = f.querySelector('.ig-l'), s = f.querySelector('select'); if (l && s) m[l.textContent.trim()] = s.value; });
+    if (m['Monnaie locale']) M.loc = m['Monnaie locale'];
+    if (!('Devise 1' in m)) { m['Devise 1'] = 'USD'; m['Devise 2'] = 'MUR'; }
+    ['Devise 1', 'Devise 2', 'Devise 3'].forEach(function (k, i) { if (m[k]) M.dev.push({ n: i + 1, code: m[k], cle: 'd' + (i + 1) }); });
+    return M;
+  }
+  function conv(loc, code, M) { return Math.round(loc * taux(M.loc) / taux(code) * 100) / 100; }
+  function val(l, d, M) { return l[d.cle] != null ? l[d.cle] : conv(l.local, d.code, M); }
+  function titreLocal(M) { return 'Montant local (' + M.loc + ')'; }
+  function titreDev(d) { return 'Montant devise ' + d.n + ' (' + d.code + ')'; }
+  function tete(M) { return ['Exercice', 'Site', 'Plan de regroupement', 'Compte', 'Compte auxiliaire', 'Sens (D/C)', titreLocal(M)].concat(M.dev.map(titreDev)); }
+
+  // exercices pouvant servir de source : non clôturés et suivis d'un exercice N+1
+  function sources() { var E = exercices(); return E.filter(function (x) { return !x.cloture && E.some(function (y) { return +y.annee === +x.annee + 1; }); }); }
+  function libCompte(c) { var L = [['120000', 'Résultat de l\'exercice (bénéfice)'], ['129000', 'Résultat de l\'exercice (perte)']], t = L.filter(function (x) { return x[0] === c; })[0] || (((window.PLANS_REF && window.PLANS_REF.comptes) || []).filter(function (x) { return String(x[0]) === c; })[0]); return t ? t[1] : ''; }
+  function majModale() {
+    var src = q('[data-an4-msrc]').value, cfg = window.CLOTURE_CFG || {}, ben = cfg.resBenefice || '120000', per = cfg.resPerte || '129000';
+    q('[data-an4-mcib]').value = src ? String(+src + 1) : '';
+    q('[data-an4-mcpt]').innerHTML = '<h3>Comptes de capitalisation (Paramétrages › Clôture comptable)</h3>' +
+      '<div><span>Résultat de l\'exercice (bénéfice)</span><b>' + esc(ben) + (libCompte(ben) ? ' – ' + esc(libCompte(ben)) : '') + '</b></div>' +
+      '<div><span>Résultat de l\'exercice (perte)</span><b>' + esc(per) + (libCompte(per) ? ' – ' + esc(libCompte(per)) : '') + '</b></div>' +
+      '<div><span>Reprise des tiers</span><b>' + esc(mode()) + '</b></div>';
+    var cible = q('[data-an4-mcib]').value, ex = G[q('[data-an4-site]').value + '|' + cible];
+    q('[data-an4-mnote]').textContent = ex ? 'Des à nouveaux provisoires existent déjà pour l\'exercice ' + cible + ' (site ' + q('[data-an4-site]').value + ') : ils seront remplacés. Les à nouveaux définitifs sont générés par la clôture annuelle.' : 'Les à nouveaux provisoires peuvent être régénérés à tout moment ; la clôture annuelle les remplace par les à nouveaux définitifs.';
+  }
+  function ouvrirModale() {
+    var S = sources(); if (!S.length) { toast('Aucun exercice source : il faut un exercice non clôturé suivi d\'un exercice N+1.'); return; }
+    var e = exo(), p = prec(e), defaut = p && S.some(function (x) { return x.annee === p.annee; }) ? p.annee : S[0].annee;
+    q('[data-an4-msrc]').innerHTML = S.map(function (x) { return '<option value="' + x.annee + '">' + x.annee + (x.cours ? ' (en cours)' : '') + '</option>'; }).join('');
+    q('[data-an4-msrc]').value = defaut; majModale(); q('[data-an4-ov]').hidden = false; q('[data-an4-msrc]').focus();
+  }
+  function generer(src, site, definitif) {
+    var cib = exercices().filter(function (x) { return +x.annee === +src + 1; })[0]; if (!cib) return null;
+    var n = new Date(), s0 = q('[data-an4-site]').value; q('[data-an4-site]').value = site;
+    var lignes = calcul(cib); q('[data-an4-site]').value = s0;
+    G[site + '|' + cib.annee] = { le: ('0' + n.getDate()).slice(-2) + '/' + ('0' + (n.getMonth() + 1)).slice(-2) + '/' + n.getFullYear(), mode: mode(), source: String(src), definitif: !!definitif, lignes: lignes };
+    return cib;
+  }
+  function mode() { return (window.CLOTURE_CFG && window.CLOTURE_CFG.reprise) === 'solde' ? 'Solde par compte' : 'Détail des écritures non lettrées'; }
+
+  // ---- données d'exemple : une ligne par compte de bilan du plan chargé, équilibrées en monnaie locale ----
+  function alea(graine) { var a = graine >>> 0; return function () { a = (a + 0x6D2B79F5) >>> 0; var t = a; t = Math.imul(t ^ (t >>> 15), t | 1); t ^= t + Math.imul(t ^ (t >>> 7), t | 61); return ((t ^ (t >>> 14)) >>> 0) / 4294967296; }; }
+  function comptesBilan() {
+    var L = ((window.PLANS_REF && window.PLANS_REF.comptes) || []).map(function (c) { return String(c[0]); }).filter(function (c) { return /^[1-5]\d{5}$/.test(c); });
+    if (L.length < 30) { L = []; for (var i = 0; i < 90; i++) L.push(String(1 + (i % 5)) + String(10000 + i * 137).slice(-5)); }
+    var pas = Math.max(1, Math.floor(L.length / 150)); return L.filter(function (c, i) { return i % pas === 0; }).slice(0, 150);
+  }
+  function ligne(e, site, cp, aux, sens, loc, M) {
+    var l = { ex: e.annee, site: site, axe: '01', compte: cp, aux: aux, sens: sens, local: loc, d1: null, d2: null, d3: null };
+    M.dev.forEach(function (d) { l[d.cle] = conv(loc, d.code, M); }); return l;
+  }
+  function calcul(e) {
+    var M = monnaies(), site = q('[data-an4-site]').value, r = alea(+e.annee * 7919 + +site), det = mode() !== 'Solde par compte', lignes = [], D = 0, Cr = 0;
+    comptesBilan().forEach(function (cp) {
+      var cl = cp.charAt(0), p = r(), sens = cl === '1' ? (p < 0.85 ? 'C' : 'D') : cl === '4' ? (p < 0.5 ? 'C' : 'D') : (p < 0.88 ? 'D' : 'C');
+      var loc = Math.round((Math.pow(10, 4 + r() * 5)) * 100) / 100;
+      var aux = cl === '4' && cp.charAt(1) !== '7' ? 'T' + ('00000' + (1 + Math.floor(r() * 132))).slice(-5) : '';
+      var n = aux && det ? 1 + Math.floor(r() * 2) : 1;
+      for (var k = 0; k < n; k++) {
+        var m = n > 1 ? Math.round(loc / n * 100) / 100 : loc;
+        lignes.push(ligne(e, site, cp, aux ? (k ? 'T' + ('00000' + (1 + Math.floor(r() * 132))).slice(-5) : aux) : '', sens, m, M));
+        if (sens === 'D') D += m; else Cr += m;
+      }
+    });
+    var ec = Math.round((D - Cr) * 100) / 100;   // ligne d'équilibrage du report à nouveau
+    if (ec !== 0) { var bl = ligne(e, site, '119000', '', ec > 0 ? 'C' : 'D', Math.abs(ec), M); M.dev.forEach(function (d) { var dd = 0; lignes.forEach(function (x) { dd += (x.sens === 'D' ? 1 : -1) * x[d.cle]; }); dd = Math.round((bl.sens === 'C' ? dd : -dd) * 100) / 100; bl[d.cle] = Math.abs(dd); }); lignes.push(bl); }
+    return lignes;
+  }
+
+  // ---- en-tête dynamique (une colonne par monnaie paramétrée) ----
+  function entete(M) {
+    var sig = M.loc + '|' + M.dev.map(function (d) { return d.code; }).join(',');
+    if (sig === sigEnt) return; sigEnt = sig;
+    var T = tete(M), h = '<tr>' + T.map(function (t, i) { return '<th class="' + (i >= 6 ? 'r' : (i === 0 || i === 1 || i === 5 ? 'c' : '')) + '"' + (i === 2 ? ' data-regr' : '') + '>' + esc(t) + '</th>'; }).join('') + '</tr>' +
+      '<tr class="flt">' + T.map(function (t, i) { return '<th' + (i === 2 ? ' data-regr' : '') + '><input data-an4-c="' + i + '" aria-label="Filtrer ' + esc(t) + '" value="' + esc(C[i] || '') + '"></th>'; }).join('') + '</tr>';
+    q('[data-an4-th]').innerHTML = h; q('.an4-tb').style.minWidth = (1000 + M.dev.length * 150) + 'px';
+  }
+
+  // ---- filtres / grille ----
+  function ligneTxt(l, M) { M = M || monnaies(); return [l.ex, l.site, l.axe, l.compte, l.aux, l.sens, nb(l.local)].concat(M.dev.map(function (d) { return nb(val(l, d, M)); })); }
+  function filtrees() {
+    var e = exo(), g = e && G[cle(e)]; if (!g) return [];
+    var rq = rech.toLowerCase(), M = monnaies();
+    return g.lignes.filter(function (l) {
+      var t = ligneTxt(l, M); if (rq && t.join(' ').toLowerCase().indexOf(rq) < 0) return false;
+      return t.every(function (x, i) { return !C[i] || String(x).toLowerCase().indexOf(C[i].toLowerCase()) >= 0; });
+    });
+  }
+  function totaux(L, M) {
+    var cles = ['local'].concat(M.dev.map(function (d) { return d.cle; })), t = cles.map(function () { return { d: 0, c: 0 }; });
+    L.forEach(function (l) { cles.forEach(function (k, i) { var v = k === 'local' ? l.local : val(l, M.dev[i - 1], M); if (l.sens === 'D') t[i].d += v; else t[i].c += v; }); }); return t;
+  }
+  function dessiner() {
+    var M = monnaies(); entete(M);
+    var e = exo(), g = e && G[cle(e)], L = filtrees();
+    q('[data-an4-conso]').hidden = !g; q('[data-an4-vide]').hidden = !!g; q('[data-an4-totbox]').hidden = !g;
+    if (!g) { etat(); return; }
+    var pages = taille === 0 ? 1 : Math.max(1, Math.ceil(L.length / taille)); if (page > pages) page = pages;
+    var vue = taille === 0 ? L : L.slice((page - 1) * taille, page * taille);
+    q('[data-an4-vide2]').hidden = L.length > 0;
+    q('[data-an4-lignes]').innerHTML = vue.map(function (l) {
+      return '<tr data-k="' + g.lignes.indexOf(l) + '"><td class="c">' + l.ex + '</td><td class="c">' + l.site + '</td><td data-regr>' + l.axe + '</td><td>' + l.compte + '</td><td>' + esc(l.aux) + '</td><td class="c">' + l.sens + '</td><td class="r">' + nb(l.local) + '</td>' + M.dev.map(function (d) { return '<td class="r">' + nb(val(l, d, M)) + '</td>'; }).join('') + '</tr>';
+    }).join('');
+    var t = totaux(L, M), noms = [M.loc].concat(M.dev.map(function (d) { return d.code; }));
+    q('[data-an4-tot]').innerHTML = noms.map(function (n, i) { return '<tr><td class="m">' + esc(n) + '</td><td class="r">' + nb(t[i].d) + '</td><td class="r">' + nb(t[i].c) + '</td></tr>'; }).join('');
+    q('[data-an4-sz]').innerHTML = [[10, '10'], [20, '20'], [50, '50'], [100, '100'], [0, 'Tous']].map(function (s) { return '<button type="button" data-sz="' + s[0] + '"' + (s[0] === taille ? ' class="on"' : '') + '>' + s[1] + '</button>'; }).join('');
+    q('[data-an4-pginfo]').textContent = 'Page ' + page + ' sur ' + pages + ' (' + L.length + ' élément' + (L.length > 1 ? 's' : '') + ')';
+    var bs = '<button type="button" data-pg="' + (page - 1) + '"' + (page <= 1 ? ' disabled' : '') + ' aria-label="Page précédente">‹</button>', deb = Math.max(1, Math.min(page - 2, pages - 4)), fin = Math.min(pages, deb + 4);
+    if (deb > 1) bs += '<button type="button" data-pg="1">1</button>' + (deb > 2 ? '…' : '');
+    for (var i = deb; i <= fin; i++) bs += '<button type="button" data-pg="' + i + '"' + (i === page ? ' class="on"' : '') + '>' + i + '</button>';
+    if (fin < pages) bs += (fin < pages - 1 ? '…' : '') + '<button type="button" data-pg="' + pages + '">' + pages + '</button>';
+    bs += '<button type="button" data-pg="' + (page + 1) + '"' + (page >= pages ? ' disabled' : '') + ' aria-label="Page suivante">›</button>';
+    q('[data-an4-pgs]').innerHTML = bs; etat();
+  }
+  function etat() {
+    var e = exo(), p = prec(e), g = e && G[cle(e)], a = q('[data-an4-actions]');
+    a.querySelector('[data-an4-generer]').disabled = !sources().length;
+    a.querySelector('[data-an4-supprimer]').disabled = !g || !!g.definitif;
+    var def = !!(g && g.definitif), A = function (k) { return a.querySelector('[data-an4-' + k + ']'); };
+    A('saisie').disabled = !e || def; A('importer').disabled = !e || def; A('pdf').disabled = !g; A('xlsx').disabled = !g;
+    q('[data-an4-info]').innerHTML = !e ? '' : !p ? '<span class="an4-ko">Aucun exercice ' + (+e.annee - 1) + ' : les à nouveaux de l\'exercice ' + e.annee + ' ne peuvent pas être générés.</span>' : g ? (g.definitif ? 'À nouveaux <b>définitifs</b> générés par la clôture annuelle de l\'exercice ' + g.source + ' le <b>' + g.le + '</b>.' : 'À nouveaux <b>provisoires</b> générés le <b>' + g.le + '</b> à partir de l\'exercice ' + g.source + ' (reprise des tiers : ' + g.mode.toLowerCase() + ').') : 'Aucun à nouveau pour ce site et cet exercice.';
+  }
+  // à nouveaux provisoires présents par défaut dans la maquette (2022 et 2023, sites 01 et 02), régénérables
+  var semis = false;
+  function semer() {
+    if (semis) return; var E = exercices(); if (!E.length) return; semis = true; if (Object.keys(G).length) return;
+    ['01', '02'].forEach(function (site) { ['2021', '2022'].forEach(function (src) { if (E.some(function (x) { return x.annee === src; }) && E.some(function (x) { return +x.annee === +src + 1; })) generer(src, site, false); }); });
+  }
+  function remplir() {
+    semer();
+    var s = q('[data-an4-ex]'), v = s.value, E = exercices();
+    s.innerHTML = E.map(function (e) { return '<option value="' + e.annee + '">' + e.annee + (e.cours ? ' (en cours)' : '') + (e.cloture ? ' — clôturé' : '') + '</option>'; }).join('');
+    var cours = E.filter(function (e) { return e.cours; })[0];
+    s.value = v && E.some(function (e) { return e.annee === v; }) ? v : (cours ? cours.annee : (E[0] || {}).annee);
+    if (!v && !prec(exo()) && E.length > 1) s.value = E[1].annee;   // par défaut : un exercice qui a un exercice précédent
+    dessiner();
+  }
+  q('[data-an4-ex]').addEventListener('change', function () { page = 1; dessiner(); });
+  q('[data-an4-site]').addEventListener('change', function () { page = 1; dessiner(); });
+  q('[data-an4-th]').addEventListener('input', function (ev) { var i = ev.target.dataset.an4C; if (i === undefined) return; C[+i] = ev.target.value.trim(); page = 1; var f = ev.target, p = f.selectionStart; dessiner(); var n = q('[data-an4-c="' + i + '"]'); if (n) { n.focus(); try { n.setSelectionRange(p, p); } catch (x) {} } });
+  q('[data-an4-q]').addEventListener('input', function () { rech = this.value.trim(); page = 1; dessiner(); });
+  root.addEventListener('click', function (ev) {
+    var b = ev.target.closest('button'); if (!b || b.disabled) return; var e = exo();
+    if (b.dataset.sz !== undefined) { taille = +b.dataset.sz; page = 1; dessiner(); return; }
+    if (b.dataset.pg !== undefined) { page = +b.dataset.pg; dessiner(); return; }
+    if (b.hasAttribute('data-an4-pdf')) { exporter('pdf'); return; }
+    if (b.hasAttribute('data-an4-xlsx')) { exporter('xlsx'); return; }
+    if (b.hasAttribute('data-an4-importer')) { window.IMPORT_ASSISTANT.ouvrir(Object.assign({ onFichier: traiter }, MODELE())); return; }
+    if (b.hasAttribute('data-an4-saisie')) { ouvrirSaisie(-1); return; }
+    if (b.hasAttribute('data-an4-generer')) { ouvrirModale(); return; }
+    else if (b.hasAttribute('data-an4-supprimer')) {
+      if (!window.confirm('Supprimer les à nouveaux de l\'exercice ' + e.annee + ' ? Cette action est définitive.')) return;
+      delete G[cle(e)]; dessiner(); toast('À nouveaux supprimés.');
+    }
+  });
+  // ---------- exports ----------
+  function exporter(fmt) {
+    var e = exo(), X = window.EXPORT_TABLEAU, L = filtrees(), M = monnaies(), T = tete(M); if (!X) { toast('Module d\'export indisponible.'); return; } if (!L.length) { toast('Rien à exporter.'); return; }
+    var nom = 'a_nouveaux_' + e.annee + '_site' + q('[data-an4-site]').value, rows = L.map(function (l) { return ligneTxt(l, M); });
+    if (fmt === 'pdf') X.pdf(nom + '.pdf', 'À nouveaux ' + e.annee, 'Site ' + q('[data-an4-site]').value + ' — ' + L.length + ' ligne(s)', T, rows); else X.xlsx(nom + '.xlsx', 'À nouveaux ' + e.annee, T, rows);
+    toast('Export ' + (fmt === 'pdf' ? 'PDF' : 'Excel (XLSX)') + ' généré : ' + L.length + ' ligne(s).');
+  }
+  function enregistre() {   // enregistrement des à nouveaux de l'exercice affiché (créé s'il n'existe pas)
+    var e = exo(), k = cle(e), p = prec(e);
+    if (!G[k]) { var n = new Date(); G[k] = { le: ('0' + n.getDate()).slice(-2) + '/' + ('0' + (n.getMonth() + 1)).slice(-2) + '/' + n.getFullYear(), mode: mode(), source: p ? String(p.annee) : '', definitif: false, lignes: [] }; }
+    return G[k];
+  }
+
+  // ---------- saisie manuelle ----------
+  var edit = -1;
+  function sf(k) { return q('[data-an4-sf="' + k + '"]'); }
+  function remplirComptes(val) {
+    var L = ((window.PLANS_REF && window.PLANS_REF.comptes) || []).filter(function (c) { return /^[1-5]\d{5}$/.test(String(c[0])); }).slice(0, 600);
+    sf('compte').innerHTML = '<option value="">— Sélectionner un compte —</option>' + L.map(function (c) { return '<option value="' + esc(c[0]) + '">' + esc(c[0] + ' — ' + c[1]) + '</option>'; }).join('');
+    if (val && !L.some(function (c) { return String(c[0]) === val; })) sf('compte').innerHTML += '<option value="' + esc(val) + '">' + esc(val + ' — Compte') + '</option>';
+    sf('compte').value = val || ''; sf('compte').dispatchEvent(new Event('change'));
+  }
+  function champsMontants(l) {   // libellés des montants selon les monnaies de l'entité ; devises non paramétrées masquées
+    var M = monnaies(); q('[data-an4-slocal]').textContent = titreLocal(M);
+    [1, 2, 3].forEach(function (n) {
+      var d = M.dev.filter(function (x) { return x.n === n; })[0], lab = q('[data-an4-sd="' + n + '"]'); lab.hidden = !d; sf('d' + n).dataset.m = '';
+      if (d) { q('[data-an4-sdt="' + n + '"]').textContent = titreDev(d); sf('d' + n).value = l ? val(l, d, M) : ''; } else sf('d' + n).value = '';
+    });
+  }
+  function ouvrirSaisie(i) {
+    var e = exo(), g = G[cle(e)], l = i >= 0 && g ? g.lignes[i] : null; if (g && g.definitif) return;
+    edit = i; q('[data-an4-stitre]').textContent = l ? 'Modifier une ligne d\'à nouveau' : 'Saisie manuelle d\'une ligne d\'à nouveau';
+    sf('site').value = q('[data-an4-site]').selectedOptions[0].textContent; sf('ex').value = e.annee;
+    sf('axe').value = l ? l.axe : '01'; sf('aux').value = l ? l.aux : ''; sf('sens').value = l ? l.sens : 'D'; sf('local').value = l ? l.local : '';
+    champsMontants(l); remplirComptes(l ? l.compte : ''); q('[data-an4-serr]').textContent = '';
+    q('[data-an4-ssup]').hidden = !l; q('[data-an4-snew]').hidden = !!l;
+    q('[data-an4-sov]').hidden = false; (l ? sf('local') : sf('compte')).focus();
+  }
+  function num(v) { var n = parseFloat(String(v).replace(/[\s  ]/g, '').replace(',', '.')); return isNaN(n) ? null : n; }
+  function lireSaisie() {
+    var compte = sf('compte').value, loc = num(sf('local').value), e = exo(), M = monnaies(), err = '';
+    if (!compte) err = 'Sélectionnez le compte général.'; else if (loc === null || loc < 0) err = 'Le montant local est obligatoire.';
+    if (err) { q('[data-an4-serr]').textContent = err; return null; }
+    var l = { ex: e.annee, site: q('[data-an4-site]').value, axe: sf('axe').value.trim() || '01', compte: compte, aux: sf('aux').value.trim(), sens: sf('sens').value, local: loc, d1: null, d2: null, d3: null };
+    M.dev.forEach(function (d) { var v = num(sf(d.cle).value); l[d.cle] = v !== null ? v : conv(loc, d.code, M); }); return l;
+  }
+  sf('local').addEventListener('input', function () { var l = num(sf('local').value), M = monnaies(); if (l === null) return; M.dev.forEach(function (d) { if (!sf(d.cle).dataset.m) sf(d.cle).value = conv(l, d.code, M); }); });
+  ['d1', 'd2', 'd3'].forEach(function (k) { sf(k).addEventListener('input', function () { this.dataset.m = '1'; }); });
+  q('[data-an4-sov]').addEventListener('click', function (ev) {
+    var ov = q('[data-an4-sov]'), b = ev.target.closest('button');
+    if (ev.target === ov || (b && b.hasAttribute('data-an4-sx'))) { ov.hidden = true; return; }
+    if (!b) return;
+    if (b.hasAttribute('data-an4-ssup')) {
+      if (!window.confirm('Supprimer la ligne du compte ' + enregistre().lignes[edit].compte + ' ?')) return;
+      enregistre().lignes.splice(edit, 1); ov.hidden = true; dessiner(); toast('Ligne supprimée.'); return;
+    }
+    if (b.hasAttribute('data-an4-sok') || b.hasAttribute('data-an4-snew')) {
+      var l = lireSaisie(); if (!l) return; var g = enregistre();
+      if (edit >= 0) g.lignes[edit] = l; else g.lignes.push(l);
+      dessiner();
+      if (b.hasAttribute('data-an4-snew')) { sf('compte').value = ''; sf('compte').dispatchEvent(new Event('change')); sf('aux').value = ''; sf('local').value = ''; champsMontants(null); q('[data-an4-serr]').textContent = ''; toast('Ligne ajoutée.'); sf('compte').focus(); }
+      else { ov.hidden = true; toast(edit >= 0 ? 'Ligne modifiée.' : 'Ligne ajoutée.'); }
+    }
+  });
+  q('[data-an4-lignes]').addEventListener('dblclick', function (ev) { var tr = ev.target.closest('tr[data-k]'); if (tr) ouvrirSaisie(+tr.dataset.k); });
+
+  // ---------- importation Excel / CSV ----------
+  function MODELE() {
+    var M = monnaies(), champs = [
+      { col: 'Site', oblig: false, format: 'Code du site (01, 02). Par défaut : le site choisi à l\'écran.', exemple: '01' },
+      { col: 'Plan de regroupement', oblig: false, format: 'Code de l\'élément du plan de regroupement (si le plan est activé). Par défaut : 01.', exemple: '01' },
+      { col: 'Compte', oblig: true, format: 'Compte général de bilan : 6 chiffres, classes 1 à 5.', exemple: '101001' },
+      { col: 'Compte auxiliaire', oblig: false, format: 'Code du tiers pour les comptes de tiers (classe 4).', exemple: 'T00001' },
+      { col: 'Sens (D/C)', oblig: true, format: 'D (débit) ou C (crédit).', exemple: 'C' },
+      { col: titreLocal(M), oblig: true, format: 'Nombre positif en monnaie locale (' + M.loc + '). Virgule ou point décimal.', exemple: '1000000,00' }
+    ].concat(M.dev.map(function (d) { return { col: titreDev(d), oblig: false, format: 'Montant en ' + d.code + ' (devise ' + d.n + ' de l\'entité). Par défaut : converti depuis le montant local.', exemple: String(conv(1000000, d.code, M)).replace('.', ',') }; }));
+    function ex(site, cp, aux, sens, loc) { return [site, '01', cp, aux, sens, String(loc).replace('.', ',')].concat(M.dev.map(function (d) { return String(conv(loc, d.code, M)).replace('.', ','); })); }
+    return { titre: 'À nouveaux', fichier: 'modele_a_nouveaux.xlsx', champs: champs, exemples: [ex('01', '101001', '', 'C', 1000000), ex('01', '411001', 'T00001', 'D', 450000), ex('01', '512001', '', 'D', 550000)] };
+  }
+  var importe = null;
+  function sansAccent(t) { return String(t == null ? '' : t).normalize('NFD').replace(/[̀-ͯ]/g, '').toLowerCase().replace(/[^a-z0-9]/g, ''); }
+  function xmlTxt(x) { return x.replace(/&lt;/g, '<').replace(/&gt;/g, '>').replace(/&quot;/g, '"').replace(/&apos;/g, "'").replace(/&amp;/g, '&'); }
+  async function inflate(u8) { var s = new Blob([u8]).stream().pipeThrough(new DecompressionStream('deflate-raw')); return new Uint8Array(await new Response(s).arrayBuffer()); }
+  async function lireZip(buf) {
+    var v = new DataView(buf), u8 = new Uint8Array(buf), i = buf.byteLength - 22, td = new TextDecoder(), fic = {};
+    while (i >= 0 && v.getUint32(i, true) !== 0x06054b50) i--;
+    if (i < 0) throw new Error('Fichier Excel invalide.');
+    var n = v.getUint16(i + 10, true), off = v.getUint32(i + 16, true);
+    for (var k = 0; k < n; k++) {
+      if (v.getUint32(off, true) !== 0x02014b50) break;
+      var meth = v.getUint16(off + 10, true), csz = v.getUint32(off + 20, true), nl = v.getUint16(off + 28, true), el = v.getUint16(off + 30, true), cl = v.getUint16(off + 32, true), lo = v.getUint32(off + 42, true);
+      var nom = td.decode(u8.subarray(off + 46, off + 46 + nl)), ds = lo + 30 + v.getUint16(lo + 26, true) + v.getUint16(lo + 28, true), data = u8.subarray(ds, ds + csz);
+      fic[nom] = meth === 8 ? await inflate(data) : data; off += 46 + nl + el + cl;
+    }
+    return fic;
+  }
+  function colIdx(r) { var m = /^([A-Z]+)/.exec(r) || [0, 'A'], n = 0; for (var i = 0; i < m[1].length; i++) n = n * 26 + m[1].charCodeAt(i) - 64; return n - 1; }
+  async function lireXlsx(buf) {
+    var fic = await lireZip(buf), td = new TextDecoder(), nomFeuille = Object.keys(fic).filter(function (n) { return /^xl\/worksheets\/sheet\d+\.xml$/.test(n); }).sort()[0];
+    if (!nomFeuille) throw new Error('Aucune feuille trouvée dans le fichier.');
+    var sst = [], sx = fic['xl/sharedStrings.xml'] ? td.decode(fic['xl/sharedStrings.xml']) : '';
+    (sx.match(/<si>[\s\S]*?<\/si>/g) || []).forEach(function (si) { sst.push(xmlTxt((si.match(/<t[^>]*>[\s\S]*?<\/t>/g) || []).map(function (t) { return t.replace(/<[^>]+>/g, ''); }).join(''))); });
+    var xml = td.decode(fic[nomFeuille]), lignes = [];
+    (xml.match(/<row[\s\S]*?<\/row>/g) || []).forEach(function (row) {
+      var r = []; (row.match(/<c [^>]*?(?:\/>|>[\s\S]*?<\/c>)/g) || []).forEach(function (c) {
+        var ref = (/\sr="([A-Z]+\d+)"/.exec(c) || [])[1] || 'A1', t = (/\st="(\w+)"/.exec(c) || [])[1], val = '', v = /<v>([\s\S]*?)<\/v>/.exec(c);
+        if (t === 'inlineStr') val = xmlTxt((c.match(/<t[^>]*>[\s\S]*?<\/t>/g) || []).map(function (x) { return x.replace(/<[^>]+>/g, ''); }).join(''));
+        else if (v) val = t === 's' ? (sst[+v[1]] || '') : xmlTxt(v[1]);
+        r[colIdx(ref)] = val;
+      });
+      if (r.length) lignes.push(r);
+    });
+    return lignes;
+  }
+  function lireCsv(txt) { return txt.replace(/^﻿/, '').split(/\r?\n/).filter(function (l) { return l.trim(); }).map(function (l) { var sep = l.indexOf(';') >= 0 ? ';' : (l.indexOf('\t') >= 0 ? '\t' : ','); return l.split(sep).map(function (c) { return c.replace(/^"|"$/g, '').trim(); }); }); }
+  var ALIAS = { exercice: 'ex', site: 'site', planderegroupement: 'axe', axederegroupement: 'axe', regroupement: 'axe', compte: 'compte', comptegeneral: 'compte', compteauxiliaire: 'aux', auxiliaire: 'aux', sens: 'sens', sensdc: 'sens', montantlocal: 'local', local: 'local', montantdevise1: 'd1', montantdevise2: 'd2', montantdevise3: 'd3', montantdevise: 'd1', montantrapport: 'd1' };
+  function convertir(rows) {
+    var ent = rows[0] || [], map = {}, e = exo(), site = q('[data-an4-site]').value, ok = [], ko = [], okN = [], M = monnaies();
+    ent.forEach(function (h, i) { var k = ALIAS[sansAccent(String(h == null ? '' : h).replace(/\([^)]*\)/g, ''))]; if (k && map[k] === undefined) map[k] = i; });
+    if (map.compte === undefined || map.sens === undefined || map.local === undefined) return { erreur: 'Colonnes obligatoires introuvables : Compte, Sens (D/C), Montant local.' };
+    rows.slice(1).forEach(function (r, i) {
+      var g = function (k) { return map[k] === undefined || r[map[k]] == null ? '' : String(r[map[k]]).trim(); }, compte = g('compte').replace(/\.0+$/, ''), sens = g('sens').toUpperCase().charAt(0), loc = num(g('local')), err = '';
+      if (!compte && !g('local') && !g('sens')) return;
+      if (!/^[1-5]\d{5}$/.test(compte)) err = 'compte « ' + compte + ' » invalide (6 chiffres, classes 1 à 5)'; else if (sens !== 'D' && sens !== 'C') err = 'sens « ' + g('sens') + ' » invalide (D ou C)'; else if (loc === null || loc < 0) err = 'montant local invalide';
+      if (err) { ko.push({ n: i + 2, type: /^compte/.test(err) ? 'compte' : /^sens/.test(err) ? 'sens' : 'montant', motif: err.charAt(0).toUpperCase() + err.slice(1), brut: [g('site'), g('axe'), g('compte'), g('aux'), g('sens'), g('local')].concat(M.dev.map(function (d) { return g(d.cle); })) }); return; }
+      okN.push(i + 2);
+      var l = { ex: e.annee, site: g('site') || site, axe: g('axe') || '01', compte: compte, aux: g('aux'), sens: sens, local: loc, d1: null, d2: null, d3: null };
+      M.dev.forEach(function (d) { var v = num(g(d.cle)); l[d.cle] = v !== null ? v : conv(loc, d.code, M); });
+      ok.push(l);
+    });
+    return { ok: ok, ko: ko, okN: okN };
+  }
+  async function traiter(f) {
+    if (!f) return;
+    try {
+      var rows = /\.xlsx$/i.test(f.name) ? await lireXlsx(await f.arrayBuffer()) : lireCsv(await f.text()), r = convertir(rows), M = monnaies();
+      if (r.erreur) { toast(r.erreur); return; }
+      importe = r; var D = 0, C2 = 0; r.ok.forEach(function (l) { if (l.sens === 'D') D += l.local; else C2 += l.local; });
+      q('[data-an4-ifich]').textContent = 'Fichier : ' + f.name + ' — exercice ' + exo().annee + ', site ' + q('[data-an4-site]').value;
+      var ec = D - C2, td = function (v, cl) { return '<td' + (cl ? ' class="' + cl + '"' : '') + '>' + esc(v) + '</td>'; };
+      var thD = M.dev.map(function (d) { return '<th>' + esc(titreDev(d)) + '</th>'; }).join('');
+      q('[data-an4-ikpi]').innerHTML = '<div><small>Lignes retenues</small><b>' + r.ok.length + '</b></div><div class="' + (r.ko.length ? 'ko' : '') + '"><small>Lignes rejetées</small><b>' + r.ko.length + '</b></div>' +
+        '<div><small>Total débit / crédit (' + esc(M.loc) + ')</small><b>' + nb(D) + ' / ' + nb(C2) + '</b></div>' + (Math.abs(ec) > 0.005 ? '<div class="wa"><small>Écart débit – crédit</small><b>' + nb(ec) + '</b></div>' : '');
+      q('[data-an4-nok]').textContent = r.ok.length; q('[data-an4-nko]').textContent = r.ko.length; q('[data-an4-nan]').textContent = '';
+      q('[data-an4-ipan="ok"]').innerHTML = r.ok.length ? '<table class="an4-it"><thead><tr><th>N° ligne</th><th>Site</th><th>Plan de regroupement</th><th>Compte</th><th>Compte auxiliaire</th><th>Sens</th><th>' + esc(titreLocal(M)) + '</th>' + thD + '</tr></thead><tbody>' +
+        r.ok.map(function (l, i) { return '<tr>' + td(r.okN[i], 'c') + td(l.site, 'c') + td(l.axe) + td(l.compte) + td(l.aux) + td(l.sens, 'c') + td(nb(l.local), 'r') + M.dev.map(function (d) { return td(nb(val(l, d, M)), 'r'); }).join('') + '</tr>'; }).join('') + '</tbody></table>' : '<div class="an4-vd">Aucune ligne retenue.</div>';
+      q('[data-an4-ipan="ko"]').innerHTML = r.ko.length ? '<table class="an4-it"><thead><tr><th>N° ligne</th><th>Site</th><th>Plan de regroupement</th><th>Compte</th><th>Compte auxiliaire</th><th>Sens</th><th>' + esc(titreLocal(M)) + '</th>' + thD + '<th>Motif du rejet</th></tr></thead><tbody>' +
+        r.ko.map(function (k) { return '<tr>' + td(k.n, 'c') + k.brut.map(function (v, i) { return td(v, i >= 5 ? 'r' : (i === 0 || i === 4 ? 'c' : '')); }).join('') + td(k.motif, 'm') + '</tr>'; }).join('') + '</tbody></table>' : '<div class="an4-vd">Aucune ligne rejetée.</div>';
+      // anomalies : regroupées par règle non respectée (onglet visible seulement s'il y a des rejets)
+      var REG = { compte: ['Compte invalide', 'Compte général à 6 chiffres, classes 1 à 5.'], sens: ['Sens invalide', 'D (débit) ou C (crédit).'], montant: ['Montant local invalide', 'Nombre positif ou nul, en monnaie locale.'] }, grp = {};
+      r.ko.forEach(function (k) { (grp[k.type] = grp[k.type] || []).push(k.n); });
+      var lignesAn = Object.keys(grp).map(function (t) { return '<tr>' + td(REG[t][0]) + td(REG[t][1]) + td(grp[t].length, 'c') + '<td style="white-space:normal">' + esc(grp[t].slice(0, 30).join(', ') + (grp[t].length > 30 ? ' … (+' + (grp[t].length - 30) + ')' : '')) + '</td></tr>'; });
+      if (Math.abs(ec) > 0.005) lignesAn.push('<tr>' + td('Écart débit – crédit') + td('Les à nouveaux doivent être équilibrés (total débit = total crédit).') + td('—', 'c') + td('Écart de ' + nb(ec) + ' sur les lignes retenues') + '</tr>');
+      q('[data-an4-ipan="an"]').innerHTML = '<table class="an4-it"><thead><tr><th>Anomalie</th><th>Règle attendue</th><th>Lignes</th><th>N° des lignes concernées</th></tr></thead><tbody>' + lignesAn.join('') + '</tbody></table>';
+      q('[data-an4-tabAn]').hidden = !r.ko.length; q('[data-an4-nan]').textContent = lignesAn.length;
+      qa('[data-an4-itab]').forEach(function (t) { t.classList.toggle('on', t.dataset.an4Itab === 'ok'); }); qa('[data-an4-ipan]').forEach(function (p) { p.hidden = p.dataset.an4Ipan !== 'ok'; });
+      q('[data-an4-iok]').disabled = !r.ok.length; q('[data-an4-iov]').hidden = false;
+    } catch (x) { toast('Importation impossible : ' + (x && x.message ? x.message : 'fichier illisible') + '.'); }
+  }
+  q('[data-an4-fichier]').addEventListener('change', function () { traiter(this.files[0]); });
+  q('[data-an4-iov]').addEventListener('click', function (ev) {
+    var ov = q('[data-an4-iov]'), tb = ev.target.closest('[data-an4-itab]');
+    if (tb) { qa('[data-an4-itab]').forEach(function (t) { t.classList.toggle('on', t === tb); }); qa('[data-an4-ipan]').forEach(function (p) { p.hidden = p.dataset.an4Ipan !== tb.dataset.an4Itab; }); return; }
+    if (ev.target.closest('[data-an4-modele]')) { ev.preventDefault(); window.IMPORT_ASSISTANT.modele(MODELE()); return; }
+    if (ev.target === ov || ev.target.closest('[data-an4-ix]')) { ov.hidden = true; return; }
+    if (ev.target.closest('[data-an4-iok]') && importe && importe.ok.length) {
+      var g = enregistre(), rempl = ov.querySelector('input[name="an4-mode"]:checked').value === 'remplacer';
+      if (rempl && g.lignes.length && !window.confirm('Remplacer les ' + g.lignes.length + ' ligne(s) existante(s) par les ' + importe.ok.length + ' ligne(s) du fichier ?')) return;
+      g.lignes = rempl ? importe.ok : g.lignes.concat(importe.ok); ov.hidden = true; page = 1; dessiner(); toast(importe.ok.length + ' ligne(s) importée(s).'); importe = null;
+    }
+  });
+  q('[data-an4-msrc]').addEventListener('change', majModale);
+  q('[data-an4-ov]').addEventListener('click', function (ev) {
+    var ov = q('[data-an4-ov]');
+    if (ev.target === ov || ev.target.closest('[data-an4-mx]')) { ov.hidden = true; return; }
+    if (!ev.target.closest('[data-an4-mok]')) return;
+    var src = q('[data-an4-msrc]').value, site = q('[data-an4-site]').value, cibN = String(+src + 1);
+    if (G[site + '|' + cibN] && !window.confirm('Générer de nouveau les à nouveaux provisoires de l\'exercice ' + cibN + ' ? Les à nouveaux existants seront remplacés.')) return;
+    ov.hidden = true; var cib = generer(src, site, false); if (!cib) return;
+    q('[data-an4-ex]').value = cib.annee; page = 1; dessiner(); toast('À nouveaux provisoires générés sur l\'exercice ' + cib.annee + '.');
+  });
+  // la clôture annuelle de l'exercice N remplace les à nouveaux provisoires de N+1 par les à nouveaux définitifs
+  window.addEventListener('exercices-changed', function (ev) {
+    var a = ev.detail && ev.detail.annee; if (!a) return;
+    if (!exercices().some(function (x) { return +x.annee === +a + 1; })) return;
+    ['01', '02'].forEach(function (site) { generer(a, site, true); });
+    dessiner();
+  });
+  window.addEventListener('hashchange', remplir); window.addEventListener('cloture-changed', dessiner); window.addEventListener('exercices-changed', remplir); window.addEventListener('load', remplir);
+  setTimeout(remplir, 400);
+})();
+</script>

@@ -1,0 +1,181 @@
+<!--
+  Écran « Devis programme » (Paramétrages › Paramètres comptables › Devis programme).
+  Écran conçu pour la maquette (pas de capture de l'application) : champs repris de l'écran
+  « Devis programme » existant, liste reprise de l'export Excel, présentation alignée sur
+  « Saisie des plans » et « Administration de l'entité ». Comportement : ecrans/devis_programme.js
+-->
+<style>
+.dp-switch{position:relative;display:inline-block;width:44px;height:24px;flex:0 0 auto;border:0;border-radius:999px;background:#cbd5e1;cursor:pointer;transition:background .2s ease}
+.dp-switch:after{content:"";position:absolute;top:3px;left:3px;width:18px;height:18px;border-radius:50%;background:#fff;box-shadow:0 1px 3px #0f172a40;transition:transform .2s ease}
+.dp-switch[aria-checked="true"]{background:#16a34a}
+.dp-switch[aria-checked="true"]:after{transform:translateX(20px)}
+.dp-switch:focus-visible{outline:2px solid #3b82f6;outline-offset:2px}
+.dp-grid{display:grid;grid-template-columns:150px minmax(0,1fr) 20px minmax(0,1fr);gap:7px 8px;align-items:center}
+.dp-grid > .dp-full{grid-column:2 / -1}
+.dp-grid > .dp-au{text-align:center;font-size:12px;color:#94a3b8}
+.dp-label{font-size:12px;font-weight:600;color:#334155;line-height:1.2}
+.dp-input{width:100%;height:30px;min-height:30px;border:1px solid #cbd5e1;border-radius:6px;background:#fff;padding:3px 8px;font:inherit;font-size:12.5px;color:#0f172a;outline:none;transition:border-color .15s ease,box-shadow .15s ease}
+.dp-input:focus{border-color:#3b82f6;box-shadow:0 0 0 2px #dbeafe}
+.dp-input:disabled{background:#f1f5f9;color:#475569;cursor:not-allowed}
+.dp-input.dp-amount{text-align:right;font-variant-numeric:tabular-nums}
+.dp-input.dp-invalid{border-color:#ef4444;box-shadow:0 0 0 2px #fee2e2}
+.dp-off .dp-body{opacity:.45;pointer-events:none;user-select:none}
+.dp-row-selected td{background:#eff6ff!important}
+.dp-row-selected td:first-child{box-shadow:inset 3px 0 #3b82f6}
+/* Mise en page compacte : deux colonnes ; libellé au-dessus du champ pour les lignes à plusieurs champs */
+.dp-cols{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1fr);gap:12px}
+.dp-box{border:1px solid #e2e8f0;border-radius:10px;padding:10px 12px;min-width:0;margin:0}
+.dp-box-title{display:block;margin-bottom:8px;font-size:11px;font-weight:700;letter-spacing:.08em;text-transform:uppercase;color:#94a3b8}
+.dp-stack{display:grid;gap:7px 8px}
+.dp-stack > div{display:flex;flex-direction:column;gap:3px;min-width:0}
+.dp-stack .dp-label{font-size:11px;color:#64748b}
+[data-dp-root] [data-dp-action]{min-height:32px;padding:5px 12px;font-size:12.5px}
+@media (max-width:1100px){.dp-cols{grid-template-columns:1fr}}
+@media (max-width:700px){.dp-grid{grid-template-columns:1fr}.dp-grid > .dp-full{grid-column:auto}.dp-grid > .dp-au{text-align:left}.dp-stack{grid-template-columns:1fr!important}}
+</style>
+<app-devis-programme>
+<div class="w-full text-slate-800" data-dp-root>
+
+  <!-- En-tête : activation des devis programmes -->
+  <div class="mb-3 flex flex-wrap items-center gap-2 rounded-xl border border-slate-200 bg-white px-4 py-2 shadow-sm">
+    <div class="mr-3" title="Paramétrage des devis programmes (DP) rattachés aux conventions du projet">
+      <h2 class="text-base font-bold text-slate-900">Devis programme</h2>
+      <p class="text-xs text-slate-500">Projet <b data-dp-projet>COMPTA HASINA</b></p>
+    </div>
+    <button type="button" data-dp-action="ajouter" class="inline-flex items-center gap-2 rounded-lg border-0 bg-blue-600 px-4 py-2 text-sm font-bold text-white transition hover:bg-blue-700 disabled:cursor-not-allowed disabled:opacity-50"><i class="ti ti-plus"></i> Ajouter</button>
+    <button type="button" data-dp-action="modifier" class="inline-flex items-center gap-2 rounded-lg border border-slate-300 bg-white px-4 py-2 text-sm font-semibold transition hover:bg-slate-50 disabled:cursor-not-allowed disabled:opacity-50"><i class="ti ti-pencil"></i> Modifier</button>
+    <button type="button" data-dp-action="supprimer" class="inline-flex items-center gap-2 rounded-lg border border-red-200 bg-white px-4 py-2 text-sm font-semibold text-red-600 transition hover:bg-red-50 disabled:cursor-not-allowed disabled:opacity-50"><i class="ti ti-trash"></i> Supprimer</button>
+    <button type="button" data-dp-action="enregistrer" class="inline-flex items-center gap-2 rounded-lg border-0 bg-emerald-600 px-4 py-2 text-sm font-semibold text-white transition hover:bg-emerald-700 disabled:cursor-not-allowed disabled:opacity-50"><i class="ti ti-device-floppy"></i> Enregistrer</button>
+    <button type="button" data-dp-action="annuler" class="inline-flex items-center gap-2 rounded-lg border border-slate-300 bg-white px-4 py-2 text-sm font-semibold transition hover:bg-slate-50 disabled:cursor-not-allowed disabled:opacity-50"><i class="ti ti-x"></i> Annuler</button>
+    <span class="flex-1"></span>
+    <span class="w-fit rounded-full px-3 py-1 text-xs font-semibold bg-slate-100 text-slate-600" data-dp-mode>Consultation</span>
+    <div class="flex items-center gap-3 rounded-lg border border-slate-200 bg-slate-50 px-3 py-1.5">
+      <div class="text-right">
+        <p class="text-sm font-semibold text-slate-700">Gestion des DP</p>
+        <p class="text-xs text-slate-500" data-dp-switch-label>Activée</p>
+      </div>
+      <button type="button" role="switch" aria-checked="true" aria-label="Activer la gestion des devis programmes" class="dp-switch" data-dp-switch></button>
+    </div>
+  </div>
+
+  <div class="mb-4 rounded-lg border border-amber-200 bg-amber-50 px-4 py-3 text-sm text-amber-800" data-dp-off-notice style="display:none">
+    <i class="ti ti-alert-triangle"></i> La gestion des devis programmes est désactivée pour ce projet : la saisie et la liste sont en lecture seule.
+  </div>
+
+  <div class="dp-body">
+    <p class="mb-3 rounded-lg border border-emerald-200 bg-emerald-50 px-4 py-2 text-sm font-semibold text-emerald-700" data-dp-message style="display:none"></p>
+
+    <!-- Onglets -->
+    <div class="flex items-center gap-1 border-b border-[#edf1f5] mb-3">
+      <button type="button" data-dp-tab="saisie" class="inline-flex items-center gap-1.5 px-4 py-2 text-[13px] font-semibold border-b-2 -mb-px transition-colors cursor-pointer border-[#3e97ff] text-[#3e97ff]"><i class="text-base ti ti-edit"></i> Saisie</button>
+      <button type="button" data-dp-tab="liste" class="inline-flex items-center gap-1.5 px-4 py-2 text-[13px] font-semibold border-b-2 -mb-px transition-colors cursor-pointer border-transparent text-[#888780]"><i class="text-base ti ti-list-details"></i> Liste des DP <span class="rounded-full bg-slate-100 px-2 text-xs text-slate-600" data-dp-count>0</span></button>
+      <span class="flex-1"></span>
+      <h3 class="text-sm font-bold text-slate-900" data-dp-form-title>Devis programme</h3>
+      <span class="ml-3 text-xs text-slate-500"><span class="text-red-500">*</span> obligatoire</span>
+    </div>
+
+    <!-- Onglet Saisie -->
+    <section data-dp-panel="saisie" class="overflow-hidden rounded-xl border border-slate-200 bg-white shadow-sm">
+      <form class="p-3" novalidate data-dp-form>
+        <div class="dp-cols">
+          <fieldset class="dp-box">
+            <span class="dp-box-title">Identification et dates</span>
+            <div class="dp-grid">
+              <label class="dp-label" for="dp-convention">Convention <span class="text-red-500">*</span></label>
+              <select id="dp-convention" name="convention" class="dp-input dp-full">
+                <option value="">-- Aucune --</option>
+                <option value="FA">FA - REVENU DU CAPITAL</option>
+              </select>
+
+              <label class="dp-label" for="dp-code">Code / libellé <span class="text-red-500">*</span></label>
+              <input id="dp-code" name="code" type="text" class="dp-input" style="text-transform:uppercase" maxlength="10" placeholder="Code (ex. ANC)" autocomplete="off">
+              <span></span>
+              <input name="libelle" type="text" class="dp-input" aria-label="Libellé du DP" placeholder="Libellé * (ex. BUDGET 2025)" autocomplete="off">
+
+              <label class="dp-label" for="dp-debut">Période <span class="text-red-500">*</span></label>
+              <input id="dp-debut" name="debut" type="date" class="dp-input" aria-label="Début du DP">
+              <span class="dp-au">au</span>
+              <input name="fin" type="date" class="dp-input" aria-label="Fin du DP">
+
+              <label class="dp-label" for="dp-engagement">Engagement individuel</label>
+              <input id="dp-engagement" name="engagement" type="text" class="dp-input dp-full" autocomplete="off">
+            </div>
+            <div class="dp-stack mt-2" style="grid-template-columns:repeat(3,minmax(0,1fr))">
+              <div><label class="dp-label" for="dp-prorogation">Date de prorogation</label><input id="dp-prorogation" name="prorogation" type="date" class="dp-input"></div>
+              <div><label class="dp-label" for="dp-cloture">Date de clôture</label><input id="dp-cloture" name="cloture" type="date" class="dp-input"></div>
+              <div><label class="dp-label" for="dp-limite">Date limite de paiement</label><input id="dp-limite" name="limitePaiement" type="date" class="dp-input"></div>
+            </div>
+          </fieldset>
+
+          <fieldset class="dp-box">
+            <span class="dp-box-title">Comptes et montants</span>
+            <div class="dp-grid">
+              <label class="dp-label" for="dp-avance">Avance initiale</label>
+              <input id="dp-avance" name="avance" type="text" inputmode="decimal" class="dp-input dp-amount" value="0,00" aria-label="Montant avance initiale (monnaie locale)">
+              <span></span>
+              <div class="flex items-center gap-2">
+                <input name="avanceDevise" type="text" inputmode="decimal" class="dp-input dp-amount" value="0,00" aria-label="Montant avance initiale en devise">
+                <span class="text-xs font-semibold text-slate-500">EUR</span>
+              </div>
+
+              <label class="dp-label" for="dp-caisse-de">Caisses du D.P. du compte</label>
+              <select id="dp-caisse-de" name="caisseDe" class="dp-input"><option value="">-- Aucun --</option></select>
+              <span class="dp-au">au</span>
+              <select name="caisseA" class="dp-input" aria-label="Caisses du D.P. au compte"><option value="">-- Aucun --</option></select>
+
+              <label class="dp-label" for="dp-banque-de">Banque du D.P. du compte</label>
+              <select id="dp-banque-de" name="banqueDe" class="dp-input"><option value="">-- Aucun --</option></select>
+              <span class="dp-au">au</span>
+              <select name="banqueA" class="dp-input" aria-label="Banque du D.P. au compte"><option value="">-- Aucun --</option></select>
+
+              <label class="dp-label" for="dp-caution-de">Caution du DP de</label>
+              <select id="dp-caution-de" name="cautionDe" class="dp-input"><option value="">-- Aucun --</option></select>
+              <span class="dp-au">au</span>
+              <select name="cautionA" class="dp-input" aria-label="Caution du DP au compte"><option value="">-- Aucun --</option></select>
+            </div>
+          </fieldset>
+        </div>
+
+        <fieldset class="dp-box mt-3" style="background:#f8fafc">
+          <span class="dp-box-title">Banque</span>
+          <div class="dp-stack" style="grid-template-columns:repeat(4,minmax(0,1fr))">
+            <div><label class="dp-label" for="dp-bq-intitule">Intitulé</label><input id="dp-bq-intitule" name="bqIntitule" type="text" class="dp-input" autocomplete="off"></div>
+            <div><label class="dp-label" for="dp-bq-numero">Numéro de la banque</label><input id="dp-bq-numero" name="bqNumero" type="text" class="dp-input" autocomplete="off"></div>
+            <div><label class="dp-label" for="dp-bq-nom">Nom de la banque</label><input id="dp-bq-nom" name="bqNom" type="text" class="dp-input" autocomplete="off"></div>
+            <div><label class="dp-label" for="dp-bq-agence">Agence</label><input id="dp-bq-agence" name="bqAgence" type="text" class="dp-input" autocomplete="off"></div>
+          </div>
+        </fieldset>
+
+        <p class="mt-2 text-sm font-semibold text-red-600" data-dp-errors style="display:none"></p>
+      </form>
+    </section>
+
+    <!-- Onglet Liste -->
+    <section data-dp-panel="liste" style="display:none" class="overflow-hidden rounded-xl border border-slate-200 bg-white shadow-sm">
+      <div class="flex flex-col gap-3 border-b border-slate-200 p-4 sm:flex-row sm:items-center sm:justify-between">
+        <p class="text-xs text-slate-500" data-dp-shown>0 DP</p>
+        <div class="relative w-full sm:w-80">
+          <i class="ti ti-search pointer-events-none absolute left-3 top-1/2 -translate-y-1/2 text-slate-400"></i>
+          <input type="search" data-dp-search placeholder="Convention, code ou libellé…" class="w-full rounded-lg border border-slate-300 bg-white py-2 pl-9 pr-3 text-sm outline-none transition focus:border-blue-500 focus:ring-2 focus:ring-blue-100">
+        </div>
+      </div>
+      <div class="overflow-x-auto">
+        <table class="min-w-full border-collapse text-sm">
+          <thead class="bg-slate-100">
+            <tr>
+              <th class="border-b border-slate-200 px-4 py-3 text-left text-xs font-bold uppercase tracking-wide text-slate-600">Convention</th>
+              <th class="border-b border-slate-200 px-4 py-3 text-left text-xs font-bold uppercase tracking-wide text-slate-600">Code du DP</th>
+              <th class="border-b border-slate-200 px-4 py-3 text-left text-xs font-bold uppercase tracking-wide text-slate-600">Libellé</th>
+              <th class="border-b border-slate-200 px-4 py-3 text-center text-xs font-bold uppercase tracking-wide text-slate-600">Début DP</th>
+              <th class="border-b border-slate-200 px-4 py-3 text-center text-xs font-bold uppercase tracking-wide text-slate-600">Fin DP</th>
+              <th class="border-b border-slate-200 px-4 py-3 text-right text-xs font-bold uppercase tracking-wide text-slate-600">Montant avance initiale</th>
+            </tr>
+          </thead>
+          <tbody data-dp-rows></tbody>
+        </table>
+      </div>
+      <footer class="border-t border-slate-200 bg-slate-50/50 px-5 py-3 text-xs text-slate-500">Cliquez sur une ligne pour la sélectionner, double-cliquez pour l'ouvrir dans l'onglet Saisie.</footer>
+    </section>
+  </div>
+</div>
+</app-devis-programme>

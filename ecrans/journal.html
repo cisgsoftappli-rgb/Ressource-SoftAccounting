@@ -1,0 +1,215 @@
+<!--
+  Écran « Journaux » (États comptables › Général › Journaux, sous le Grand livre général) — fenêtre de critères (période comptable, centres de saisie,
+  plan de regroupement, type de l'état, monnaie, choix du journal, rupture) puis édition des écritures du journal (modèle : fichier Journaux.xls,
+  extrait de démonstration dans ecrans/journal_donnees.json). La fenêtre s'ouvre à l'arrivée sur l'écran, comme les autres états.
+  Ne pas nommer de fonction « $$ » (build.cjs).
+-->
+<style>
+.jr-lists{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:16px;padding:16px}
+@media (max-width:760px){.jr-lists{grid-template-columns:1fr}}
+.jr-box{border:1px solid #D6D9E0;border-radius:8px;height:132px;overflow:auto;padding:6px 10px;display:grid;align-content:start;gap:2px;background:#fff}
+.jr-box label{display:flex;align-items:center;gap:8px;min-height:28px;font-size:12px;cursor:pointer}
+.jr-box input,.jr-radios input{width:16px;height:16px;accent-color:#2E427B;margin:0}
+.jr-radios{display:flex;flex-wrap:wrap;gap:6px 24px}
+.jr-radios label{display:inline-flex;align-items:center;gap:8px;font-size:12px;cursor:pointer;min-height:28px}
+.jr-radios.col{flex-direction:column;gap:2px}
+.jr-g1{padding:16px;display:grid;gap:16px}
+.jr-dt{position:relative}.jr-dt .be-in{padding-right:40px}
+.jr-res{overflow-x:auto}
+.jr-tb.be-tb{width:100%;border-collapse:collapse;min-width:1500px}
+.jr-tb.be-tb th{background:#18244F;color:#fff;padding:8px 10px;font-size:12px;font-weight:700;letter-spacing:.04em;text-transform:uppercase;text-align:left;white-space:nowrap;border-bottom:1px solid #F4F7FE;position:sticky;top:0;z-index:1}
+.jr-tb.be-tb td{padding:8px 10px;font-size:13px;font-weight:400;color:#353944;border-bottom:1px solid #F4F7FE;white-space:nowrap;vertical-align:middle}
+.jr-tb.be-tb td:nth-child(7){min-width:340px;max-width:460px;overflow:hidden;text-overflow:ellipsis}
+.jr-tb.be-tb td.r,.jr-tb.be-tb th.r{text-align:right;font-variant-numeric:tabular-nums}
+.jr-tb.be-tb tbody tr:hover td{background:#F4F7FE}
+.jr-tb.be-tb tr.jh td{background:#F9F8E7;color:#7A5F1E;font-weight:700}
+.jr-tb.be-tb tr.tm td{background:#F9F8E7;color:#7A5F1E;font-weight:700}
+.jr-tb.be-tb tr.tg td{background:#F0EDD0;color:#7A5F1E;font-weight:700}
+.jr-tb.be-tb tr.tm:hover td,.jr-tb.be-tb tr.jh:hover td{background:#F9F8E7}.jr-tb.be-tb tr.tg:hover td{background:#F0EDD0}
+.jr-meta{padding:10px 12px 8px;display:grid;gap:2px;text-align:left}
+.jr-meta b{font-family:var(--font-sans);font-size:14px;font-weight:700;color:#0B1332;text-transform:uppercase;letter-spacing:.02em}
+.jr-meta span{color:#5B606D;font-size:12px}
+.jr-vide{padding:48px 16px;text-align:center;color:#5B606D;font-size:14px}.jr-vide[hidden]{display:none}
+@media print{.jr-tb{min-width:0!important;font-size:8px}.jr-tb td,.jr-tb th{padding:2px 3px!important;font-size:8px!important;white-space:normal}.jr-res{overflow:visible!important}}
+</style>
+
+<div class="be-root" data-jr>
+  <h1 style="position:absolute;width:1px;height:1px;overflow:hidden;clip-path:inset(50%);margin:0">Journaux</h1>
+  <div class="no-print" data-jr-actions>
+    <button type="button" data-jr-criteres>Critères</button>
+    <button type="button" data-jr-imprimer>Imprimer</button>
+    <button type="button" data-jr-exporter>Exporter</button>
+  </div>
+
+  <div class="be-ov" data-jr-ov hidden>
+    <div class="be-dlg" role="dialog" aria-modal="true" aria-labelledby="jr-dt">
+      <div class="be-dh"><div><p class="be-eyebrow">Critères d'édition</p><h2 id="jr-dt">Journal</h2><p class="be-dsub">Choisissez la période, les centres de saisie et le journal, puis éditez l'état.</p></div>
+        <button type="button" class="be-x" data-jr-fermer aria-label="Fermer"><i class="ti ti-x"></i></button></div>
+      <div class="be-db">
+        <section class="be-pan" aria-label="Période comptable">
+          <h2>Période comptable</h2>
+          <div class="be-g">
+            <label class="be-c be-span2"><span>Exercice comptable</span><select class="be-sel" data-k="exercice"><option value="2026|01/01/2026|31/12/2026">2026</option><option value="2025|01/01/2025|31/12/2025">2025</option></select></label>
+            <div class="be-c"><span>Période du</span><div class="jr-dt"><input class="be-in" data-k="du" placeholder="jj/mm/aaaa" autocomplete="off" inputmode="numeric" aria-label="Période du"><button type="button" class="be-dpb" data-cal="du" aria-label="Ouvrir le calendrier" aria-haspopup="dialog"><i class="ti ti-chevron-down"></i></button></div></div>
+            <div class="be-c"><span>Au</span><div class="jr-dt"><input class="be-in" data-k="au" placeholder="jj/mm/aaaa" autocomplete="off" inputmode="numeric" aria-label="Au"><button type="button" class="be-dpb" data-cal="au" aria-label="Ouvrir le calendrier" aria-haspopup="dialog"><i class="ti ti-chevron-down"></i></button></div></div>
+          </div>
+        </section>
+        <section class="be-pan" aria-label="Sélection">
+          <div class="jr-lists">
+            <div class="be-c"><span>Centre de saisie</span><div class="jr-box" data-jr-sites></div></div>
+            <div class="be-c" data-regr><span>Plan de regroupement</span><div class="jr-box" data-jr-axes></div></div>
+          </div>
+        </section>
+        <section class="be-pan" aria-label="Type de l'état et monnaie">
+          <div class="jr-g1">
+            <div class="be-c"><span>Type de l'état</span><div class="jr-radios"><label><input type="radio" name="jr-type" value="general" checked>Journal Général</label><label><input type="radio" name="jr-type" value="aux">Journal Auxiliaire</label></div></div>
+            <label class="be-c"><span>Monnaie d'édition</span><select class="be-sel" data-k="monnaie"><option value="MGA">MGA – Monnaie locale</option><option value="DEV">Devise étrangère</option><option value="USD">USD – Monnaie de rapport</option></select></label>
+          </div>
+        </section>
+        <section class="be-pan" aria-label="Choix du journal">
+          <div class="be-g">
+            <label class="be-c"><span>Numéro du journal</span><select class="be-sel" data-k="journal"></select></label>
+            <label class="be-c"><span>Description</span><input class="be-in" data-k="jdesc" disabled></label>
+            <div class="be-c be-span2"><span>Rupture</span><div class="jr-radios"><label><input type="radio" name="jr-rup" value="mois" checked>Rupture / mois</label><label><input type="radio" name="jr-rup" value="jm">Rupture / Journal / mois</label></div></div>
+          </div>
+        </section>
+      </div>
+      <div class="be-df"><button type="button" class="be-b" data-jr-reinit><i class="ti ti-refresh"></i>Réinitialiser</button><button type="button" class="be-b" data-jr-fermer>Annuler</button><button type="button" class="be-b pri" data-jr-editer><i class="ti ti-file-text"></i>Éditer</button></div>
+    </div>
+  </div>
+
+  <div class="jr-vide" data-jr-vide>Aucun journal édité. Utilisez « Critères » pour lancer l'édition.</div>
+  <div class="bp-toast" role="status" hidden data-jr-toast style="position:fixed;top:16px;right:16px;z-index:60;background:#0B1332;color:#fff;border-radius:8px;padding:10px 16px;font-size:12px;font-weight:600">Export du journal (maquette)</div>
+
+  <section class="be-pan be-res jr-res" aria-label="Résultat" data-jr-res hidden>
+    <div class="jr-meta"><b data-jr-titre>Journaux</b><span data-jr-l1></span><span data-jr-l2></span></div>
+    <table class="be-tb jr-tb"><thead><tr><th>Date comptable</th><th>N° ordre</th><th>Journal</th><th>N° pièce</th><th>Site</th><th>Compte – Auxiliaire</th><th>Libellé</th><th class="r">Débit</th><th class="r">Crédit</th><th>Mon.</th><th>SSACTI</th><th>CPT PCOP</th><th>Financement</th><th>Commune</th></tr></thead><tbody data-jr-corps></tbody></table>
+  </section>
+</div>
+
+<script>
+(function () {
+  var root = document.querySelector('[data-jr]'); if (!root) return;
+  function q(s) { return root.querySelector(s); } function qa(s) { return [].slice.call(root.querySelectorAll(s)); }
+  var K = {}; qa('[data-k]').forEach(function (e) { K[e.dataset.k] = e; });
+  var DATA = %%DONNEES%%;
+  var SITES = [['00', 'Consolidation'], ['01', 'Siege'], ['02', 'ATSIMO ANDREFANA'], ['03', 'ANDROY'], ['04', 'ANOSY'], ['05', 'ATSINANANA'], ['06', 'ITASY']];
+  var AXES = [['', 'TOUTES'], ['01', 'BANQUE MONDIALE'], ['02', 'PPA'], ['03', 'FINANCEMENTS ADDITIONNELS'], ['04', 'ETAT MALAGASY']];
+  var JOURNAUX = [['', 'Tous les journaux'], ['ACH', 'Journal Achats de Biens & Prestations de Services'], ['AAJMISS', 'JOURNAL MISSION ATSIMO ANDREFANA'], ['BCDA', 'Banque – dépenses en Ariary'], ['CADI', 'Caisse – dépenses'], ['FAACH', 'Factures d\'achat'], ['FABNM', 'Règlements fournisseurs'], ['FA2ACH', 'Factures d\'achat (2)'], ['FA2BNIM', 'Règlements fournisseurs (2)'], ['JMISS', 'Journal des missions'], ['OD', 'Opérations diverses'], ['PA', 'Paie']];
+  function esc(s) { return String(s == null ? '' : s).replace(/[&<>"]/g, function (c) { return { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c]; }); }
+  function z2(n) { return (n < 10 ? '0' : '') + n; }
+  function toD(t) { var p = (t || '').split('/'); return new Date(+p[2], +p[1] - 1, +p[0]); }
+  function fD(d) { return z2(d.getDate()) + '/' + z2(d.getMonth() + 1) + '/' + d.getFullYear(); }
+  function num(t) { return t ? parseFloat(String(t).replace(/[\s  ]/g, '').replace(',', '.')) || 0 : 0; }
+  function fmt(n) { return n.toFixed(2).replace('.', ',').replace(/\B(?=(\d{3})+(?!\d))/g, ' '); }
+  function ex() { var p = K.exercice.value.split('|'); return { an: p[0], d: p[1], f: p[2] }; }
+
+  // listes de cases à cocher
+  q('[data-jr-sites]').innerHTML = SITES.map(function (s) { return '<label><input type="checkbox" data-site="' + s[0] + '"' + (s[0] === '01' ? ' checked' : '') + '>' + s[0] + ' ' + esc(s[1]) + '</label>'; }).join('');
+  var axesCle = null;
+  function majAxes() {
+    var g = window.REGROUPEMENT && window.REGROUPEMENT(), els = g && g.elements.length ? g.elements.map(function (e) { return [e.code, e.libelle]; }) : AXES.slice(1), k = els.join('|');
+    if (k === axesCle) return; axesCle = k;
+    var cochés = qa('[data-axe]').filter(function (c) { return c.checked && c.dataset.axe; }).map(function (c) { return c.dataset.axe; });
+    var liste = [['', 'TOUTES']].concat(els), tous = !cochés.length;
+    q('[data-jr-axes]').innerHTML = liste.map(function (a) { return '<label><input type="checkbox" data-axe="' + a[0] + '"' + ((a[0] === '' ? tous : cochés.indexOf(a[0]) >= 0) ? ' checked' : '') + '>' + (a[0] ? a[0] + ' ' : '') + esc(a[1]) + '</label>'; }).join('');
+  }
+  majAxes(); window.addEventListener('regroupement-changed', majAxes); window.addEventListener('hashchange', function () { setTimeout(majAxes, 250); });
+  q('[data-jr-axes]').addEventListener('change', function (e) {
+    var t = e.target; if (!t.matches('[data-axe]')) return;
+    if (t.dataset.axe === '' && t.checked) qa('[data-axe]').forEach(function (c) { if (c.dataset.axe) c.checked = false; });
+    else if (t.checked) q('[data-axe=""]').checked = false;
+  });
+  K.journal.innerHTML = JOURNAUX.map(function (j) { return '<option value="' + j[0] + '">' + (j[0] ? j[0] + ' — ' : '') + esc(j[1]) + '</option>'; }).join('');
+  function majDesc() { var j = JOURNAUX.filter(function (x) { return x[0] === K.journal.value; })[0]; K.jdesc.value = j && j[0] ? j[1] : ''; }
+  K.journal.addEventListener('change', majDesc);
+  function periode() { var e = ex(); K.du.value = e.d; K.au.value = e.f; }
+  K.exercice.addEventListener('change', periode);
+
+  // calendrier (dates bornées à l'exercice)
+  var cal = document.createElement('div'); cal.className = 'be-cal'; cal.hidden = true; cal.setAttribute('role', 'dialog'); cal.setAttribute('aria-label', 'Calendrier'); root.appendChild(cal);
+  var vue = new Date(), cible = null, MOISL = ['janvier', 'février', 'mars', 'avril', 'mai', 'juin', 'juillet', 'août', 'septembre', 'octobre', 'novembre', 'décembre'];
+  function sem(d) { var t = new Date(Date.UTC(d.getFullYear(), d.getMonth(), d.getDate())); var n = t.getUTCDay() || 7; t.setUTCDate(t.getUTCDate() + 4 - n); var y0 = new Date(Date.UTC(t.getUTCFullYear(), 0, 1)); return Math.ceil(((t - y0) / 86400000 + 1) / 7); }
+  function dessiner() {
+    var e = ex(), mn = toD(e.d), mx = toD(e.f), cur = toD(cible.value), auj = new Date(); auj.setHours(0, 0, 0, 0);
+    var y = vue.getFullYear(), m = vue.getMonth(), dec = (new Date(y, m, 1).getDay() + 6) % 7, h = '';
+    h += '<div class="be-cal-h"><button type="button" data-n="-12" aria-label="Année précédente">«</button><button type="button" data-n="-1" aria-label="Mois précédent">‹</button><b>' + MOISL[m] + ' ' + y + '</b><button type="button" data-n="1" aria-label="Mois suivant">›</button><button type="button" data-n="12" aria-label="Année suivante">»</button></div>';
+    h += '<table class="be-cal-t"><thead><tr><th></th>' + ['lun.', 'mar.', 'mer.', 'jeu.', 'ven.', 'sam.', 'dim.'].map(function (j) { return '<th>' + j + '</th>'; }).join('') + '</tr></thead><tbody>';
+    for (var r = 0; r < 6; r++) {
+      var d0 = new Date(y, m, 1 - dec + r * 7); h += '<tr><td class="w">' + z2(sem(new Date(d0.getFullYear(), d0.getMonth(), d0.getDate() + 3))) + '</td>';
+      for (var c = 0; c < 7; c++) {
+        var d = new Date(y, m, 1 - dec + r * 7 + c), hors = d < mn || d > mx, cls = (d.getMonth() !== m ? 'o ' : '') + (c >= 5 ? 'we ' : '') + (+d === +auj ? 'au ' : '') + (!isNaN(cur) && +d === +cur ? 'sel ' : '');
+        h += '<td><button type="button" class="' + cls + '" data-d="' + fD(d) + '"' + (hors ? ' disabled' : '') + '>' + d.getDate() + '</button></td>';
+      }
+      h += '</tr>';
+    }
+    cal.innerHTML = h + '</tbody></table><div class="be-cal-f"><button type="button" class="be-b" data-act="auj">Aujourd\'hui</button><button type="button" class="be-b" data-act="eff">Effacer</button></div>';
+  }
+  function fermerCal() { cal.hidden = true; }
+  function ouvrirCal(champ) {
+    cible = champ; var cur = toD(champ.value); vue = isNaN(cur) ? toD(ex().d) : cur; dessiner(); cal.hidden = false;
+    var r = champ.getBoundingClientRect(), hc = cal.offsetHeight, wc = cal.offsetWidth, top = r.bottom + 4; if (top + hc > window.innerHeight - 8) top = Math.max(8, r.top - hc - 4);
+    cal.style.top = top + 'px'; cal.style.left = Math.max(8, Math.min(r.left, window.innerWidth - wc - 8)) + 'px';
+  }
+  qa('[data-cal]').forEach(function (b) { b.addEventListener('click', function (e) { e.stopPropagation(); var c = K[b.dataset.cal]; if (!cal.hidden && cible === c) fermerCal(); else ouvrirCal(c); }); });
+  function poser(t) { cible.value = t; fermerCal(); coherence(cible); }
+  cal.addEventListener('click', function (e) {
+    e.stopPropagation(); var b = e.target.closest('button'); if (!b || b.disabled) return;
+    if (b.dataset.n) { vue = new Date(vue.getFullYear(), vue.getMonth() + (+b.dataset.n), 1); dessiner(); return; }
+    if (b.dataset.d) { poser(b.dataset.d); return; }
+    var e2 = ex(), mn = toD(e2.d), mx = toD(e2.f);
+    if (b.dataset.act === 'auj') { var t = new Date(); t.setHours(0, 0, 0, 0); poser(fD(t < mn ? mn : t > mx ? mx : t)); return; }
+    if (b.dataset.act === 'eff') poser(cible === K.du ? e2.d : e2.f);
+  });
+  document.addEventListener('click', function (e) { if (!cal.hidden && !cal.contains(e.target)) fermerCal(); });
+  function coherence(c) {
+    var e = ex(), mn = toD(e.d), mx = toD(e.f), d = toD(c.value);
+    if (!/^\d{2}\/\d{2}\/\d{4}$/.test(c.value) || isNaN(d) || d < mn || d > mx) c.value = c === K.du ? e.d : e.f;
+    if (toD(K.du.value) > toD(K.au.value)) { if (c === K.du) K.au.value = K.du.value; else K.du.value = K.au.value; }
+  }
+  K.du.addEventListener('change', function () { coherence(K.du); }); K.au.addEventListener('change', function () { coherence(K.au); });
+
+  // édition
+  function editer() {
+    var du = toD(K.du.value), au = toD(K.au.value), jr = K.journal.value, aux = q('[name=jr-type]:checked').value === 'aux', rup = q('[name=jr-rup]:checked').value;
+    var sites = qa('[data-site]:checked').map(function (c) { return c.dataset.site; });
+    var L = DATA.filter(function (r) { var d = toD(r.d); return d >= du && d <= au && (!jr || r.j === jr) && sites.indexOf(r.s) >= 0 && (aux ? / - /.test(r.c) : true); });
+    L.sort(function (a, b) { var ma = a.d.slice(3), mb = b.d.slice(3), ya = toD(a.d), yb = toD(b.d); if (rup === 'jm' && a.j !== b.j) return a.j < b.j ? -1 : 1; return (ya - yb) || (a.o < b.o ? -1 : a.o > b.o ? 1 : 0); });
+    var h = '', cle = '', cleJ = '', sd = 0, sc = 0, td = 0, tc = 0;
+    function lig(r) { return '<tr><td class="n">' + r.d + '</td><td class="n">' + esc(r.o) + '</td><td class="n">' + esc(r.j) + '</td><td class="n">' + esc(r.p) + '</td><td>' + esc(r.s) + '</td><td class="n">' + esc(r.c) + '</td><td title="' + esc(r.l) + '">' + esc(r.l) + '</td><td class="r">' + r.db + '</td><td class="r">' + r.cr + '</td><td>' + esc(r.m) + '</td><td>' + esc(r.a) + '</td><td>' + esc(r.pc) + '</td><td>' + esc(r.f) + '</td><td>' + esc(r.co) + '</td></tr>'; }
+    function tot(lib, d, c, cl) { return '<tr class="' + cl + '"><td colspan="7">' + lib + '</td><td class="r">' + fmt(d) + '</td><td class="r">' + fmt(c) + '</td><td colspan="5"></td></tr>'; }
+    L.forEach(function (r, i) {
+      var cm = r.d.slice(3), cj = r.j;
+      var chg = cle && (cm !== cle || (rup === 'jm' && cj !== cleJ));
+      if (chg) { h += tot('Total ' + (rup === 'jm' ? cleJ + ' — ' : '') + 'mois ' + cle, sd, sc, 'tm'); sd = 0; sc = 0; }
+      if (rup === 'jm' && cj !== cleJ) h += '<tr class="jh"><td colspan="14">Journal ' + esc(cj) + '</td></tr>';
+      cle = cm; cleJ = cj; h += lig(r); var d = num(r.db), c = num(r.cr); sd += d; sc += c; td += d; tc += c;
+    });
+    if (L.length) { h += tot('Total ' + (rup === 'jm' ? cleJ + ' — ' : '') + 'mois ' + cle, sd, sc, 'tm'); h += tot('TOTAL GÉNÉRAL', td, tc, 'tg'); }
+    else h = '<tr><td colspan="14" class="jr-vide">Aucune écriture pour ces critères.</td></tr>';
+    q('[data-jr-corps]').innerHTML = h;
+    q('[data-jr-titre]').textContent = (aux ? 'Journal auxiliaire' : 'Journal général') + ' au ' + K.au.value;
+    q('[data-jr-l1]').textContent = (aux ? 'Journal auxiliaire' : 'Journal général') + ' : (' + K.monnaie.value + ') — ' + (jr ? jr + ' ' : 'Tous les journaux ');
+    q('[data-jr-l2]').textContent = 'Site : ' + (sites.join(', ') || '—') + ' · Période du ' + K.du.value + ' au ' + K.au.value;
+    q('[data-jr-res]').hidden = false; majEtat();
+  }
+  var ov = q('[data-jr-ov]');
+  function ouvrir() { ov.hidden = false; K.exercice.focus(); }
+  function fermer() { fermerCal(); ov.hidden = true; }
+  q('[data-jr-editer]').addEventListener('click', function () { editer(); fermer(); });
+  qa('[data-jr-fermer]').forEach(function (b) { b.addEventListener('click', fermer); });
+  q('[data-jr-criteres]').addEventListener('click', ouvrir);
+  q('[data-jr-imprimer]').addEventListener('click', function () { window.print(); });
+  q('[data-jr-exporter]').addEventListener('click', function () { var t = q('[data-jr-toast]'); t.hidden = false; setTimeout(function () { t.hidden = true; }, 2200); });
+  q('[data-jr-reinit]').addEventListener('click', function () {
+    K.exercice.selectedIndex = 0; periode(); qa('[data-site]').forEach(function (c) { c.checked = c.dataset.site === '01'; }); qa('[data-axe]').forEach(function (c) { c.checked = c.dataset.axe === ''; });
+    q('[name=jr-type][value=general]').checked = true; q('[name=jr-rup][value=mois]').checked = true; K.monnaie.selectedIndex = 0; K.journal.selectedIndex = 0; majDesc();
+  });
+  root.addEventListener('keydown', function (e) { if (e.key === 'Escape') { if (!cal.hidden) { fermerCal(); e.stopPropagation(); } else if (!ov.hidden) fermer(); } }, true);
+  function arrivee() { if (location.hash === '#journal' && q('[data-jr-res]').hidden) setTimeout(ouvrir, 150); }
+  window.addEventListener('hashchange', arrivee); setTimeout(arrivee, 700);
+  function majEtat() { var vide = q('[data-jr-res]').hidden; q('[data-jr-vide]').hidden = !vide; q('[data-jr-imprimer]').disabled = vide; q('[data-jr-exporter]').disabled = vide; }
+  setInterval(majEtat, 300);
+  periode(); majDesc();
+})();
+</script>

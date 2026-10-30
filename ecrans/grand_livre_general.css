@@ -1,0 +1,14 @@
+/* Grand livre général : réutilise les classes bx-* (balance auxiliaire) */
+.glg-table{min-width:2300px}
+.glg-table td.mono{font-family:ui-monospace,Consolas,monospace}
+.glg-table tr.g td{background:#f1f5f9;font-weight:700;color:#0f172a;cursor:default}
+.glg-table tr.t td{background:#eff6ff;font-weight:700;color:#1e40af;cursor:default}
+.glg-table tr.s td{background:#f8fafc;font-weight:700;cursor:default}
+.glg-table tr.g:hover,.glg-table tr.t:hover,.glg-table tr.s:hover{background:inherit}
+.glg-table tr.plus td{text-align:center;background:#fff;cursor:default}
+.glg-table tr.plus button{border:1px solid #2563eb;background:#fff;color:#2563eb;border-radius:8px;padding:6px 14px;font-weight:600;cursor:pointer}
+.glg-table tr.plus button:hover{background:#eff6ff}
+.glg-pied{margin-top:10px;font-size:13px;color:#0f172a}
+.glg-table tr.m td{background:#f8fafc;font-style:italic;font-weight:600;color:#475569;cursor:default}
+.glg-table tr.m:hover{background:inherit}
+.glg-plans{max-width:520px}

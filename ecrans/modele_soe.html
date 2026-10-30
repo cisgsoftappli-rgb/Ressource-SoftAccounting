@@ -1,0 +1,107 @@
+<!--
+  Écran « Modèle d'état SOE » (Gestion des demandes de remboursement › Paramétrages › Modèle SOE) — capture Angular app-modeles-etat-reporting-list.
+  Page de liste : titre, sous-titre, bouton « Nouveau modèle », recherche (nom, source ou bailleur), état vide « Aucun modèle trouvé ».
+  « Nouveau modèle » ouvre une fenêtre de création (nom, source, bailleur) puis le modèle s'ajoute à la liste ; « Concepteur » ouvre le
+  concepteur d'état SOE (window.__mfDesigner). Données en mémoire. Fenêtre de création et colonnes : à confirmer.
+-->
+<style>
+.so-card{background:#fff;border:1px solid #e2e8f0;border-radius:12px;box-shadow:0 1px 2px #0000000d}
+.so-top{display:flex;flex-wrap:wrap;align-items:center;justify-content:space-between;gap:16px;border-bottom:1px solid #e2e8f0;padding:20px}
+.so-h{margin:0;font-size:20px;font-weight:700;color:#0f172a}.so-sub{margin:4px 0 0;font-size:14px;color:#64748b}
+.so-btn{border:0;border-radius:8px;background:#0f766e;color:#fff;padding:8px 16px;font:inherit;font-size:14px;font-weight:600;cursor:pointer;transition:background .15s}
+.so-btn:hover{background:#115e59}.so-btn.sec{background:#fff;color:#334155;border:1px solid #cbd5e1}.so-btn.sec:hover{background:#f1f5f9}.so-btn:disabled{opacity:.6;cursor:not-allowed}
+.so-sr{border-bottom:1px solid #e2e8f0;padding:16px}
+.so-in{width:100%;border:1px solid #cbd5e1;border-radius:8px;padding:8px 12px;font:inherit;font-size:14px;outline:none;background:#fff}.so-in:focus{border-color:#0d9488;box-shadow:0 0 0 3px #ccfbf1}
+.so-empty{padding:40px;text-align:center}.so-empty b{display:block;font-size:14px;color:#334155}.so-empty span{display:block;margin-top:4px;font-size:12px;color:#64748b}
+.so-t{width:100%;border-collapse:collapse;font-size:14px}.so-t th{background:#0c4a6e;color:#fff;text-align:left;padding:10px 16px;font-weight:600;font-size:13px}
+.so-t td{padding:10px 16px;border-top:1px solid #e2e8f0;color:#334155}.so-t td.a{text-align:right;white-space:nowrap}
+.so-pill{display:inline-block;border-radius:999px;background:#ccfbf1;color:#115e59;font-size:12px;font-weight:600;padding:2px 10px}
+.so-ico{border:1px solid #cbd5e1;background:#fff;border-radius:6px;padding:4px 10px;font:inherit;font-size:12.5px;cursor:pointer;color:#334155;margin-left:6px}.so-ico:hover{background:#f1f5f9}.so-ico.d:hover{background:#fef2f2;color:#b91c1c;border-color:#fecaca}
+.so-ov{position:fixed;inset:0;z-index:2000;background:#0f172a99;display:none;align-items:center;justify-content:center;padding:16px}
+.so-md{background:#fff;border-radius:16px;width:100%;max-width:460px;box-shadow:0 25px 50px -12px #0f172a40;overflow:hidden}
+.so-mh{background:#152847;color:#fff;padding:16px 22px;font-size:15px;font-weight:700}
+.so-mb{padding:22px;display:flex;flex-direction:column;gap:16px}.so-mb label span{display:block;font-size:12px;font-weight:700;text-transform:uppercase;letter-spacing:.03em;color:#6b7280;margin-bottom:6px}
+.so-mf{display:flex;justify-content:flex-end;gap:10px;padding:14px 22px;background:#f8fafc;border-top:1px solid #f1f5f9}
+.so-err{color:#b91c1c;font-size:12px;display:none}
+</style>
+<app-modeles-etat-reporting-list>
+<div data-so-root style="width:100%">
+  <section class="so-card">
+    <div class="so-top">
+      <div><h1 class="so-h">Modèle d'état SOE</h1><p class="so-sub">Paramétrez et personnalisez les modèles d’état SOE (état récapitulatif des dépenses) à présenter aux bailleurs.</p></div>
+      <button type="button" class="so-btn" data-so-new>Nouveau modèle</button>
+    </div>
+    <div class="so-sr"><input class="so-in" type="text" placeholder="Rechercher par nom, source ou bailleur..." data-so-q></div>
+    <div class="so-empty" data-so-empty><b>Aucun modèle trouvé</b><span>Créez un modèle pour commencer la personnalisation.</span></div>
+    <div style="overflow:auto;display:none" data-so-tw><table class="so-t"><thead><tr><th>Nom du modèle</th><th>Source</th><th>Bailleur</th><th style="text-align:right">Actions</th></tr></thead><tbody data-so-rows></tbody></table></div>
+  </section>
+
+  <div class="so-ov" data-so-ov>
+    <div class="so-md" role="dialog" aria-modal="true" aria-label="Nouveau modèle SOE">
+      <div class="so-mh">Nouveau modèle d'état SOE</div>
+      <div class="so-mb">
+        <label><span>Nom du modèle *</span><input class="so-in" data-so-nom placeholder="Ex : Formulaire 4F"></label>
+        <label><span>Source de données</span><select class="so-in" data-so-src><option>Demande de remboursement</option><option>Comptabilité générale</option><option>Budget</option></select></label>
+        <label><span>Bailleur</span><select class="so-in" data-so-bai><option>Banque mondiale (IDA)</option><option>FIDA</option><option>Union européenne (FED)</option><option>Fonds mondial</option></select></label>
+        <div class="so-err" data-so-err>Renseignez le nom du modèle.</div>
+      </div>
+      <div class="so-mf"><button type="button" class="so-btn sec" data-so-cancel>Annuler</button><button type="button" class="so-btn" data-so-ok>Créer</button></div>
+    </div>
+  </div>
+</div>
+<script>
+(function () {
+  var root = document.currentScript.parentElement.querySelector('[data-so-root]');
+  var q = function (s) { return root.querySelector(s); };
+  var MODELS = [];
+  function esc(s) { var d = document.createElement('div'); d.textContent = s == null ? '' : s; return d.innerHTML; }
+  var RECAP = /EJCD|récapitulatif|déclaration/i;
+  function procModels() {
+    var map = {}, order = [];
+    (window.__pfProcs || []).forEach(function (p) { p.models.forEach(function (m) {
+      if (RECAP.test(m)) return; var k = p.proc + '|' + m;
+      if (!map[k]) { map[k] = { id: 'p' + k, nom: m, src: 'Procédure ' + p.proc, bai: [], proc: true }; order.push(k); } map[k].bai.push(p.conv);
+    }); });
+    return order.map(function (k) { map[k].bai = map[k].bai.join(', '); return map[k]; });
+  }
+  function draw() {
+    var f = q('[data-so-q]').value.trim().toLowerCase(), ALL = procModels().concat(MODELS);
+    var l = ALL.filter(function (m) { return !f || (m.nom + ' ' + m.src + ' ' + m.bai).toLowerCase().indexOf(f) >= 0; });
+    q('[data-so-empty]').style.display = l.length ? 'none' : '';
+    q('[data-so-empty]').innerHTML = ALL.length ? '<b>Aucun modèle trouvé</b><span>Modifiez votre recherche.</span>' : '<b>Aucun modèle trouvé</b><span>Créez un modèle pour commencer la personnalisation.</span>';
+    q('[data-so-tw]').style.display = l.length ? '' : 'none';
+    q('[data-so-rows]').innerHTML = l.map(function (m) {
+      return '<tr><td><b>' + esc(m.nom) + '</b></td><td><span class="so-pill">' + esc(m.src) + '</span></td><td>' + esc(m.bai) + '</td><td class="a">' + (/4F/.test(m.nom) ? '<button type="button" class="so-ico" data-so-prev="' + esc(m.nom) + '">Aperçu</button>' : '') + '<button type="button" class="so-ico" data-so-open="' + m.id + '">Concepteur</button><button type="button" class="so-ico" data-so-dup="' + m.id + '">Dupliquer</button>' + (m.proc ? '' : '<button type="button" class="so-ico d" data-so-del="' + m.id + '">Supprimer</button>') + '</td></tr>';
+    }).join('');
+  }
+  q('[data-so-q]').addEventListener('input', draw);
+  q('[data-so-new]').addEventListener('click', function () { q('[data-so-nom]').value = ''; q('[data-so-err]').style.display = 'none'; q('[data-so-ov]').style.display = 'flex'; q('[data-so-nom]').focus(); });
+  q('[data-so-cancel]').addEventListener('click', function () { q('[data-so-ov]').style.display = 'none'; });
+  q('[data-so-ok]').addEventListener('click', function () {
+    var n = q('[data-so-nom]').value.trim();
+    if (!n) { q('[data-so-err]').style.display = 'block'; return; }
+    MODELS.push({ id: Date.now() + '' + MODELS.length, nom: n, src: q('[data-so-src]').value, bai: q('[data-so-bai]').value });
+    q('[data-so-ov]').style.display = 'none'; draw();
+  });
+  q('[data-so-rows]').addEventListener('click', function (e) {
+    var pv = e.target.closest('[data-so-prev]'); if (pv && window.__open4F) { window.__open4F(pv.dataset.soPrev); return; }
+    var du = e.target.closest('[data-so-dup]');
+    if (du) {
+      var sm = procModels().concat(MODELS).filter(function (x) { return x.id === du.dataset.soDup; })[0];
+      window.__dupModele({ source: { code: sm.code || '', nom: sm.nom }, exists: function (c) { return MODELS.some(function (m) { return String(m.code || '').toLowerCase() === c.toLowerCase(); }); }, onOk: function (c, n) {
+        MODELS.push({ id: Date.now() + '' + MODELS.length, code: c, nom: n, src: sm.proc ? 'Demande de remboursement' : sm.src, bai: sm.bai }); draw();
+      } });
+      return;
+    }
+    var o = e.target.closest('[data-so-open]'), d = e.target.closest('[data-so-del]');
+    if (d) { MODELS = MODELS.filter(function (m) { return m.id !== d.dataset.soDel; }); draw(); return; }
+    if (o) {
+      var m = procModels().concat(MODELS).filter(function (x) { return x.id === o.dataset.soOpen; })[0];
+      window.__mfDesigner = { code: 'SOE', nom: m.nom, def: false, type: 'SOE', src: 'Demande de remboursement', proc: m.proc ? m.src.replace(/^Procédure /, '') : '', bai: m.bai }; window.__designerFrom = 'soemodel'; location.hash = 'designer';
+    }
+  });
+  window.addEventListener('mf-model-dup', function (e) { var d = e.detail || {}; if (d.from !== 'soemodel') return; MODELS.push({ id: Date.now() + '' + MODELS.length, code: d.code, nom: d.nom, src: 'Demande de remboursement', bai: '' }); draw(); });
+  window.addEventListener('pf-change', draw); draw();
+})();
+</script>
+</app-modeles-etat-reporting-list>

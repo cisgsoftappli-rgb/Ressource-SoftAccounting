@@ -1,0 +1,308 @@
+<!--
+  Gabarit des écrans « Plan » (Paramétrages › Gestion des plans › Saisie des plans › Plan comptable, Activité, Budget, Géographique, Financier,
+  Plan 5 à Plan 10, Tiers, Journaux). Instancié par build.cjs pour chaque plan : %%ID%% (identifiant d'écran), %%TITRE%% (nom du plan),
+  %%DONNEES%% (JSON : extra, lignes). Onglets Saisie / Liste, liste filtrable, hiérarchie par code parent. Données en mémoire.
+  Niveau : liste des niveaux paramétrés dans « Configuration des plans » ; le code parent est limité au niveau précédent.
+  Plan comptable uniquement : racine de compte rattachée (comptes de niveau 1), comportements du dernier niveau (sans analytique, tiers,
+  immobilisations, lettrage) et comportements analytiques (axes ouverts par la racine de compte, parmi les plans activés).
+  S'appuie sur les styles bp-* de l'écran « Paramétrage du bilan » (présents dans la page). Ne pas nommer de fonction « $$ » (build.cjs).
+-->
+<style>
+.pl-aide{display:block;font-size:12px;color:#5B606D;margin-top:2px}.pl-aide.err{color:#B63132}
+.pl-cw{position:relative;display:block}.pl-tirets{position:absolute;inset:0;display:flex;align-items:center;white-space:pre;pointer-events:none;overflow:hidden;box-sizing:border-box}.pl-tirets i{font-style:normal;color:transparent}.pl-tirets b{font-weight:400;color:#9AA0AE}
+.pl-sec{margin:18px 0 8px;padding-bottom:4px;border-bottom:1px solid #E9EBF0;font-size:12px;font-weight:600;letter-spacing:.04em;text-transform:uppercase;color:#2E427B}
+.pl-note{margin:0 0 8px;font-size:12px;color:#B45309}
+.pl-tuiles{display:grid;grid-template-columns:repeat(auto-fill,minmax(170px,1fr));gap:10px}
+.pl-tuile{display:flex;align-items:center;gap:10px;padding:8px 12px;border:1px solid #D6D9E0;border-radius:10px;background:#fff;font-size:12px;color:#0B1332;cursor:pointer}
+.pl-tuile input{width:16px;height:16px;accent-color:#2E427B;flex:none}
+.pl-tuile.on{background:#E3EBFE;border-color:#2E427B}
+.pl-tuile.off{background:#F5F7F9;color:#8A8F9C;cursor:default}
+</style>
+<div class="bp-root" data-pl="%%ID%%">
+  <h1 style="position:absolute;width:1px;height:1px;overflow:hidden;clip-path:inset(50%);margin:0">%%TITRE%%</h1>
+
+  <div class="no-print" data-pl-actions>
+    <button type="button" data-pl-ajouter>Ajouter</button>
+    <button type="button" data-pl-modifier>Modifier</button>
+    <button type="button" data-pl-supprimer>Supprimer</button>
+    <button type="button" data-pl-enregistrer>Enregistrer</button>
+    <button type="button" data-pl-annuler>Annuler</button>
+    <button type="button" data-pl-imprimer>Imprimer</button>
+    <button type="button" data-pl-exporter>Exporter</button>
+  </div>
+
+  <div class="bp-tabs" role="tablist">
+    <button type="button" role="tab" class="on" data-pl-tab="saisie">Saisie</button>
+    <button type="button" role="tab" data-pl-tab="liste">Liste <span class="bp-n" data-pl-compte></span></button>
+  </div>
+
+  <div class="bp-grid">
+    <section class="bp-pan" aria-label="Liste de %%TITRE%%" data-pl-pan="liste" hidden>
+      <h2>%%TITRE%% <small>Double-clic ou « Modifier » pour ouvrir la ligne en saisie</small></h2>
+      <div style="overflow:auto;max-height:560px">
+        <table class="bp-tb" style="min-width:760px"><thead data-pl-head></thead><tbody data-pl-lignes></tbody></table>
+      </div>
+      <div class="bp-vide" data-pl-vide hidden>Aucune ligne dans ce plan : utilisez « Ajouter ».</div>
+    </section>
+
+    <section class="bp-pan" aria-label="Saisie de %%TITRE%%" data-pl-pan="saisie">
+      <form class="bp-form" data-pl-form onsubmit="return false">
+        <div class="bp-l3">
+          <label class="bp-champ"><span>Niveau <b>*</b></span><select class="bp-sel" data-f="niveau"></select></label>
+          <label class="bp-champ bp-span2"><span>Code parent</span><select class="bp-sel" data-f="parent"></select></label>
+          <label class="bp-champ"><span>Code <b>*</b></span><span class="pl-cw"><input class="bp-in" data-f="code" maxlength="20" autocomplete="off"><span class="pl-tirets" data-pl-tirets aria-hidden="true"></span></span><span class="pl-aide" data-pl-aide></span></label>
+          <label class="bp-champ bp-span2"><span>Libellé <b>*</b></span><input class="bp-in" data-f="libelle" maxlength="120"></label>
+          <label class="bp-champ" data-pl-extra-champ><span data-pl-extra-lib></span><select class="bp-sel" data-f="extra"></select></label>
+          <label class="bp-champ bp-span2" data-pl-sec="racine" hidden><span>Racine de compte rattachée <b>*</b></span><select class="bp-sel" data-f="racine"></select></label>
+        </div>
+        <div data-pl-sec="dernier" hidden>
+          <div class="pl-sec">Comportements du dernier niveau</div>
+          <div class="pl-tuiles" data-pl-comp></div>
+          <div class="pl-sec" data-pl-ana-titre>Comportements analytiques</div>
+          <p class="pl-note" data-pl-ana-note hidden></p>
+          <div class="pl-tuiles" data-pl-ana></div>
+        </div>
+        <div class="bp-chk"><label><input type="checkbox" data-c="actif">Actif</label></div>
+      </form>
+    </section>
+  </div>
+  <div class="bp-toast" role="status" hidden data-pl-toast></div>
+</div>
+
+<script>
+(function () {
+  var root = document.querySelector('[data-pl="%%ID%%"]'); if (!root) return;
+  function q(s) { return root.querySelector(s); } function qa(s) { return [].slice.call(root.querySelectorAll(s)); }
+  var CFG = %%DONNEES%%;
+  var COMPTABLE = '%%ID%%' === 'pl_comptable';
+  var rows = CFG.lignes.map(function (r) { return { code: r[0], libelle: r[1], parent: r[2] || '', extra: r[3] || '', actif: r[4] !== 0, racine: '', comp: [], ana: [] }; });
+  var sel = -1, mode = 'consultation', filt = {}, draft = { racine: '', comp: [], ana: [] };
+  if (COMPTABLE) window.PLAN_COMPTABLE = rows; // comptes proposés par « Type de taxe »
+  function esc(s) { return String(s == null ? '' : s).replace(/[&<>"]/g, function (c) { return { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c]; }); }
+  function toast(m) { var t = q('[data-pl-toast]'); t.textContent = m; t.hidden = false; clearTimeout(toast.t); toast.t = setTimeout(function () { t.hidden = true; }, 2200); }
+  // index code -> ligne et niveau (mémorisé) : nécessaire pour les plans de plusieurs milliers de lignes
+  var idx = {}, niv = {}, idxN = -1;
+  function reindexer() { if (idxN === rows.length) return; idx = {}; niv = {}; rows.forEach(function (x) { idx[x.code] = x; }); idxN = rows.length; }
+  function niveau(code, vu) { reindexer(); if (niv[code]) return niv[code]; vu = vu || {}; var r = idx[code]; if (!r || vu[code]) return 1; vu[code] = 1; var n = r.parent ? 1 + niveau(r.parent, vu) : 1; niv[code] = n; return n; }
+  // Codification : suit strictement « Configuration des plans » (niveaux : format et nombre de caractères). Code d'un niveau = code du parent + segment du niveau.
+  var PLAN_CFG = { pl_comptable: 'PC', pl_activite: 'PLAN1', pl_budget: 'PLAN2', pl_financier: 'PLAN3', pl_geo: 'PLAN4', pl_5: 'PLAN5', pl_6: 'PLAN6', pl_7: 'PLAN7', pl_8: 'PLAN8', pl_9: 'PLAN9', pl_10: 'PLAN10' };
+  window.PLANS_LIGNES = window.PLANS_LIGNES || {}; window.PLANS_LIGNES[PLAN_CFG['%%ID%%']] = { get rows() { return rows; }, niveau: niveau }; // lu par window.REGROUPEMENT()
+  var FMT = { 'Numérique': { re: /[0-9]/, nom: 'numériques' }, 'Alphabétique': { re: /[A-Za-z]/, nom: 'alphabétiques' }, 'Alphanumérique': { re: /[A-Za-z0-9]/, nom: 'alphanumériques' } };
+  function niveauxCfg() { var p = (window.PLANS_CFG || []).filter(function (x) { return x.code === PLAN_CFG['%%ID%%']; })[0]; return p ? p.niveaux : null; }
+  function rowDe(code) { reindexer(); return idx[code]; }
+  function niveauSel() { return +q('[data-f=niveau]').value || 1; }
+  // niveaux proposés : ceux de la configuration du plan (à défaut, 6 niveaux génériques)
+  function remplirNiveaux() {
+    var cfg = niveauxCfg(), s = q('[data-f=niveau]'), v = s.value, o = '';
+    if (cfg) cfg.forEach(function (l, i) { o += '<option value="' + (i + 1) + '">Niveau ' + (i + 1) + (l.libelle ? ' — ' + esc(l.libelle) : '') + '</option>'; });
+    else for (var i = 1; i <= 6; i++) o += '<option value="' + i + '">Niveau ' + i + '</option>';
+    s.innerHTML = o; if (v && s.querySelector('option[value="' + v + '"]')) s.value = v;
+  }
+  // règle du code pour un parent donné : { n, prefixe, larg, fmt } (null : plan sans configuration de niveaux, saisie libre)
+  function regle(parent) {
+    var cfg = niveauxCfg(); if (!cfg) return null;
+    var n = parent ? niveau(parent) + 1 : niveauSel();
+    if (n > cfg.length) return { n: n, hors: true, max: cfg.length };
+    if (n > 1 && !parent) return { n: n, attente: true, lib: cfg[n - 1].libelle };
+    return { n: n, prefixe: parent || '', larg: +cfg[n - 1].car, fmt: cfg[n - 1].format, lib: cfg[n - 1].libelle };
+  }
+  function aideTexte() {
+    var e = q('[data-pl-aide]'), r = regle(q('[data-f=parent]').value);
+    if (!r) { e.textContent = ''; return; }
+    e.classList.remove('err');
+    if (r.attente) { e.textContent = 'Niveau ' + r.n + (r.lib ? ' (' + r.lib + ')' : '') + ' : choisissez d\'abord le code parent (niveau ' + (r.n - 1) + ').'; return; }
+    e.textContent = r.hors ? 'Ce plan est limité à ' + r.max + ' niveaux.' : 'Niveau ' + r.n + (r.lib ? ' (' + r.lib + ')' : '') + ' : ' + r.larg + ' caractère' + (r.larg > 1 ? 's' : '') + ' ' + (r.larg > 1 ? FMT[r.fmt].nom : FMT[r.fmt].nom.replace(/s$/, '')) + (r.prefixe ? ', à la suite du code parent « ' + r.prefixe + ' »' : '') + ' — ' + (r.prefixe.length + r.larg) + ' au total.';
+  }
+  // saisie du code : préfixe du parent imposé, caractères du segment filtrés selon le format, longueur bornée
+  function forcerCode() {
+    var c = q('[data-f=code]'), r = regle(q('[data-f=parent]').value); if (!r || r.hors || c.disabled) return;
+    if (r.attente) { c.value = ''; return; }
+    var v = c.value.toUpperCase(), suf = v.indexOf(r.prefixe) === 0 ? v.slice(r.prefixe.length) : v.replace(r.prefixe, '');
+    suf = suf.split('').filter(function (ch) { return FMT[r.fmt].re.test(ch); }).join('').slice(0, r.larg);
+    c.value = r.prefixe + suf; c.maxLength = r.prefixe.length + r.larg;
+  }
+  // tirets : un par caractère encore saisissable dans le code (préfixe du parent + segment du niveau)
+  function tirets() {
+    var c = q('[data-f=code]'), t = q('[data-pl-tirets]'), rg = regle(q('[data-f=parent]').value);
+    if (!rg || rg.hors || rg.attente || c.disabled) { t.innerHTML = ''; return; }
+    var reste = rg.prefixe.length + rg.larg - c.value.length; if (reste < 0) reste = 0;
+    var cs = getComputedStyle(c);
+    t.style.paddingLeft = (parseFloat(cs.paddingLeft) + parseFloat(cs.borderLeftWidth)) + 'px'; t.style.font = cs.font; t.style.letterSpacing = cs.letterSpacing;
+    t.innerHTML = '<i>' + esc(c.value) + '</i><b>' + new Array(reste + 1).join('– ') + '</b>';
+  }
+  function aide() { aideTexte(); tirets(); }
+  function aEnfants(code) { return rows.some(function (r) { return r.parent === code; }); }
+
+  // ---- Plan comptable : racine de compte, comportements du dernier niveau et comportements analytiques ----
+  var COMPORTEMENTS = [['sans', 'Sans analytique'], ['tiers', 'Tiers'], ['immo', 'Immobilisations'], ['lettrage', 'Lettrage']];
+  var PLANS_LIES = ['PLAN1', 'PLAN2', 'PLAN3', 'PLAN4', 'PLAN5', 'PLAN6', 'PLAN7', 'PLAN8', 'PLAN9', 'PLAN10'];
+  function racines() { return window.RACINES || []; }
+  function racineObj(code) { return racines().filter(function (x) { return x.code === code; })[0]; }
+  function racineDefaut(row) { var c = 'C' + String(row.code).charAt(0); return racineObj(c) ? c : ''; }
+  // racine (superclasse) d'un compte : celle du compte de niveau 1 dont il descend
+  function superclasse(code, vu) {
+    vu = vu || {}; var r = rowDe(code); if (!r || vu[code]) return '';
+    vu[code] = 1; if (!r.parent) return r.racine || racineDefaut(r); return superclasse(r.parent, vu);
+  }
+  function dernierNiveau(n) { var cfg = niveauxCfg(); return COMPTABLE && cfg && n === cfg.length; }
+  function libPlan(c) { var p = (window.PLANS_CFG || []).filter(function (x) { return x.code === c; })[0]; return p ? (p.abrev || p.libelle) : c; } // abréviation du plan
+  function plansActifs() { var a = window.PLANS_ACTIFS ? window.PLANS_ACTIFS() : []; return PLANS_LIES.filter(function (c) { return a.indexOf(c) >= 0; }); }
+  function tuile(cle, lib, coche, actif, attr) {
+    return '<label class="pl-tuile' + (coche ? ' on' : '') + (actif ? '' : ' off') + '"><input type="checkbox" ' + attr + '="' + cle + '"' + (coche ? ' checked' : '') + (actif ? '' : ' disabled') + '>' + esc(lib) + '</label>';
+  }
+  function sections() {
+    if (!COMPTABLE) return;
+    var ed = mode !== 'consultation', n = mode === 'consultation' && sel >= 0 ? niveau(rows[sel].code) : niveauSel();
+    var rac = q('[data-pl-sec=racine]'); rac.hidden = n !== 1;
+    var dn = q('[data-pl-sec=dernier]'); dn.hidden = !dernierNiveau(n);
+    if (n === 1) {
+      var s = q('[data-f=racine]'), v = draft.racine;
+      s.innerHTML = '<option value="">— Choisir une racine —</option>' + racines().map(function (x) { return '<option value="' + esc(x.code) + '">' + esc(x.code) + ' — ' + esc(x.libelle) + '</option>'; }).join('');
+      s.value = v; s.disabled = !ed;
+    }
+    if (!dernierNiveau(n)) return;
+    q('[data-pl-comp]').innerHTML = COMPORTEMENTS.map(function (c) { return tuile(c[0], c[1], draft.comp.indexOf(c[0]) >= 0, ed, 'data-comp'); }).join('');
+    // axes analytiques : plans activés ET ventilés par la racine de compte (superclasse) ; indisponibles si « Sans analytique »
+    var parent = mode === 'consultation' && sel >= 0 ? rows[sel].parent : q('[data-f=parent]').value, sc = parent ? superclasse(parent) : '', ro = sc ? racineObj(sc) : null;
+    var sans = draft.comp.indexOf('sans') >= 0, note = q('[data-pl-ana-note]');
+    q('[data-pl-ana-titre]').textContent = 'Comportements analytiques' + (sc ? ' — superclasse ' + sc : '');
+    var ouverts = ro ? plansActifs().filter(function (c) { return ro.plans && ro.plans[c]; }) : [];
+    if (!parent) { note.textContent = 'La superclasse sera déterminée par le code parent.'; note.hidden = false; }
+    else if (!ro) { note.textContent = 'Aucune racine de compte n\'est rattachée à la superclasse de ce compte.'; note.hidden = false; }
+    else if (!ouverts.length) { note.textContent = 'La superclasse « ' + sc + ' » ne prévoit aucun axe analytique.'; note.hidden = false; }
+    else if (sans) { note.textContent = '« Sans analytique » est coché : aucun axe analytique pour ce compte.'; note.hidden = false; }
+    else note.hidden = true;
+    q('[data-pl-ana]').innerHTML = plansActifs().map(function (c) {
+      var ok = ed && !sans && ouverts.indexOf(c) >= 0;
+      return tuile(c, libPlan(c), draft.ana.indexOf(c) >= 0 && ouverts.indexOf(c) >= 0, ok, 'data-ana');
+    }).join('');
+  }
+  root.addEventListener('change', function (e) {
+    var t = e.target;
+    if (t.hasAttribute('data-comp')) {
+      var k = t.getAttribute('data-comp'); draft.comp = draft.comp.filter(function (x) { return x !== k; }); if (t.checked) draft.comp.push(k);
+      if (k === 'sans' && t.checked) draft.ana = [];
+      sections();
+    } else if (t.hasAttribute('data-ana')) {
+      var a = t.getAttribute('data-ana'); draft.ana = draft.ana.filter(function (x) { return x !== a; }); if (t.checked) draft.ana.push(a);
+      sections();
+    } else if (t.getAttribute('data-f') === 'racine') draft.racine = t.value;
+  });
+  window.addEventListener('plans-actifs', function () { sections(); });
+  window.addEventListener('racines-changed', function () { sections(); });
+
+  // en-tête et filtres
+  var cols = [['Code', 'code'], ['Libellé', 'libelle'], ['Niveau', 'niveau'], ['Code parent', 'parent']].concat(CFG.extra ? [[CFG.extra.label, 'extra']] : []).concat([['Statut', 'statut']]);
+  q('[data-pl-head]').innerHTML = '<tr>' + cols.map(function (c) { return '<th>' + c[0] + '</th>'; }).join('') + '</tr><tr class="flt">' +
+    cols.map(function (c, i) { return c[1] === 'statut' ? '<th><select class="bp-sel" data-fc="' + i + '" aria-label="Filtrer Statut"><option value=""></option><option value="actif">Actif</option><option value="inactif">Inactif</option></select></th>' : '<th><input class="bp-in" data-fc="' + i + '" aria-label="Filtrer ' + c[0] + '"></th>'; }).join('') + '</tr>';
+  function filtrer() {
+    var F = qa('[data-fc]').map(function (e) { return e.value.trim().toLowerCase(); }), last = cols.length - 1;
+    qa('[data-pl-lignes] tr').forEach(function (tr) { tr.hidden = F.some(function (v, k) { if (!v) return false; var td = tr.children[k]; var t = (td.dataset.v || td.textContent).toLowerCase(); return k === last ? t !== v : t.indexOf(v) < 0; }); });
+  }
+  qa('[data-fc]').forEach(function (e) { e.addEventListener('input', filtrer); e.addEventListener('change', filtrer); });
+
+  function liste() {
+    idxN = -1; // données modifiées : l'index est reconstruit
+    q('[data-pl-compte]').textContent = rows.length ? rows.length + ' ligne' + (rows.length > 1 ? 's' : '') : '';
+    q('[data-pl-vide]').hidden = rows.length > 0;
+    q('[data-pl-lignes]').innerHTML = rows.map(function (r, i) {
+      return '<tr data-i="' + i + '"' + (i === sel ? ' class="sel"' : '') + '><td>' + esc(r.code) + '</td><td>' + esc(r.libelle) + '</td><td class="c">' + niveau(r.code) + '</td><td>' + esc(r.parent) + '</td>' +
+        (CFG.extra ? '<td>' + esc(r.extra) + '</td>' : '') + '<td class="c" data-v="' + (r.actif ? 'actif' : 'inactif') + '">' + (r.actif ? 'Actif' : 'Inactif') + '</td></tr>';
+    }).join(''); filtrer();
+  }
+  // code parent : uniquement les éléments du niveau précédent celui qui est choisi (niveau 1 : aucun parent)
+  function remplirParents(cible) {
+    var s = q('[data-f=parent]'), cfg = niveauxCfg(), n = niveauSel();
+    var liste = rows.filter(function (r) { return r.code !== cible && niveau(r.code) === n - 1; });
+    s.innerHTML = '<option value="">— Aucun (niveau 1) —</option>' + liste.map(function (r) { return '<option value="' + esc(r.code) + '">' + esc(r.code) + ' — ' + esc(r.libelle) + '</option>'; }).join('');
+  }
+  if (CFG.extra) { q('[data-pl-extra-lib]').textContent = CFG.extra.label; q('[data-f=extra]').innerHTML = '<option value=""></option>' + CFG.extra.options.map(function (o) { return '<option>' + esc(o) + '</option>'; }).join(''); }
+  else q('[data-pl-extra-champ]').hidden = true;
+
+  function form(r) {
+    r = r || { code: '', libelle: '', parent: '', extra: '', actif: true, racine: '', comp: [], ana: [] };
+    remplirNiveaux();
+    q('[data-f=niveau]').value = r.code ? niveau(r.code) : (r.parent ? niveau(r.parent) + 1 : 1);
+    remplirParents(r.code); q('[data-f=code]').value = r.code; q('[data-f=libelle]').value = r.libelle; q('[data-f=parent]').value = r.parent; q('[data-f=extra]').value = r.extra || '';
+    q('[data-c=actif]').checked = !!r.actif;
+    draft = { racine: r.racine || (r.code && !r.parent ? racineDefaut(r) : ''), comp: (r.comp || []).slice(), ana: (r.ana || []).slice() };
+    sections();
+  }
+  q('[data-f=niveau]').addEventListener('change', function () {
+    if (mode !== 'creation') return;
+    remplirParents(''); q('[data-f=parent]').value = ''; q('[data-f=code]').value = ''; q('[data-f=code]').maxLength = 20;
+    draft = { racine: '', comp: [], ana: [] }; forcerCode(); aide(); sections();
+  });
+  q('[data-f=parent]').addEventListener('change', function () {
+    var p = q('[data-f=parent]').value; if (p) q('[data-f=niveau]').value = niveau(p) + 1;
+    if (mode === 'creation') { q('[data-f=code]').value = ''; forcerCode(); } aide(); sections();
+  });
+  q('[data-f=code]').addEventListener('input', function () { forcerCode(); tirets(); });
+  q('[data-f=code]').addEventListener('focus', function () { if (mode === 'creation') forcerCode(); });
+  window.addEventListener('plans-changed', function () { remplirNiveaux(); aide(); sections(); });
+  function etat() {
+    var ed = mode !== 'consultation';
+    qa('[data-pl-form] input,[data-pl-form] select').forEach(function (e) { if (!e.hasAttribute('data-comp') && !e.hasAttribute('data-ana')) e.disabled = !ed; });
+    q('[data-f=code]').disabled = mode !== 'creation'; q('[data-f=parent]').disabled = mode !== 'creation'; q('[data-f=niveau]').disabled = mode !== 'creation'; aide(); sections();
+    var a = q('[data-pl-actions]');
+    a.querySelector('[data-pl-ajouter]').disabled = ed; a.querySelector('[data-pl-modifier]').disabled = ed || sel < 0; a.querySelector('[data-pl-supprimer]').disabled = ed || sel < 0;
+    a.querySelector('[data-pl-enregistrer]').disabled = !ed; a.querySelector('[data-pl-annuler]').disabled = !ed; a.querySelector('[data-pl-imprimer]').disabled = !rows.length; a.querySelector('[data-pl-exporter]').disabled = !rows.length;
+  }
+  function onglet(n) { qa('[data-pl-pan]').forEach(function (p) { p.hidden = p.dataset.plPan !== n; }); qa('[data-pl-tab]').forEach(function (t) { var on = t.dataset.plTab === n; t.classList.toggle('on', on); t.setAttribute('aria-selected', on); }); }
+  function choisir(i) { if (mode !== 'consultation') return; sel = i; liste(); form(rows[i]); etat(); }
+  qa('[data-pl-tab]').forEach(function (t) { t.addEventListener('click', function () { onglet(t.dataset.plTab); }); });
+  var tb = q('[data-pl-lignes]');
+  tb.addEventListener('click', function (e) { var tr = e.target.closest('tr[data-i]'); if (tr) choisir(+tr.dataset.i); });
+  tb.addEventListener('dblclick', function (e) { var tr = e.target.closest('tr[data-i]'); if (tr) { choisir(+tr.dataset.i); onglet('saisie'); } });
+
+  function enregistrer() {
+    var r = { code: q('[data-f=code]').value.trim(), libelle: q('[data-f=libelle]').value.trim(), parent: q('[data-f=parent]').value, extra: q('[data-f=extra]').value, actif: q('[data-c=actif]').checked, racine: '', comp: [], ana: [] };
+    var n = mode === 'creation' ? niveauSel() : niveau(rows[sel].code);
+    var err = !r.code ? 'Le code est obligatoire.' : !r.libelle ? 'Le libellé est obligatoire.' : (mode === 'creation' && rows.some(function (x) { return x.code === r.code; })) ? 'Ce code existe déjà.' : '';
+    if (!err && mode === 'creation') {
+      var rg = regle(r.parent);
+      if (rg && rg.hors) err = 'Ce plan est limité à ' + rg.max + ' niveaux : le code parent choisi est déjà au dernier niveau.';
+      else if (rg && rg.attente) err = 'Choisissez le code parent du niveau ' + (rg.n - 1) + '.';
+      else if (rg && (r.code.indexOf(rg.prefixe) !== 0 || r.code.length !== rg.prefixe.length + rg.larg)) err = 'Le code du niveau ' + rg.n + ' doit comporter ' + (rg.prefixe.length + rg.larg) + ' caractères (' + (rg.prefixe ? 'code parent « ' + rg.prefixe + ' » + ' : '') + rg.larg + ' ' + FMT[rg.fmt].nom + ').';
+      else if (rg && !r.code.slice(rg.prefixe.length).split('').every(function (ch) { return FMT[rg.fmt].re.test(ch); })) err = 'Le segment du niveau ' + rg.n + ' doit être ' + FMT[rg.fmt].nom + '.';
+    }
+    if (!err && COMPTABLE && n === 1) { if (!draft.racine) err = 'Choisissez la racine de compte rattachée.'; else r.racine = draft.racine; }
+    if (!err && dernierNiveau(n)) {
+      r.comp = draft.comp.slice();
+      var sc = r.parent ? superclasse(r.parent) : '', ro = sc ? racineObj(sc) : null;
+      r.ana = r.comp.indexOf('sans') >= 0 ? [] : draft.ana.filter(function (c) { return ro && ro.plans && ro.plans[c]; });
+    }
+    if (err) { var ae = q('[data-pl-aide]'); toast(err); ae.textContent = err; ae.classList.add('err'); return; }
+    if (mode === 'creation') { rows.push(r); sel = rows.length - 1; } else rows[sel] = r;
+    mode = 'consultation'; liste(); form(rows[sel]); etat(); onglet('liste'); toast('Ligne enregistrée');
+  }
+  root.addEventListener('click', function (e) {
+    var b = e.target.closest('button'); if (!b || b.disabled) return;
+    if (b.hasAttribute('data-pl-ajouter')) {
+      var base = sel >= 0 ? rows[sel] : null;
+      onglet('saisie'); mode = 'creation'; sel = -1; liste(); form(null); etat();
+      if (base) {
+        // la ligne cliquée devient le code parent d'un élément du niveau suivant ; au dernier niveau, le nouvel élément est un frère (même parent)
+        var cfgN = niveauxCfg(), nb = niveau(base.code), dernier = cfgN && nb >= cfgN.length, parent = dernier ? base.parent : base.code, nn = dernier ? nb : nb + 1;
+        q('[data-f=niveau]').value = nn; remplirParents(''); q('[data-f=parent]').value = parent;
+        q('[data-f=code]').value = ''; q('[data-f=code]').maxLength = 20; forcerCode(); aide(); sections();
+        if (dernier) toast('« ' + base.code + ' » est au dernier niveau : le nouvel élément est créé au même niveau.');
+        q('[data-f=code]').focus();
+      } else q('[data-f=niveau]').focus();
+      return;
+    }
+    if (b.hasAttribute('data-pl-modifier')) { onglet('saisie'); mode = 'edition'; etat(); q('[data-f=libelle]').focus(); return; }
+    if (b.hasAttribute('data-pl-annuler')) { mode = 'consultation'; liste(); form(sel >= 0 ? rows[sel] : null); etat(); return; }
+    if (b.hasAttribute('data-pl-enregistrer')) { enregistrer(); return; }
+    if (b.hasAttribute('data-pl-supprimer')) {
+      var r = rows[sel]; if (!r) return;
+      if (aEnfants(r.code)) { toast('Suppression impossible : ce code a des sous-codes.'); return; }
+      if (!window.confirm('Supprimer « ' + r.code + ' — ' + r.libelle + ' » ?')) return;
+      rows.splice(sel, 1); sel = -1; liste(); form(null); etat(); toast('Ligne supprimée'); return;
+    }
+    if (b.hasAttribute('data-pl-imprimer')) { window.print(); return; }
+    if (b.hasAttribute('data-pl-exporter')) { toast('Export de « %%TITRE%% » (maquette)'); return; }
+  });
+  liste(); form(null); etat(); onglet('liste');
+})();
+</script>

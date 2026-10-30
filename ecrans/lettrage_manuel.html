@@ -1,0 +1,325 @@
+<!--
+  Écran « Lettrage » (Comptabilité générale › Lettrage › Lettrage ; manuel, avec bouton Lettrage automatique) — critères (compte, tiers, période), liste des écritures du tiers
+  avec case à cocher, totaux débit / crédit de la sélection et lettrage des lignes cochées. Une sélection équilibrée est lettrée ; un écart inférieur ou
+  égal à l'écart toléré (écran Lettrage › Paramètre, window.LETTRAGE_CFG) est accepté et passé au compte d'écart de règlement ; au-delà, le lettrage est refusé.
+  La lettre suit le format paramétré (AA, AB… ou 0001…). « Délettrer » défait le lettrage de la lettre des lignes cochées.
+  Boutons Lettrer / Délettrer / Tout désélectionner relayés par la barre d'actions de page (CFG « lettmanuel »). Données d'exemple en mémoire,
+  état de lettrage conservé dans localStorage (softcompta.lettrageManuel). S'appuie sur les styles bp-*. Ne pas nommer de fonction « $$ » (build.cjs).
+-->
+<style>
+.lm-crit{display:flex;flex-wrap:wrap;align-items:flex-end;gap:8px 12px;padding:8px 12px;margin-bottom:8px;background:#fff;border:1px solid #E9EBF0;border-radius:12px}
+@media (max-width:900px){.lm-crit{grid-template-columns:repeat(2,minmax(0,1fr))}}
+.lm-crit .bp-champ>span{font-size:11px}
+.lm-c1{flex:0 0 150px;min-width:0}.lm-c2{flex:1 1 200px;max-width:280px;min-width:0}.lm-c3{flex:0 0 124px;min-width:0}
+[data-screen] .lm-crit.lm-crit .cb-box,[data-screen] .lm-crit.lm-crit input[type=date],[data-screen] .lm-crit.lm-crit button.lm-go.lm-go{height:30px!important;min-height:30px!important;font-size:12px!important}.lm-crit .cb-box{padding-top:0;padding-bottom:0}
+.lm-crit input[type=date]{width:100%;box-sizing:border-box;height:30px;border:1px solid #878D9A;border-radius:8px;padding:0 8px;font:inherit;font-size:12px;color:#353944;background:#fff}
+.lm-go-w{margin-left:auto;display:flex;align-items:center;gap:10px}
+.lm-go{display:inline-flex;align-items:center;gap:6px;height:30px;padding:0 16px;border:1px solid #2E427B;border-radius:8px;background:#2E427B;color:#fff;font:700 12px var(--font-sans);cursor:pointer}.lm-go:hover{background:#243569}.lm-go:focus-visible{outline:3px solid #2E427B;outline-offset:2px}
+.lm-crit input[type=date]:focus-visible{outline:3px solid #2E427B;outline-offset:2px}
+.lm-root{display:flex;flex-direction:column;height:calc(100vh - 250px);min-height:420px}
+.lm-st{display:inline-flex;padding:2px;gap:2px;border:1px solid #E9EBF0;border-radius:10px;background:#F5F7F9}
+.lm-st label{position:relative;cursor:pointer}.lm-st input{position:absolute;opacity:0;inset:0;margin:0;cursor:pointer}
+.lm-st span{display:inline-flex;align-items:center;justify-content:center;min-width:78px;height:24px;padding:0 10px;border-radius:6px;font-size:12px;font-weight:600;color:#8A90A0;white-space:nowrap}
+.lm-st input:checked+span{background:#fff;color:#0B1332;box-shadow:0 1px 3px rgba(11,19,50,.15)}
+.lm-st input:focus-visible+span{outline:3px solid #2E427B;outline-offset:1px}
+.lm-ov{position:fixed;inset:0;z-index:2000;display:flex;align-items:center;justify-content:center;padding:16px;background:rgba(11,19,50,.55)}.lm-ov[hidden]{display:none}
+.lm-md{display:flex;flex-direction:column;width:min(980px,100%);max-height:90vh;background:#fff;border-radius:14px;box-shadow:0 24px 60px rgba(11,19,50,.35);overflow:hidden}
+.lm-mh{display:flex;align-items:flex-start;justify-content:space-between;gap:12px;padding:16px 20px;border-bottom:1px solid #E9EBF0}.lm-mh h2{margin:0;font:600 18px var(--font-heading);color:#0B1332}.lm-mh p{margin:4px 0 0;font-size:12px;color:#5B606D}
+.lm-x{width:36px;height:36px;border:0;border-radius:50%;background:#F5F7F9;color:#353944;font-size:18px;cursor:pointer;flex:none}.lm-x:hover{background:#E9EBF0}
+.lm-mb{padding:14px 20px;overflow:auto;display:flex;flex-direction:column;gap:12px;background:#F5F7F9}
+.lm-pr{background:#fff;border:1px solid #E1E5EE;border-radius:10px;overflow:hidden}.lm-pr.off{opacity:.55}
+.lm-ph{display:flex;align-items:center;gap:12px;padding:8px 14px;border-bottom:1px solid #F1F2F5;font-size:12px;flex-wrap:wrap}.lm-ph input[type=checkbox]{width:16px;height:16px;accent-color:#2E427B}
+.lm-ph .lm-nl{display:inline-flex;align-items:center;gap:6px;font-weight:700;color:#0B1332}.lm-ph .lm-nl input{width:64px;height:28px;box-sizing:border-box;border:1px solid #878D9A;border-radius:6px;padding:0 8px;font:700 13px var(--font-sans);text-align:center;text-transform:uppercase;color:#2E427B}
+.lm-ph .lm-nl input:focus-visible{outline:3px solid #2E427B;outline-offset:1px}.lm-ph .lm-rs{margin-left:auto;color:#5B606D}.lm-ph .lm-rs b{color:#0B1332}.lm-ph .lm-ec{color:#9A6B00;font-weight:600}.lm-ph .lm-er{color:#B63132;font-weight:600}
+.lm-pr table{width:100%;border-collapse:collapse;font-size:12px}.lm-pr td{padding:6px 14px;border-bottom:1px solid #F7F8FA;white-space:nowrap;color:#353944}.lm-pr tr:last-child td{border-bottom:0}.lm-pr td.r{text-align:right;font-variant-numeric:tabular-nums}
+.lm-mv{padding:28px 12px;text-align:center;color:#5B606D;font-size:14px;background:#fff;border:1px solid #E1E5EE;border-radius:10px}
+.lm-mf{display:flex;align-items:center;gap:10px;padding:12px 20px;border-top:1px solid #E9EBF0}.lm-mf .lm-sp{flex:1}.lm-mf span{font-size:12px;color:#5B606D}
+.lm-mf button{height:36px;padding:0 18px;border:1px solid #C5CAD6;border-radius:8px;background:#fff;color:#353944;font:600 13px var(--font-sans);cursor:pointer}.lm-mf button:hover{background:#F5F7F9}.lm-mf button.p{background:#2E427B;border-color:#2E427B;color:#fff}.lm-mf button.p:hover{background:#243569}.lm-mf button:disabled{opacity:.5;cursor:not-allowed}
+.lm-tb-w{flex:1 1 auto;min-height:120px;background:#fff;border:1px solid #E9EBF0;border-radius:12px;overflow:auto;margin-bottom:8px}
+.lm-tb{width:100%;min-width:900px;border-collapse:collapse;font-size:12px}
+.lm-tb th{position:sticky;top:0;z-index:2;padding:8px 12px;background:#F5F7F9;border-bottom:1px solid #E9EBF0;text-align:left;font-size:11px;font-weight:700;letter-spacing:.05em;text-transform:uppercase;color:#5B606D;white-space:nowrap}
+.lm-tb th.r,.lm-tb td.r{text-align:right;font-variant-numeric:tabular-nums}.lm-tb td.c,.lm-tb th.c{text-align:center;width:44px}
+.lm-tb td{padding:10px 12px;border-bottom:1px solid #F1F2F5;color:#353944;white-space:nowrap}
+.lm-tb tr.sel td{background:#EEF2FD}.lm-tb tr.let td{color:#8A90A0}
+.lm-tb input[type=checkbox]{width:16px;height:16px;accent-color:#2E427B;margin:0;cursor:pointer}.lm-tb input[type=checkbox]:disabled{cursor:not-allowed}
+.lm-pc{font-family:var(--font-mono,ui-monospace,Consolas,monospace);font-weight:600;color:#0B1332}
+.lm-jr{display:inline-block;padding:2px 9px;border:1px solid #E1E5EE;border-radius:6px;background:#F5F7F9;font-size:11px;color:#474C58}
+.lm-lt{display:inline-block;min-width:26px;padding:1px 8px;border-radius:999px;background:#E3EBFE;color:#2E427B;font-weight:700;text-align:center}
+.lm-vide{padding:36px 16px;text-align:center;color:#5B606D;font-size:14px}
+.lm-tot{flex:none;display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:4px 24px;padding:8px 16px;background:#fff;border:1px solid #E9EBF0;border-radius:12px}
+.lm-tot label{display:flex;align-items:center;gap:12px;font-size:12px;font-weight:700;color:#0B1332;white-space:nowrap}
+.lm-tot output{display:block;flex:1;box-sizing:border-box;padding:4px 12px;border:1px solid #DADDE5;border-radius:6px;background:#F0F1F4;text-align:right;font-weight:700;font-variant-numeric:tabular-nums;color:#353944}
+.lm-etat{grid-column:1/-1;margin:0;text-align:center;font-size:12px;font-weight:600;min-height:16px}.lm-etat.ok{color:#047857}.lm-etat.att{color:#9A6B00}.lm-etat.ko{color:#B63132}
+</style>
+
+<div class="bp-root lm-root" data-lm>
+  <h1 style="position:absolute;width:1px;height:1px;overflow:hidden;clip-path:inset(50%);margin:0">Lettrage</h1>
+
+  <div class="no-print" data-lm-actions>
+    <button type="button" data-lm-auto>Lettrage automatique</button>
+    <button type="button" data-lm-desel>Tout désélectionner</button>
+    <button type="button" data-lm-delettrer>Délettrer</button>
+    <button type="button" data-lm-lettrer>Lettrer</button>
+  </div>
+
+  <div class="lm-crit">
+    <label class="bp-champ lm-c1"><span>Compte</span><select class="bp-sel" data-lm-compte></select></label>
+    <label class="bp-champ lm-c2"><span>Tiers</span><select class="bp-sel" data-lm-tiers></select></label>
+    <label class="bp-champ lm-c3"><span>Du</span><input type="date" data-lm-du style="height:30px!important;min-height:30px!important"></label>
+    <label class="bp-champ lm-c3"><span>Au</span><input type="date" data-lm-au style="height:30px!important;min-height:30px!important"></label>
+    <div class="bp-champ"><span>Statut</span><div class="lm-st" role="radiogroup" aria-label="Statut de lettrage">
+      <label><input type="radio" name="lm-st" value="non" data-lm-st><span>Non lettrées</span></label>
+      <label><input type="radio" name="lm-st" value="let" data-lm-st><span>Lettrées</span></label>
+      <label><input type="radio" name="lm-st" value="tout" data-lm-st checked><span>Toutes</span></label>
+    </div></div>
+    <div class="lm-go-w"><button type="button" class="lm-go" data-lm-rech><i class="ti ti-search" aria-hidden="true"></i>Rechercher</button></div>
+  </div>
+
+  <div class="lm-tb-w"><table class="lm-tb">
+    <thead><tr><th class="c"><input type="checkbox" data-lm-tout aria-label="Tout sélectionner"></th><th>Date</th><th>Pièce</th><th>Journal</th><th>Libellé</th><th>Référence</th><th>Échéance</th><th class="r">Débit</th><th class="r">Crédit</th><th>Lettre</th></tr></thead>
+    <tbody data-lm-corps></tbody>
+  </table></div>
+
+  <div class="lm-tot">
+    <label>Total Débit<output data-lm-td>0,00</output></label>
+    <label>Total Crédit<output data-lm-tc>0,00</output></label>
+    <p class="lm-etat" data-lm-etat aria-live="polite"></p>
+  </div>
+  <div class="lm-ov" data-lm-ov hidden><div class="lm-md" role="dialog" aria-modal="true" aria-labelledby="lm-md-t">
+    <div class="lm-mh"><div><h2 id="lm-md-t">Lettrage automatique</h2><p data-lm-ocrit></p></div><button type="button" class="lm-x" data-lm-ox aria-label="Fermer"><i class="ti ti-x" aria-hidden="true"></i></button></div>
+    <div class="lm-mb" data-lm-omb></div>
+    <div class="lm-mf"><span data-lm-ocnt></span><span class="lm-sp"></span><button type="button" data-lm-oann>Annuler</button><button type="button" class="p" data-lm-oval>Valider le lettrage</button></div>
+  </div></div>
+  <div class="bp-toast" role="status" hidden data-lm-toast></div>
+</div>
+
+<script>
+(function () {
+  var root = document.querySelector('[data-lm]'); if (!root) return;
+  function q(s) { return root.querySelector(s); }
+  function qa(s) { return [].slice.call(root.querySelectorAll(s)); }
+  function esc(s) { return String(s).replace(/[&<>"]/g, function (c) { return { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c]; }); }
+  function nb(v, d) { return v.toLocaleString('fr-FR', { minimumFractionDigits: d || 0, maximumFractionDigits: d || 0 }); }
+  function iso(j) { var p = j.split('/'); return p[2] + '-' + p[1] + '-' + p[0]; }
+
+  // Jeu d'exemple : [id, date, pièce, journal, libellé, référence, échéance, débit, crédit, lettre]
+  var COMPTES = [['411000', 'Clients'], ['401000', 'Fournisseurs'], ['467000', 'Autres débiteurs et créditeurs']];
+  var TIERS = {
+    '411000': [['C0001', 'Client exemple Alpha'], ['C0002', 'Telma Madagascar'], ['C0003', 'Client exemple Bêta']],
+    '401000': [['F0001', 'Fournisseur exemple A'], ['F0002', 'Fournisseur exemple B']],
+    '467000': [['D0001', 'Débiteur divers exemple']]
+  };
+  var L = {
+    '411000|C0001': [
+      [101, '10/02/2026', 'VTE-2026-0045', 'VTE', 'Facture F2026-0120', 'F2026-0120', '12/03/2026', 1200000, 0, ''],
+      [102, '25/02/2026', 'BNI-2026-0071', 'BNI', 'Virement Client Alpha – F2026-0120', 'F2026-0120', '', 0, 1199800, ''],
+      [103, '14/09/2026', 'VTE-2026-0238', 'VTE', 'Facture F2026-0385', 'F2026-0385', '14/10/2026', 850000, 0, '']
+    ],
+    '411000|C0002': [
+      [201, '12/03/2026', 'VTE-2026-0101', 'VTE', 'Facture F2026-0102', 'F2026-0102', '11/04/2026', 3100000, 0, 'AA'],
+      [202, '05/04/2026', 'BNI-2026-0120', 'BNI', 'Virement Telma – F2026-0102', 'F2026-0102', '', 0, 3100000, 'AA'],
+      [203, '02/09/2026', 'VTE-2026-0231', 'VTE', 'Facture F2026-0380', 'F2026-0380', '02/10/2026', 2250000, 0, ''],
+      [204, '19/10/2026', 'BNI-2026-0309', 'BNI', 'Virement Telma – F2026-0380', 'F2026-0380', '', 0, 2250000, ''],
+      [205, '15/09/2026', 'VTE-2026-0244', 'VTE', 'Facture F2026-0393', 'F2026-0393', '15/10/2026', 2100000, 0, ''],
+      [206, '23/10/2026', 'VTE-2026-0262', 'VTE', 'Facture F2026-0411', 'F2026-0411', '22/11/2026', 4350000, 0, ''],
+      [207, '30/09/2026', 'VTE-2026-0252', 'VTE', 'Avoir AV2026-0012', 'AV2026-0012', '', 0, 350000, '']
+    ],
+    '411000|C0003': [
+      [301, '03/06/2026', 'VTE-2026-0170', 'VTE', 'Facture F2026-0255', 'F2026-0255', '03/07/2026', 640000, 0, ''],
+      [302, '28/06/2026', 'CAI-2026-0033', 'CAI', 'Règlement espèces F2026-0255', 'F2026-0255', '', 0, 600000, '']
+    ],
+    '401000|F0001': [
+      [401, '08/05/2026', 'ACH-2026-0090', 'ACH', 'Facture fournisseur FA-5521', 'FA-5521', '07/06/2026', 0, 1800000, ''],
+      [402, '30/05/2026', 'BNI-2026-0140', 'BNI', 'Paiement FA-5521', 'FA-5521', '', 1800000, 0, ''],
+      [403, '17/09/2026', 'ACH-2026-0211', 'ACH', 'Facture fournisseur FA-5788', 'FA-5788', '17/10/2026', 0, 920000, '']
+    ],
+    '401000|F0002': [
+      [501, '20/07/2026', 'ACH-2026-0150', 'ACH', 'Facture fournisseur FB-310', 'FB-310', '19/08/2026', 0, 560000, '']
+    ],
+    '467000|D0001': [
+      [601, '11/08/2026', 'OD-2026-0044', 'OD', 'Avance à régulariser', 'AV-0044', '', 300000, 0, ''],
+      [602, '29/08/2026', 'OD-2026-0049', 'OD', 'Régularisation avance', 'AV-0044', '', 0, 300000, '']
+    ]
+  };
+  var CLE = 'softcompta.lettrageManuel', etat = { lettres: {}, cnt: {} };
+  try { var sv = JSON.parse(localStorage.getItem(CLE) || 'null'); if (sv && typeof sv === 'object') etat = { lettres: sv.lettres || {}, cnt: sv.cnt || {} }; } catch (e) {}
+  function sauver() { try { localStorage.setItem(CLE, JSON.stringify(etat)); } catch (e) {} }
+  function lettreDe(l) { return etat.lettres.hasOwnProperty(l[0]) ? etat.lettres[l[0]] : l[9]; }
+  var appl = { compte: '', tiers: '', du: '', au: '', statut: 'tout' };
+  function cle() { return appl.compte + '|' + appl.tiers; }
+  function statutSaisi() { var r = q('[data-lm-st]:checked'); return r ? r.value : 'tout'; }
+  function saisis() { return { compte: q('[data-lm-compte]').value, tiers: q('[data-lm-tiers]').value, du: q('[data-lm-du]').value, au: q('[data-lm-au]').value, statut: statutSaisi() }; }
+  function enAttente() {}   // les critères ne s'appliquent qu'au clic sur Rechercher (ou Entrée)
+  function rechercher() { appl = saisis(); sel = {}; qa('[data-lm-corps] tr.let').forEach(function (r) { r.style.outline = ''; }); dessiner(); }
+  function cfg() { return window.LETTRAGE_CFG || { format: 'alpha', ecart: 500, compteEcart: '658000', critere: 'ref_montant' }; }
+  var sel = {};
+
+  function remplirCompte() { q('[data-lm-compte]').innerHTML = COMPTES.map(function (c) { return '<option value="' + c[0] + '">' + esc(c[0] + ' — ' + c[1]) + '</option>'; }).join(''); }
+  function remplirTiers() {
+    var c = q('[data-lm-compte]').value;
+    q('[data-lm-tiers]').innerHTML = (TIERS[c] || []).map(function (t) { return '<option value="' + t[0] + '">' + esc(t[0] + ' — ' + t[1]) + '</option>'; }).join('');
+    var cb = q('[data-lm-tiers]'); if (cb.__combo && cb.__combo.maj) cb.__combo.maj();
+  }
+  function lignes() {
+    var du = appl.du, au = appl.au;
+    return (L[cle()] || []).filter(function (l) { var d = iso(l[1]), lt = !!lettreDe(l); return (!du || d >= du) && (!au || d <= au) && (appl.statut === 'tout' || (appl.statut === 'let') === lt); });
+  }
+  function dessiner() {
+    var rows = lignes(), h = '';
+    rows.forEach(function (l) {
+      var lt = lettreDe(l), on = !!sel[l[0]];
+      h += '<tr class="' + (lt ? 'let' : on ? 'sel' : '') + '" data-id="' + l[0] + '"><td class="c"><input type="checkbox" data-lm-ck aria-label="Sélectionner ' + esc(l[2]) + '"' + (on ? ' checked' : '') + (lt ? ' disabled' : '') + '></td>' +
+        '<td>' + l[1] + '</td><td class="lm-pc">' + esc(l[2]) + '</td><td><span class="lm-jr">' + esc(l[3]) + '</span></td><td>' + esc(l[4]) + '</td><td>' + esc(l[5]) + '</td><td>' + (l[6] || '') + '</td>' +
+        '<td class="r">' + (l[7] ? nb(l[7]) : '—') + '</td><td class="r">' + (l[8] ? nb(l[8]) : '—') + '</td><td>' + (lt ? '<span class="lm-lt">' + esc(lt) + '</span>' : '') + '</td></tr>';
+    });
+    q('[data-lm-corps]').innerHTML = h || '<tr><td colspan="10" class="lm-vide">Aucune écriture pour ce tiers sur la période.</td></tr>';
+    var libres = rows.filter(function (l) { return !lettreDe(l); }), tout = q('[data-lm-tout]');
+    tout.disabled = !libres.length; tout.checked = !!libres.length && libres.every(function (l) { return sel[l[0]]; });
+    totaux();
+  }
+  function selection() { var r = []; Object.keys(L).forEach(function (k) { L[k].forEach(function (l) { if (sel[l[0]]) r.push(l); }); }); return r; }
+  function totaux() {
+    var s = selection(), d = 0, c = 0; s.forEach(function (l) { d += l[7]; c += l[8]; });
+    q('[data-lm-td]').textContent = nb(d, 2); q('[data-lm-tc]').textContent = nb(c, 2);
+    var e = q('[data-lm-etat]'), ec = Math.abs(d - c), tol = cfg().ecart;
+    if (!s.length) { e.textContent = ''; e.className = 'lm-etat'; }
+    else if (ec < 0.005) { e.textContent = 'Sélection équilibrée : prête à être lettrée.'; e.className = 'lm-etat ok'; }
+    else if (ec <= tol) { e.textContent = 'Écart de ' + nb(ec, 2) + ' Ar, dans l’écart toléré (' + nb(tol) + ' Ar) : il sera passé au compte ' + cfg().compteEcart + '.'; e.className = 'lm-etat att'; }
+    else { e.textContent = 'Écart de ' + nb(ec, 2) + ' Ar : supérieur à l’écart toléré (' + nb(tol) + ' Ar).'; e.className = 'lm-etat ko'; }
+  }
+  function toast(m) { var t = q('[data-lm-toast]'); t.textContent = m; t.hidden = false; clearTimeout(toast.t); toast.t = setTimeout(function () { t.hidden = true; }, 3200); }
+  function lettreAt(n) {
+    if (cfg().format === 'num') return ('000' + (n + 1)).slice(-4);
+    var a = Math.floor(n / 26), b = n % 26; return String.fromCharCode(65 + a % 26) + String.fromCharCode(65 + b);
+  }
+  function lettreSuivante(compte) { var i = (etat.cnt[compte] || 1); etat.cnt[compte] = i + 1; return lettreAt(i); }
+  function lettresUtilisees(compte) {
+    var u = {}; Object.keys(L).forEach(function (k) { if (k.split('|')[0] === compte) L[k].forEach(function (l) { var lt = lettreDe(l); if (lt) u[lt] = 1; }); }); return u;
+  }
+
+  // Lettrage automatique : propositions selon les critères de Lettrage › Paramètre, validées avant application
+  var propositions = [];
+  function jours(d) { var p = d.split('/'); return Date.UTC(+p[2], +p[1] - 1, +p[0]) / 864e5; }
+  function proposer() {
+    var c = cfg(), tol = c.equilibre ? Math.max(0, +c.ecart || 0) : 0;
+    var libres = (L[cle()] || []).filter(function (l) { return !lettreDe(l); }), res = [], pris = {};
+    function ok(g) {
+      var d = 0, k = 0, hasD = false, hasC = false, mn = 1e9, mx = -1e9;
+      g.forEach(function (l) { d += l[7]; k += l[8]; if (l[7]) hasD = true; if (l[8]) hasC = true; var j = jours(l[1]); mn = Math.min(mn, j); mx = Math.max(mx, j); });
+      if (!hasD || !hasC || Math.abs(d - k) > tol + 0.005) return false;
+      if (c.critere === 'ref_montant_date' && mx - mn > 5) return false;
+      if (c.memePiece && g.some(function (l) { return l[2] !== g[0][2]; })) return false;
+      if ((c.critere === 'ref_montant' || c.critere === 'ref_montant_date') && g.some(function (l) { return !l[5] || l[5] !== g[0][5]; })) return false;
+      return true;
+    }
+    function prendre(g) { g.forEach(function (l) { pris[l[0]] = 1; }); res.push(g); }
+    // 1) groupes entiers par référence quand le critère l'exige ou la référence est commune
+    if (c.critere !== 'montant') {
+      var parRef = {}; libres.forEach(function (l) { if (l[5]) (parRef[l[5]] = parRef[l[5]] || []).push(l); });
+      Object.keys(parRef).forEach(function (r) { if (parRef[r].length > 1 && ok(parRef[r])) prendre(parRef[r]); });
+    }
+    // 2) paires débit / crédit restantes
+    libres.filter(function (l) { return !pris[l[0]] && l[7]; }).forEach(function (d) {
+      if (pris[d[0]]) return;
+      var cr = libres.filter(function (x) { return !pris[x[0]] && x[8] && ok([d, x]); }).sort(function (a, b) { return Math.abs(a[8] - d[7]) - Math.abs(b[8] - d[7]); })[0];
+      if (cr) prendre([d, cr]);
+    });
+    return res;
+  }
+  var CRIT = { montant: 'Montant', ref_montant: 'Référence + montant', ref_montant_date: 'Référence + montant + date ± 5 j' };
+  function dessinerProp() {
+    var c = cfg(), compte = appl.compte, base = etat.cnt[compte] || 1, nbs = 0;
+    q('[data-lm-ocrit]').textContent = 'Critères : ' + (CRIT[c.critere] || c.critere) + (c.memePiece ? ' · même numéro de pièce' : '') + (c.equilibre ? ' · équilibre à ± ' + nb(c.ecart) + ' Ar' : ' · équilibre exact') + ' — compte ' + compte + ', tiers ' + appl.tiers;
+    if (!propositions.length) {
+      q('[data-lm-omb]').innerHTML = '<div class="lm-mv">Aucune ligne ne peut être lettrée automatiquement avec les critères paramétrés.<br>Ajustez-les dans Lettrage › Paramètre, ou lettrez manuellement.</div>';
+      q('[data-lm-ocnt]').textContent = ''; q('[data-lm-oval]').disabled = true; return;
+    }
+    q('[data-lm-omb]').innerHTML = propositions.map(function (g, i) {
+      var d = 0, k = 0; g.lignes.forEach(function (l) { d += l[7]; k += l[8]; }); var ec = Math.abs(d - k);
+      return '<section class="lm-pr" data-p="' + i + '"><div class="lm-ph"><input type="checkbox" data-lm-pck checked aria-label="Inclure la proposition ' + (i + 1) + '"><span class="lm-nl">Lettre <input type="text" maxlength="4" value="' + esc(g.lettre) + '" data-lm-plt aria-label="Numéro de lettrage proposé"></span>' +
+        '<span class="lm-rs">Débit <b>' + nb(d) + '</b> · Crédit <b>' + nb(k) + '</b> · ' + (ec < 0.005 ? '<span class="lm-ec" style="color:#047857">équilibré</span>' : '<span class="lm-ec">écart ' + nb(ec, 2) + ' Ar → ' + esc(c.compteEcart) + '</span>') + '</span></div>' +
+        '<table><tbody>' + g.lignes.map(function (l) { return '<tr><td>' + l[1] + '</td><td class="lm-pc">' + esc(l[2]) + '</td><td>' + esc(l[4]) + '</td><td>' + esc(l[5]) + '</td><td class="r">' + (l[7] ? nb(l[7]) : '—') + '</td><td class="r">' + (l[8] ? nb(l[8]) : '—') + '</td></tr>'; }).join('') + '</tbody></table></section>';
+    }).join('');
+    compterProp();
+  }
+  function compterProp() {
+    var n = qa('[data-lm-pck]:checked').length; q('[data-lm-ocnt]').textContent = propositions.length + ' proposition(s), ' + n + ' retenue(s)'; q('[data-lm-oval]').disabled = !n; q('[data-lm-oval]').textContent = 'Valider le lettrage (' + n + ')';
+  }
+  function ouvrirAuto() {
+    if (!appl.compte) { toast('Lancez d\u2019abord une recherche.'); return; }
+    var base = etat.cnt[appl.compte] || 1, u = lettresUtilisees(appl.compte), k = 0;
+    propositions = proposer().map(function (g) { var lt; do { lt = lettreAt(base + k); k++; } while (u[lt]); return { lignes: g, lettre: lt }; });
+    dessinerProp(); q('[data-lm-ov]').hidden = false; var b = q('[data-lm-oval]'); if (!b.disabled) b.focus(); else q('[data-lm-oann]').focus();
+  }
+  function fermerAuto() { q('[data-lm-ov]').hidden = true; }
+  function validerAuto() {
+    var u = lettresUtilisees(appl.compte), choisies = [], vus = {}, erreur = '';
+    qa('.lm-pr').forEach(function (sec, i) {
+      if (!sec.querySelector('[data-lm-pck]').checked) return;
+      var lt = sec.querySelector('[data-lm-plt]').value.trim().toUpperCase();
+      if (!lt) erreur = 'Chaque lettrage retenu doit avoir un numéro.'; else if (u[lt] || vus[lt]) erreur = 'La lettre ' + lt + ' est déjà utilisée sur ce compte.';
+      vus[lt] = 1; choisies.push({ lt: lt, g: propositions[i].lignes });
+    });
+    if (erreur) { toast(erreur); return; }
+    if (!choisies.length) return;
+    choisies.forEach(function (c) { c.g.forEach(function (l) { etat.lettres[l[0]] = c.lt; delete sel[l[0]]; }); });
+    etat.cnt[appl.compte] = (etat.cnt[appl.compte] || 1) + choisies.length;
+    sauver(); fermerAuto(); dessiner(); toast(choisies.length + ' lettrage(s) appliqué(s) : ' + choisies.map(function (c) { return c.lt; }).join(', ') + '.');
+  }
+  function lettrer() {
+    var s = selection().filter(function (l) { return !lettreDe(l); });
+    if (s.length < 2) { toast('Sélectionnez au moins deux écritures à lettrer.'); return; }
+    var d = 0, c = 0; s.forEach(function (l) { d += l[7]; c += l[8]; });
+    if (!d || !c) { toast('La sélection doit comporter au moins une écriture au débit et une au crédit.'); return; }
+    var ec = Math.abs(d - c), tol = cfg().ecart;
+    if (ec > tol + 0.005) { toast('Lettrage refusé : écart de ' + nb(ec, 2) + ' Ar supérieur à l’écart toléré (' + nb(tol) + ' Ar).'); return; }
+    var lt = lettreSuivante(appl.compte);
+    s.forEach(function (l) { etat.lettres[l[0]] = lt; delete sel[l[0]]; });
+    sauver(); dessiner();
+    toast('Écritures lettrées avec la lettre ' + lt + (ec > 0.005 ? ' (écart de ' + nb(ec, 2) + ' Ar passé au compte ' + cfg().compteEcart + ').' : '.'));
+  }
+  function delettrer() {
+    var lettres = {};
+    var cibles = (L[cle()] || []).filter(function (l) { return lettreDe(l) && sel[l[0]]; });
+    if (!cibles.length) { toast('Cliquez d\u2019abord sur une ligne lettrée, puis sur « Délettrer ».'); return; }
+    cibles.forEach(function (l) { lettres[lettreDe(l)] = 1; });
+    var n = 0; (L[cle()] || []).forEach(function (l) { if (lettres[lettreDe(l)]) { etat.lettres[l[0]] = ''; delete sel[l[0]]; n++; } });
+    sauver(); dessiner(); toast(n + ' écriture(s) délettrée(s).');
+  }
+
+  q('[data-lm-compte]').addEventListener('change', function () { remplirTiers(); enAttente(); });
+  q('[data-lm-tiers]').addEventListener('change', enAttente);
+  qa('[data-lm-st]').forEach(function (r) { r.addEventListener('change', enAttente); });
+  q('[data-lm-du]').addEventListener('change', enAttente); q('[data-lm-au]').addEventListener('change', enAttente);
+  q('.lm-crit').addEventListener('keydown', function (e) { if (e.key === 'Enter' && e.target.matches('input')) { e.preventDefault(); rechercher(); } });
+  q('[data-lm-corps]').addEventListener('change', function (e) {
+    if (!e.target.matches('[data-lm-ck]')) return; var tr = e.target.closest('tr'); sel[tr.dataset.id] = e.target.checked || undefined; if (!e.target.checked) delete sel[tr.dataset.id];
+    tr.classList.toggle('sel', e.target.checked); var libres = lignes().filter(function (l) { return !lettreDe(l); }); q('[data-lm-tout]').checked = !!libres.length && libres.every(function (l) { return sel[l[0]]; }); totaux();
+  });
+  // Un clic sur une ligne lettrée la marque pour le délettrage (même lettre)
+  q('[data-lm-corps]').addEventListener('click', function (e) {
+    var tr = e.target.closest('tr.let'); if (!tr || e.target.closest('input')) return;
+    var id = tr.dataset.id, on = !sel[id]; var l = (L[cle()] || []).filter(function (x) { return String(x[0]) === id; })[0]; if (!l) return;
+    var lt = lettreDe(l); (L[cle()] || []).forEach(function (x) { if (lettreDe(x) === lt) { if (on) sel[x[0]] = true; else delete sel[x[0]]; } });
+    qa('[data-lm-corps] tr.let').forEach(function (r) { var m = (L[cle()] || []).filter(function (x) { return String(x[0]) === r.dataset.id; })[0]; r.style.outline = m && sel[m[0]] ? '2px solid #2E427B' : ''; r.style.outlineOffset = '-2px'; });
+  });
+  q('[data-lm-ov]').addEventListener('change', function (e) { if (e.target.matches('[data-lm-pck]')) { e.target.closest('.lm-pr').classList.toggle('off', !e.target.checked); compterProp(); } });
+  q('[data-lm-ov]').addEventListener('click', function (e) { if (e.target === q('[data-lm-ov]')) fermerAuto(); });
+  q('[data-lm-ov]').addEventListener('keydown', function (e) { if (e.key === 'Escape') { e.stopPropagation(); fermerAuto(); } });
+  q('[data-lm-tout]').addEventListener('change', function (e) { lignes().forEach(function (l) { if (!lettreDe(l)) { if (e.target.checked) sel[l[0]] = true; else delete sel[l[0]]; } }); dessiner(); });
+  root.addEventListener('click', function (e) {
+    var b = e.target.closest('button'); if (!b || b.disabled) return;
+    if (b.hasAttribute('data-lm-oann') || b.hasAttribute('data-lm-ox')) fermerAuto();
+    else if (b.hasAttribute('data-lm-oval')) validerAuto();
+    else if (b.hasAttribute('data-lm-auto')) ouvrirAuto();
+    else if (b.hasAttribute('data-lm-rech')) rechercher();
+    else if (b.hasAttribute('data-lm-lettrer')) lettrer();
+    else if (b.hasAttribute('data-lm-delettrer')) delettrer();
+    else if (b.hasAttribute('data-lm-desel')) { sel = {}; dessiner(); qa('[data-lm-corps] tr.let').forEach(function (r) { r.style.outline = ''; }); }
+  });
+
+  var auj = new Date(), p2 = function (n) { return ('0' + n).slice(-2); };
+  q('[data-lm-du]').value = auj.getFullYear() + '-01-01'; q('[data-lm-au]').value = auj.getFullYear() + '-' + p2(auj.getMonth() + 1) + '-' + p2(auj.getDate());
+  remplirCompte(); q('[data-lm-compte]').value = '411000'; remplirTiers(); q('[data-lm-tiers]').value = 'C0002'; rechercher();
+})();
+</script>

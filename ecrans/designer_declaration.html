@@ -1,0 +1,661 @@
+<!--
+  Écran « Designer — Modèle d'état Déclaration » (ouvert par « Ouvrir le designer » de la ligne Déclaration).
+  Reprise de la capture, onglet « En-tête & pied de page » : champs d'en-tête, de pied de page et filigrane.
+  Onglet « Grille » (états de type solde des comptes) repris de la capture : tableaux, cellules (texte, constante, solde, formule), propriétés.
+  Les onglets Designer, Document et JSON restent indicatifs.
+-->
+<style>
+.dd{display:flex;flex-direction:column;gap:16px;color:#26312d;font-size:13px}
+.dd-bar{display:flex;flex-wrap:wrap;align-items:center;justify-content:space-between;gap:12px;background:#fff;border:1px solid #e3ddd0;border-radius:14px;padding:12px 16px}
+.dd-left{display:flex;align-items:center;gap:12px;min-width:0}
+.dd-title{font-size:15px;font-weight:700;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;max-width:300px}
+.dd-back{display:inline-flex;align-items:center;gap:6px;border:1px solid #e3ddd0;border-radius:8px;background:#fff;color:#4b5675;padding:6px 12px;font:inherit;font-size:12px;font-weight:600;cursor:pointer}
+.dd-back:hover{background:#f8fafc}
+.dd-tabs{display:flex;gap:4px;background:#f1ede4;padding:4px;border-radius:11px}
+.dd-tab{border:0;background:transparent;padding:6px 14px;border-radius:8px;font:inherit;font-size:13px;font-weight:600;color:#7c8078;cursor:pointer;white-space:nowrap}
+.dd-tab:hover{background:#0000000d}
+.dd-tab.on{background:#fff;color:#26312d;box-shadow:0 1px 3px #00000014}
+.dd-save{display:inline-flex;align-items:center;gap:6px;border:0;border-radius:12px;background:#1c3934;color:#fff;padding:8px 16px;font:inherit;font-size:14px;font-weight:700;cursor:pointer}
+.dd-save:hover{background:#254842}
+.dd-main{display:grid;grid-template-columns:minmax(0,1fr) 320px;gap:20px;align-items:start}
+@media(max-width:900px){.dd-main{grid-template-columns:1fr}}
+.dd-col{display:flex;flex-direction:column;gap:20px;min-width:0}
+.dd-card{background:#fff;border:1px solid #e3ddd0;border-radius:14px;padding:22px}
+.dd-card h4{display:flex;align-items:center;gap:7px;margin:0 0 4px;font-size:14px;font-weight:700}
+.dd-desc{margin:0 0 12px;font-size:12px;color:#9a9a8f}
+.dd-item{display:flex;justify-content:space-between;align-items:flex-start;gap:10px;border:1px solid #ece7db;border-radius:10px;padding:11px 13px;margin-bottom:9px;background:#fff}
+.dd-item.edit{border-color:#9fbfae;background:#f6faf7}
+.dd-name{font-weight:700;font-size:12.5px}
+.dd-cont{margin-top:3px;font-size:12px;color:#6b7268;word-break:break-all}
+.dd-act{display:flex;gap:6px;flex-shrink:0}
+.dd-ib{display:inline-flex;align-items:center;justify-content:center;width:32px;height:32px;border-radius:8px;border:1px solid #e3ddd0;background:#fff;color:#7c8078;cursor:pointer}
+.dd-ib:hover{background:#fef2f2;border-color:#fca5a5;color:#ef4444}
+.dd-ib.ed{background:#fff4e6;border-color:#fdd0a2;color:#c25e00}
+.dd-ib.ed:hover{background:#ffe5b8;color:#c25e00;border-color:#fdd0a2}
+.dd-add{border-top:1px dashed #e3ddd0;padding-top:14px;margin-top:6px}
+.dd-grid3{display:grid;grid-template-columns:130px 1fr 1fr;gap:10px;margin-bottom:14px}
+@media(max-width:600px){.dd-grid3{grid-template-columns:1fr}}
+.dd-lab{display:block;margin-bottom:6px;font-size:12px;font-weight:700;color:#4b544c}
+.dd-in{width:100%;border:1px solid #e3ddd0;border-radius:8px;background:#fdfcfa;color:#26312d;padding:9px 11px;font:inherit;font-size:13px}
+.dd-in:focus{outline:none;border-color:#9fb6a6;background:#fff}
+.dd-in:disabled{background:#f1efe8;color:#9a9a8f}
+.dd-btn{display:inline-flex;align-items:center;gap:6px;border:0;border-radius:12px;background:#1c3934;color:#fff;padding:8px 16px;font:inherit;font-size:14px;font-weight:700;cursor:pointer}
+.dd-btn:hover{background:#254842}
+.dd-btn.sec{background:#fff;color:#26312d;border:1px solid #e3ddd0;font-weight:600}
+.dd-chk{display:flex;align-items:center;gap:8px;font-weight:600;margin-bottom:16px}
+.dd-g2{display:grid;grid-template-columns:1fr 1fr;gap:14px}
+.dd-g4{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:12px;margin-bottom:12px}
+@media(max-width:700px){.dd-g4{grid-template-columns:repeat(2,minmax(0,1fr))}}
+.dd-stage{background:#e9e4d7;border-radius:14px;padding:36px;display:flex;justify-content:center;min-height:400px}
+.dd-sheet{background:#fff;width:794px;box-shadow:0 10px 30px #0000001f;padding:14px;min-height:1123px;position:relative;box-sizing:border-box;flex:0 0 auto}
+.dd-stage{overflow:auto;justify-content:flex-start}
+.dd-guides{position:absolute;z-index:2;border:1px dashed #c5c0b4;pointer-events:none}
+.dd-zn{position:relative;z-index:3}.dd-zb{position:relative}
+.dd-el{position:absolute;overflow:hidden;cursor:move;box-sizing:border-box;user-select:none;font-size:13px;color:#26312d;white-space:pre-wrap}
+.dd-el.sel{outline:1.5px solid #4c8fd9;background:#cfe3f559}.dd-rs{position:absolute;right:0;bottom:0;width:10px;height:10px;background:#ec4899;cursor:nwse-resize}
+.dd-lay{position:absolute;inset:0;z-index:4;pointer-events:none}
+.dg-blk{position:absolute;pointer-events:auto;cursor:move;box-sizing:border-box;border:1px solid transparent}.dg-blk.on{outline:1.5px solid #4c8fd9;outline-offset:2px}
+.dg-in2{width:100%;height:100%;overflow:auto}.dg-bn{position:absolute;top:-19px;left:0;font-size:11px;font-weight:600;color:#7c8078;white-space:nowrap;pointer-events:none}
+.dg-h{position:absolute;width:10px;height:10px;background:#ec4899;border:1.5px solid #ec4899;border-radius:2px;z-index:6}
+.dg-h[data-h=nw]{top:-5px;left:-5px;cursor:nwse-resize}.dg-h[data-h=n]{top:-5px;left:calc(50% - 5px);cursor:ns-resize}.dg-h[data-h=ne]{top:-5px;right:-5px;cursor:nesw-resize}.dg-h[data-h=e]{top:calc(50% - 5px);right:-5px;cursor:ew-resize}
+.dg-h[data-h=se]{bottom:-5px;right:-5px;cursor:nwse-resize}.dg-h[data-h=s]{bottom:-5px;left:calc(50% - 5px);cursor:ns-resize}.dg-h[data-h=sw]{bottom:-5px;left:-5px;cursor:nesw-resize}.dg-h[data-h=w]{top:calc(50% - 5px);left:-5px;cursor:ew-resize}
+.dd-sheet .wm{position:absolute;inset:0;overflow:hidden;z-index:1;display:flex;align-items:center;justify-content:center;font-size:72px;font-weight:800;color:#000;transform:rotate(-28deg);pointer-events:none;letter-spacing:.05em}
+.dd-sf{cursor:pointer;border-radius:5px;padding:2px 4px;margin:0 -4px 2px;font-size:13px}
+.dd-sf:hover{background:#eef4f0;outline:1px dashed #9fbfae}
+.dd-json{background:#fff;border:1px solid #ece7db;border-radius:12px;padding:20px;font-size:12.3px;line-height:1.6;overflow:auto;max-height:640px;font-family:ui-monospace,Menlo,Consolas,monospace;margin:0;white-space:pre}
+.dg-grille{display:grid;grid-template-columns:minmax(0,1fr) 360px;gap:20px;align-items:start;background:#fff;border:1px solid #e3ddd0;border-radius:14px;padding:22px}
+@media(max-width:1024px){.dg-grille{grid-template-columns:1fr}}
+.dg-left{min-width:0}.dg-sec{margin-bottom:18px;padding-bottom:14px;border-bottom:1px dashed #e3ddd0}.dg-top{margin-top:18px}
+.dg-sl{display:flex;align-items:center;gap:6px;font-size:14px;font-weight:700;margin-bottom:10px}.dg-sh{display:flex;justify-content:space-between;align-items:center;margin-bottom:14px}
+.dg-tl{display:flex;flex-direction:column;gap:6px;margin:8px 0 12px}.dg-tr{display:flex;align-items:center;gap:8px;padding:8px 10px;border:1px solid #e3ddd0;border-radius:8px;background:#fff;cursor:pointer;font-size:12px}.dg-tr.on{border-color:#9fb6a6;background:#f3f8f5}
+.dg-bd{background:#1c3934;color:#fff;border-radius:999px;padding:1px 7px;font-size:10px;font-weight:700}.dg-tn{flex:1;font-weight:600;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}.dg-tm{color:#7c8078;white-space:nowrap}.dg-ta{display:flex;gap:4px}
+.dg-mb{width:19px;height:19px;border:1px solid #ece7db;border-radius:4px;background:#fff;color:#7c8078;font-size:10px;line-height:1;cursor:pointer;padding:0}.dg-mb:hover{background:#eee}.dg-mb:disabled{opacity:.4;cursor:not-allowed}
+.dg-btn{border:1px solid #e3ddd0;border-radius:9px;background:#fff;color:#26312d;padding:8px 14px;font:inherit;font-size:13px;font-weight:600;cursor:pointer}.dg-btn:hover{background:#f7f5ef}.dg-btn.sm{padding:5px 11px;font-size:12px}
+.dg-g2{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:12px;margin-bottom:12px}
+.dg-lab{display:block;margin-bottom:5px;font-size:12px;font-weight:700;color:#4b544c}
+.dg-in{width:100%;border:1px solid #e3ddd0;border-radius:8px;background:#fdfcfa;color:#26312d;padding:8px 10px;font:inherit;font-size:13px}.dg-in:focus{outline:none;border-color:#9fb6a6;background:#fff}.dg-in:disabled{background:#f1efe8;color:#9a9a8f}
+.dg-ck{display:flex;align-items:center;gap:6px;font-size:12px;color:#6b7268;cursor:pointer}.dg-mini{display:flex;flex-wrap:wrap;gap:8px;margin-bottom:14px}
+.dg-scroll{overflow:auto;border:1px solid #ece7db;border-radius:12px;background:#fbfaf6}.dg-et{border-collapse:collapse;table-layout:fixed;min-width:100%}.dg-et th,.dg-et td{border:1px solid #ece7db}
+.dg-corner{background:#f1efe6;width:46px}.dg-hd{position:relative;background:#f1efe6;color:#7c8078;font-size:11px;font-weight:700;text-align:center;padding:4px 6px;min-width:46px}.dg-hw{display:flex;flex-direction:column;align-items:center;gap:2px}.dg-hb{display:flex;gap:2px}
+.dg-c{min-width:90px;height:52px;cursor:pointer;background:#fff}.dg-c.selected{outline:2px solid #4c8fd9;outline-offset:-2px;background:#cfe3f5!important}.dg-c.inrange{background:#d6ecd9!important;outline:1.5px solid #5fae74;outline-offset:-1.5px}
+.dg-cv{font-size:12.5px;word-break:break-word}.dg-cv.empty{color:#c4c0b3;font-style:italic}
+.dg-tag{display:inline-block;font-size:9px;font-weight:700;text-transform:uppercase;border-radius:4px;padding:1px 5px;margin-right:4px}.dg-tag-constante{background:#e6effb;color:#2f5fa8}.dg-tag-solde{background:#e5f5ea;color:#2b8a4c}.dg-tag-formule{background:#f2ecfb;color:#7147c4}
+.dg-cw{display:flex;flex-wrap:wrap;gap:12px}.dg-cw>div{min-width:130px;flex:1}.dg-hint{margin:8px 0 0;font-size:11.5px;line-height:1.5;color:#9a9a8f}.dg-hs{font-size:12px;color:#6b7268;margin:8px 0}
+.dg-props{border:1px solid #ece7db;border-radius:12px;padding:16px;background:#fbfaf6;position:sticky;top:12px;max-height:calc(100vh - 140px);overflow-y:auto}.dg-pt{margin:0 0 12px;font-size:13px;font-weight:700}.dg-f{margin-bottom:12px}.dg-r2{display:grid;grid-template-columns:1fr 1fr;gap:8px}
+.dg-axe{border:1px solid #ece7db;border-radius:10px;padding:10px;margin-bottom:8px;background:#fff;display:flex;flex-direction:column;gap:8px}.dg-axh{display:flex;gap:8px;align-items:center}.dg-chip{background:#eef1ec;color:#3c5b46;border-radius:999px;padding:1px 8px;font-size:10px;font-weight:700;text-transform:uppercase;white-space:nowrap}
+.dg-rg{display:grid;grid-template-columns:1fr 1fr 58px 32px;gap:6px;align-items:center}.dg-rl{grid-column:1 / -1;font-size:11px;color:#9a9a8f}.dg-rs{font-size:11px;color:#9a9a8f}
+.dg-sq{width:32px;height:32px;border:1px solid #e3ddd0;border-radius:8px;background:#fff;color:#7c8078;cursor:pointer}.dg-sq:hover:not(:disabled){background:#fef2f2;color:#ef4444}.dg-sq:disabled{opacity:.4;cursor:not-allowed}
+.dg-ps{margin-top:8px;padding-top:12px;border-top:1px dashed #ece7db}.dg-pst{font-size:11px;font-weight:700;letter-spacing:.06em;text-transform:uppercase;color:#6b7268;margin-bottom:10px}
+.dg-tg{width:100%;border:1px solid #e3ddd0;border-radius:8px;background:#fff;padding:7px 10px;font:inherit;font-size:12px;color:#6b7268;cursor:pointer}.dg-tg.on{background:#1c3934;border-color:#1c3934;color:#fff}.dg-co{width:100%;height:34px;padding:2px;border:1px solid #e3ddd0;border-radius:8px}
+.dg-seg{display:flex;border:1px solid #e3ddd0;border-radius:8px;overflow:hidden}.dg-seg button{flex:1;border:0;border-right:1px solid #e3ddd0;background:#fff;padding:7px 0;font:inherit;font-size:12px;color:#6b7268;cursor:pointer}.dg-seg button:last-child{border-right:0}.dg-seg button.on{background:#1c3934;color:#fff}
+.ep{color:#2c2c2a;font-size:12px}
+.dd-empty{color:#9a9a8f;font-size:13px;text-align:center;padding:36px 10px}
+</style>
+<app-modele-etat-recapitulatif-designer>
+<div class="dd" data-dd-root>
+  <div class="dd-bar">
+    <div class="dd-left">
+      <button type="button" class="dd-back" data-dd-back><i class="ti ti-arrow-left"></i> Retour</button>
+      <span class="dd-title" data-dd-title>DECLARATION — Déclaration</span><button type="button" class="dd-back" data-dd-params title="Paramètres du modèle d'état"><i class="ti ti-settings"></i> Paramètres</button><button type="button" class="dd-back" data-dd-dup title="Dupliquer le modèle"><i class="ti ti-copy"></i> Dupliquer</button><span data-dd-sum style="font-size:11px;color:#64748b;max-width:420px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap"></span>
+    </div>
+    <div class="dd-tabs">
+      <button type="button" class="dd-tab" data-dd-tab="designer">Designer</button>
+      <button type="button" class="dd-tab" data-dd-tab="grille">Grille</button>
+      <button type="button" class="dd-tab on" data-dd-tab="hf">En-tête &amp; pied de page</button>
+      <button type="button" class="dd-tab" data-dd-tab="doc">Document</button>
+      <button type="button" class="dd-tab" data-dd-tab="json">JSON</button>
+    </div>
+    <button type="button" class="dd-save" data-dd-save><i class="ti ti-device-floppy"></i> Sauvegarder</button>
+  </div>
+
+  <div data-dd-view="hf">
+    <div class="dd-main">
+      <div class="dd-col">
+        <div class="dd-card" data-dd-zone="entete">
+          <h4><i class="ti ti-tag" style="color:#f59e0b"></i> En-tête</h4>
+          <p class="dd-desc">Champs affichés dans la zone d'en-tête de l'onglet Designer. Variables : numero, dateDebut, dateFin, page.</p>
+          <div data-dd-list></div>
+          <div class="dd-add">
+            <div class="dd-grid3">
+              <div><label class="dd-lab">Type de champ</label><select class="dd-in" data-dd-f="type"><option value="texte">Texte</option><option value="image">Image</option></select></div>
+              <div><label class="dd-lab">Nom du champ</label><input class="dd-in" data-dd-f="nom" placeholder="Ex : Titre"></div>
+              <div><label class="dd-lab">Contenu</label><input class="dd-in" data-dd-f="contenu" placeholder="Texte affiché"></div>
+            </div>
+            <button type="button" class="dd-btn" data-dd-add><i class="ti ti-plus"></i> Ajouter le champ</button>
+          </div>
+        </div>
+        <div class="dd-card" data-dd-zone="pied">
+          <h4><i class="ti ti-tag" style="color:#f59e0b"></i> Pied de page</h4>
+          <p class="dd-desc">Champs affichés dans la zone de pied de page de l'onglet Designer.</p>
+          <div data-dd-list></div>
+          <div class="dd-add">
+            <div class="dd-grid3">
+              <div><label class="dd-lab">Type de champ</label><select class="dd-in" data-dd-f="type"><option value="texte">Texte</option><option value="image">Image</option></select></div>
+              <div><label class="dd-lab">Nom du champ</label><input class="dd-in" data-dd-f="nom" placeholder="Ex : Titre"></div>
+              <div><label class="dd-lab">Contenu</label><input class="dd-in" data-dd-f="contenu" placeholder="Texte affiché"></div>
+            </div>
+            <button type="button" class="dd-btn" data-dd-add><i class="ti ti-plus"></i> Ajouter le champ</button>
+          </div>
+        </div>
+        <div class="dd-card">
+          <h4><i class="ti ti-droplet" style="color:#3b82f6"></i> Filigrane</h4>
+          <label class="dd-chk"><input type="checkbox" data-dd-wm-on> Activer un filigrane sur le document</label>
+          <div class="dd-g2">
+            <div><label class="dd-lab">Texte du filigrane</label><input class="dd-in" data-dd-wm-text></div>
+            <div><label class="dd-lab">Opacité (%)</label><input class="dd-in" type="number" min="5" max="60" data-dd-wm-op value="15"></div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div data-dd-view="designer" style="display:none">
+    <div class="dd-stage"><div class="dd-sheet" data-dd-sheet>
+      <div class="wm" data-dd-wm style="display:none"></div>
+      <div class="dd-guides" data-dd-guides></div>
+      <div class="dd-zn" data-dd-zh></div>
+      <div class="dd-zb" data-dd-zb></div>
+      <div class="dd-zn" data-dd-zf></div>
+      <div class="dd-lay" data-dd-grid-layer></div>
+    </div></div>
+  </div>
+  <div data-dd-view="grille" style="display:none"><div data-dg-root></div>
+  </div>
+  <div data-dd-view="doc" style="display:none"><div class="dd-card" style="max-width:720px"><h4>Document</h4><p class="dd-desc">Format de la feuille, marges (repères en pointillés) et hauteur des zones d'en-tête et de pied de page, en pixels.</p>
+    <div class="dd-g4"><div><label class="dd-lab">Haut (px)</label><input class="dd-in" type="number" data-dd-doc="mt" value="14"></div><div><label class="dd-lab">Bas (px)</label><input class="dd-in" type="number" data-dd-doc="mb" value="14"></div><div><label class="dd-lab">Gauche (px)</label><input class="dd-in" type="number" data-dd-doc="ml" value="14"></div><div><label class="dd-lab">Droite (px)</label><input class="dd-in" type="number" data-dd-doc="mr" value="14"></div></div>
+    <div class="dd-g4"><div><label class="dd-lab">Hauteur en-tête (px)</label><input class="dd-in" type="number" data-dd-doc="hh" value="70"></div><div><label class="dd-lab">Hauteur pied de page (px)</label><input class="dd-in" type="number" data-dd-doc="fh" value="44"></div></div>
+    <label class="dd-lab">Format</label><select class="dd-in" data-dd-fmt><option value="p">A4 — Portrait (794 × 1123)</option><option value="l">A4 — Paysage (1123 × 794)</option></select></div></div>
+  <div data-dd-view="json" style="display:none"><pre class="dd-json" data-dd-json></pre></div>
+</div>
+<script>
+(function () {
+  var root = document.currentScript.parentElement.querySelector('[data-dd-root]');
+  var q = function (s) { return root.querySelector(s); }, qa = function (s) { return Array.prototype.slice.call(root.querySelectorAll(s)); };
+  var DEF = function () { return { entete: [{ nom: 'Logo', type: 'image', contenu: 'logo-soft-appli.png' }, { nom: 'Institution', type: 'texte', contenu: '' }, { nom: "Titre de l'état", type: 'texte', contenu: '' }, { nom: 'Bailleur', type: 'texte', contenu: '' }, { nom: 'QR code', type: 'image', contenu: 'qr-code.png' }], pied: [{ nom: 'Pied de page (bandeau)', type: 'image', contenu: 'pied-soft-accounting.png' }, { nom: 'Pagination', type: 'texte', contenu: 'Page {page}' }] }; };
+  var TMP = function () { return { entete: [{ nom: 'Logo', type: 'image', contenu: 'logo-soft-appli.png' }, { nom: 'Titre', type: 'texte', contenu: 'Formulaire de déclaration taxe sur marchés publics (TMP)' }, { nom: 'NIF', type: 'texte', contenu: 'NIF : [NIF]' }, { nom: 'Raison sociale', type: 'texte', contenu: 'Raison sociale : [Société]' }, { nom: 'Période', type: 'texte', contenu: 'Période du [Début période] au [Fin période]' }, { nom: 'Monnaie', type: 'texte', contenu: 'Monnaie : [Monnaie]' }, { nom: 'QR code', type: 'image', contenu: 'qr-code.png' }], pied: [{ nom: 'Pied de page (bandeau)', type: 'image', contenu: 'pied-soft-accounting.png' }, { nom: 'Date', type: 'texte', contenu: 'Date :' }, { nom: 'Nom et titre', type: 'texte', contenu: 'Nom et titre :' }, { nom: 'Signature', type: 'texte', contenu: 'Signature :' }, { nom: 'Pagination', type: 'texte', contenu: 'Page {page}/1' }] }; };
+  var EJ = function () { return { entete: [{ nom: 'Logo', type: 'image', contenu: 'logo-soft-appli.png' }, { nom: 'Titre', type: 'texte', contenu: 'Appendice 4 - Etat de rapprochement du compte désigné' }, { nom: 'Monnaie', type: 'texte', contenu: '[Monnaie]' }, { nom: 'Institution', type: 'texte', contenu: 'SOFTWELL - Version partenaire SOFTWELL - FOOD SYSTEM RESILIENCE PROGRAM - MADAGASCAR' }, { nom: 'Financement', type: 'texte', contenu: 'Financement du IDA n° : [Convention]' }, { nom: 'Exercice', type: 'texte', contenu: "Pour l'exercice clos le : [Fin exercice]" }, { nom: 'Compte bancaire', type: 'texte', contenu: 'Numéro du compte bancaire : [Compte désigné]' }, { nom: 'QR code', type: 'image', contenu: 'qr-code.png' }], pied: [{ nom: 'Pied de page (bandeau)', type: 'image', contenu: 'pied-soft-accounting.png' }, { nom: 'Date', type: 'texte', contenu: 'Date : [Date]' }, { nom: 'Édition', type: 'texte', contenu: 'Edité le [Date] — SOFTWELL - Madagascar' }, { nom: 'Pagination', type: 'texte', contenu: 'Page {page}/1' }] }; };
+  var CAT = function () { return { entete: [{ nom: 'Logo', type: 'image', contenu: 'logo-soft-appli.png' }, { nom: 'Institution', type: 'texte', contenu: 'SOFTWELL - Version partenaire [Société] - [Programme] - [Pays]' }, { nom: 'Titre', type: 'texte', contenu: 'État récapitulatif par catégories' }, { nom: 'Demande', type: 'texte', contenu: 'Demande de retrait de fonds n° [N° demande] du [Début période] au [Fin période]' }, { nom: 'Monnaie', type: 'texte', contenu: 'Monnaie : [Monnaie]' }, { nom: 'QR code', type: 'image', contenu: 'qr-code.png' }], pied: [{ nom: 'Pied de page (bandeau)', type: 'image', contenu: 'pied-soft-accounting.png' }, { nom: 'Édition', type: 'texte', contenu: 'Edité le [Date] à [Heure] (UTC+3)' }, { nom: 'Utilisateur', type: 'texte', contenu: '[Utilisateur] - SOFTWELL - Madagascar' }, { nom: 'Pagination', type: 'texte', contenu: 'Page {page}/1' }] }; };
+  var data = DEF(), model = { code: 'DECLARATION', nom: 'Déclaration' }, editing = {};
+  function esc(s) { var d = document.createElement('div'); d.textContent = s; return d.innerHTML; }
+  function zone(k) { return q('[data-dd-zone="' + k + '"]'); }
+  var DOC = { mt: 14, mb: 14, ml: 14, mr: 14, hh: 70, fh: 44, pw: 794, ph: 1123 }, selF = null, drag = null;
+  function sub(s) { s = String(s).replace(/\{page\}/g, '1').replace(/\{numero\}/g, model.code); return window.__ddGrid && window.__ddGrid.subst ? window.__ddGrid.subst(s) : s; }
+  function normF() { ['entete', 'pied'].forEach(function (k) { data[k].forEach(function (f, i) { if (f.x == null) { f.x = 0; f.y = (k === 'entete' ? 4 : 10) + 28 * i; f.w = f.w || (k === 'entete' ? 420 : 260); f.h = 24; } }); }); }
+  function fieldsHtml(k) {
+    return data[k].map(function (f, i) {
+      var on = selF && selF.k === k && selF.i === i;
+      return '<div class="dd-el' + (on ? ' sel' : '') + '" data-dd-fid="' + k + ',' + i + '" style="left:' + f.x + 'px;top:' + f.y + 'px;width:' + f.w + 'px;height:' + f.h + 'px">' + esc(sub(f.contenu || f.nom)) + (on ? '<span class="dd-rs" data-rs></span>' : '') + '</div>';
+    }).join('');
+  }
+  function spacer() {
+    var mb = window.__ddGrid && window.__ddGrid.maxBottom ? window.__ddGrid.maxBottom() : 0;
+    q('[data-dd-zb]').style.height = Math.max(0, mb + 10 - (DOC.mt + DOC.hh)) + 'px';
+  }
+  window.__ddSpacer = spacer;
+  function paintSheet() {
+    normF();
+    var sh = q('[data-dd-sheet]'); sh.style.width = DOC.pw + 'px'; sh.style.minHeight = DOC.ph + 'px'; sh.style.padding = DOC.mt + 'px ' + DOC.mr + 'px ' + DOC.mb + 'px ' + DOC.ml + 'px';
+    q('[data-dd-guides]').style.inset = DOC.mt + 'px ' + DOC.mr + 'px ' + DOC.mb + 'px ' + DOC.ml + 'px';
+    var zh = q('[data-dd-zh]'), zf = q('[data-dd-zf]'); zh.style.height = DOC.hh + 'px'; zh.innerHTML = fieldsHtml('entete'); zf.style.height = DOC.fh + 'px'; zf.innerHTML = fieldsHtml('pied');
+    if (window.__ddGrid) window.__ddGrid.paint(); spacer();
+  }
+  function render() {
+    ['entete', 'pied'].forEach(function (k) {
+      var list = zone(k).querySelector('[data-dd-list]'); list.innerHTML = '';
+      data[k].forEach(function (it, i) {
+        var d = document.createElement('div'); d.className = 'dd-item' + (editing[k] === i ? ' edit' : '');
+        if (editing[k] === i) {
+          d.innerHTML = '<div style="flex:1;display:flex;flex-direction:column;gap:8px"><div style="display:flex;gap:8px"><input class="dd-in" data-e="nom" value="' + esc(it.nom).replace(/"/g, '&quot;') + '"><input class="dd-in" data-e="contenu" value="' + esc(it.contenu).replace(/"/g, '&quot;') + '"></div><div style="display:grid;grid-template-columns:repeat(4,1fr);gap:8px">' + ['x', 'y', 'w', 'h'].map(function (p) { return '<input class="dd-in" type="number" title="' + ({ x: 'X', y: 'Y', w: 'Largeur', h: 'Hauteur' })[p] + '" placeholder="' + p.toUpperCase() + '" data-e="' + p + '" value="' + (it[p] == null ? '' : it[p]) + '">'; }).join('') + '</div></div>' +
+            '<div class="dd-act"><button type="button" class="dd-btn" data-ok style="padding:6px 12px;font-size:12px">OK</button></div>';
+          d.querySelector('[data-ok]').addEventListener('click', function () { it.nom = d.querySelector('[data-e="nom"]').value.trim() || it.nom; it.contenu = d.querySelector('[data-e="contenu"]').value; ['x', 'y', 'w', 'h'].forEach(function (p) { var v = d.querySelector('[data-e="' + p + '"]').value; if (v !== '') it[p] = +v; }); editing[k] = -1; render(); });
+        } else {
+          d.innerHTML = '<div style="flex:1;min-width:0"><div class="dd-name">' + esc(it.nom) + '</div><div class="dd-cont">' + (it.type === 'image' ? 'Image' : 'Texte') + ' — ' + esc(it.contenu) + '</div></div>' +
+            '<div class="dd-act"><button type="button" class="dd-ib ed" title="Modifier" data-ed><i class="ti ti-pencil"></i></button><button type="button" class="dd-ib" title="Supprimer" data-rm><i class="ti ti-trash"></i></button></div>';
+          d.querySelector('[data-ed]').addEventListener('click', function () { editing[k] = i; render(); });
+          d.querySelector('[data-rm]').addEventListener('click', function () { data[k].splice(i, 1); editing[k] = -1; render(); });
+        }
+        list.appendChild(d);
+      });
+    });
+    paintSheet();
+    var on = q('[data-dd-wm-on]').checked, w = q('[data-dd-wm]');
+    w.style.display = on ? '' : 'none'; w.textContent = q('[data-dd-wm-text]').value; w.style.opacity = (Math.min(60, Math.max(5, +q('[data-dd-wm-op]').value || 15)) / 100);
+  }
+  qa('[data-dd-zone]').forEach(function (z) {
+    var k = z.dataset.ddZone;
+    z.querySelector('[data-dd-add]').addEventListener('click', function () {
+      var nom = z.querySelector('[data-dd-f="nom"]'), c = z.querySelector('[data-dd-f="contenu"]'), t = z.querySelector('[data-dd-f="type"]');
+      if (!nom.value.trim()) { nom.focus(); return; }
+      data[k].push({ nom: nom.value.trim(), type: t.value, contenu: c.value }); nom.value = c.value = ''; render();
+    });
+  });
+  ['[data-dd-wm-on]', '[data-dd-wm-text]', '[data-dd-wm-op]'].forEach(function (s) { q(s).addEventListener('input', render); });
+  qa('[data-dd-doc]').forEach(function (i) { i.addEventListener('input', function () { DOC[i.dataset.ddDoc] = Math.max(0, +i.value || 0); paintSheet(); }); });
+  q('[data-dd-fmt]').addEventListener('change', function (e) { var l = e.target.value === 'l'; DOC.pw = l ? 1123 : 794; DOC.ph = l ? 794 : 1123; paintSheet(); });
+  /* glisser / redimensionner les champs et les blocs de grille sur la feuille */
+  var sheet = q('[data-dd-sheet]');
+  sheet.addEventListener('mousedown', function (e) {
+    var fe = e.target.closest('[data-dd-fid]'), blk = e.target.closest('[data-dd-blk]'), g = window.__ddGrid;
+    if (fe) {
+      var p = fe.dataset.ddFid.split(','), f = data[p[0]][+p[1]];
+      selF = { k: p[0], i: +p[1] }; if (g) g.setActive(-1, true);
+      drag = { t: 'f', k: p[0], i: +p[1], mode: e.target.closest('[data-rs]') ? 'r' : 'm', sx: e.clientX, sy: e.clientY, x: f.x, y: f.y, w: f.w, h: f.h };
+      paintSheet(); e.preventDefault(); return;
+    }
+    if (blk && g) {
+      var bi = +blk.dataset.ddBlk, t = g.tables()[bi], hh = e.target.closest('[data-h]'); selF = null; g.setActive(bi, true);
+      drag = { t: 'b', i: bi, mode: hh ? hh.dataset.h : 'm', sx: e.clientX, sy: e.clientY, x: t.x, y: t.y, w: t.w, h: t.h };
+      paintSheet(); e.preventDefault(); return;
+    }
+    selF = null; paintSheet();
+  });
+  document.addEventListener('mousemove', function (e) {
+    if (!drag) return; var dx = e.clientX - drag.sx, dy = e.clientY - drag.sy, o;
+    if (drag.t === 'f') {
+      o = data[drag.k][drag.i];
+      if (drag.mode === 'm') { o.x = Math.max(0, drag.x + dx); o.y = Math.max(0, drag.y + dy); } else { o.w = Math.max(20, drag.w + dx); o.h = Math.max(12, drag.h + dy); }
+    } else {
+      o = window.__ddGrid.tables()[drag.i]; var m = drag.mode;
+      if (m === 'm') { o.x = Math.max(0, drag.x + dx); o.y = Math.max(0, drag.y + dy); }
+      else {
+        if (m.indexOf('e') >= 0) o.w = Math.max(40, drag.w + dx);
+        if (m.indexOf('s') >= 0) o.h = Math.max(30, drag.h + dy);
+        if (m.indexOf('w') >= 0) { var nw = Math.max(40, drag.w - dx); o.x = Math.max(0, drag.x + drag.w - nw); o.w = nw; }
+        if (m.indexOf('n') >= 0) { var nh = Math.max(30, drag.h - dy); o.y = Math.max(0, drag.y + drag.h - nh); o.h = nh; }
+      }
+    }
+    paintSheet();
+  });
+  document.addEventListener('mouseup', function () { var was = drag; drag = null; if (was && was.t === 'b' && window.__ddGrid) window.__ddGrid.refresh(); if (was && was.t === 'f') render(); });
+  qa('[data-dd-tab]').forEach(function (b) {
+    b.addEventListener('click', function () {
+      qa('[data-dd-tab]').forEach(function (x) { x.classList.toggle('on', x === b); });
+      qa('[data-dd-view]').forEach(function (v) { v.style.display = v.dataset.ddView === b.dataset.ddTab ? '' : 'none'; });
+      if (b.dataset.ddTab === 'designer' && window.__ddGrid) window.__ddGrid.paint();
+      if (b.dataset.ddTab === 'json') q('[data-dd-json]').textContent = JSON.stringify({ numero: model.code, nom: model.nom, tableaux: window.__ddGrid ? window.__ddGrid.data() : [], entete: data.entete, piedDePage: data.pied, filigrane: { actif: q('[data-dd-wm-on]').checked, texte: q('[data-dd-wm-text]').value, opacite: +q('[data-dd-wm-op]').value } }, null, 2);
+    });
+  });
+  q('[data-dd-save]').addEventListener('click', function () { var b = q('[data-dd-save]'); b.innerHTML = '✔ Sauvegardé'; setTimeout(function () { b.innerHTML = '<i class="ti ti-device-floppy"></i> Sauvegarder'; }, 1800); });
+  q('[data-dd-back]').addEventListener('click', function () { history.back(); });
+  function sum() { var e = q('[data-dd-sum]'); if (e && window.__mfSummary) { e.textContent = window.__mfSummary(); e.title = e.textContent; } }
+  q('[data-dd-dup]').addEventListener('click', function () {
+    var src = window.__mfDesigner || model;
+    window.__dupModele({ source: { code: src.code, nom: src.nom }, onOk: function (c, n, fl) {
+      var nm = {}; Object.keys(src).forEach(function (k) { nm[k] = src[k]; }); nm.code = c; nm.nom = n; nm.def = false; nm.file = fl;
+      window.__mfDesigner = nm; model = nm; q('[data-dd-title]').textContent = n; sum();
+      window.dispatchEvent(new CustomEvent('mf-model-dup', { detail: { from: window.__designerFrom, src: src.code, srcNom: src.nom, code: c, nom: n, file: nm.file, type: nm.type } }));
+    } });
+  });
+  q('[data-dd-params]').addEventListener('click', function () { window.__mfParams(function (m) { model = m; q('[data-dd-title]').textContent = m.nom || '—'; sum(); }); });
+  window.addEventListener('hashchange', function () {
+    if (location.hash !== '#designer2') return;
+    var m = window.__mfDesigner; if (!m) return;
+    if (m.code !== model.code) { data = DEF(); editing = {}; if (window.__ddGrid) window.__ddGrid.reset(); DOC.hh = 70; selF = null; if (/RECAPCAT/.test(m.code) || /r.capitulatif par cat/i.test(String(m.base || ''))) { data = CAT(); DOC.hh = 180; if (window.__ddGrid) window.__ddGrid.presetCAT(); } if (m.code === 'EJCD') { data = EJ(); DOC.hh = 180; if (window.__ddGrid) window.__ddGrid.presetEJCD(); } if (m.code === 'TMP_DECLARATION') { data = TMP(); DOC.hh = 150; if (window.__ddGrid) window.__ddGrid.presetTMP(); } var hi = q('[data-dd-doc="hh"]'); if (hi) hi.value = DOC.hh; }
+    model = m; q('[data-dd-title]').textContent = m.nom || '—'; sum(); render();
+  });
+  render();
+})();
+</script>
+<script>
+/* Onglet « Grille » du designer d'état récapitulatif / déclaration (états de type solde des comptes) */
+(function () {
+  var root = document.currentScript.parentElement.querySelector('[data-dd-root]');
+  var host = root.querySelector('[data-dg-root]');
+  function esc(s) { var d = document.createElement('div'); d.textContent = s == null ? '' : s; return d.innerHTML; }
+  function attr(s) { return esc(s).replace(/"/g, '&quot;'); }
+  var STY = { font: 'Arial', fs: 12, b: 0, i: 0, u: 0, col: '#26312d', bw: 1, bs: 'solid', bc: '#e3ddd0', bg: '#ffffff', al: 'left', va: 'middle', pad: 4, lh: 1.2 };
+  var FONTS = ['Arial', 'Calibri', 'Times New Roman', 'Courier New', 'Inter', 'Georgia', 'Verdana'];
+  var TABLES = ['Comptabilité générale', 'Budget', 'Demande de remboursement', 'Contrat'];
+  var EDITVARS = [['[Saisie 1]', 'Saisie d’édition 1'], ['[Saisie 2]', 'Saisie d’édition 2']];
+  var ACC = { '101010': { d: 0, c: 21425000000 }, '101020': { d: 0, c: 0 }, '108100': { d: 0, c: 0 }, '108102': { d: 0, c: 0 }, '108120': { d: 0, c: 0 }, '451100': { d: 0, c: 0 }, '451200': { d: 0, c: 0 }, '511000': { d: 13405424893.13, c: 0 }, '512000': { d: 1000000000, c: 0 }, '512100': { d: 300000000, c: 0 }, '512110': { d: 500000000, c: 0 }, '512200': { d: 57724554.2, c: 0 }, '531000': { d: 0, c: 0 }, '531500': { d: 0, c: 0 }, '601000': { d: 5000000, c: 0 }, '622100': { d: 3500000, c: 0 }, '627000': { d: 1200000, c: 0 }, '701000': { d: 0, c: 8000000 } };
+  function bal(s, d, c) { if (s === 'C') return c; if (s === 'D') return d; if (s === 'S') return Math.abs(d - c); if (s === 'C-D') return c - d; if (s === 'D-C') return d - c; if (s === 'Solde D') return Math.max(d - c, 0); if (s === 'Solde C') return Math.max(c - d, 0); return d - c; }
+  function vars() { var c = window.__ejcdCtx || {}; return { 'Convention': c.Convention || 'E083-MG', 'Exercice': c.Exercice || '2026', 'Fin exercice': c['Fin exercice'] || '31/12/2026', 'Date': c.Date || '13/10/2026', 'Monnaie': c.Monnaie || 'MGA', 'Compte désigné': c['Compte désigné'] || '511000', 'Libellé ligne 6': c.l6t != null ? c.l6t : 'Demande de retrait numéro 38', 'Libellé ligne 7': c.l7t || '', 'Remarques': c.rem || '' }; }
+  function subst(t) { var v = vars(); return String(t == null ? '' : t).replace(/\[([^\]]+)\]/g, function (m, k) { return v.hasOwnProperty(k) ? v[k] : m; }); }
+  var SENS = ['D', 'C', 'C-D', 'D-C', 'Solde D', 'Solde C'], MOUV = ['Tous', 'Journal OD', 'Journal de trésorerie'], TYP = ['Mouvement', "Solde d'ouverture", 'Solde de clôture'];
+  var AXES = [['COMPTE_GENERAL', 'Compte général'], ['CATEGORIE', 'Catégorie (financement)'], ['TIERS', 'Tiers'], ['JOURNAL', 'Journal'], ['COMPTE_TIERS', 'Compte (classe 4) + Tiers'], ['CENTRE_SAISIE', 'Centre de saisie']].concat([1, 2, 3, 4, 5, 6, 7, 8, 9, 10].map(function (n) { return ['PLAN' + n, 'Plan ' + n]; }));
+  var VALS = { COMPTE_GENERAL: Object.keys(ACC).sort(), JOURNAL: ['AC', 'BFM', 'BMOIUSD', 'BQ', 'OD', 'VT'], CENTRE_SAISIE: ['Siège'] };
+  var PERS = [['periode_edition', "Période d'édition (par défaut)"], ['annee_edition', "Année d'édition"], ['decalage_unite', 'Décalage par unité (période relative)'], ['cumulatif', 'Cumulatif'], ['fourchette_mois', 'Fourchette de mois relative'], ['periode_fixe', 'Période fixe']];
+  var FMTS = ['Général', '#,##0', '#,##0.00', '0.00%', '# ##0,00 "MGA"'];
+  var PERLAB = { periode_edition: "Période d'édition", annee_edition: "Année d'édition", decalage_unite: 'Décalage par unité', cumulatif: 'Cumulatif', fourchette_mois: 'Fourchette de mois relative', periode_fixe: 'Période fixe' };
+
+  function newSolde() { return { tbl: 'Comptabilité générale', sens: 'D', mouv: 'Tous', typ: 'Mouvement', axes: [{ axe: 'COMPTE_GENERAL', ranges: [{ a: '', b: '', s: '' }] }], per: 'periode_edition', unit: 'mois', shift: -1, m1: 1, m2: 12, d1: '', d2: '', fmt: 'Général', monnaie: 'locale' }; }
+  function mkTable(name) { return { name: name, x: 0, y: 0, w: 300, h: 56, rows: 2, cols: 2, colW: [null, null], rowH: [null, null], cells: {} }; }
+  var T = [mkTable('Tableau 1')], ai = 0, sel = { r1: 0, c1: 0, r2: 0, c2: 0 }, calc = true, anchor = { r: 0, c: 0 };
+  function cur() { return T[ai]; }
+  function colL(c) { var s = ''; c++; while (c > 0) { var m = (c - 1) % 26; s = String.fromCharCode(65 + m) + s; c = Math.floor((c - 1) / 26); } return s; }
+  function addr(r, c) { return colL(c) + (r + 1); }
+  function parseCol(s) { var n = 0; s.toUpperCase().split('').forEach(function (ch) { n = n * 26 + ch.charCodeAt(0) - 64; }); return n - 1; }
+  function cell(t, r, c) { return t.cells[r + ',' + c]; }
+  function ensure(t, r, c) { var k = r + ',' + c; if (!t.cells[k]) t.cells[k] = { type: 'texte', text: '' }; return t.cells[k]; }
+  function sty(cl) { return Object.assign({}, STY, cl || {}); }
+
+  /* ---- calcul ---- */
+  function nf(v, d) { var p = Math.abs(v).toFixed(d == null ? 2 : d).split('.'); p[0] = p[0].replace(/\B(?=(\d{3})+(?!\d))/g, ' '); return (v < 0 ? '-' : '') + p.join(','); }
+  var CAT_DEMO = { '01': 274240.72, '03': 143423.05 };
+  function soldeVal(cl) {
+    var axc = cl.axes.filter(function (a) { return a.axe === 'CATEGORIE'; })[0];
+    if (axc) { var tc = 0; axc.ranges.forEach(function (r) { Object.keys(CAT_DEMO).forEach(function (k) { if (r.a && r.b && k >= r.a && k <= r.b) tc += CAT_DEMO[k]; }); }); return tc; }
+    var ax0 = cl.axes.filter(function (a) { return a.axe === 'COMPTE_GENERAL'; })[0], rgs = ax0 ? ax0.ranges.filter(function (r) { return r.a && r.b; }) : [];
+    if (cl.tbl === TABLES[0] && rgs.length) {
+      var tot = 0;
+      rgs.forEach(function (r) { var d = 0, c = 0; Object.keys(ACC).forEach(function (k) { if (k >= r.a && k <= r.b) { d += ACC[k].d; c += ACC[k].c; } }); tot += bal(r.s || cl.sens, d, c); });
+      return tot;
+    }
+    var key = [cl.tbl, cl.sens, cl.mouv, cl.typ, cl.axes.map(function (a) { return a.axe + a.ranges.map(function (r) { return r.a + r.b; }).join(''); }).join('|'), cl.per].join('/');
+    var def = [newSolde().tbl, 'D', 'Tous', 'Mouvement', 'COMPTE_GENERAL', 'periode_edition'].join('/');
+    if (key.indexOf('COMPTE_GENERAL') === key.lastIndexOf('COMPTE_GENERAL') && key.replace(/\|.*$/, '') === key.replace(/\|.*$/, '') && key.split('/').slice(0, 3).join('/') === def.split('/').slice(0, 3).join('/') && cl.typ === 'Mouvement' && cl.axes.length === 1 && !cl.axes[0].ranges.some(function (r) { return r.a || r.b; }) && cl.per === 'periode_edition') return 1279763840613.79;
+    var h = 0; for (var i = 0; i < key.length; i++) h = (h * 31 + key.charCodeAt(i)) % 9973;
+    return 1279763840613.79 * (10 + (h % 90)) / 100;
+  }
+  function num(t, r, c, d) {
+    var cl = cell(t, r, c); if (!cl) return 0;
+    if (cl.type === 'constante') { var mv = /^\[(.+)\]$/.exec(String(cl.value || '')); if (mv) { var cx = window.__ejcdCtx || {}, vv = { 'Saisie 1': cx.l6, 'Saisie 2': cx.l7 }[mv[1]]; return vv != null ? vv : 0; } return parseFloat(cl.value) || 0; }
+    if (cl.type === 'solde') return soldeVal(cl);
+    if (cl.type === 'formule') return evalF(t, cl.formula || '', d + 1);
+    return parseFloat(String(cl.text || '').replace(',', '.')) || 0;
+  }
+  function evalF(t, f, d) {
+    if (d > 10) return NaN; f = String(f).replace(/^\s*=/, '');
+    f = f.replace(/SUM\(\s*([A-Z]+)(\d+)\s*:\s*([A-Z]+)(\d+)\s*\)/gi, function (m, a, b, c, e) {
+      var c1 = parseCol(a), c2 = parseCol(c), r1 = +b - 1, r2 = +e - 1, s = 0;
+      for (var r = Math.min(r1, r2); r <= Math.max(r1, r2); r++) for (var cc = Math.min(c1, c2); cc <= Math.max(c1, c2); cc++) s += num(t, r, cc, d);
+      return '(' + s + ')';
+    });
+    f = f.replace(/\b([A-Z]+)(\d+)\b/gi, function (m, col, row) { return '(' + num(t, +row - 1, parseCol(col), d) + ')'; });
+    if (!f.trim() || !/^[\d\s+\-*/().eE]+$/.test(f)) return NaN;
+    try { var v = Function('"use strict";return (' + f + ')')(); return isFinite(v) ? v : NaN; } catch (e) { return NaN; }
+  }
+  function disp(t, r, c) {
+    var cl = cell(t, r, c); if (!cl) return '';
+    if (cl.type === 'texte') return subst(cl.text || '');
+    var v = num(t, r, c, 0);
+    if (cl.type === 'constante' && cl.value === '' ) return '';
+    return isNaN(v) ? '#ERR' : nf(v, (cl.fmt === '#,##0' ? 0 : 2));
+  }
+
+  /* ---- fusion : cellules couvertes ---- */
+  function covered(t) {
+    var cov = {};
+    Object.keys(t.cells).forEach(function (k) {
+      var cl = t.cells[k], p = k.split(',').map(Number);
+      if (cl.rs > 1 || cl.cs > 1) for (var r = p[0]; r < p[0] + (cl.rs || 1); r++) for (var c = p[1]; c < p[1] + (cl.cs || 1); c++) if (r !== p[0] || c !== p[1]) cov[r + ',' + c] = 1;
+    });
+    return cov;
+  }
+  function cssOf(cl) {
+    var s = sty(cl);
+    return 'font-family:' + s.font + ';font-size:' + s.fs + 'px;' + (s.b ? 'font-weight:700;' : '') + (s.i ? 'font-style:italic;' : '') + (s.u ? 'text-decoration:underline;' : '') + 'color:' + s.col + ';background:' + s.bg + ';text-align:' + s.al + ';padding:' + s.pad + 'px;line-height:' + s.lh + ';' +
+      'border:' + (s.bs === 'none' ? '0' : s.bw + 'px ' + s.bs + ' ' + s.bc) + ';vertical-align:' + (s.va === 'top' ? 'top' : s.va === 'bottom' ? 'bottom' : 'middle');
+  }
+
+  /* ---- rendu ---- */
+  var leftBox, propsBox;
+  function build() {
+    host.innerHTML = '<div class="dg-grille"><div class="dg-left" data-dg-left></div><div class="dg-props" data-dg-props></div></div>';
+    leftBox = host.querySelector('[data-dg-left]'); propsBox = host.querySelector('[data-dg-props]');
+    renderLeft(); renderProps();
+  }
+  function renderLeft() {
+    noActive = false;
+    var t = cur(), cov = covered(t), h = '';
+    h += '<div class="dg-sec"><div class="dg-sl"><i class="ti ti-table"></i> Tableaux du modèle</div><div class="dg-tl">' + T.map(function (x, i) {
+      return '<div class="dg-tr' + (i === ai ? ' on' : '') + '" data-dg-tab="' + i + '">' + (i === ai ? '<span class="dg-bd">Actif</span>' : '') + '<span class="dg-tn">' + esc(x.name) + '</span><span class="dg-tm">' + x.rows + '×' + x.cols + '</span><span class="dg-tm">X' + x.x + ' Y' + x.y + '</span><span class="dg-tm">' + x.w + '×' + x.h + '</span>' +
+        '<span class="dg-ta"><button type="button" class="dg-mb" data-dg-ren="' + i + '" title="Renommer"><i class="ti ti-pencil"></i></button><button type="button" class="dg-mb" data-dg-dup="' + i + '" title="Dupliquer"><i class="ti ti-copy"></i></button><button type="button" class="dg-mb" data-dg-del="' + i + '" title="' + (T.length < 2 ? 'Le modèle doit conserver au moins un tableau.' : 'Supprimer') + '"' + (T.length < 2 ? ' disabled' : '') + '><i class="ti ti-trash"></i></button></span></div>';
+    }).join('') + '</div><button type="button" class="dg-btn" data-dg-addt>+ Ajouter un tableau</button></div>';
+    h += '<div class="dg-sec"><div class="dg-sl">📍 Position &amp; taille du tableau (page)</div><div class="dg-g2">' + [['x', 'X'], ['y', 'Y'], ['w', 'Largeur'], ['h', 'Hauteur']].map(function (p) { return '<div><label class="dg-lab">' + p[1] + '</label><input class="dg-in" type="number" data-dg-pos="' + p[0] + '" value="' + t[p[0]] + '"></div>'; }).join('') + '</div></div>';
+    h += '<div class="dg-sh"><div class="dg-sl"><i class="ti ti-table"></i> Structure de la grille</div><label class="dg-ck"><input type="checkbox" data-dg-calc' + (calc ? ' checked' : '') + '> Aperçu calculé</label></div>';
+    h += '<div class="dg-g2"><div><label class="dg-lab">Nombre de lignes</label><input class="dg-in" type="number" min="1" data-dg-nr value="' + t.rows + '"></div><div><label class="dg-lab">Nombre de colonnes</label><input class="dg-in" type="number" min="1" data-dg-nc value="' + t.cols + '"></div></div>';
+    h += '<div class="dg-mini"><button type="button" class="dg-btn" data-dg-apply>Appliquer les dimensions</button><button type="button" class="dg-btn sm" data-dg-merge>🖇 Fusionner les cellules</button><button type="button" class="dg-btn sm" data-dg-unmerge>✂ Défusionner</button></div>';
+    var r1 = Math.min(sel.r1, sel.r2), r2 = Math.max(sel.r1, sel.r2), c1 = Math.min(sel.c1, sel.c2), c2 = Math.max(sel.c1, sel.c2);
+    h += '<div class="dg-scroll"><table class="dg-et"><colgroup><col>' + t.colW.map(function (w) { return '<col' + (w ? ' style="width:' + w + 'px"' : '') + '>'; }).join('') + '</colgroup><thead><tr><th class="dg-corner"></th>' +
+      t.colW.map(function (w, c) { return '<th class="dg-hd"><div class="dg-hw"><span>' + colL(c) + '</span><div class="dg-hb"><button type="button" class="dg-mb" data-dg-ic="' + c + '" title="Insérer une colonne">+</button><button type="button" class="dg-mb" data-dg-dc="' + c + '" title="Supprimer la colonne">🗑</button></div></div></th>'; }).join('') + '</tr></thead><tbody>';
+    for (var r = 0; r < t.rows; r++) {
+      h += '<tr' + (t.rowH[r] ? ' style="height:' + t.rowH[r] + 'px"' : '') + '><th class="dg-hd"><div class="dg-hw"><span>' + (r + 1) + '</span><div class="dg-hb"><button type="button" class="dg-mb" data-dg-ir="' + r + '" title="Insérer une ligne">+</button><button type="button" class="dg-mb" data-dg-dr="' + r + '" title="Supprimer la ligne">🗑</button></div></div></th>';
+      for (var c = 0; c < t.cols; c++) {
+        if (cov[r + ',' + c]) continue;
+        var cl = cell(t, r, c), inr = r >= r1 && r <= r2 && c >= c1 && c <= c2, isA = anchor.r === r && anchor.c === c;
+        var body = cl ? (calc || cl.type === 'texte' ? (disp(t, r, c) || '') : '<span class="dg-tag dg-tag-' + cl.type + '">' + cl.type + '</span>' + esc(summary(cl))) : '';
+        h += '<td class="dg-c' + (isA ? ' selected' : inr ? ' inrange' : '') + '" data-dg-cell="' + r + ',' + c + '"' + (cl && cl.rs > 1 ? ' rowspan="' + cl.rs + '"' : '') + (cl && cl.cs > 1 ? ' colspan="' + cl.cs + '"' : '') + ' style="' + (cl ? cssOf(cl) : '') + '"><div class="dg-cv' + (body ? '' : ' empty') + '">' + (cl && (calc || cl.type === 'texte') ? esc(body) : (body || '—')) + '</div></td>';
+      }
+      h += '</tr>';
+    }
+    h += '</tbody></table></div>';
+    h += '<div class="dg-sec dg-top"><div class="dg-sl"><i class="ti ti-table"></i> Largeur des colonnes (tableau)</div><div class="dg-cw">' + t.colW.map(function (w, c) { return '<div><label class="dg-lab">Colonne ' + colL(c) + '</label><input class="dg-in" type="number" data-dg-cw="' + c + '" value="' + (w || '') + '" placeholder="Auto"></div>'; }).join('') + '</div></div>';
+    h += '<div class="dg-sec"><div class="dg-sl">📐 Hauteur des lignes (tableau)</div><div class="dg-cw">' + t.rowH.map(function (v, r) { return '<div><label class="dg-lab">Ligne ' + (r + 1) + '</label><input class="dg-in" type="number" data-dg-rh="' + r + '" value="' + (v || '') + '" placeholder="Auto"></div>'; }).join('') + '</div></div>';
+    h += '<p class="dg-hint">Cliquez sur une cellule pour la sélectionner, Maj + clic sur une autre pour sélectionner une plage, puis « Fusionner les cellules ». Icônes +/🗑 des en-têtes pour insérer/supprimer une ligne/colonne. Formules au format tableur (ex. C2, SUM(C2:C3)).</p>';
+    leftBox.innerHTML = h;
+    paint();
+  }
+  function summary(cl) {
+    if (cl.type === 'solde') return ' ' + cl.tbl + ' · ' + cl.sens + ' · ' + cl.typ;
+    if (cl.type === 'formule') return ' ' + (cl.formula || '');
+    if (cl.type === 'constante') return ' ' + (cl.value || '');
+    return '';
+  }
+  function selOpts(list, v) { return list.map(function (o) { var val = Array.isArray(o) ? o[0] : o, lab = Array.isArray(o) ? o[1] : o; return '<option value="' + attr(val) + '"' + (val === v ? ' selected' : '') + '>' + esc(lab) + '</option>'; }).join(''); }
+  function renderProps() {
+    var t = cur(), cl = cell(t, anchor.r, anchor.c) || { type: 'texte', text: '' }, s = sty(cl), ty = cl.type, h = '';
+    var multi = !(sel.r1 === sel.r2 && sel.c1 === sel.c2);
+    h += '<h4 class="dg-pt">Propriétés de la cellule</h4>';
+    h += '<div class="dg-f"><label class="dg-lab">Cellule</label><input class="dg-in" disabled value="' + (multi ? addr(Math.min(sel.r1, sel.r2), Math.min(sel.c1, sel.c2)) + ':' + addr(Math.max(sel.r1, sel.r2), Math.max(sel.c1, sel.c2)) : addr(anchor.r, anchor.c)) + '"></div>';
+    h += '<div class="dg-f"><label class="dg-lab">Type de cellule</label><select class="dg-in" data-dg-type>' + selOpts([['texte', 'Texte (libellé libre)'], ['constante', 'Constante numérique'], ['solde', 'Solde de compte par axe'], ['formule', 'Formule']], ty) + '</select></div>';
+    if (ty === 'texte') h += '<div class="dg-f"><label class="dg-lab">Texte</label><textarea class="dg-in" rows="3" data-dg-k="text">' + esc(cl.text || '') + '</textarea></div><div class="dg-f"><label class="dg-lab">Insérer une variable</label><select class="dg-in" data-dg-var><option value="">— Choisir —</option>' + Object.keys(vars()).map(function (k) { return '<option value="[' + attr(k) + ']">' + esc(k) + '</option>'; }).join('') + '</select></div>';
+    if (ty === 'constante') h += '<div class="dg-f"><label class="dg-lab">Valeur</label><input class="dg-in" data-dg-k="value" value="' + attr(cl.value == null ? '' : cl.value) + '" placeholder="Nombre ou variable"></div><div class="dg-f"><label class="dg-lab">Variable d’édition</label><select class="dg-in" data-dg-cvar><option value="">— Valeur fixe —</option>' + selOpts(EDITVARS, cl.value) + '</select><p class="dg-hint">Une variable d’édition reprend la valeur saisie dans l’écran d’édition de l’état.</p></div>';
+    if (ty === 'formule') h += '<div class="dg-f"><label class="dg-lab">Formule</label><input class="dg-in" data-dg-k="formula" value="' + attr(cl.formula || '') + '" placeholder="=SUM(A1:A2)"><p class="dg-hint">Références de cellules (ex. A1) et SUM(A1:B2) ; opérateurs + - * / et parenthèses.</p></div>';
+    if (ty === 'solde') {
+      h += '<div class="dg-f"><label class="dg-lab">Table de données</label><select class="dg-in" data-dg-k="tbl">' + selOpts(TABLES, cl.tbl) + '</select></div>';
+      h += '<div class="dg-r2"><div class="dg-f"><label class="dg-lab">Sens</label><select class="dg-in" data-dg-k="sens">' + selOpts(SENS, cl.sens) + '</select></div><div class="dg-f"><label class="dg-lab">Mouvement</label><select class="dg-in" data-dg-k="mouv">' + selOpts(MOUV, cl.mouv) + '</select></div></div>';
+      h += '<div class="dg-f"><label class="dg-lab">Type</label><select class="dg-in" data-dg-k="typ">' + selOpts(TYP, cl.typ) + '</select></div>';
+      h += '<div class="dg-f"><label class="dg-lab">Axe analytique &amp; fourchettes de compte</label>' + cl.axes.map(function (ax, ai2) {
+        var vals = VALS[ax.axe] || [];
+        return '<div class="dg-axe"><div class="dg-axh"><span class="dg-chip">Axe ' + (ai2 + 1) + '</span><select class="dg-in" data-dg-axe="' + ai2 + '">' + selOpts(AXES, ax.axe) + '</select><button type="button" class="dg-sq" data-dg-axdel="' + ai2 + '"' + (cl.axes.length < 2 ? ' disabled' : '') + ' title="Supprimer cet axe">🗑</button></div>' +
+          ax.ranges.map(function (rg, ri) {
+            return '<div class="dg-rg"><span class="dg-rl">Fourchette ' + (ri + 1) + '</span><select class="dg-in" data-dg-rg="' + ai2 + ',' + ri + ',a"><option value="">Choisir…</option>' + selOpts(vals, rg.a) + '</select><select class="dg-in" data-dg-rg="' + ai2 + ',' + ri + ',b"><option value="">Choisir…</option>' + selOpts(vals, rg.b) + '</select><select class="dg-in" title="Sens" data-dg-rg="' + ai2 + ',' + ri + ',s"><option value="">S</option>' + selOpts(['C', 'D', 'S'], rg.s) + '</select><button type="button" class="dg-sq" data-dg-rgdel="' + ai2 + ',' + ri + '"' + (ax.ranges.length < 2 ? ' disabled' : '') + ' title="Supprimer cette fourchette">🗑</button></div>';
+          }).join('') + (vals.length ? '' : '<span class="dg-rs">Aucune valeur disponible pour cet axe.</span>') + '<button type="button" class="dg-btn sm" data-dg-rgadd="' + ai2 + '">Ajouter une fourchette</button></div>';
+      }).join('') + '<button type="button" class="dg-btn" data-dg-axadd>+ Ajouter un axe</button><p class="dg-hint">Les axes et fourchettes sont fournis par le serveur selon la table de données. Chaque axe porte ses propres fourchettes ; le croisement des axes est évalué côté backend.</p></div>';
+      h += '<div class="dg-f"><label class="dg-lab">📅 Périodicité</label><select class="dg-in" data-dg-k="per">' + selOpts(PERS, cl.per) + '</select>';
+      if (cl.per === 'decalage_unite') h += '<div class="dg-r2"><div><label class="dg-lab">Unité</label><select class="dg-in" data-dg-k="unit">' + selOpts(['jour', 'mois', 'trimestre', 'année'], cl.unit) + '</select></div><div><label class="dg-lab">Décalage</label><input class="dg-in" type="number" data-dg-k="shift" value="' + cl.shift + '"></div></div>';
+      if (cl.per === 'fourchette_mois') h += '<div class="dg-r2"><div><label class="dg-lab">Mois début</label><input class="dg-in" type="number" min="1" max="12" data-dg-k="m1" value="' + cl.m1 + '"></div><div><label class="dg-lab">Mois fin</label><input class="dg-in" type="number" min="1" max="12" data-dg-k="m2" value="' + cl.m2 + '"></div></div>';
+      if (cl.per === 'periode_fixe') h += '<div class="dg-r2"><div><label class="dg-lab">Du</label><input class="dg-in" type="date" data-dg-k="d1" value="' + attr(cl.d1) + '"></div><div><label class="dg-lab">Au</label><input class="dg-in" type="date" data-dg-k="d2" value="' + attr(cl.d2) + '"></div></div>';
+      h += '<div class="dg-hs">Période appliquée : <b>' + PERLAB[cl.per] + '</b></div><p class="dg-hint">Ce réglage de périodicité est universel : il s’applique à l’ensemble des tables de données (Compta, Budget, Demande, Contrat).</p></div>';
+      h += '<div class="dg-hs">Le solde officiel est calculé par le moteur serveur (écritures, sens, mouvement, périodicité, formules).</div><div class="dg-hs" data-dg-prevval>Aperçu <b>' + nf(soldeVal(cl)) + '</b></div>';
+    }
+    if (ty !== 'texte') {
+      h += '<div class="dg-f"><label class="dg-lab">Format d’affichage</label><div style="display:flex;gap:6px"><input class="dg-in" data-dg-k="fmt" list="dg-fmts" value="' + attr(cl.fmt || 'Général') + '" placeholder="Général"><datalist id="dg-fmts">' + FMTS.map(function (f) { return '<option value="' + attr(f) + '">'; }).join('') + '</datalist></div></div>';
+      h += '<div class="dg-f"><label class="dg-lab">Monnaie cible</label><select class="dg-in" data-dg-k="monnaie">' + selOpts([['locale', 'Monnaie locale (Devise tenue de compte / Monnaie 1)'], ['devise1', 'Devise 1'], ['devise2', 'Devise 2'], ['devise3', 'Devise 3']], cl.monnaie || 'locale') + '</select></div>';
+    }
+    h += '<div class="dg-ps"><div class="dg-pst">Police</div><div class="dg-f"><label class="dg-lab">Police</label><select class="dg-in" data-dg-s="font">' + selOpts(FONTS, s.font) + '</select></div><div class="dg-f"><label class="dg-lab">Taille</label><input class="dg-in" type="number" data-dg-s="fs" value="' + s.fs + '"></div>' +
+      '<div class="dg-r2"><div class="dg-f"><label class="dg-lab">Gras</label><button type="button" class="dg-tg' + (s.b ? ' on' : '') + '" data-dg-tg="b">Gras</button></div><div class="dg-f"><label class="dg-lab">Italique</label><button type="button" class="dg-tg' + (s.i ? ' on' : '') + '" data-dg-tg="i">Italique</button></div></div>' +
+      '<div class="dg-r2"><div class="dg-f"><label class="dg-lab">Souligné</label><button type="button" class="dg-tg' + (s.u ? ' on' : '') + '" data-dg-tg="u">Souligné</button></div><div class="dg-f"><label class="dg-lab">Couleur du texte</label><input type="color" class="dg-co" data-dg-s="col" value="' + s.col + '"></div></div></div>';
+    h += '<div class="dg-ps"><div class="dg-pst">Bordure &amp; remplissage</div><div class="dg-r2"><div class="dg-f"><label class="dg-lab">Épaisseur de bordure</label><input class="dg-in" type="number" min="0" data-dg-s="bw" value="' + s.bw + '"></div><div class="dg-f"><label class="dg-lab">Style de bordure</label><select class="dg-in" data-dg-s="bs">' + selOpts([['none', 'Aucun'], ['solid', 'Continu'], ['dashed', 'Discontinu'], ['dotted', 'Pointillé']], s.bs) + '</select></div></div>' +
+      '<div class="dg-r2"><div class="dg-f"><label class="dg-lab">Couleur de bordure</label><input type="color" class="dg-co" data-dg-s="bc" value="' + s.bc + '"></div><div class="dg-f"><label class="dg-lab">Couleur de remplissage</label><input type="color" class="dg-co" data-dg-s="bg" value="' + s.bg + '"></div></div></div>';
+    h += '<div class="dg-ps"><div class="dg-pst">Paragraphe</div><div class="dg-f"><label class="dg-lab">Alignement</label><div class="dg-seg">' + [['left', 'Gauche'], ['center', 'Centre'], ['right', 'Droite'], ['justify', 'Justifié']].map(function (o) { return '<button type="button" class="' + (s.al === o[0] ? 'on' : '') + '" data-dg-seg="al,' + o[0] + '">' + o[1] + '</button>'; }).join('') + '</div></div>' +
+      '<div class="dg-f"><label class="dg-lab">Alignement vertical</label><div class="dg-seg">' + [['top', 'Haut'], ['middle', 'Milieu'], ['bottom', 'Bas']].map(function (o) { return '<button type="button" class="' + (s.va === o[0] ? 'on' : '') + '" data-dg-seg="va,' + o[0] + '">' + o[1] + '</button>'; }).join('') + '</div></div>' +
+      '<div class="dg-r2"><div class="dg-f"><label class="dg-lab">Marges internes</label><input class="dg-in" type="number" min="0" data-dg-s="pad" value="' + s.pad + '"></div><div class="dg-f"><label class="dg-lab">Interligne</label><input class="dg-in" type="number" step="0.1" min="1" data-dg-s="lh" value="' + s.lh + '"></div></div></div>';
+    propsBox.innerHTML = h;
+  }
+
+  /* ---- aperçu dans l'onglet Designer ---- */
+  function paint() {
+    var layer = root.querySelector('[data-dd-grid-layer]'); if (!layer) return;
+    layer.innerHTML = T.map(function (t, ti) {
+      var cov = covered(t), tot = t.colW.reduce(function (a, w) { return a + (w || 100); }, 0), body = '';
+      for (var r = 0; r < t.rows; r++) {
+        body += '<tr' + (t.rowH[r] ? ' style="height:' + t.rowH[r] + 'px"' : '') + '>';
+        for (var c = 0; c < t.cols; c++) {
+          if (cov[r + ',' + c]) continue; var cl = cell(t, r, c);
+          body += '<td' + (cl && cl.rs > 1 ? ' rowspan="' + cl.rs + '"' : '') + (cl && cl.cs > 1 ? ' colspan="' + cl.cs + '"' : '') + ' style="' + (cl ? cssOf(cl) : 'border:1px solid #e3ddd0;padding:4px') + '">' + esc(disp(t, r, c)) + '</td>';
+        }
+        body += '</tr>';
+      }
+      var on = ti === ai && !noActive;
+      return '<div class="dg-blk' + (on ? ' on' : '') + '" data-dd-blk="' + ti + '" style="left:' + t.x + 'px;top:' + t.y + 'px;width:' + t.w + 'px;height:' + t.h + 'px"><span class="dg-bn">' + esc(t.name) + '</span><div class="dg-in2"><table class="dg-pv" style="width:100%;table-layout:fixed;border-collapse:collapse"><colgroup>' + t.colW.map(function (w) { return '<col style="width:' + ((w || 100) * 100 / tot) + '%">'; }).join('') + '</colgroup><tbody>' + body + '</tbody></table></div>' +
+        (on ? ['nw', 'n', 'ne', 'e', 'se', 's', 'sw', 'w'].map(function (h) { return '<span class="dg-h" data-h="' + h + '"></span>'; }).join('') : '') + '</div>';
+    }).join('');
+    if (window.__ddSpacer) window.__ddSpacer();
+  }
+  var noActive = false;
+  /* ---- actions ---- */
+  function shiftCells(t, axis, at, delta) {
+    var out = {};
+    Object.keys(t.cells).forEach(function (k) {
+      var p = k.split(',').map(Number), idx = axis === 'r' ? p[0] : p[1];
+      if (delta < 0 && idx === at) return;
+      if (idx >= at) p[axis === 'r' ? 0 : 1] += delta;
+      out[p[0] + ',' + p[1]] = t.cells[k];
+    }); t.cells = out;
+  }
+  function clamp() { var t = cur(); sel.r1 = Math.min(sel.r1, t.rows - 1); sel.r2 = Math.min(sel.r2, t.rows - 1); sel.c1 = Math.min(sel.c1, t.cols - 1); sel.c2 = Math.min(sel.c2, t.cols - 1); anchor.r = Math.min(anchor.r, t.rows - 1); anchor.c = Math.min(anchor.c, t.cols - 1); }
+  host.addEventListener('click', function (e) {
+    var t = cur(), el;
+    if ((el = e.target.closest('[data-dg-cell]'))) {
+      var p = el.dataset.dgCell.split(',').map(Number);
+      if (e.shiftKey) { sel.r2 = p[0]; sel.c2 = p[1]; } else { sel = { r1: p[0], c1: p[1], r2: p[0], c2: p[1] }; anchor = { r: p[0], c: p[1] }; }
+      renderLeft(); renderProps(); return;
+    }
+    if ((el = e.target.closest('[data-dg-ren]'))) { e.stopPropagation(); var n = prompt('Nom du tableau', T[+el.dataset.dgRen].name); if (n && n.trim()) { T[+el.dataset.dgRen].name = n.trim(); renderLeft(); } return; }
+    if ((el = e.target.closest('[data-dg-dup]'))) { e.stopPropagation(); var src = T[+el.dataset.dgDup], cp = JSON.parse(JSON.stringify(src)); cp.name = src.name + ' (copie)'; cp.y += 10; T.push(cp); ai = T.length - 1; renderLeft(); return; }
+    if ((el = e.target.closest('[data-dg-del]'))) { e.stopPropagation(); if (T.length < 2) return; T.splice(+el.dataset.dgDel, 1); ai = Math.min(ai, T.length - 1); sel = { r1: 0, c1: 0, r2: 0, c2: 0 }; anchor = { r: 0, c: 0 }; renderLeft(); renderProps(); return; }
+    if ((el = e.target.closest('[data-dg-tab]'))) { ai = +el.dataset.dgTab; sel = { r1: 0, c1: 0, r2: 0, c2: 0 }; anchor = { r: 0, c: 0 }; renderLeft(); renderProps(); return; }
+    if (e.target.closest('[data-dg-addt]')) { var nt = mkTable('Tableau ' + (T.length + 1)); nt.cells = {}; nt.y = T.reduce(function (a, x) { return Math.max(a, x.y + x.h + 20); }, 0); T.push(nt); ai = T.length - 1; sel = { r1: 0, c1: 0, r2: 0, c2: 0 }; anchor = { r: 0, c: 0 }; renderLeft(); renderProps(); return; }
+    if (e.target.closest('[data-dg-apply]')) {
+      var nr = Math.max(1, +host.querySelector('[data-dg-nr]').value || 1), nc = Math.max(1, +host.querySelector('[data-dg-nc]').value || 1);
+      t.rows = nr; t.cols = nc; while (t.colW.length < nc) t.colW.push(null); t.colW.length = nc; while (t.rowH.length < nr) t.rowH.push(null); t.rowH.length = nr;
+      Object.keys(t.cells).forEach(function (k) { var p = k.split(',').map(Number); if (p[0] >= nr || p[1] >= nc) delete t.cells[k]; }); clamp(); renderLeft(); renderProps(); return;
+    }
+    if ((el = e.target.closest('[data-dg-ic]'))) { var c = +el.dataset.dgIc; shiftCells(t, 'c', c, 1); t.cols++; t.colW.splice(c, 0, null); renderLeft(); return; }
+    if ((el = e.target.closest('[data-dg-dc]'))) { if (t.cols < 2) return; var c2 = +el.dataset.dgDc; shiftCells(t, 'c', c2, -1); t.cols--; t.colW.splice(c2, 1); clamp(); renderLeft(); renderProps(); return; }
+    if ((el = e.target.closest('[data-dg-ir]'))) { var r = +el.dataset.dgIr; shiftCells(t, 'r', r, 1); t.rows++; t.rowH.splice(r, 0, null); renderLeft(); return; }
+    if ((el = e.target.closest('[data-dg-dr]'))) { if (t.rows < 2) return; var r2 = +el.dataset.dgDr; shiftCells(t, 'r', r2, -1); t.rows--; t.rowH.splice(r2, 1); clamp(); renderLeft(); renderProps(); return; }
+    if (e.target.closest('[data-dg-merge]')) {
+      var a1 = Math.min(sel.r1, sel.r2), b1 = Math.min(sel.c1, sel.c2), a2 = Math.max(sel.r1, sel.r2), b2 = Math.max(sel.c1, sel.c2);
+      if (a1 === a2 && b1 === b2) return;
+      for (var rr = a1; rr <= a2; rr++) for (var cc = b1; cc <= b2; cc++) if (rr !== a1 || cc !== b1) delete t.cells[rr + ',' + cc];
+      var an = ensure(t, a1, b1); an.rs = a2 - a1 + 1; an.cs = b2 - b1 + 1; anchor = { r: a1, c: b1 }; sel = { r1: a1, c1: b1, r2: a1, c2: b1 }; renderLeft(); renderProps(); return;
+    }
+    if (e.target.closest('[data-dg-unmerge]')) { var cl0 = cell(t, anchor.r, anchor.c); if (cl0) { delete cl0.rs; delete cl0.cs; } renderLeft(); return; }
+    /* panneau de propriétés */
+    var cl = ensure(t, anchor.r, anchor.c);
+    if ((el = e.target.closest('[data-dg-tg]'))) { var k = el.dataset.dgTg; cl[k] = cl[k] ? 0 : 1; renderLeft(); renderProps(); return; }
+    if ((el = e.target.closest('[data-dg-seg]'))) { var kv = el.dataset.dgSeg.split(','); cl[kv[0]] = kv[1]; renderLeft(); renderProps(); return; }
+    if (e.target.closest('[data-dg-axadd]')) { cl.axes.push({ axe: 'COMPTE_GENERAL', ranges: [{ a: '', b: '', s: '' }] }); renderProps(); return; }
+    if ((el = e.target.closest('[data-dg-axdel]'))) { if (cl.axes.length > 1) cl.axes.splice(+el.dataset.dgAxdel, 1); renderLeft(); renderProps(); return; }
+    if ((el = e.target.closest('[data-dg-rgadd]'))) { cl.axes[+el.dataset.dgRgadd].ranges.push({ a: '', b: '', s: '' }); renderProps(); return; }
+    if ((el = e.target.closest('[data-dg-rgdel]'))) { var q = el.dataset.dgRgdel.split(',').map(Number); if (cl.axes[q[0]].ranges.length > 1) cl.axes[q[0]].ranges.splice(q[1], 1); renderLeft(); renderProps(); return; }
+  });
+  function onChange(e) {
+    var t = cur(), el = e.target, cl;
+    if (el.matches('[data-dg-calc]')) { calc = el.checked; renderLeft(); return; }
+    if (el.dataset.dgPos) { t[el.dataset.dgPos] = Math.max(0, +el.value || 0); renderLeft(); return; }
+    if (el.dataset.dgCw != null && el.dataset.dgCw !== '') { t.colW[+el.dataset.dgCw] = +el.value > 0 ? +el.value : null; renderLeft(); return; }
+    if (el.dataset.dgRh != null && el.dataset.dgRh !== '') { t.rowH[+el.dataset.dgRh] = +el.value > 0 ? +el.value : null; renderLeft(); return; }
+    if (!el.closest('[data-dg-props]')) return;
+    cl = ensure(t, anchor.r, anchor.c);
+    if (el.matches('[data-dg-type]')) {
+      var ty = el.value, keep = { rs: cl.rs, cs: cl.cs }; ['font', 'fs', 'b', 'i', 'u', 'col', 'bw', 'bs', 'bc', 'bg', 'al', 'va', 'pad', 'lh'].forEach(function (k) { if (cl[k] != null) keep[k] = cl[k]; });
+      var base = ty === 'solde' ? newSolde() : ty === 'texte' ? { text: '' } : ty === 'constante' ? { value: '' } : { formula: '' };
+      if (ty !== 'texte' && ty !== 'solde') base.fmt = 'Général', base.monnaie = 'locale';
+      t.cells[anchor.r + ',' + anchor.c] = Object.assign({ type: ty }, base, keep); renderLeft(); renderProps(); return;
+    }
+    if (el.matches('[data-dg-cvar]')) { cl.value = el.value; renderLeft(); renderProps(); return; }
+    if (el.matches('[data-dg-var]')) { if (el.value) { cl.text = (cl.text || '') + el.value; renderLeft(); renderProps(); } return; }
+    if (el.dataset.dgK) { cl[el.dataset.dgK] = el.type === 'number' && el.dataset.dgK !== 'value' ? +el.value : el.value; if (el.tagName === 'SELECT' && /^(tbl|per|typ|sens|mouv)$/.test(el.dataset.dgK)) { renderLeft(); renderProps(); } else { renderLeft(); var pv = propsBox.querySelector('[data-dg-prevval]'); if (pv && cl.type === 'solde') pv.innerHTML = 'Aperçu <b>' + nf(soldeVal(cl)) + '</b>'; } return; }
+    if (el.dataset.dgS) { cl[el.dataset.dgS] = el.type === 'number' ? +el.value : el.value; renderLeft(); return; }
+    if (el.dataset.dgAxe != null && el.dataset.dgAxe !== '') { cl.axes[+el.dataset.dgAxe].axe = el.value; cl.axes[+el.dataset.dgAxe].ranges = [{ a: '', b: '', s: '' }]; renderLeft(); renderProps(); return; }
+    if (el.dataset.dgRg) { var p = el.dataset.dgRg.split(','); cl.axes[+p[0]].ranges[+p[1]][p[2]] = el.value; renderLeft(); renderProps(); return; }
+  }
+  host.addEventListener('change', onChange); host.addEventListener('input', function (e) { if (e.target.matches('textarea,[data-dg-k],[data-dg-s]') && e.target.tagName !== 'SELECT') onChange(e); });
+
+  var ejLive = null;
+  function buildEJ() {
+    var t = mkTable('EJCD'); t.cells = {}; t.rows = 15; t.cols = 4; t.colW = [50, 400, 140, 170]; t.rowH = []; for (var i = 0; i < 15; i++) t.rowH.push(null); t.w = 760; t.h = 15 * 30; t.x = 14; t.y = 204;
+    var SEC = { b: 1, bg: '#dbe9f6' };
+    function rg(a, b, s) { return { a: a, b: b, s: s }; }
+    var JNL = { axe: 'JOURNAL', ranges: [rg('BMOIUSD', 'BMOIUSD', ''), rg('BFM', 'BFM', '')] };
+    function txt(r, c, text, st) { t.cells[r + ',' + c] = Object.assign({ type: 'texte', text: text }, st || {}); }
+    function sol(r, ranges, withJnl) { t.cells[r + ',3'] = Object.assign({ type: 'solde' }, newSolde(), { axes: [{ axe: 'COMPTE_GENERAL', ranges: ranges }].concat(withJnl ? [JSON.parse(JSON.stringify(JNL))] : []), fmt: '#,##0.00', al: 'right' }); }
+    function cst(r, v) { t.cells[r + ',3'] = { type: 'constante', value: v, fmt: '#,##0.00', monnaie: 'locale', al: 'right' }; }
+    function frm(r, f) { t.cells[r + ',3'] = { type: 'formule', formula: f, fmt: '#,##0.00', monnaie: 'locale', al: 'right', b: 1, bg: '#f1f5f9' }; }
+    function line(r, n, lab, extra) { txt(r, 0, n, { al: 'center', b: 1 }); txt(r, 1, lab); if (extra) txt(r, 2, extra, { col: '#555555' }); }
+    txt(0, 0, 'SECTION 1', Object.assign({ cs: 4 }, SEC));
+    line(1, '1', 'Montant total avancé par IDA'); sol(1, [rg('101010', '101020', 'C')]);
+    line(2, '2', 'moins montant total recouvré par IDA'); sol(2, [rg('101010', '101020', 'D')]);
+    line(3, '3', "= Encours de l'avance du IDA"); frm(3, '=D2-D3');
+    txt(4, 0, 'SECTION 2', Object.assign({ cs: 4 }, SEC));
+    line(5, '4', 'Solde du compte désigné selon le relevé bancaire'); sol(5, [rg('511000', '511000', 'S')], true);
+    line(6, '5a', "Plus Solde des comptes d'exploitation"); sol(6, [rg('512000', '512000', 'S'), rg('512110', '512110', 'S'), rg('512100', '512100', 'S'), rg('512200', '512200', 'S')], true);
+    line(7, '5c', 'Plus argent en caisse'); sol(7, [rg('531000', '531500', 'S')], true);
+    line(8, '', '= Solde bancaire total au [Date]'); frm(8, '=SUM(D6:D8)');
+    line(9, '6', 'Plus montant demandé dans la présente demande de retrait', '[Libellé ligne 6]'); cst(9, '[Saisie 1]');
+    line(10, '7', 'Plus montant retiré mais pas encore demandé', '[Libellé ligne 7]'); cst(10, '[Saisie 2]');
+    line(11, '8', 'Plus montants demandés dans les demandes précédentes et non encore crédités à la date du relevé bancaire, ou demandés après cette date'); sol(11, [rg('451100', '451100', 'S'), rg('451200', '451200', 'S')]);
+    line(12, '9', 'moins intérêts perçus'); sol(12, [rg('108100', '108100', 'S'), rg('108102', '108102', 'S'), rg('108120', '108120', 'S')]);
+    line(13, '10', "= Montant total de l'avance justifiée"); frm(13, '=D9+D10+D11+D12-D13');
+    line(14, '11', "Explication de la différence entre l'encours de l'avance (ligne 3) et l'avance justifiée (ligne 10)", '[Remarques]'); frm(14, '=D4-D14');
+    [3, 8, 13, 14].forEach(function (r) { t.cells[r + ',1'].b = 1; });
+    return t;
+  }
+  function presetEJCD() {
+    var t = buildEJ(); ejLive = t;
+    T = [t]; ai = 0; anchor = { r: 1, c: 3 }; sel = { r1: 1, c1: 3, r2: 1, c2: 3 }; build();
+  }
+  function buildCAT() {
+    var t = mkTable('Récapitulatif par catégories'); t.cells = {}; t.rows = 4; t.cols = 3; t.colW = [110, 560, 190]; t.rowH = [null, null, null, null]; t.w = 860; t.h = 4 * 30; t.x = 14; t.y = 204;
+    var HEAD = { b: 1, al: 'center', bg: '#336699', col: '#ffffff', bc: '#ffffff', bw: 2 };
+    function rg(a, b, s) { return { a: a, b: b, s: s }; }
+    ['Catégories', 'Libellé', 'Montant Retiré'].forEach(function (x, c) { t.cells['0,' + c] = Object.assign({ type: 'texte', text: x }, HEAD); });
+    [['01', '(1) Biens, travaux, services non-consultants, partie 1,2,3', '#ffffff'], ['03', '(3) Biens, travaux, services non-consultants, partie 4', '#e9e9e9']].forEach(function (l, k) {
+      var r = k + 1;
+      t.cells[r + ',0'] = { type: 'texte', text: l[0], al: 'center', col: '#0c4a6e', bg: l[2] };
+      t.cells[r + ',1'] = { type: 'texte', text: l[1], col: '#0c4a6e', bg: l[2] };
+      t.cells[r + ',2'] = Object.assign({ type: 'solde' }, newSolde(), { tbl: 'Demande de remboursement', sens: 'D', axes: [{ axe: 'CATEGORIE', ranges: [rg(l[0], l[0], '')] }], fmt: '#,##0.00', al: 'right', bg: l[2], col: '#0c4a6e' });
+    });
+    t.cells['3,0'] = { type: 'texte', text: 'Total général :', cs: 2, b: 1, al: 'right', col: '#0c4a6e', bg: '#eef0f6' };
+    t.cells['3,2'] = { type: 'formule', formula: '=SUM(C2:C3)', fmt: '#,##0.00', monnaie: 'locale', al: 'right', b: 1, col: '#0c4a6e', bg: '#eef0f6' };
+    return t;
+  }
+  function presetCAT() { var t = buildCAT(); T = [t]; ai = 0; anchor = { r: 1, c: 2 }; sel = { r1: 1, c1: 2, r2: 1, c2: 2 }; build(); }
+  function buildTMP() {
+    var t = mkTable('Déclaration TMP'); t.cells = {}; t.rows = 17; t.cols = 4; t.colW = [60, 420, 170, 170]; t.rowH = []; for (var i = 0; i < 17; i++) t.rowH.push(null); t.w = 820; t.h = 17 * 28; t.x = 14; t.y = 8;
+    function txt(r, c, text, st) { t.cells[r + ',' + c] = Object.assign({ type: 'texte', text: text }, st || {}); }
+    function frm(r, f, b) { t.cells[r + ',3'] = { type: 'formule', formula: f, fmt: '#,##0.00', monnaie: 'locale', al: 'right', b: b ? 1 : 0 }; }
+    function sec(r, label) { txt(r, 0, label, { cs: 4, b: 1, i: 1, bg: '#ffffff' }); }
+    function line(r, n, lab, calc, bold, red) { txt(r, 0, n, { al: 'center', b: 1, col: red ? '#e11d48' : '#0c4a6e' }); txt(r, 1, lab, { b: bold ? 1 : 0, col: '#0c4a6e' }); if (calc) txt(r, 2, calc, { b: bold ? 1 : 0, fs: 10 }); }
+    ['Ligne', 'Libellé', 'Calcul', 'Montant'].forEach(function (h, c) { txt(0, c, h, { b: 1, al: 'center', bg: '#ffffff' }); });
+    sec(1, 'A - Retenue et déclaration par le redevable légal');
+    line(2, '10', 'Montant payé sur Marché par le redevable légal au titulaire résident'); line(3, '20', 'Montant payé sur Marché par le redevable légal au titulaire non résident');
+    line(4, '30', 'Montant TMP 8%', '= (10+20)*8%', 1, 1); frm(4, '=(D3+D4)*0.08', 1);
+    sec(5, 'B - Déclaration sans paiement par le titulaire');
+    line(6, '40', 'Montant payé sur Marché par le redevable au titulaire résident'); line(7, '50', 'Montant payé sur Marché par un Comptable public ou assimilé');
+    line(8, '60', 'Montant TMP 8%', '= (40+50)*8%', 1, 1); frm(8, '=(D7+D8)*0.08', 1);
+    sec(9, 'C - Déclaration par le titulaire si totalité du marché lui a été payé directement');
+    line(10, '70', 'Montant payé sur Marché directement au titulaire résident'); t.cells['10,3'] = Object.assign({ type: 'solde' }, newSolde(), { axes: [{ axe: 'COMPTE_GENERAL', ranges: [{ a: '445000', b: '445000', s: 'C' }] }], fmt: '#,##0.00', al: 'right' });
+    line(11, '80', 'Montant payé sur Marché directement au titulaire non résident');
+    line(12, '90', 'Montant TMP 8%', '= (70+80)*8%', 1, 1); frm(12, '=(D11+D12)*0.08', 1);
+    line(14, '100', 'Montant payé sur Marché assujeti à la TMP', '= 10+20+40+50+70+80', 1); frm(14, '=D3+D4+D7+D8+D11+D12', 1);
+    line(16, '200', 'Montant Total TMP 8% à payer', '= 30+90', 1); frm(16, '=D5+D13', 1);
+    var u = mkTable('Paiement'); u.cells = {}; u.rows = 6; u.cols = 4; u.colW = [220, 150, 150, 150]; u.rowH = [null, null, null, null, null, null]; u.w = 670; u.h = 6 * 28; u.x = 164; u.y = 17 * 28 + 40;
+    ['Type', 'Montant dû', 'Montant Payé', 'Reste à payer'].forEach(function (h, c) { u.cells['0,' + c] = { type: 'texte', text: h, b: 1, al: 'center' }; });
+    ['Principal', 'Pénalité si retard', 'Intérêt 1% par mois de retard', '', 'Total dû pour la période'].forEach(function (l, k) { u.cells[(k + 1) + ',0'] = { type: 'texte', text: l, col: '#0c4a6e', b: k === 4 ? 1 : 0 }; });
+    u.cells['1,1'] = { type: 'formule', formula: '=Déclaration TMP!D17', fmt: '#,##0.00', monnaie: 'locale', al: 'right' }; u.cells['1,2'] = { type: 'formule', formula: '=B2', fmt: '#,##0.00', monnaie: 'locale', al: 'right' };
+    u.cells['5,1'] = { type: 'formule', formula: '=SUM(B2:B5)', fmt: '#,##0.00', monnaie: 'locale', al: 'right', b: 1 }; u.cells['5,2'] = { type: 'formule', formula: '=SUM(C2:C5)', fmt: '#,##0.00', monnaie: 'locale', al: 'right', b: 1 };
+    return [t, u];
+  }
+  function presetTMP() { T = buildTMP(); ai = 0; anchor = { r: 2, c: 3 }; sel = { r1: 2, c1: 3, r2: 2, c2: 3 }; build(); }
+  window.__ejcdEval = function () {
+    var t = ejLive || buildEJ(), g = function (r) { return num(t, r, 3, 0); };
+    return { l1: g(1), l2: g(2), l3: g(3), l4: g(5), l5a: g(6), l5c: g(7), tot: g(8), l6: g(9), l7: g(10), l8: g(11), l9: g(12), l10: g(13), l11: g(14) };
+  };
+  window.addEventListener('ejcd-change', function () { renderLeft(); });
+  window.__ddGrid = {
+    presetEJCD: presetEJCD, presetTMP: presetTMP, presetCAT: presetCAT, subst: subst,
+    paint: paint, tables: function () { return T; }, maxBottom: function () { return T.reduce(function (a, t) { return Math.max(a, t.y + t.h); }, 0); },
+    setActive: function (i, keep) { noActive = i < 0; if (i >= 0) { ai = i; sel = { r1: 0, c1: 0, r2: 0, c2: 0 }; anchor = { r: 0, c: 0 }; renderLeft(); renderProps(); } },
+    refresh: function () { renderLeft(); },
+    reset: function () { T = [mkTable('Tableau 1')]; ai = 0; sel = { r1: 0, c1: 0, r2: 0, c2: 0 }; anchor = { r: 0, c: 0 }; build(); },
+    data: function () { return T.map(function (t) { return { nom: t.name, x: t.x, y: t.y, largeur: t.w, hauteur: t.h, lignes: t.rows, colonnes: t.cols, largeursColonnes: t.colW, hauteursLignes: t.rowH, cellules: Object.keys(t.cells).map(function (k) { var p = k.split(',').map(Number), c = t.cells[k]; return Object.assign({ adresse: addr(p[0], p[1]) }, c); }) }; }); }
+  };
+  build();
+})();
+</script>
+</app-modele-etat-recapitulatif-designer>

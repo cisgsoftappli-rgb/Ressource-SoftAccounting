@@ -1,0 +1,162 @@
+<!--
+  Écran « Édition › Liste » (États comptables › États personnalisés › Édition › Liste).
+  Reprise de la capture : titre, bouton « Critères d'édition », message « Sélectionnez un modèle puis lancez la recherche. »
+  et fenêtre Critères (Bailleur, Modèle, Site, Exercice, Période mois/trimestre/intervalle, dates pièce du/au, Annuler/Rechercher).
+  Le résultat (menu Exporter + aperçu d'impression) est conçu pour la maquette à partir des styles de la page.
+-->
+<style>
+.el{max-width:1100px;margin:0 auto;padding:24px;color:#1e293b}
+.el h1{margin:0;font-size:22px;color:#0f172a}
+.el .el-d{margin:4px 0 0;font-size:13px;color:#64748b}
+.el-bar{margin-top:16px;display:flex;align-items:center;gap:12px;flex-wrap:wrap}
+.el-chip{display:inline-flex;align-items:center;gap:6px;background:#fff;border:1px solid #d6d3c9;border-radius:999px;padding:8px 16px;font:inherit;font-size:13px;font-weight:700;cursor:pointer;max-width:100%;min-width:0}
+.el-chip i{font-style:normal;font-weight:400;color:#64748b;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.el-exp{position:relative}
+.el-bx{display:inline-flex;align-items:center;gap:6px;background:#0f766e;color:#fff;border:0;border-radius:8px;padding:10px 16px;font:inherit;font-weight:700;cursor:pointer}
+.el-menu{position:absolute;top:calc(100% + 4px);left:0;z-index:20;background:#fff;border:1px solid #edf1f5;border-radius:10px;box-shadow:0 10px 30px #0000001f;display:none;flex-direction:column;min-width:190px;overflow:hidden}
+.el-menu button{border:0;background:none;color:#181c32;text-align:left;padding:10px 14px;font:inherit;font-size:13px;cursor:pointer}
+.el-menu button:hover{background:#f4f6fa}
+.el-hint{margin-top:16px;font-size:13px;color:#64748b}
+.el-mod{position:fixed;inset:0;z-index:2000;display:none;align-items:center;justify-content:center;background:#0f172a99;padding:16px;backdrop-filter:blur(3px)}
+.el-dlg{width:100%;max-width:560px;max-height:90vh;display:flex;flex-direction:column;background:#fff;border-radius:16px;border:1px solid #e2e8f099;box-shadow:0 25px 50px -12px #0f172a40}
+.el-dh{padding:24px 32px;border-bottom:1px solid #f1f5f9}.el-dh h2{margin:0;font-size:18px}
+.el-db{padding:24px 32px;overflow:auto}
+.el-df{padding:20px 32px;border-top:1px solid #f1f5f9;background:#f8fafc80;border-radius:0 0 16px 16px;display:flex;justify-content:flex-end;gap:12px}
+.el-f{display:grid;grid-template-columns:repeat(auto-fit,minmax(180px,1fr));gap:12px}
+.el-f label{display:flex;flex-direction:column;gap:6px;font-size:12px;font-weight:700}
+.el-f select,.el-f input[type=date]{border:1px solid #d6d3c9;border-radius:10px;padding:8px 10px;font:inherit;font-weight:400;background:#fff}
+.el-f fieldset{grid-column:1/-1;border:1px solid #edf1f5;border-radius:10px;padding:12px;display:grid;grid-template-columns:repeat(auto-fit,minmax(180px,1fr));gap:12px}
+.el-f legend{font-size:12px;font-weight:700;padding:0 4px}
+.el-f .el-r{grid-column:1/-1;display:flex;gap:16px;flex-wrap:wrap}
+.el-f .el-r label{flex-direction:row;align-items:center;gap:6px;font-weight:400}
+.el-fh{grid-column:1/-1;margin:0;font-size:12px;color:#64748b}
+.el-bp,.el-bs{border-radius:8px;padding:8px 16px;font:inherit;font-size:14px;cursor:pointer}
+.el-bp{background:#0f766e;color:#fff;border:0;font-weight:700}.el-bs{background:#fff;border:1px solid #d6d3c9}
+.el-prev{margin-top:16px;border-radius:12px;overflow:hidden;box-shadow:0 10px 30px #0f172a1f}
+.el-pt{display:flex;align-items:center;justify-content:space-between;gap:16px;padding:10px 20px;background:#1f2937;color:#fff;flex-wrap:wrap;font-size:13px}
+.el-pt b{font-size:14px}.el-pt button{background:#374151;color:#fff;border:0;border-radius:6px;width:26px;height:26px;font-size:15px;cursor:pointer}
+.el-pb{background:#4b5563;max-height:70vh;overflow:auto;padding:32px;display:flex;justify-content:safe center}
+.el-pg{background:#fff;width:794px;min-height:600px;padding:32px 40px;box-sizing:border-box;zoom:.8;flex:0 0 auto}
+.el-tt{margin:0 0 4px;font-size:16px;font-weight:700;color:#0f172a}.el-ts{margin:0 0 14px;font-size:11px;color:#64748b}
+.el-t{width:100%;border-collapse:collapse;table-layout:fixed;font-size:11px}
+.el-t th,.el-t td{border:1px solid #d6cfc0;height:18px;line-height:17px;padding:0 6px;text-align:left;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.el-t th{background:#0c4a6e;color:#fff;text-transform:uppercase;font-size:11px;letter-spacing:.04em}
+.el-t td.n{text-align:right}
+.el-t tr.tot td{background:#f4efe6;font-weight:700}
+.el-pf{margin-top:12px;text-align:right;font-size:11px;color:#2c2c2a}
+</style>
+<app-listing-report-edition>
+<div class="el">
+  <header><h1>Liste</h1><p class="el-d">Éditer un état personnalisé sous forme de liste, à partir d'un modèle listing paramétré et d'une période donnée.</p></header>
+  <div class="el-bar">
+    <button type="button" class="el-chip" data-el-open>🔍 <span>Critères d'édition</span><i data-el-sum></i></button>
+    <div class="el-exp" data-el-expw style="display:none"><button type="button" class="el-bx" data-el-exp>Exporter <small>▾</small></button>
+      <div class="el-menu" data-el-menu><button type="button" data-el-do="pdf">Imprimer / PDF</button><button type="button" data-el-do="xls">Exporter (Excel)</button><button type="button" data-el-do="csv">Exporter (CSV)</button></div></div>
+  </div>
+  <p class="el-hint" data-el-hint>Sélectionnez un modèle puis lancez la recherche.</p>
+  <div class="el-prev" data-el-prev style="display:none">
+    <div class="el-pt"><div><b data-el-ptitle></b></div><div>Page 1 / <span data-el-pn>1</span></div><div><button type="button" data-el-z="-1">−</button> <span data-el-zv style="display:inline-block;min-width:40px;text-align:center;font-weight:700">80%</span> <button type="button" data-el-z="1">+</button></div></div>
+    <div class="el-pb"><div class="el-pg" data-el-pg></div></div>
+  </div>
+  <div class="el-mod" data-el-mod><div class="el-dlg" role="dialog" aria-label="Critères d'édition">
+    <div class="el-dh"><h2>Critères d'édition</h2></div>
+    <div class="el-db"><form class="el-f" novalidate onsubmit="return false">
+      <label>Bailleur<select data-el-bai><option value="">Tous les bailleurs</option></select></label>
+      <label>Modèle<select data-el-tpl></select></label>
+      <label>Site<select data-el-site><option value="">Tous</option><option>Siège</option></select></label>
+      <label>Exercice<select data-el-ex><option value="">Tous les exercices</option><option>2028</option><option>2027</option><option>2026</option><option>2025</option><option>2024</option><option>2023</option></select></label>
+      <fieldset><legend>Période</legend>
+        <div class="el-r"><label><input type="radio" name="elp" value="mois"> Mois</label><label><input type="radio" name="elp" value="trimestre"> Trimestre</label><label><input type="radio" name="elp" value="intervalle"> Intervalle</label></div>
+        <label data-el-wm style="display:none">Mois<select data-el-m></select></label>
+        <label data-el-wt style="display:none">Trimestre<select data-el-t><option value="1">T1 (janv. – mars)</option><option value="2">T2 (avr. – juin)</option><option value="3">T3 (juil. – sept.)</option><option value="4">T4 (oct. – déc.)</option></select></label>
+        <label>Date pièce — du<input type="date" data-el-du></label>
+        <label>Date pièce — au<input type="date" data-el-au></label>
+        <p class="el-fh" data-el-fh></p>
+      </fieldset>
+    </form></div>
+    <div class="el-df"><button type="button" class="el-bs" data-el-cancel>Annuler</button><button type="button" class="el-bp" data-el-go>Rechercher</button></div>
+  </div></div>
+</div>
+<script>
+(function () {
+  var root = document.currentScript.parentElement;
+  function q(s) { return root.querySelector(s); }
+  function qa(s) { return Array.prototype.slice.call(root.querySelectorAll(s)); }
+  function esc(s) { var d = document.createElement('div'); d.textContent = s == null ? '' : s; return d.innerHTML; }
+  var MOIS = ['Janvier', 'Février', 'Mars', 'Avril', 'Mai', 'Juin', 'Juillet', 'Août', 'Septembre', 'Octobre', 'Novembre', 'Décembre'];
+  var LAB = { reference: 'Référence', montantReporting: 'Montant', beneficiaire: 'Bénéficiaire', libelle: 'Libellé', compteGeneralCode: 'Compte', dateEcriture: 'Date', journal: 'Journal', piece: 'N° pièce', tiers: 'Tiers', devise: 'Devise' };
+  var POOL = [['Loyer bureau DECIM', 'ARO', '613000', 640000], ['Abonnement internet', 'TELMA', '626000', 526470], ['Insertion AAO', 'EXPRESS', '623000', 31680], ['Honoraires coordonnateur', 'JACQUIS', '622000', 969096], ['Acquisition véhicules', 'MADAUTO', '215400', 35288960], ['Collations évaluation offres', 'ROSE DE TANA', '606300', 246400], ['Vidéo projecteurs', 'EA2S', '218300', 1254000], ['Billets d\'avion', 'BLUEBERRY', '625100', 1828960]];
+  var cur = null, zoom = 0.8, rows = [];
+  function fld(s) { return q(s); }
+  function iso(d) { var m = d.getMonth() + 1, j = d.getDate(); return d.getFullYear() + '-' + (m < 10 ? '0' : '') + m + '-' + (j < 10 ? '0' : '') + j; }
+  function fmt(s) { return s ? s.split('-').reverse().join('/') : ''; }
+  function nf(v) { return String(Math.round(v)).replace(/\B(?=(\d{3})+(?!\d))/g, ' ') + ',00'; }
+  function fillTpl() {
+    var l = window.__listingModelsList || [{ code: 'SOE', nom: 'SOE' }, { code: 'TEST', nom: 'TEST' }], s = fld('[data-el-tpl]'), v = s.value;
+    s.innerHTML = '<option value="">Sélectionner un modèle</option>' + l.map(function (m) { return '<option value="' + esc(m.code) + '">' + esc(m.nom) + '</option>'; }).join('');
+    s.value = v;
+  }
+  function bounds() {
+    var y = fld('[data-el-ex]').value, du = fld('[data-el-du]'), au = fld('[data-el-au]'), h = fld('[data-el-fh]');
+    if (y) { du.min = au.min = y + '-01-01'; du.max = au.max = y + '-12-31'; h.textContent = 'Dates bornées par l\'exercice sélectionné : ' + y + '-01-01 → ' + y + '-12-31.'; if (du.value && du.value.slice(0, 4) !== y) du.value = ''; if (au.value && au.value.slice(0, 4) !== y) au.value = ''; }
+    else { du.removeAttribute('min'); du.removeAttribute('max'); au.removeAttribute('min'); au.removeAttribute('max'); h.textContent = ''; }
+  }
+  function mode() {
+    var m = (root.querySelector('input[name=elp]:checked') || {}).value;
+    fld('[data-el-wm]').style.display = m === 'mois' ? '' : 'none'; fld('[data-el-wt]').style.display = m === 'trimestre' ? '' : 'none';
+    var y = +(fld('[data-el-ex]').value || new Date().getFullYear()), du = fld('[data-el-du]'), au = fld('[data-el-au]');
+    if (m === 'mois') { var k = +fld('[data-el-m]').value; du.value = iso(new Date(y, k, 1)); au.value = iso(new Date(y, k + 1, 0)); }
+    if (m === 'trimestre') { var t = +fld('[data-el-t]').value - 1; du.value = iso(new Date(y, t * 3, 1)); au.value = iso(new Date(y, t * 3 + 3, 0)); }
+  }
+  function openM() { fillTpl(); bounds(); q('[data-el-mod]').style.display = 'flex'; }
+  function cols(code) {
+    var sv = window.__listingSaved && window.__listingSaved[code], c = ['reference', 'montantReporting', 'beneficiaire', 'libelle', 'compteGeneralCode', 'dateEcriture'];
+    if (sv) sv.els.forEach(function (e) { if (e.type === 'table' && e.cols && e.cols.length) c = e.cols; });
+    return c;
+  }
+  function gen(du, au) {
+    var d0 = du ? new Date(du) : new Date(2028, 0, 1), d1 = au ? new Date(au) : new Date(2028, 11, 31), span = Math.max(1, Math.round((d1 - d0) / 864e5)), out = [];
+    for (var i = 0; i < 40; i++) {
+      var p = POOL[i % POOL.length], d = new Date(d0.getTime() + Math.round(span * i / 39) * 864e5);
+      out.push({ reference: 'ECR-' + ('0000' + (i + 1)).slice(-4), montantReporting: p[3], beneficiaire: p[1], libelle: p[0], compteGeneralCode: p[2], dateEcriture: d.toLocaleDateString('fr-FR'), journal: i % 2 ? 'ACH' : 'OD', piece: 'P-' + ('0000' + (i + 1)).slice(-4), tiers: p[1], devise: 'MGA' });
+    }
+    return out;
+  }
+  function render() {
+    var c = cols(cur.code), tot = rows.reduce(function (a, r) { return a + r.montantReporting; }, 0);
+    q('[data-el-pg]').style.zoom = zoom; q('[data-el-zv]').textContent = Math.round(zoom * 100) + '%';
+    q('[data-el-pg]').innerHTML = '<h2 class="el-tt">Listing des écritures</h2><p class="el-ts">' + esc(cur.nom) + ' · ' + (cur.site || 'Tous les sites') + ' · du ' + fmt(cur.du) + ' au ' + fmt(cur.au) + '</p>' +
+      '<table class="el-t"><thead><tr>' + c.map(function (k) { return '<th>' + esc(LAB[k] || k) + '</th>'; }).join('') + '</tr></thead><tbody>' +
+      rows.map(function (r) { return '<tr>' + c.map(function (k) { return '<td class="' + (k === 'montantReporting' ? 'n' : '') + '">' + esc(k === 'montantReporting' ? nf(r[k]) : r[k]) + '</td>'; }).join('') + '</tr>'; }).join('') +
+      '<tr class="tot">' + c.map(function (k, i) { return '<td class="' + (k === 'montantReporting' ? 'n' : '') + '">' + (k === 'montantReporting' ? nf(tot) : i === 0 ? 'Total' : '') + '</td>'; }).join('') + '</tr></tbody></table><div class="el-pf">Page 1 / 1</div>';
+  }
+  function download(name, mime, txt) { var a = document.createElement('a'); a.href = URL.createObjectURL(new Blob([txt], { type: mime })); a.download = name; document.body.appendChild(a); a.click(); a.remove(); }
+  root.addEventListener('click', function (e) {
+    var t = e.target, b;
+    if (t.closest('[data-el-open]')) openM();
+    else if (t.closest('[data-el-cancel]')) q('[data-el-mod]').style.display = 'none';
+    else if (t.closest('[data-el-go]')) {
+      var tp = fld('[data-el-tpl]').value; if (!tp) { fld('[data-el-tpl]').style.borderColor = '#ef4444'; return; } fld('[data-el-tpl]').style.borderColor = '';
+      var l = window.__listingModelsList || [], m = l.filter(function (x) { return x.code === tp; })[0] || { code: tp, nom: tp };
+      cur = { code: m.code, nom: m.nom, site: fld('[data-el-site]').value, du: fld('[data-el-du]').value, au: fld('[data-el-au]').value, ex: fld('[data-el-ex]').value };
+      rows = gen(cur.du, cur.au); q('[data-el-mod]').style.display = 'none';
+      q('[data-el-sum]').textContent = ' ' + m.nom + (cur.ex ? ' · ' + cur.ex : '') + (cur.du ? ' · ' + fmt(cur.du) + ' → ' + fmt(cur.au) : '');
+      q('[data-el-hint]').style.display = 'none'; q('[data-el-expw]').style.display = ''; q('[data-el-prev]').style.display = ''; q('[data-el-ptitle]').textContent = m.nom + ' — Listing des écritures'; render();
+    }
+    else if (t.closest('[data-el-exp]')) { var mn = q('[data-el-menu]'); mn.style.display = mn.style.display === 'flex' ? 'none' : 'flex'; }
+    else if ((b = t.closest('[data-el-do]'))) {
+      q('[data-el-menu]').style.display = 'none'; var c = cols(cur.code), k = b.dataset.elDo;
+      if (k === 'csv') download('listing_' + cur.code + '.csv', 'text/csv;charset=utf-8', '﻿' + c.map(function (x) { return LAB[x] || x; }).join(';') + '\n' + rows.map(function (r) { return c.map(function (x) { return r[x]; }).join(';'); }).join('\n'));
+      else if (k === 'xls') download('listing_' + cur.code + '.xls', 'application/vnd.ms-excel', '﻿<html><meta charset="utf-8"><body><table><tr>' + c.map(function (x) { return '<th>' + esc(LAB[x] || x) + '</th>'; }).join('') + '</tr>' + rows.map(function (r) { return '<tr>' + c.map(function (x) { return '<td>' + esc(r[x]) + '</td>'; }).join('') + '</tr>'; }).join('') + '</table><' + '/body><' + '/html>');
+      else { window.__printMask(q('[data-el-pg]').innerHTML, { titre: 'Listing' }); }
+    }
+    else if ((b = t.closest('[data-el-z]'))) { zoom = Math.min(1.4, Math.max(0.4, zoom + (+b.dataset.elZ) * 0.1)); render(); }
+  });
+  root.addEventListener('change', function (e) { var t = e.target; if (t.matches('[data-el-ex]')) { bounds(); mode(); } else if (t.matches('input[name=elp],[data-el-m],[data-el-t]')) mode(); });
+  fld('[data-el-m]').innerHTML = MOIS.map(function (m, i) { return '<option value="' + i + '">' + m + '</option>'; }).join('');
+  fld('[data-el-ex]').value = '2028';
+  window.addEventListener('hashchange', function () { if (location.hash === '#listedit') { cur = null; q('[data-el-prev]').style.display = 'none'; q('[data-el-expw]').style.display = 'none'; q('[data-el-hint]').style.display = ''; q('[data-el-sum]').textContent = ''; openM(); } });
+  if (location.hash === '#listedit') openM();
+})();
+</script>
+</app-listing-report-edition>

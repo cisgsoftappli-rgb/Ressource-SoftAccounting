@@ -1,0 +1,248 @@
+<!--
+  Écran « Rapprochement bancaire › Pointage » (entrée de menu « Pointage » : liste et création des relevés ; le bouton « Pointage » ouvre le rapprochement du relevé, écran rapprochement_pointage.html) — onglets Saisie / Liste. Création des relevés bancaires : compte bancaire (comptes configurés dans
+  « Rapprochement bancaire › Configuration », window.RAPPROCH_CONFIG), n° de relevé, date, période, lignes du relevé (date, libellé, montant : positif = entrée,
+  négatif = sortie), saisies à la main ou importées d'un fichier Excel. Période et soldes sont déduits : solde initial = solde final du relevé précédent du compte, solde final = initial + mouvements.
+  Liste : statut Non pointé / En cours / Pointé d'après les lignes déjà rapprochées ; après sélection d'un relevé, le bouton « Pointage » ouvre l'écran Pointage sur ce relevé
+  (window.POINTAGE_API.charger). Données partagées : window.RELEVES (copie dans localStorage softcompta.releves). Préfixe rl- / data-rl.
+  S'appuie sur les styles bp-*. Ne pas nommer de fonction « $$ » (build.cjs).
+-->
+<style>
+[data-rl] .rl-cpt{display:flex;align-items:flex-end;gap:16px;flex-wrap:wrap;padding:8px 12px;margin-bottom:10px;background:#fff;border:1px solid #E9EBF0;border-radius:12px}
+[data-rl] .rl-cpt .bp-champ{flex:0 1 380px;min-width:240px}[data-rl] .rl-cpn{padding-bottom:8px;font-size:12px;color:#5B606D}
+[data-rl] .rl-f{display:grid;gap:12px;padding:16px}
+[data-rl] .rl-b{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:12px 16px;padding:12px;border:1px solid #D5DBE5;border-radius:6px;background:#fff}
+@media (max-width:900px){[data-rl] .rl-b{grid-template-columns:repeat(2,minmax(0,1fr))}}
+@media (max-width:620px){[data-rl] .rl-b{grid-template-columns:1fr}}
+[data-rl] .bp-champ>span{text-transform:uppercase;letter-spacing:.02em;font-size:11px}
+[data-rl] .bp-in.err,[data-rl] .bp-sel.err{border-color:#B63132}
+[data-rl] .rl-er{display:none;font-size:12px;color:#B63132}[data-rl] .rl-er.show{display:block}
+[data-rl] .rl-ok{font-size:12px;color:#2E427B;margin-left:8px}
+[data-rl] tbody tr{cursor:pointer}[data-rl] tbody tr.rl-sel td{background:#E8ECF6}
+[data-rl] td.r,[data-rl] th.r{text-align:right;font-variant-numeric:tabular-nums}
+[data-rl] .rl-st{display:inline-block;padding:1px 10px;border-radius:999px;font-size:11px;font-weight:700;white-space:nowrap}
+[data-rl] .rl-st.non{background:#F1F2F5;color:#5B606D}[data-rl] .rl-st.cours{background:#FBF3C7;color:#706000}[data-rl] .rl-st.ok{background:#E2F6EC;color:#0B6B43}
+[data-rl] .rl-lg{border:1px solid #D5DBE5;border-radius:6px;background:#fff;overflow:hidden}
+[data-rl] .rl-lgh{display:flex;align-items:center;justify-content:space-between;gap:12px;padding:8px 12px;border-bottom:1px solid #E9EBF0;font-size:12px;font-weight:700;color:#0B1332;text-transform:uppercase;letter-spacing:.03em}
+[data-rl] .rl-lgh button,[data-rl] .rl-x{min-height:28px!important;height:28px;padding:0 12px;border:1px solid #2E427B;border-radius:6px;background:#fff;color:#2E427B;font:600 12px var(--font-sans);cursor:pointer}
+[data-rl] .rl-lgh button:hover{background:#F4F7FE}
+[data-rl] .rl-sc{max-height:300px;overflow:auto}
+[data-rl] .rl-lt{width:100%;border-collapse:collapse;font-size:12px}
+[data-rl] .rl-lt th{position:sticky;top:0;background:#F5F7F9;padding:6px 10px;text-align:left;font-size:11px;text-transform:uppercase;color:#5B606D;border-bottom:1px solid #E9EBF0}
+[data-rl] .rl-lt td{padding:4px 8px;border-bottom:1px solid #F1F2F5}[data-rl] .rl-lt td .bp-in{height:28px;min-height:28px!important;font-size:12px}
+[data-rl] .rl-x{width:28px;padding:0;border-color:#C5CAD6;color:#B63132}
+[data-rl] .rl-bil{display:flex;flex-wrap:wrap;gap:6px 24px;padding:8px 12px;border-top:1px solid #E9EBF0;background:#FAFBFC;font-size:12px}
+[data-rl] .rl-bil b{font-variant-numeric:tabular-nums}[data-rl] .rl-bil .ko{color:#B63132;font-weight:700}[data-rl] .rl-bil .vert{color:#0B6B43;font-weight:700}
+</style>
+
+<div class="bp-root" data-rl>
+  <h1 style="position:absolute;width:1px;height:1px;overflow:hidden;clip-path:inset(50%);margin:0">Rapprochement bancaire — Pointage : relevés</h1>
+
+  <div class="no-print">
+    <button type="button" data-rl-ajouter>Ajouter</button>
+    <button type="button" data-rl-modifier>Modifier</button>
+    <button type="button" data-rl-supprimer>Supprimer</button>
+    <button type="button" data-rl-importer disabled>Importer les lignes</button>
+    <button type="button" data-rl-enregistrer>Enregistrer</button>
+    <button type="button" data-rl-annuler>Annuler</button>
+    <button type="button" data-ba-nav data-rl-pointage disabled>Pointage</button>
+    <span class="rl-ok" data-rl-msg role="status"></span>
+  </div>
+
+  <div class="rl-cpt"><label class="bp-champ"><span>Compte bancaire</span><select class="bp-sel" data-rl-cpt aria-label="Compte bancaire des relevés"></select></label><span class="rl-cpn">Les relevés sont cloisonnés par compte bancaire.</span></div>
+
+  <div class="bp-tabs" role="tablist">
+    <button type="button" role="tab" data-rl-tab="saisie">Saisie</button>
+    <button type="button" role="tab" class="on" data-rl-tab="liste">Liste <span class="bp-n" data-rl-compte></span></button>
+  </div>
+
+  <div class="bp-grid">
+    <section class="bp-pan" aria-label="Liste des relevés" data-rl-pan="liste">
+      <h2>Relevés bancaires <small>Sélectionnez un relevé puis « Pointage » ; double-clic ou « Modifier » pour l'ouvrir en saisie</small></h2>
+      <div style="overflow:auto;max-height:560px">
+        <table class="bp-tb" style="min-width:600px"><thead>
+          <tr><th>Compte bancaire</th><th>N° de relevé</th><th class="c">Date</th><th class="r">Lignes</th><th>Statut</th></tr>
+        </thead><tbody data-rl-lignes></tbody></table>
+      </div>
+      <div class="bp-vide" data-rl-vide hidden>Aucun relevé pour ce compte bancaire : utilisez « Ajouter ».</div>
+    </section>
+
+    <section class="bp-pan" aria-label="Saisie d'un relevé" data-rl-pan="saisie" hidden>
+      <form class="rl-f" data-rl-form onsubmit="return false" novalidate>
+        <div class="rl-b">
+          <label class="bp-champ"><span>Compte bancaire <b>*</b></span><select class="bp-sel" data-f="compte"></select><span class="rl-er" data-er="compte"></span></label>
+          <label class="bp-champ"><span>N° de relevé <b>*</b></span><input class="bp-in" data-f="numero" maxlength="30" autocomplete="off" placeholder="2026-11 / 0472"><span class="rl-er" data-er="numero"></span></label>
+          <label class="bp-champ"><span>Date du relevé <b>*</b></span><input class="bp-in" data-f="date" type="date"><span class="rl-er" data-er="date"></span></label>
+        </div>
+        <div class="rl-lg">
+          <div class="rl-lgh"><span>Lignes du relevé <span data-rl-nl></span></span><button type="button" data-rl-addl>Ajouter une ligne</button></div>
+          <div class="rl-sc"><table class="rl-lt" data-no-tf><thead><tr><th style="width:150px">Date</th><th>Libellé</th><th style="width:180px">Montant (+ entrée / − sortie)</th><th style="width:44px"></th></tr></thead><tbody data-rl-lg></tbody></table></div>
+          <div class="rl-bil" data-rl-bil></div>
+        </div>
+      </form>
+    </section>
+  </div>
+</div>
+
+<script>
+(function () {
+  var root = document.querySelector('[data-rl]'); if (!root) return;
+  function q(s) { return root.querySelector(s); } function qa(s) { return [].slice.call(root.querySelectorAll(s)); }
+  function f(n) { return q('[data-f="' + n + '"]'); }
+  function esc(s) { return String(s == null ? '' : s).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;'); }
+  var CLE = 'softcompta.releves', sel = -1, edit = -1, lignesEdit = [], n0 = 0, cpt = '';
+  function somme(l) { return l.reduce(function (s, x) { return s + (Number(x.m) || 0); }, 0); }
+  function seed() {
+    var oct = [
+      { d: '2026-10-22', l: 'VIR ORANGE MADAGASCAR REF F2026-0398', m: 5400000, r: true }, { d: '2026-10-21', l: 'CHQ 4471', m: -1000000, r: true }, { d: '2026-10-20', l: 'PRLV JIRAMA OCT', m: -1240000, r: true },
+      { d: '2026-10-19', l: 'VIR TELMA MADAGASCAR', m: 2250000, r: false }, { d: '2026-10-18', l: 'FRAIS TENUE DE COMPTE', m: -45000, r: false }, { d: '2026-10-17', l: 'VIR SALAIRES LOT 10/2026', m: -6850000, r: true }, { d: '2026-10-15', l: 'AGIOS T3', m: -312000, r: false }
+    ];
+    var sep = [{ d: '2026-09-28', l: 'VIR CLIENT SEPT', m: 12500000, r: true }, { d: '2026-09-20', l: 'PRLV JIRAMA SEPT', m: -4200000, r: true }, { d: '2026-09-12', l: 'CHQ 4460', m: -2800000, r: true }, { d: '2026-09-05', l: 'FRAIS BANCAIRES SEPT', m: -500000, r: true }];
+    var boa = [{ d: '2026-10-09', l: 'VIR CLIENT BETA', m: 3200000, r: false }, { d: '2026-10-07', l: 'FRAIS TENUE COMPTE', m: -640000, r: false }, { d: '2026-10-03', l: 'CHQ 0231', m: -1200000, r: false }];
+    return [
+      { compte: '512100', numero: '2026-10 / 0471', date: '2026-10-24', du: '2026-10-01', au: '2026-10-24', soldeIni: 31240000 - somme(oct), soldeFin: 31240000, lignes: oct },
+      { compte: '512100', numero: '2026-09 / 0470', date: '2026-09-30', du: '2026-09-01', au: '2026-09-30', soldeIni: 33037000 - somme(sep), soldeFin: 33037000, lignes: sep },
+      { compte: '512101', numero: '2026-10 / 0112', date: '2026-10-10', du: '2026-10-01', au: '2026-10-10', soldeIni: 1500000, soldeFin: 1500000 + somme(boa), lignes: boa }
+    ];
+  }
+  var data = seed();
+  try { var sv = JSON.parse(localStorage.getItem(CLE) || 'null'); if (Array.isArray(sv)) data = sv; } catch (e) {}
+  window.RELEVES = data;
+  function sauver() { try { localStorage.setItem(CLE, JSON.stringify(data)); } catch (e) {} window.dispatchEvent(new Event('releves-changed')); }
+  function cfg() { return window.RAPPROCH_CONFIG || []; }
+  function banque(c) { var x = cfg().filter(function (r) { return r.compte === c; })[0]; return x ? (x.banqueLib || x.banque) : ''; }
+  function date(d) { return d ? d.split('-').reverse().join('/') : ''; }
+  function nb(v) { return (v < 0 ? '-' : '') + Math.abs(Math.round(v)).toLocaleString('fr-FR'); }
+  function statut(r) { var p = r.lignes.filter(function (l) { return l.r; }).length; return !r.lignes.length || !p ? ['non', 'Non pointé'] : p === r.lignes.length ? ['ok', 'Pointé'] : ['cours', 'En cours (' + p + '/' + r.lignes.length + ')']; }
+  function msg(t) { q('[data-rl-msg]').textContent = t || ''; }
+  function effacer() { qa('.rl-er').forEach(function (e) { e.classList.remove('show'); e.textContent = ''; }); qa('.err').forEach(function (e) { e.classList.remove('err'); }); }
+  function err(n, m) { var e = q('[data-er="' + n + '"]'); if (e) { e.textContent = m; e.classList.add('show'); } f(n).classList.add('err'); }
+  function majPointage() { var b = q('[data-rl-pointage]'); b.disabled = sel < 0; }
+
+  function remplirCpt() {
+    var s = q('[data-rl-cpt]');
+    s.innerHTML = cfg().map(function (c) { return '<option value="' + esc(c.compte) + '">' + esc(c.compte) + ' — ' + esc(c.banqueLib || c.banque) + '</option>'; }).join('') || '<option value="">Aucun compte configuré</option>';
+    if (!cpt || !s.querySelector('option[value="' + cpt + '"]')) cpt = s.value; else s.value = cpt;
+    if (s.__combo && s.__combo.maj) s.__combo.maj();
+  }
+  function comptes() {
+    var s = f('compte'), v = s.value;
+    s.innerHTML = '<option value="">— Sélectionner —</option>' + cfg().map(function (c) { return '<option value="' + esc(c.compte) + '">' + esc(c.compte) + ' — ' + esc(c.banqueLib || c.banque) + '</option>'; }).join('');
+    if (v && !s.querySelector('option[value="' + v + '"]')) s.insertAdjacentHTML('beforeend', '<option value="' + esc(v) + '">' + esc(v) + '</option>');
+    s.value = v;
+  }
+  function precedent(compte, dateR, sauf) {
+    var p = null; data.forEach(function (r, i) { if (i !== sauf && r.compte === compte && (!dateR || r.date < dateR) && (!p || r.date > p.date)) p = r; }); return p;
+  }
+  function soldeInitial() {
+    var p = precedent(f('compte').value, f('date').value, edit);
+    if (p) return p.soldeFin;
+    return edit >= 0 && data[edit] && data[edit].compte === f('compte').value ? data[edit].soldeIni : 0;
+  }
+  function bilan() {
+    var ini = soldeInitial(), mv = somme(lignesEdit);
+    q('[data-rl-nl]').textContent = '(' + lignesEdit.length + ')';
+    q('[data-rl-bil]').innerHTML = '<span>Solde initial (relevé précédent) : <b>' + nb(ini) + '</b></span><span>Mouvements : <b>' + nb(mv) + '</b></span><span>Solde du relevé : <b>' + nb(ini + mv) + '</b></span>';
+  }
+  function dessinerLignes() {
+    q('[data-rl-lg]').innerHTML = lignesEdit.map(function (l, i) {
+      return '<tr data-i="' + i + '"><td><input class="bp-in" type="date" data-l="d" value="' + esc(l.d) + '" aria-label="Date de la ligne ' + (i + 1) + '"></td><td><input class="bp-in" data-l="l" value="' + esc(l.l) + '" maxlength="120" aria-label="Libellé de la ligne ' + (i + 1) + '"></td>' +
+        '<td><input class="bp-in" type="number" step="1" data-l="m" value="' + (l.m === '' ? '' : esc(l.m)) + '" aria-label="Montant de la ligne ' + (i + 1) + '"></td><td><button type="button" class="rl-x" data-rl-supl aria-label="Supprimer la ligne ' + (i + 1) + '"><i class="ti ti-x" aria-hidden="true"></i></button></td></tr>';
+    }).join('') || '<tr><td colspan="4" style="padding:18px;text-align:center;color:#5B606D">Aucune ligne : « Ajouter une ligne » ou « Importer ».</td></tr>';
+    bilan();
+  }
+  function charger(r) {
+    comptes(); effacer();
+    ['compte', 'numero', 'date'].forEach(function (n) { var el = f(n), v = r ? r[n] : (n === 'compte' ? cpt : ''); if (n === 'compte' && v && !el.querySelector('option[value="' + v + '"]')) el.insertAdjacentHTML('beforeend', '<option value="' + esc(v) + '">' + esc(v) + '</option>'); el.value = v == null ? '' : v; });
+    lignesEdit = r ? r.lignes.map(function (l) { return { d: l.d, l: l.l, m: l.m, r: l.r }; }) : []; f('compte').disabled = true; dessinerLignes();
+  }
+  function onglet(n) {
+    qa('[data-rl-tab]').forEach(function (b) { b.classList.toggle('on', b.getAttribute('data-rl-tab') === n); });
+    qa('[data-rl-pan]').forEach(function (p) { p.hidden = p.getAttribute('data-rl-pan') !== n; });
+    qa('[data-rl-enregistrer],[data-rl-annuler]').forEach(function (b) { b.disabled = n !== 'saisie'; });
+    qa('[data-rl-ajouter],[data-rl-modifier],[data-rl-supprimer]').forEach(function (b) { b.disabled = n === 'saisie'; });
+    qa('[data-rl-importer]').forEach(function (b) { b.disabled = n !== 'saisie'; }); q('[data-rl-cpt]').disabled = n === 'saisie';
+    majPointage();
+  }
+  function lister() {
+    var h = '', n = 0;
+    data.forEach(function (r, i) {
+      if (r.compte !== cpt) return; n++;
+      var st = statut(r), cel = [r.compte, r.numero, date(r.date), r.lignes.length];
+      h += '<tr data-i="' + i + '"' + (i === sel ? ' class="rl-sel"' : '') + '>' + cel.map(function (c, k) { return '<td' + (k === 2 ? ' class="c"' : k === 3 ? ' class="r"' : '') + '>' + esc(c) + '</td>'; }).join('') + '<td><span class="rl-st ' + st[0] + '">' + esc(st[1]) + '</span></td></tr>';
+    });
+    q('[data-rl-lignes]').innerHTML = h; q('[data-rl-vide]').hidden = n > 0; q('[data-rl-compte]').textContent = '(' + n + ')'; majPointage();
+  }
+  function ouvrir(i) { edit = i; if (i >= 0) sel = i; charger(i >= 0 ? data[i] : null); onglet('saisie'); }
+  function pointage() {
+    if (sel < 0 || !data[sel]) { msg('Sélectionnez un relevé dans la liste.'); return; }
+    if (!window.POINTAGE_API) { msg('Écran Pointage indisponible.'); return; }
+    cpt = data[sel].compte; window.POINTAGE_API.charger(data[sel]); location.hash = '#pointage';
+  }
+
+  // Événements
+  q('[data-rl-tab="saisie"]').addEventListener('click', function () { if (q('[data-rl-pan="saisie"]').hidden) ouvrir(sel); });
+  q('[data-rl-tab="liste"]').addEventListener('click', function () { onglet('liste'); lister(); });
+  q('[data-rl-ajouter]').addEventListener('click', function () { msg(); sel = -1; ouvrir(-1); });
+  q('[data-rl-modifier]').addEventListener('click', function () { if (sel < 0) { msg('Sélectionnez un relevé dans la liste.'); return; } msg(); ouvrir(sel); });
+  q('[data-rl-supprimer]').addEventListener('click', function () {
+    if (sel < 0) { msg('Sélectionnez un relevé dans la liste.'); return; }
+    if (!window.confirm('Supprimer le relevé ' + data[sel].numero + ' du compte ' + data[sel].compte + ' ?')) return;
+    data.splice(sel, 1); sel = -1; sauver(); lister(); msg('Relevé supprimé.');
+  });
+  q('[data-rl-annuler]').addEventListener('click', function () { msg(); onglet('liste'); lister(); });
+  q('[data-rl-pointage]').addEventListener('click', pointage);
+  q('[data-rl-cpt]').addEventListener('change', function () { cpt = this.value; sel = -1; msg(); lister(); });
+  q('[data-rl-lignes]').addEventListener('click', function (e) { var tr = e.target.closest('tr[data-i]'); if (!tr) return; sel = +tr.dataset.i; qa('[data-rl-lignes] tr').forEach(function (r) { r.classList.toggle('rl-sel', r === tr); }); majPointage(); msg(); });
+  q('[data-rl-lignes]').addEventListener('dblclick', function (e) { var tr = e.target.closest('tr[data-i]'); if (tr) { sel = +tr.dataset.i; ouvrir(sel); } });
+  f('compte').addEventListener('change', bilan); f('date').addEventListener('change', bilan);
+  q('[data-rl-addl]').addEventListener('click', function () { lignesEdit.push({ d: f('date').value || '', l: '', m: '', r: false }); dessinerLignes(); var l = qa('[data-rl-lg] tr:last-child [data-l="d"]')[0]; if (l) l.focus(); });
+  q('[data-rl-lg]').addEventListener('input', function (e) { var tr = e.target.closest('tr[data-i]'); if (!tr || !e.target.dataset.l) return; var l = lignesEdit[+tr.dataset.i], k = e.target.dataset.l; l[k] = k === 'm' ? (e.target.value === '' ? '' : Number(e.target.value)) : e.target.value; bilan(); });
+  q('[data-rl-lg]').addEventListener('click', function (e) { var b = e.target.closest('[data-rl-supl]'); if (!b) return; lignesEdit.splice(+b.closest('tr').dataset.i, 1); dessinerLignes(); });
+
+  // Import Excel : colonnes Date, Libellé, Montant
+  function parseDate(v) {
+    if (v == null || v === '') return '';
+    if (typeof v === 'number' || /^\d{5}(\.\d+)?$/.test(String(v))) { var d = new Date(Date.UTC(1899, 11, 30) + Math.floor(Number(v)) * 864e5); return d.toISOString().slice(0, 10); }
+    var s = String(v).trim(), m = s.match(/^(\d{1,2})[\/.-](\d{1,2})[\/.-](\d{4})/); if (m) return m[3] + '-' + ('0' + m[2]).slice(-2) + '-' + ('0' + m[1]).slice(-2);
+    m = s.match(/^(\d{4})-(\d{2})-(\d{2})/); return m ? m[0] : '';
+  }
+  function parseMontant(v) { if (typeof v === 'number') return v; var n = parseFloat(String(v == null ? '' : v).replace(/[\s ]/g, '').replace(',', '.')); return isNaN(n) ? null : n; }
+  var MODELE = { titre: 'Importer les lignes du relevé', fichier: 'modele_releve_bancaire.xlsx',
+    champs: [{ col: 'Date', oblig: true, format: 'jj/mm/aaaa', exemple: '22/10/2026' }, { col: 'Libellé', oblig: true, format: 'Texte', exemple: 'VIR CLIENT REF F2026-0398' }, { col: 'Montant', oblig: true, format: 'Nombre (+ entrée / − sortie)', exemple: '5400000' }],
+    exemples: [['22/10/2026', 'VIR CLIENT REF F2026-0398', 5400000], ['21/10/2026', 'CHQ 4471', -1000000]],
+    onFichier: function (file) {
+      window.IMPORT_ASSISTANT.lireFichier(file).then(function (rows) {
+        var ent = (rows[0] || []).map(function (c) { return String(c == null ? '' : c).toLowerCase().normalize('NFD').replace(/[̀-ͯ]/g, '').replace(/[^a-z]/g, ''); });
+        var ci = { d: ent.indexOf('date'), l: Math.max(ent.indexOf('libelle'), ent.indexOf('designation')), m: ent.indexOf('montant') };
+        if (ci.d < 0 || ci.l < 0 || ci.m < 0) { msg('Colonnes attendues : Date, Libellé, Montant.'); return; }
+        var ok = [], ko = 0;
+        rows.slice(1).forEach(function (r) { if (!r || r.every(function (c) { return c === '' || c == null; })) return; var d = parseDate(r[ci.d]), m = parseMontant(r[ci.m]), l = String(r[ci.l] == null ? '' : r[ci.l]).trim(); if (d && l && m !== null) ok.push({ d: d, l: l, m: m, r: false }); else ko++; });
+        if (!ok.length) { msg('Aucune ligne valide dans le fichier (' + ko + ' rejetée(s)).'); return; }
+        lignesEdit = lignesEdit.concat(ok); dessinerLignes();
+        var ds = lignesEdit.map(function (x) { return x.d; }).filter(Boolean).sort(); if (ds.length && !f('date').value) f('date').value = ds[ds.length - 1]; bilan();
+        msg(ok.length + ' ligne(s) importée(s)' + (ko ? ', ' + ko + ' rejetée(s)' : '') + '. Complétez le n° de relevé puis enregistrez.');
+      });
+    } };
+  q('[data-rl-importer]').addEventListener('click', function () { if (window.IMPORT_ASSISTANT) window.IMPORT_ASSISTANT.ouvrir(MODELE); });
+
+  q('[data-rl-enregistrer]').addEventListener('click', function () {
+    effacer(); var ok = true, r = {}; ['compte', 'numero', 'date'].forEach(function (n) { r[n] = f(n).value.trim(); });
+    if (!r.compte) { err('compte', 'Le compte bancaire est obligatoire.'); ok = false; }
+    if (!r.numero) { err('numero', 'Le n° de relevé est obligatoire.'); ok = false; }
+    else if (data.some(function (x, i) { return i !== edit && x.compte === r.compte && x.numero.toLowerCase() === r.numero.toLowerCase(); })) { err('numero', 'Ce relevé existe déjà pour ce compte.'); ok = false; }
+    if (!r.date) { err('date', 'La date du relevé est obligatoire.'); ok = false; }
+    var lg = lignesEdit.filter(function (l) { return l.d || l.l || l.m !== ''; });
+    if (lg.some(function (l) { return !l.d || !l.l.trim() || l.m === '' || isNaN(Number(l.m)); })) { msg('Chaque ligne doit avoir une date, un libellé et un montant.'); ok = false; }
+    if (!lg.length) { msg('Ajoutez au moins une ligne au relevé.'); ok = false; }
+    if (!ok) return;
+    r.lignes = lg.map(function (l) { return { d: l.d, l: l.l.trim(), m: Number(l.m), r: !!l.r }; });
+    var ds = r.lignes.map(function (x) { return x.d; }).sort(); r.du = ds[0]; r.au = ds[ds.length - 1];
+    r.soldeIni = soldeInitial(); r.soldeFin = r.soldeIni + somme(r.lignes);
+    if (edit >= 0) data[edit] = r; else { data.push(r); edit = data.length - 1; }
+    sel = edit; window.RELEVES = data; sauver(); msg('Relevé enregistré.'); onglet('liste'); lister();
+  });
+  window.addEventListener('hashchange', function () { if (location.hash === '#releves') { lister(); } else sauver(); });
+  window.addEventListener('rapprochement-changed', function () { remplirCpt(); comptes(); lister(); });
+  remplirCpt(); onglet('liste'); lister();
+})();
+</script>

@@ -1,0 +1,151 @@
+<!--
+  Écran « Petite caisse › Génération des écritures » (Comptabilité générale) — liste des lots de caisse (window.CAISSE_LOTS, écran Saisie) : N° lot, Compte caisse
+  (compte du journal du lot), Date fermeture (dernière opération), Nb opérations, Montant total mouvement, Statut (À générer | Généré). « Proposer schéma comptable » affiche,
+  avant validation, les écritures du lot sélectionné : recette = débit compte caisse / crédit compte du type d'opération ; dépense = débit compte du type / crédit compte caisse,
+  avec les imputations analytiques. « Générer les écritures » n'est possible qu'après la proposition ; le statut passe à Généré (localStorage softcompta.caisseGen).
+  Préfixe cge / data-cge. S'appuie sur les styles bp-*. Ne pas nommer de fonction « $$ » (build.cjs).
+-->
+<style>
+[data-cge] .bp-in.err{border-color:#B63132}
+[data-cge] .cge-ok{font-size:12px;color:#2E427B;margin-left:8px}
+[data-cge] tbody tr.cge-l{cursor:pointer}[data-cge] tbody tr.cge-sel td{background:#E8ECF6}
+[data-cge] td.r,[data-cge] th.r{text-align:right;font-variant-numeric:tabular-nums}
+[data-cge] .cge-st{display:inline-block;padding:2px 10px;border-radius:999px;font-size:12px;font-weight:600}
+[data-cge] .cge-st.a{background:#FFF4DB;color:#8A5A00}[data-cge] .cge-st.g{background:#DFF3E6;color:#1D6B3A}
+.cge-ov{position:fixed;inset:0;z-index:2000;display:flex;align-items:center;justify-content:center;padding:16px;background:rgba(11,19,50,.55)}.cge-ov[hidden]{display:none}
+.cge-md{display:flex;flex-direction:column;width:min(1240px,100%);max-height:92vh;background:#fff;border-radius:10px;box-shadow:0 24px 60px rgba(11,19,50,.35);overflow:hidden}
+.cge-mh{padding:12px 20px;background:#2E427B}.cge-mh h2{margin:0;font:600 15px var(--font-heading);color:#fff}
+.cge-mb{padding:14px 20px;overflow:auto;display:grid;gap:12px}
+.cge-ent{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:12px 24px}.cge-ent label{display:flex;align-items:center;gap:12px;font-size:12px;color:#353944}.cge-ent label span{flex:none;min-width:84px}.cge-ent .bp-in{flex:1;min-width:0;background:#F5F7F9;color:#474C58}
+@media (max-width:820px){.cge-ent{grid-template-columns:1fr}}
+.cge-tw{border:1px solid #D5DBE5;border-radius:6px;overflow:auto;min-height:220px;max-height:46vh}
+.cge-md td.r,.cge-md th.r{text-align:right;font-variant-numeric:tabular-nums}.cge-md th{text-align:center}
+.cge-tot{display:flex;gap:28px;justify-content:flex-start;align-items:center;padding:8px 12px;border:1px solid #D5DBE5;border-radius:6px;font-size:13px;color:#5B606D}.cge-tot span:first-child{min-width:300px;text-align:right;font-weight:600}.cge-tot b{min-width:110px;text-align:right;color:#0B1332;font-variant-numeric:tabular-nums}
+.cge-mf{display:flex;align-items:center;justify-content:flex-end;gap:8px;padding:12px 20px;border-top:1px solid #E9EBF0}.cge-ms{margin-right:auto;font-size:12px;color:#B63132}
+.cge-mf button{height:36px;padding:0 18px;border:1px solid #C5CAD6;border-radius:8px;background:#fff;color:#353944;font:600 13px var(--font-sans);cursor:pointer}.cge-mf button:hover{background:#F5F7F9}.cge-mf button.p{background:#2E427B;border-color:#2E427B;color:#fff}.cge-mf button.p:hover{background:#243569}.cge-mf button:disabled{opacity:.5;cursor:not-allowed}
+.cge-md .cge-eq{color:#1D6B3A;font-weight:600}.cge-md .cge-eq.ko{color:#B63132}
+[data-cge] .cge-pied{display:flex;gap:24px;justify-content:flex-end;flex-wrap:wrap;padding:8px 12px;font-size:13px;color:#353944;border-top:1px solid #E9EBF0}[data-cge] .cge-pied b{color:#0B1332;font-variant-numeric:tabular-nums}
+[data-cge] .cge-eq{color:#1D6B3A;font-weight:600}[data-cge] .cge-eq.ko{color:#B63132}
+[data-cge] tr.cge-tot td{font-weight:600;background:#F5F7F9}
+</style>
+
+<div class="bp-root" data-cge>
+  <h1 style="position:absolute;width:1px;height:1px;overflow:hidden;clip-path:inset(50%);margin:0">Petite caisse — Génération des écritures</h1>
+
+  <div class="no-print">
+    <button type="button" data-cge-proposer>Proposer schéma comptable</button>
+    <span class="cge-ok" data-cge-msg role="status"></span>
+  </div>
+
+  <div class="bp-grid">
+    <section class="bp-pan" aria-label="Lots de caisse" data-cge-pan="lots">
+      <h2>Lots de caisse <small>Sélectionnez un lot puis « Proposer schéma comptable »</small></h2>
+      <div style="overflow:auto;max-height:340px">
+        <table class="bp-tb" style="min-width:860px"><thead>
+          <tr><th>N° lot</th><th>Compte caisse</th><th class="c">Date fermeture</th><th class="r">Nb opérations</th><th class="r">Montant total mouvement</th><th class="c">Statut</th></tr>
+        </thead><tbody data-cge-lignes></tbody></table>
+      </div>
+      <div class="bp-vide" data-cge-vide hidden>Aucun lot de caisse : créez-en un dans Petite caisse › Saisie.</div>
+    </section>
+
+  </div>
+
+  <div class="cge-ov" data-cge-ov hidden><div class="cge-md" role="dialog" aria-modal="true" aria-labelledby="cge-md-t">
+    <div class="cge-mh"><h2 id="cge-md-t">Génération des écritures</h2></div>
+    <div class="cge-mb">
+      <div class="cge-ent">
+        <label><span>Site</span><input class="bp-in" data-cge-site readonly></label>
+        <label><span>Journal</span><input class="bp-in" data-cge-j readonly></label>
+        <label><span>Numéro de lot</span><input class="bp-in" data-cge-nl readonly></label>
+      </div>
+      <div class="cge-tw"><table class="bp-tb" data-no-tf style="min-width:1000px"><thead data-cge-th></thead><tbody data-cge-ecr></tbody></table></div>
+      <div class="cge-tot"><span>Total</span><b data-cge-td></b><b data-cge-tc></b><span data-cge-eq></span></div>
+    </div>
+    <div class="cge-mf"><span class="cge-ms" data-cge-ms></span><button type="button" class="p" data-cge-valider>Valider</button><button type="button" data-cge-fermer>Fermer</button></div>
+  </div></div>
+</div>
+
+<script>
+(function () {
+  var root = document.querySelector('[data-cge]'); if (!root) return;
+  function q(s) { return root.querySelector(s); } function qa(s) { return [].slice.call(root.querySelectorAll(s)); }
+  function esc(s) { return String(s == null ? '' : s).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;'); }
+  var CLE = 'softcompta.caisseGen', sel = '', gen = {};
+  try { gen = JSON.parse(localStorage.getItem(CLE) || '{}') || {}; } catch (e) {}
+  function lots() { return window.CAISSE_LOTS || []; }
+  function nb(v) { return Number(v || 0).toLocaleString('fr-FR', { minimumFractionDigits: 2, maximumFractionDigits: 2 }); }
+  function date(d) { return d ? d.split('-').reverse().join('/') : ''; }
+  function msg(t) { q('[data-cge-msg]').textContent = t || ''; }
+  function journal(l) { return (window.JOURNAUX_PLAN || []).filter(function (j) { return j.code === l.journal; })[0] || {}; }
+  function compteCaisse(l) { return l.compte || journal(l).compte || '531000'; }
+  function libCompte(c) { var r = (window.PLAN_COMPTABLE || []).filter(function (x) { return x.code === c; })[0]; return r ? r.libelle : ''; }
+  function typeDe(lib) { return (window.CAISSE_TYPES || []).filter(function (t) { return t.libelle === lib; })[0]; }
+  function fermeture(l) { return (l.ops || []).reduce(function (m, o) { return o.date > m ? o.date : m; }, ''); }
+  function mouvement(l) { return (l.ops || []).reduce(function (a, o) { return a + (Number(o.rec) || 0) + (Number(o.dep) || 0); }, 0); }
+  function lot(n) { return lots().filter(function (l) { return l.num === n; })[0]; }
+  function enreg() { try { localStorage.setItem(CLE, JSON.stringify(gen)); } catch (e) {} }
+
+  function lister() {
+    var h = '';
+    lots().forEach(function (l) {
+      var g = gen[l.num];
+      h += '<tr class="cge-l' + (l.num === sel ? ' cge-sel' : '') + '" data-n="' + esc(l.num) + '"><td>' + esc(l.num) + '</td><td>' + esc(compteCaisse(l)) + '</td><td class="c">' + date(fermeture(l)) + '</td><td class="r">' + (l.ops || []).length + '</td><td class="r">' + nb(mouvement(l)) + '</td><td class="c"><span class="cge-st ' + (g ? 'g' : 'a') + '">' + (g ? 'Généré' : 'À générer') + '</span></td></tr>';
+    });
+    q('[data-cge-lignes]').innerHTML = h; q('[data-cge-vide]').hidden = lots().length > 0; boutons();
+  }
+  function boutons() {
+    var l = sel && lot(sel);
+    q('[data-cge-proposer]').disabled = !l;
+  }
+  // schéma comptable : une écriture par opération du lot
+  function schema(l) {
+    var cc = compteCaisse(l), jr = l.journal, rows = [], seq = 0, td = 0, tc = 0, manque = [];
+    (l.ops || []).forEach(function (o) {
+      var t = typeDe(o.type), cg = t && t.compte, m = Number(o.rec) || Number(o.dep) || 0, rec = Number(o.rec) > 0;
+      if (!cg) manque.push(o.libelle);
+      var an = o.ana && Object.keys(o.ana).length ? o.ana : (t && t.analytique ? t.ana || {} : {});
+      var piece = jr + ('0000' + (++seq)).slice(-4), cpt1 = rec ? cc : (cg || '?'), cpt2 = rec ? (cg || '?') : cc;
+      rows.push({ date: o.date, piece: piece, lib: o.libelle, cpt: cpt1, ana: rec ? {} : an, d: m, c: 0 });
+      rows.push({ date: o.date, piece: piece, lib: o.libelle, cpt: cpt2, ana: rec ? an : {}, d: 0, c: m });
+      td += m; tc += m;
+    });
+    return { rows: rows, td: td, tc: tc, manque: manque };
+  }
+  function plans() { return window.CAISSE_PLANS ? window.CAISSE_PLANS() : []; }
+  function afficher(l) {
+    var s = schema(l), h = '', pl = plans();
+    q('[data-cge-th]').innerHTML = '<tr><th>Code</th><th>Date pièce</th><th>Libellé</th><th>N° pièce</th><th class="r">Débit</th><th class="r">Crédit</th><th>Compte</th><th>Auxi</th><th>SS CPTE</th>' + pl.map(function (p) { return '<th>' + esc(p.lib) + '</th>'; }).join('') + '</tr>';
+    s.rows.forEach(function (r) {
+      h += '<tr><td>' + esc(l.journal) + '</td><td class="c">' + date(r.date) + '</td><td>' + esc(r.lib) + '</td><td>' + esc(r.piece) + '</td><td class="r">' + (r.d ? nb(r.d) : '') + '</td><td class="r">' + (r.c ? nb(r.c) : '') + '</td><td>' + esc(r.cpt) + '</td><td></td><td></td>' + pl.map(function (p) { return '<td>' + esc(r.ana[p.code] || '') + '</td>'; }).join('') + '</tr>';
+    });
+    q('[data-cge-ecr]').innerHTML = h;
+    q('[data-cge-site]').value = l.site || ''; q('[data-cge-j]').value = l.journal; q('[data-cge-nl]').value = l.num;
+    q('[data-cge-td]').textContent = nb(s.td); q('[data-cge-tc]').textContent = nb(s.tc);
+    var eq = q('[data-cge-eq]'), ok = Math.abs(s.td - s.tc) < 0.005;
+    eq.className = 'cge-eq' + (ok ? '' : ' ko'); eq.textContent = ok ? 'Équilibré' : 'Déséquilibré';
+    var bloc = !s.rows.length ? 'Ce lot ne contient aucune opération.' : s.manque.length ? 'Imputation sans compte général : ' + s.manque.join(', ') + '.' : gen[l.num] ? 'Lot déjà généré.' : '';
+    q('[data-cge-ms]').textContent = bloc; q('[data-cge-valider]').disabled = !!bloc || !ok;
+    q('[data-cge-ov]').hidden = false; q('[data-cge-fermer]').focus();
+    return s;
+  }
+  q('[data-cge-lignes]').addEventListener('click', function (e) {
+    var tr = e.target.closest('tr[data-n]'); if (!tr) return; sel = tr.dataset.n; msg();
+    qa('[data-cge-lignes] tr').forEach(function (r) { r.classList.toggle('cge-sel', r === tr); }); boutons();
+  });
+  q('[data-cge-proposer]').addEventListener('click', function () {
+    var l = sel && lot(sel); if (!l) { msg('Sélectionnez un lot de caisse.'); return; }
+    msg(); afficher(l);
+  });
+  function fermer() { q('[data-cge-ov]').hidden = true; }
+  q('[data-cge-fermer]').addEventListener('click', fermer);
+  q('[data-cge-ov]').addEventListener('keydown', function (e) { if (e.key === 'Escape') fermer(); });
+  q('[data-cge-valider]').addEventListener('click', function () {
+    var l = sel && lot(sel); if (!l || gen[sel]) return;
+    gen[sel] = { date: new Date().toISOString().slice(0, 10), nb: (l.ops || []).length * 2 }; enreg(); fermer(); lister();
+    msg('Écritures du lot ' + l.num + ' générées (' + gen[l.num].nb + ' lignes).');
+  });
+  window.addEventListener('caisse-lots-changed', lister); 
+  window.addEventListener('hashchange', function () { if (location.hash === '#caissegen') { lister(); } });
+  lister(); [600, 1800].forEach(function (t) { setTimeout(lister, t); });
+})();
+</script>

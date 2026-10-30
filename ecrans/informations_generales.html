@@ -1,0 +1,57 @@
+<app-informations-generales>
+<style>
+.ig-wrap{display:flow-root}
+.ig-intro{font-size:13px;color:#888780;margin:-4px 0 14px}
+.ig-card{background:#fff;border:1px solid #edf1f5;border-radius:16px;box-shadow:0 10px 30px rgba(76,87,125,.08);overflow:hidden}
+.ig-bd{padding:18px 24px 6px}
+.ig-sec{margin-bottom:14px;padding-bottom:14px;border-bottom:1px solid #edf1f5}
+.ig-sec:last-child{border-bottom:0;margin-bottom:0;padding-bottom:6px}
+.ig-t{display:block;font-size:11.5px;font-weight:700;letter-spacing:.1em;text-transform:uppercase;color:#b4b2a9;margin:0 0 8px}
+.ig-g{display:grid;grid-template-columns:repeat(12,minmax(0,1fr));gap:10px 16px;align-items:end}
+.ig-s2{grid-column:span 2}.ig-s3{grid-column:span 3}.ig-s4{grid-column:span 4}.ig-s6{grid-column:span 6}
+.ig-l{display:block;font-size:11.5px;font-weight:600;color:#888780;margin-bottom:4px;text-transform:uppercase;letter-spacing:.04em;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.ig-in{width:100%;box-sizing:border-box;height:38px;padding:0 12px;border:1px solid #d3d1c7;border-radius:8px;background:#fff;color:#2c2c2a;font-size:13.5px;outline:none}
+.ig-in:focus{border-color:#00875a;box-shadow:0 0 0 3px rgba(0,135,90,.12)}
+.ig-logo{display:flex;align-items:center;gap:10px}
+.ig-lg{width:56px;height:56px;flex:none;border:1px solid #edf1f5;border-radius:10px;background:#fafaf9;display:flex;align-items:center;justify-content:center;overflow:hidden}
+.ig-lb{display:inline-flex;align-items:center;gap:6px;height:30px;padding:0 10px;border:1px solid #d3d1c7;border-radius:8px;background:#fff;color:#2c2c2a;font-size:12px;font-weight:500;cursor:pointer;white-space:nowrap}
+.ig-lb:hover{background:#f4f6fa}.ig-lb input{display:none}
+.ig-hint{font-size:11px;color:#888780;margin:3px 0 0}
+.ig-bt{height:38px;padding:0 16px;border:1px solid #d3d1c7;border-radius:8px;background:#fff;color:#2c2c2a;font-size:13px;font-weight:500;cursor:pointer}.ig-ok{background:#00875a;border-color:#00875a;color:#fff}.ig-ok:hover{background:#00764f}
+.ig-ft{display:flex;justify-content:flex-end;gap:8px;padding:12px 24px;border-top:1px solid #edf1f5;background:#fafaf9}
+@media (max-width:1100px){.ig-s2,.ig-s3,.ig-s4,.ig-s6{grid-column:span 6}}
+@media (max-width:640px){.ig-s2,.ig-s3,.ig-s4,.ig-s6{grid-column:span 12}}
+</style>
+<div class="ig-wrap">
+<div class="ig-card"><div class="ig-bd">
+<div class="ig-sec"><span class="ig-t">Identification</span><div class="ig-g">
+<div class="ig-f ig-s4"><label class="ig-l">Logo</label><div class="ig-logo"><span class="ig-lg"><i class="ti ti-photo text-[28px] text-[#b4b2a9]"></i></span><div><label class="ig-lb"><i class="ti ti-upload"></i> Changer le logo<input type="file" accept="image/*"></label><p class="ig-hint">Image, 5 Mo maximum.</p></div></div></div>
+<div class="ig-f ig-s4"><label class="ig-l">Libellé de l'entité</label><input type="text" placeholder="Ex : SOFTWELL SA" class="form-input ig-in"></div>
+<div class="ig-f ig-s4"><label class="ig-l">Gérant</label><input type="text" class="form-input ig-in"></div>
+</div></div>
+<div class="ig-sec"><span class="ig-t">Domiciliation et contact</span><div class="ig-g">
+<div class="ig-f ig-s4"><label class="ig-l">Adresse</label><input type="text" placeholder="Adresse complète" class="form-input ig-in"></div>
+<div class="ig-f ig-s2"><label class="ig-l">Pays</label><select class="form-input ig-in"><option value="">-- Aucun --</option><option value="Belgique">Belgique</option><option value="france">france</option><option value="Madagascar">Madagascar</option></select></div>
+<div class="ig-f ig-s3"><label class="ig-l">Téléphone</label><input type="tel" class="form-input ig-in"></div>
+<div class="ig-f ig-s3"><label class="ig-l">Mail</label><input type="email" class="form-input ig-in"></div>
+</div></div>
+<div class="ig-sec"><span class="ig-t">Informations légales</span><div class="ig-g">
+<div class="ig-f ig-s4"><label class="ig-l">NIF</label><input type="text" class="form-input ig-in mono"></div>
+<div class="ig-f ig-s4"><label class="ig-l">STAT</label><input type="text" class="form-input ig-in mono"></div>
+<div class="ig-f ig-s4"><label class="ig-l">RCS</label><input type="text" class="form-input ig-in mono"></div>
+</div></div>
+<div class="ig-sec"><span class="ig-t">Comptabilité</span><div class="ig-g">
+<div class="ig-f ig-s4"><label class="ig-l">Référentiel comptable</label><select class="form-input ig-in"><option value="PCG2005" selected>PCG 2005 (Madagascar)</option><option value="SYSCOHADA">SYSCOHADA</option><option value="SYCEBNL">SYCEBNL</option><option value="PCGFR">PCG France</option><option value="IFRS">IFRS</option></select></div>
+<div class="ig-f ig-s4" style="align-self:end"><label class="ig-l" style="display:flex;align-items:center;gap:8px;cursor:pointer;text-transform:none;letter-spacing:0"><input type="checkbox" data-ig-checklist checked style="width:16px;height:16px;accent-color:#2E427B"> Checklist clôture d'exercice</label><span style="display:block;margin-top:4px;font-size:12px;color:#5B606D">Active la checklist des opérations de clôture d'exercice.</span></div>
+</div></div>
+<div class="ig-sec"><span class="ig-t">Monnaies</span><div class="ig-g">
+<div class="ig-f ig-s3"><label class="ig-l">Monnaie locale</label><select class="form-input ig-in"><option value="">-- Aucune --</option><option value="MGA">MGA — Ariary</option><option value="MUR">MUR — ROUPIE</option><option value="XOF">XOF — FRANC CFA</option></select></div>
+<div class="ig-f ig-s3"><label class="ig-l">Devise 1</label><select class="form-input ig-in"><option value="">-- Aucune --</option><option value="MUR">MUR — ROUPIE</option><option value="USD">USD — Dollar Américain</option><option value="XOF">XOF — FRANC CFA</option></select></div>
+<div class="ig-f ig-s3"><label class="ig-l">Devise 2</label><select class="form-input ig-in"><option value="">-- Aucune --</option><option value="EUR">EUR — Euro</option><option value="MUR">MUR — ROUPIE</option><option value="XOF">XOF — FRANC CFA</option></select></div>
+<div class="ig-f ig-s3"><label class="ig-l">Devise 3</label><select class="form-input ig-in"><option value="">-- Aucune --</option><option value="MUR">MUR — ROUPIE</option><option value="XOF">XOF — FRANC CFA</option></select></div>
+</div></div>
+</div>
+<div class="ig-ft"><button type="button" class="ig-bt">Annuler</button><button type="button" class="ig-bt ig-ok">Enregistrer</button></div>
+</div></div>
+</app-informations-generales>
+<script>(function(){var c=document.querySelector("[data-ig-checklist]");if(!c)return;window.ENTITE_OPTIONS=window.ENTITE_OPTIONS||{checklistCloture:true};try{var sv=localStorage.getItem("softcompta.checklistCloture");if(sv!==null)window.ENTITE_OPTIONS.checklistCloture=sv==="1";}catch(e){}c.checked=!!window.ENTITE_OPTIONS.checklistCloture;c.addEventListener("change",function(){window.ENTITE_OPTIONS.checklistCloture=c.checked;try{localStorage.setItem("softcompta.checklistCloture",c.checked?"1":"0");}catch(e){}window.dispatchEvent(new Event("entite-options-changed"));});})();</script>

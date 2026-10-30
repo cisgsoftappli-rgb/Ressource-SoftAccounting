@@ -1,0 +1,135 @@
+<!--
+  Écran « Clôture comptable » (Paramétrages › Paramètres comptables › Clôture comptable) — paramétrage : Reprise des tiers (Solde par compte / Détail des écritures
+  non lettrées), Compte de résultat (bénéfice) et (perte), Clôture mensuelle des périodes (bloque la saisie sur les périodes clôturées).
+  Boutons Annuler / Enregistrer relayés par la barre d'actions de page (CFG « cloture » dans barre_actions.js). Données en mémoire :
+  window.CLOTURE_CFG = { reprise, resBenefice, resPerte, mensuelle, periodique, checklist:[{id,actif,bloquant}] } (événement « cloture-changed »). La checklist n'est modifiable que si l'option « Checklist clôture d'exercice » est cochée dans Administration de l'entité (window.ENTITE_OPTIONS). S'appuie sur les styles bp-*.
+  Ne pas nommer de fonction « $$ » (build.cjs).
+-->
+<style>
+.cl-help{display:block;margin-top:2px;font-size:12px;color:#5B606D}
+.cl-g{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:16px 20px;max-width:980px}
+@media (max-width:760px){.cl-g{grid-template-columns:1fr}}
+.cl-sec{margin:0 0 10px;font-size:12px;font-weight:700;letter-spacing:.04em;text-transform:uppercase;color:#2E427B}.cl-sec+.cl-g{margin-bottom:22px}
+.cl-sw{display:inline-flex;align-items:center;gap:12px;cursor:pointer;font-size:14px;color:#353944}
+.cl-sw input{position:absolute;opacity:0;width:1px;height:1px}
+.cl-sw .cl-tg{position:relative;flex:none;width:44px;height:24px;border-radius:12px;background:#B5BAC4;transition:background .15s}
+.cl-sw .cl-tg:after{content:"";position:absolute;top:3px;left:3px;width:18px;height:18px;border-radius:50%;background:#fff;box-shadow:0 1px 3px rgba(11,19,50,.3);transition:transform .15s}
+.cl-sw input:checked+.cl-tg{background:#2E427B}.cl-sw input:checked+.cl-tg:after{transform:translateX(20px)}
+.cl-sw input:focus-visible+.cl-tg{outline:2px solid #2E427B;outline-offset:2px}
+.cl-ck{max-width:980px;overflow:auto}.cl-ck .bp-tb td,.cl-ck .bp-tb th{vertical-align:middle}.cl-ck .c{text-align:center;width:90px}.cl-ck .t{font-weight:600;color:#0B1332}.cl-ck .d{color:#5B606D;font-size:13px}
+.cl-ck input[type=checkbox]{width:16px;height:16px;accent-color:#2E427B}.cl-ck tr.off .t,.cl-ck tr.off .d{opacity:.55}
+.cl-cnt{margin:8px 0 0;font-size:12px;color:#5B606D}
+.cl-row{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,2fr);gap:20px 28px;max-width:1180px;margin-bottom:22px}
+.cl-duo{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:16px 20px}
+.cl-row .cl-sec{margin-bottom:10px}
+@media (max-width:900px){.cl-row,.cl-duo{grid-template-columns:1fr}}
+</style>
+
+<div class="bp-root" data-cl>
+  <h1 style="position:absolute;width:1px;height:1px;overflow:hidden;clip-path:inset(50%);margin:0">Clôture comptable</h1>
+
+  <div class="no-print" data-cl-actions>
+    <button type="button" data-cl-annuler>Annuler</button>
+    <button type="button" data-cl-enregistrer>Enregistrer</button>
+  </div>
+
+  <div class="bp-grid"><section class="bp-pan" aria-label="Paramétrage de la clôture comptable">
+    <form class="bp-form" data-cl-form onsubmit="return false" novalidate>
+      <div class="cl-row">
+        <div class="cl-col1"><div class="cl-sec">Reprise des soldes</div>
+          <label class="bp-champ"><span>Reprise des tiers</span>
+            <select class="bp-sel" data-f="reprise"><option value="solde">Solde par compte</option><option value="detail">Détail des écritures non lettrées</option></select></label></div>
+        <div class="cl-col2"><div class="cl-sec">Résultat de l'exercice</div>
+          <div class="cl-duo">
+            <label class="bp-champ"><span>Compte de résultat (bénéfice) <b>*</b></span><select class="bp-sel" data-f="resBenefice"></select></label>
+            <label class="bp-champ"><span>Compte de résultat (perte) <b>*</b></span><select class="bp-sel" data-f="resPerte"></select></label>
+          </div></div>
+      </div>
+      <div class="cl-sec">Périodes</div>
+      <div class="cl-g">
+        <div class="bp-champ"><span>Clôture mensuelle des périodes</span>
+          <label class="cl-sw"><input type="checkbox" data-f="mensuelle"><span class="cl-tg" aria-hidden="true"></span>Bloque la saisie sur les périodes clôturées</label></div>
+        <div class="bp-champ"><span>Clôture périodique</span>
+          <label class="cl-sw"><input type="checkbox" data-f="periodique"><span class="cl-tg" aria-hidden="true"></span>Active les travaux périodiques en comptabilité générale</label></div>
+      </div>
+      <div data-cl-ckwrap hidden>
+      <div class="cl-sec" style="margin-top:6px">Checklist de clôture d'exercice</div>
+      
+      
+      <div class="cl-ck"><table class="bp-tb" style="min-width:700px"><thead><tr><th class="c">Inclure</th><th>Contrôle</th><th>Description</th><th class="c">Bloquant</th></tr></thead><tbody data-cl-ck></tbody></table></div>
+      <p class="cl-cnt" data-cl-cnt></p>
+      </div>
+    </form>
+  </section></div>
+  <div class="bp-toast" role="status" hidden data-cl-toast></div>
+</div>
+
+<script>
+(function () {
+  var root = document.querySelector('[data-cl]'); if (!root) return;
+  function q(s) { return root.querySelector(s); }
+  var CONTROLES = [
+    ['periodes', 'Toutes les périodes mensuelles sont clôturées', 'Chaque mois de l\'exercice est clôturé.', true],
+    ['brouillons', 'Aucune pièce en brouillon ou en attente', 'Aucune pièce non validée sur l\'exercice.', true],
+    ['rapprochements', 'Rapprochements bancaires validés', 'Dernier rapprochement validé pour chaque compte bancaire à la date de clôture.', false],
+    ['amortissements', 'Dotations aux amortissements générées', 'Dotations générées pour les 12 mois de l\'exercice.', false],
+    ['analytique', 'Ventilation analytique complète', 'Toutes les écritures de classes 6 et 7 sont ventilées.', false],
+    ['attente', 'Comptes d\'attente soldés (471, 472)', 'Les comptes d\'attente sont soldés.', false],
+    ['tva', 'TVA déclarée et comptabilisée', 'Déclarations de TVA établies et comptabilisées jusqu\'à la fin de l\'exercice.', false],
+    ['balance', 'Balance équilibrée', 'Le total des débits est égal au total des crédits.', true],
+    ['lettrage', 'Lettrage des comptes tiers', 'Taux de lettrage des comptes tiers et écritures anciennes non lettrées.', false],
+    ['inventaire', 'Écritures d\'inventaire (stocks, provisions, CCA/PCA)', 'Écritures d\'inventaire saisies avant la clôture.', false]
+  ];
+  window.CLOTURE_CONTROLES = CONTROLES.map(function (c) { return { id: c[0], titre: c[1], description: c[2] }; });
+  function checklistDefaut() { return CONTROLES.map(function (c) { return { id: c[0], actif: true, bloquant: c[3] }; }); }
+  var DEFAUT = { reprise: 'detail', resBenefice: '120000', resPerte: '129000', mensuelle: true, periodique: true, checklist: checklistDefaut() };
+  var cfg = JSON.parse(JSON.stringify(DEFAUT)), CLE = 'softcompta.cloture';
+  try { var sv = JSON.parse(localStorage.getItem(CLE) || 'null'); if (sv && typeof sv === 'object') cfg = Object.assign(cfg, sv); } catch (e) {}
+  window.ENTITE_OPTIONS = window.ENTITE_OPTIONS || { checklistCloture: true };
+  function optionActive() { return !!(window.ENTITE_OPTIONS && window.ENTITE_OPTIONS.checklistCloture); }
+  function dessinerChecklist(liste) {
+    var on = optionActive();
+    q('[data-cl-ckwrap]').hidden = !on;
+    q('[data-cl-ck]').innerHTML = CONTROLES.map(function (c, i) {
+      var l = liste[i];
+      return '<tr class="' + (l.actif ? '' : 'off') + '" data-i="' + i + '"><td class="c"><input type="checkbox" data-ck="actif" aria-label="Inclure : ' + esc(c[1]) + '"' + (l.actif ? ' checked' : '') + (on ? '' : ' disabled') + '></td><td class="t">' + esc(c[1]) + '</td><td class="d">' + esc(c[2]) + '</td><td class="c"><input type="checkbox" data-ck="bloquant" aria-label="Bloquant : ' + esc(c[1]) + '"' + (l.bloquant ? ' checked' : '') + (on && l.actif ? '' : ' disabled') + '></td></tr>';
+    }).join('');
+    compter();
+  }
+  function lireChecklist() { return CONTROLES.map(function (c, i) { var tr = q('[data-cl-ck] tr[data-i="' + i + '"]'); return { id: c[0], actif: tr.querySelector('[data-ck=actif]').checked, bloquant: tr.querySelector('[data-ck=bloquant]').checked }; }); }
+  function compter() { var L = lireChecklist(); q('[data-cl-cnt]').textContent = L.filter(function (x) { return x.actif; }).length + ' contrôle(s) inclus sur ' + L.length + ' — ' + L.filter(function (x) { return x.actif && x.bloquant; }).length + ' bloquant(s).'; }
+  q('[data-cl-ck]').addEventListener('change', function (e) {
+    var tr = e.target.closest('tr'); if (!tr) return;
+    if (e.target.matches('[data-ck=actif]')) { tr.classList.toggle('off', !e.target.checked); var bl = tr.querySelector('[data-ck=bloquant]'); bl.disabled = !e.target.checked || !optionActive(); if (!e.target.checked) bl.checked = false; }
+    compter();
+  });
+  window.addEventListener('entite-options-changed', function () { dessinerChecklist(lireChecklist()); });
+  function toast(m) { var t = q('[data-cl-toast]'); t.textContent = m; t.hidden = false; clearTimeout(toast.t); toast.t = setTimeout(function () { t.hidden = true; }, 2500); }
+  function esc(s) { return String(s).replace(/[&<>"]/g, function (c) { return { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c]; }); }
+  // Comptes de résultat : les deux comptes usuels puis les comptes de classe 12 du plan comptable chargé
+  function comptes() {
+    var L = [['120000', 'Résultat de l\'exercice (bénéfice)'], ['129000', 'Résultat de l\'exercice (perte)']];
+    ((window.PLANS_REF && window.PLANS_REF.comptes) || []).forEach(function (c) { if (/^12/.test(c[0]) && !L.some(function (x) { return x[0] === c[0]; })) L.push([c[0], c[1]]); });
+    return L;
+  }
+  function remplir(sel, val) {
+    var L = comptes();
+    sel.innerHTML = L.map(function (c) { return '<option value="' + esc(c[0]) + '">' + esc(c[0] + ' – ' + c[1]) + '</option>'; }).join('');
+    sel.value = val;
+  }
+  function afficher() {
+    q('[data-f=reprise]').value = cfg.reprise; remplir(q('[data-f=resBenefice]'), cfg.resBenefice); remplir(q('[data-f=resPerte]'), cfg.resPerte); q('[data-f=mensuelle]').checked = !!cfg.mensuelle; q('[data-f=periodique]').checked = cfg.periodique !== false; dessinerChecklist(cfg.checklist);
+  }
+  function publier() { var H = document.documentElement.classList; H.toggle('sans-periodique', cfg.periodique === false); H.toggle('sans-mensuelle', cfg.mensuelle === false); window.CLOTURE_CFG = JSON.parse(JSON.stringify(cfg)); window.dispatchEvent(new Event('cloture-changed')); }
+  root.addEventListener('click', function (e) {
+    var b = e.target.closest('button'); if (!b || b.disabled) return;
+    if (b.hasAttribute('data-cl-annuler')) { afficher(); toast('Modifications annulées.'); return; }
+    if (b.hasAttribute('data-cl-enregistrer')) {
+      if (q('[data-f=resBenefice]').value === q('[data-f=resPerte]').value) { toast('Les comptes de résultat (bénéfice) et (perte) doivent être différents.'); return; }
+      cfg = { reprise: q('[data-f=reprise]').value, resBenefice: q('[data-f=resBenefice]').value, resPerte: q('[data-f=resPerte]').value, mensuelle: q('[data-f=mensuelle]').checked, periodique: q('[data-f=periodique]').checked, checklist: lireChecklist() };
+      publier(); try { localStorage.setItem(CLE, JSON.stringify(cfg)); } catch (e) {} toast('Paramétrage de la clôture enregistré.');
+    }
+  });
+  afficher(); publier();
+})();
+</script>

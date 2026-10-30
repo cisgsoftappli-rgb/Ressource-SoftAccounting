@@ -1,0 +1,42 @@
+/* Barre d'actions de page : bande sous le fil d'Ariane — recherche à gauche, actions à droite (charte §7.4, §8.1) */
+.ba-bar{position:sticky;top:0;z-index:30;display:flex;align-items:center;gap:16px;flex-wrap:wrap;background:#fff;border-bottom:1px solid #E9EBF0;box-shadow:0 1px 2px rgba(11,19,50,.05)}
+.ba-left{position:relative;flex:1 1 280px;max-width:420px;min-width:0}
+.ba-left i{position:absolute;left:14px;top:50%;transform:translateY(-50%);color:#5B606D;font-size:16px;pointer-events:none}
+.ba-left input{width:100%;box-sizing:border-box;height:44px;padding:0 14px 0 40px;border:1px solid #878D9A;border-radius:8px;background:#fff;font:400 14px var(--font-sans);color:#353944}
+.ba-left input::placeholder{color:#5B606D}
+.ba-right{margin-left:auto;display:flex;align-items:center;justify-content:flex-end;flex-wrap:wrap;gap:8px}
+.ba-btn{display:inline-flex;align-items:center;justify-content:center;gap:8px;min-height:44px;padding:0 16px;border:1px solid #D6D9E0;border-radius:8px;background:#fff;color:#474C58;font:700 14px var(--font-sans);white-space:nowrap;cursor:pointer;box-shadow:none}
+.ba-btn:hover:not(:disabled){background:#E9EBF0}
+.ba-btn:disabled{opacity:.5;cursor:not-allowed}
+.ba-btn[hidden]{display:none}
+.ba-btn i,.ba-btn svg{font-size:16px;width:16px;height:16px;flex:none}
+.ba-btn.pri{background:#2E427B;border-color:#2E427B;color:#fff}
+.ba-btn.ba-nav{order:9;min-width:120px;background:#2E427B;border-color:#2E427B;color:#fff}
+.ba-btn.ba-nav:hover:not(:disabled){background:#243569;border-color:#243569}
+.ba-btn.pri:hover:not(:disabled){background:#243569;border-color:#243569}
+.ba-btn:focus-visible,.ba-left input:focus-visible{outline:3px solid #2E427B;outline-offset:2px}
+/* Ordre : secondaires, modifier, supprimer, annuler, enregistrer, puis l'action principale tout à droite */
+.ba-plus{order:1;position:relative}.ba-other{order:1}.ba-edit{order:2}.ba-del{order:3}.ba-cancel{order:4}.ba-save{order:5}.ba-add{order:6}
+.ba-menu{position:absolute;right:0;top:calc(100% + 4px);z-index:40;min-width:240px;display:flex;flex-direction:column;padding:8px;background:#fff;border:1px solid #E9EBF0;border-radius:12px;box-shadow:0 6px 16px -6px rgba(11,19,50,.14)}
+.ba-menu[hidden]{display:none}
+.ba-menu .ba-btn{justify-content:flex-start;border:0;font-weight:600}
+/* Éléments d'origine masqués visuellement (leurs écouteurs restent actifs) */
+.ba-orig{position:absolute!important;width:1px!important;height:1px!important;overflow:hidden!important;clip-path:inset(50%)!important;opacity:0!important;pointer-events:none!important}
+.ba-cache{height:0!important;min-height:0!important;margin:0!important;padding:0!important;border:0!important;overflow:hidden!important;opacity:0!important;pointer-events:none!important;box-shadow:none!important}
+@media (max-width:640px){.ba-left{max-width:none;flex-basis:100%}.ba-right{width:100%;justify-content:stretch}.ba-right .ba-btn{flex:1 1 auto}}
+/* Bande hors carte, directement sous le fil d'Ariane (non défilante) */
+.ba-host{background:#fff;border-bottom:1px solid #E9EBF0}
+.ba-host[hidden],.ba-bar[hidden]{display:none}
+.ba-host .ba-bar{position:static;margin:0;padding:12px 24px;box-shadow:none;border-bottom:0}
+
+/* Compactage (−25 %) : fil d'Ariane et barre d'actions. Police plancher 12 px (charte §5.3). */
+.soft-breadcrumb{padding:6px 20px!important;min-height:26px;line-height:14px}
+.ba-host .ba-bar{padding:9px 24px;gap:12px}
+.ba-right{gap:6px}
+.ba-btn{min-height:33px;padding:0 12px;gap:6px;font-size:12px}
+.ba-btn i,.ba-btn svg{font-size:12px;width:12px;height:12px}
+.ba-left input{height:33px;padding:0 10px 0 30px;font-size:12px}
+.ba-left i{left:10px;font-size:12px}
+.ba-menu{min-width:180px;padding:6px}
+.soft-breadcrumb *{line-height:14px!important}
+.soft-breadcrumb{border-bottom-width:1px}

@@ -1,0 +1,236 @@
+<!--
+  Écran « Saisie des tiers » (Paramétrages › Gestion des plans › Saisie des plans › Tiers) — onglets Saisie / Liste.
+  Liste : Compte collectif (classe 4), Code (tri), Intitulé, Sous-type (pastille), Adresse, Téléphone, NIF, Statut (Actif / Utilisé) ; filtres par colonne et pagination.
+  Saisie : Identité (code*, intitulé*, sous-type*, compte collectif*), Coordonnées (adresse, région, pays, téléphone, NIF, STAT, RCS),
+  Coordonnées bancaires (banque, code banque, code agence, numéro de compte, clé, SWIFT, adresse et pays de la banque), Paiement et site.
+  Données : Plans_consolides.xlsx (feuille Tiers, Projet PARN) — %%DONNEES%% = { tiers:[[compte, code, nom]], det:{index:{…}}, collectifs, sites } (import_plans/gen.cjs).
+  Un tiers « Utilisé » dans une pièce ne peut plus être supprimé ; son code et son compte collectif sont verrouillés. Ne pas nommer de fonction « $$ » (build.cjs).
+-->
+<style>
+.ti-sec{margin:18px 0 8px;padding-bottom:4px;border-bottom:1px solid #E9EBF0;font-size:13px;font-weight:600;color:#0B1332}
+.ti-sec:first-child{margin-top:0}
+.ti-g{display:grid;gap:10px 14px}
+.ti-g.id{grid-template-columns:repeat(4,minmax(0,1fr))}.ti-g.co{grid-template-columns:2.4fr repeat(6,minmax(0,1fr))}.ti-g.ba{grid-template-columns:repeat(6,minmax(0,1fr)) 2fr 1fr}.ti-g.pa{grid-template-columns:1fr 1fr}
+@media(max-width:1250px){.ti-g.co,.ti-g.ba{grid-template-columns:repeat(4,minmax(0,1fr))}}
+@media(max-width:800px){.ti-g.id,.ti-g.co,.ti-g.ba,.ti-g.pa{grid-template-columns:1fr 1fr}}
+.ti-er{display:none;font-size:12px;color:#B63132}.ti-er.show{display:block}
+.bp-in.err,.bp-sel.err{border-color:#B63132}
+.ti-st{display:inline-flex;align-items:center;justify-content:center;width:34px;height:34px;border-radius:8px;font-size:11px;font-weight:700;flex:none}
+.ti-st.FR{background:#FEF3C7;color:#B45309}.ti-st.CL{background:#DCFCE7;color:#15803D}.ti-st.SA{background:#E3EBFE;color:#2E427B}.ti-st.PA{background:#F3E8FF;color:#7E22CE}.ti-st.BQ{background:#E0F2FE;color:#0369A1}.ti-st.AU{background:#CCFBF1;color:#0F766E}
+.ti-ligne{display:flex;align-items:center;gap:10px;font-weight:600}
+.ti-act{display:inline-flex;align-items:center;gap:6px;font-weight:600;color:#047857}.ti-act i{width:7px;height:7px;border-radius:50%;background:#16A34A}.ti-act.n{color:#5B606D}.ti-act.n i{background:#9AA0AE}
+.ti-use{display:block;margin-top:2px;font-size:11px;color:#B45309;font-weight:400}
+.ti-pag{display:flex;align-items:center;justify-content:space-between;gap:12px;flex-wrap:wrap;padding:10px 4px;font-size:12px;color:#5B606D}
+.ti-pag .btns{display:flex;align-items:center;gap:8px}
+.bp-tb th.tri{cursor:pointer;user-select:none}
+.bp-tb td.num{text-align:right;font-variant-numeric:tabular-nums}
+</style>
+
+<div class="bp-root" data-ti>
+  <h1 style="position:absolute;width:1px;height:1px;overflow:hidden;clip-path:inset(50%);margin:0">Tiers</h1>
+
+  <div class="no-print" data-ti-actions>
+    <button type="button" data-ti-ajouter>Ajouter</button>
+    <button type="button" data-ti-modifier>Modifier</button>
+    <button type="button" data-ti-supprimer>Supprimer</button>
+    <button type="button" data-ti-enregistrer>Enregistrer</button>
+    <button type="button" data-ti-annuler>Annuler</button>
+    <button type="button" data-ti-imprimer>Imprimer</button>
+    <button type="button" data-ti-exporter>Exporter</button>
+  </div>
+
+  <div class="bp-tabs" role="tablist">
+    <button type="button" role="tab" class="on" data-ti-tab="saisie">Saisie</button>
+    <button type="button" role="tab" data-ti-tab="liste">Liste <span class="bp-n" data-ti-compte></span></button>
+  </div>
+
+  <div class="bp-grid">
+    <section class="bp-pan" aria-label="Liste des tiers" data-ti-pan="liste" hidden>
+      <h2>Tiers <small>Double-clic ou « Modifier » pour ouvrir la ligne en saisie</small></h2>
+      <div style="overflow:auto">
+        <table class="bp-tb" style="min-width:1000px"><thead>
+          <tr><th class="tri" data-ti-tri="compte">Compte collectif <i class="ti" data-ti-fleche="compte" style="font-size:12px"></i></th><th class="tri" data-ti-tri="code">Code <i class="ti ti-arrow-up" data-ti-fleche="code" style="font-size:12px"></i></th><th class="tri" data-ti-tri="nom">Intitulé <i class="ti" data-ti-fleche="nom" style="font-size:12px"></i></th><th>Sous-type</th><th>Adresse</th><th>Téléphone</th><th>NIF</th><th class="c">Statut</th></tr>
+          <tr class="flt">
+            <th><input class="bp-in" data-fc="compte" aria-label="Filtrer Compte collectif"></th>
+            <th><input class="bp-in" data-fc="code" aria-label="Filtrer Code"></th>
+            <th><input class="bp-in" data-fc="nom" aria-label="Filtrer Intitulé"></th>
+            <th><select class="bp-sel" data-fc="sous" aria-label="Filtrer Sous-type"><option value=""></option><option>Client</option><option>Fournisseur</option><option>Salarié</option><option>Partenaire</option><option>Banque</option><option>Autre type de tiers</option></select></th>
+            <th><input class="bp-in" data-fc="adr" aria-label="Filtrer Adresse"></th>
+            <th><input class="bp-in" data-fc="tel" aria-label="Filtrer Téléphone"></th>
+            <th><input class="bp-in" data-fc="nif" aria-label="Filtrer NIF"></th>
+            <th><select class="bp-sel" data-fc="actif" aria-label="Filtrer Statut"><option value=""></option><option value="1">Actif</option><option value="0">Inactif</option></select></th>
+          </tr>
+          </thead><tbody data-ti-lignes></tbody></table>
+      </div>
+      <div class="bp-vide" data-ti-vide hidden>Aucun tiers ne correspond aux filtres.</div>
+      <div class="ti-pag no-print"><span data-ti-pos></span><span class="btns"><label>Lignes par page <select class="bp-sel" data-ti-taille style="width:80px;display:inline-block"><option>20</option><option>50</option><option>100</option></select></label><button type="button" data-ti-prec>Précédent</button><span data-ti-page></span><button type="button" data-ti-suiv>Suivant</button></span></div>
+    </section>
+
+    <section class="bp-pan" aria-label="Saisie d'un tiers" data-ti-pan="saisie">
+      <form class="bp-form" data-ti-form onsubmit="return false" novalidate>
+        <div class="ti-sec">Identité</div>
+        <div class="ti-g id">
+          <label class="bp-champ"><span>Code <b>*</b></span><input class="bp-in" data-f="code" maxlength="30" autocomplete="off"><span class="ti-er" data-er="code"></span></label>
+          <label class="bp-champ"><span>Intitulé <b>*</b></span><input class="bp-in" data-f="nom" maxlength="120" autocomplete="off"><span class="ti-er" data-er="nom"></span></label>
+          <label class="bp-champ"><span>Sous-type <b>*</b></span><select class="bp-sel" data-f="sous"><option>Client</option><option>Fournisseur</option><option>Salarié</option><option>Partenaire</option><option>Banque</option><option>Autre type de tiers</option></select></label>
+          <label class="bp-champ"><span>Compte collectif <b>*</b></span><select class="bp-sel" data-f="compte"></select><span class="ti-er" data-er="compte"></span></label>
+        </div>
+        <div class="ti-sec">Coordonnées</div>
+        <div class="ti-g co">
+          <label class="bp-champ"><span>Adresse</span><input class="bp-in" data-f="adr" maxlength="200" autocomplete="off"></label>
+          <label class="bp-champ"><span>Région</span><input class="bp-in" data-f="reg" maxlength="60" autocomplete="off"></label>
+          <label class="bp-champ"><span>Pays</span><input class="bp-in" data-f="pays" maxlength="40" autocomplete="off"></label>
+          <label class="bp-champ"><span>Téléphone</span><input class="bp-in" data-f="tel" maxlength="30" autocomplete="off"></label>
+          <label class="bp-champ"><span>NIF</span><input class="bp-in" data-f="nif" maxlength="30" autocomplete="off"></label>
+          <label class="bp-champ"><span>STAT</span><input class="bp-in" data-f="stat" maxlength="30" autocomplete="off"></label>
+          <label class="bp-champ"><span>RCS</span><input class="bp-in" data-f="rcs" maxlength="30" autocomplete="off"></label>
+        </div>
+        <div class="ti-sec">Coordonnées bancaires</div>
+        <div class="ti-g ba">
+          <label class="bp-champ"><span>Banque</span><input class="bp-in" data-f="banque" maxlength="60" autocomplete="off"></label>
+          <label class="bp-champ"><span>Code banque</span><input class="bp-in" data-f="cb" maxlength="10" autocomplete="off"></label>
+          <label class="bp-champ"><span>Code agence</span><input class="bp-in" data-f="ca" maxlength="10" autocomplete="off"></label>
+          <label class="bp-champ"><span>Numéro de compte</span><input class="bp-in" data-f="num" maxlength="30" autocomplete="off"></label>
+          <label class="bp-champ"><span>Clé</span><input class="bp-in" data-f="cle" maxlength="4" autocomplete="off"></label>
+          <label class="bp-champ"><span>SWIFT</span><input class="bp-in" data-f="swift" maxlength="11" autocomplete="off"></label>
+          <label class="bp-champ"><span>Adresse de la banque</span><input class="bp-in" data-f="adrb" maxlength="200" autocomplete="off"></label>
+          <label class="bp-champ"><span>Pays de la banque</span><input class="bp-in" data-f="paysb" maxlength="40" autocomplete="off"></label>
+        </div>
+        <div class="ti-sec">Paiement et site</div>
+        <div class="ti-g pa">
+          <label class="bp-champ"><span>Modalité de paiement</span><select class="bp-sel" data-f="modalite"><option value="">Aucune</option><option>Virement</option><option>Chèque</option><option>Espèces</option><option>Mobile money</option></select></label>
+          <label class="bp-champ"><span>Site</span><select class="bp-sel" data-f="site"></select></label>
+        </div>
+        <div class="bp-chk" style="margin-top:14px"><label><input type="checkbox" data-f="actif">Actif</label></div>
+      </form>
+    </section>
+  </div>
+  <div class="bp-toast" role="status" hidden data-ti-toast></div>
+</div>
+
+<script>
+(function () {
+  var root = document.querySelector('[data-ti]'); if (!root) return;
+  function q(s) { return root.querySelector(s); } function qa(s) { return [].slice.call(root.querySelectorAll(s)); }
+  var D = %%DONNEES%%;
+  var SOUS = { FR: 'Fournisseur', CL: 'Client', SA: 'Salarié', PA: 'Partenaire', BQ: 'Banque', AU: 'Autre type de tiers' };
+  var ABR = { 'Fournisseur': 'FR', 'Client': 'CL', 'Salarié': 'SA', 'Partenaire': 'PA', 'Banque': 'BQ', 'Autre type de tiers': 'AU' };
+  // sous-type déduit du compte collectif (fournisseurs 401-409, personnel 421 et avances de mission 463, ONG / partenaires 466-467)
+  function sousDe(c) { return /^40[1-9]/.test(c) ? 'Fournisseur' : /^41/.test(c) ? 'Client' : /^(42|463)/.test(c) ? 'Salarié' : /^46[67]/.test(c) ? 'Partenaire' : /^5[12]/.test(c) ? 'Banque' : 'Autre type de tiers'; }
+  var CHAMPS = ['adr', 'reg', 'pays', 'tel', 'nif', 'stat', 'rcs', 'banque', 'cb', 'ca', 'num', 'cle', 'swift', 'adrb', 'paysb', 'modalite', 'site'];
+  var rows = D.tiers.map(function (t, i) { var o = { compte: t[0], code: t[1], nom: t[2], sous: sousDe(t[0]), actif: true, utilise: false }; CHAMPS.forEach(function (k) { o[k] = ''; }); var d = D.det[i]; if (d) Object.keys(d).forEach(function (k) { o[k] = d[k]; }); return o; });
+  window.TIERS_PLAN = rows;
+  // un tiers mouvementé dans une pièce devient « Utilisé » (appelé par la saisie d'écritures)
+  window.TIERS_MARQUER = function (compte, code) { var t = rows.filter(function (x) { return x.compte === compte && x.code === code; })[0]; if (t && !t.utilise) { t.utilise = true; if (vue === 'liste') liste(); } };
+  var vue = 'saisie', sel = -1, mode = 'consultation', tri = { k: 'code', sens: 1 }, page = 0, taille = 20, ordre = [], filtres = {};
+  function esc(s) { return String(s == null ? '' : s).replace(/[&<>"]/g, function (c) { return { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c]; }); }
+  function toast(m) { var t = q('[data-ti-toast]'); t.textContent = m; t.hidden = false; clearTimeout(toast.t); toast.t = setTimeout(function () { t.hidden = true; }, 2600); }
+  function err(k, m) { var e = q('[data-er="' + k + '"]'); if (e) { e.textContent = m || ''; e.classList.toggle('show', !!m); } var f = q('[data-f=' + k + ']'); if (f) f.classList.toggle('err', !!m); }
+
+  // liste des comptes collectifs et des sites
+  q('[data-f=compte]').innerHTML = '<option value="">Sélectionner un compte collectif</option>' + D.collectifs.map(function (c) { return '<option value="' + esc(c[0]) + '">' + esc(c[0]) + ' — ' + esc(c[1]) + '</option>'; }).join('');
+  q('[data-f=site]').innerHTML = '<option value="">Aucun</option>' + D.sites.map(function (s) { return '<option value="' + esc(s[0]) + '">' + esc(s[0]) + ' — ' + esc(s[1]) + '</option>'; }).join('');
+
+  // ---- liste : filtres, tri, pagination (le tri et les filtres portent sur l'ensemble des tiers) ----
+  function calculer() {
+    var f = filtres, o = [];
+    rows.forEach(function (r, i) {
+      if (f.code && r.code.toLowerCase().indexOf(f.code) < 0) return;
+      if (f.nom && r.nom.toLowerCase().indexOf(f.nom) < 0) return;
+      if (f.sous && r.sous.toLowerCase() !== f.sous) return;
+      if (f.compte && r.compte.indexOf(f.compte) < 0) return;
+      if (f.adr && String(r.adr).toLowerCase().indexOf(f.adr) < 0) return;
+      if (f.tel && String(r.tel).toLowerCase().indexOf(f.tel) < 0) return;
+      if (f.nif && String(r.nif).toLowerCase().indexOf(f.nif) < 0) return;
+      if (f.actif && (f.actif === '1') !== r.actif) return;
+      o.push(i);
+    });
+    var k = tri.k, s = tri.sens;
+    o.sort(function (a, b) { var x = String(rows[a][k]).toLowerCase(), y = String(rows[b][k]).toLowerCase(); return x < y ? -s : x > y ? s : (rows[a].code < rows[b].code ? -1 : 1); });
+    ordre = o;
+  }
+  function liste() {
+    calculer();
+    var n = ordre.length, pages = Math.max(1, Math.ceil(n / taille)); if (page >= pages) page = pages - 1;
+    var deb = page * taille, vus = ordre.slice(deb, deb + taille);
+    q('[data-ti-compte]').textContent = rows.length;
+    q('[data-ti-vide]').hidden = n > 0;
+    qa('[data-ti-fleche]').forEach(function (i) { i.className = 'ti ' + (i.dataset.tiFleche === tri.k ? (tri.sens > 0 ? 'ti-arrow-up' : 'ti-arrow-down') : ''); });
+    q('[data-ti-lignes]').innerHTML = vus.map(function (i) {
+      var r = rows[i], ab = ABR[r.sous] || 'AU';
+      return '<tr data-i="' + i + '"' + (i === sel ? ' class="sel"' : '') + '><td>' + esc(r.compte) + '</td><td><b>' + esc(r.code) + '</b></td><td>' + esc(r.nom) + '</td><td><span class="ti-ligne"><span class="ti-st ' + ab + '">' + ab + '</span>' + esc(r.sous) + '</span></td>' +
+        '<td>' + (r.adr ? esc(r.adr) : '—') + '</td><td>' + (r.tel ? esc(r.tel) : '—') + '</td><td>' + (r.nif ? esc(r.nif) : '—') + '</td><td class="c"><span class="ti-act' + (r.actif ? '' : ' n') + '"><i></i>' + (r.actif ? 'Actif' : 'Inactif') + '</span>' + (r.utilise ? '<span class="ti-use"><i class="ti ti-lock" style="font-size:11px"></i> Utilisé</span>' : '') + '</td></tr>';
+    }).join('');
+    q('[data-ti-pos]').textContent = n ? (deb + 1) + '–' + (deb + vus.length) + ' sur ' + n + ' tiers' : '0 tiers';
+    q('[data-ti-page]').textContent = 'Page ' + (page + 1) + ' / ' + pages;
+    q('[data-ti-prec]').disabled = page === 0; q('[data-ti-suiv]').disabled = page >= pages - 1;
+  }
+  qa('[data-fc]').forEach(function (e) { function maj() { filtres[e.dataset.fc] = e.value.trim().toLowerCase(); page = 0; liste(); } e.addEventListener('input', maj); e.addEventListener('change', maj); });
+  qa('[data-ti-tri]').forEach(function (h) { h.addEventListener('click', function () { var k = h.dataset.tiTri; tri = { k: k, sens: tri.k === k ? -tri.sens : 1 }; page = 0; liste(); }); });
+  q('[data-ti-taille]').addEventListener('change', function () { taille = +this.value; page = 0; liste(); });
+  q('[data-ti-prec]').addEventListener('click', function () { if (page > 0) { page--; liste(); } });
+  q('[data-ti-suiv]').addEventListener('click', function () { page++; liste(); });
+
+  // ---- formulaire ----
+  function form(r) {
+    r = r || { code: '', nom: '', sous: 'Client', compte: '', actif: true };
+    q('[data-f=code]').value = r.code; q('[data-f=nom]').value = r.nom; q('[data-f=sous]').value = r.sous; q('[data-f=compte]').value = r.compte;
+    CHAMPS.forEach(function (k) { q('[data-f=' + k + ']').value = r[k] || ''; });
+    q('[data-f=actif]').checked = r.actif !== false;
+    ['code', 'nom', 'compte'].forEach(function (k) { err(k); });
+  }
+  function etat() {
+    var ed = mode !== 'consultation', r = rows[sel], verrou = mode === 'edition' && r && r.utilise;
+    qa('[data-ti-form] input,[data-ti-form] select').forEach(function (e) { e.disabled = !ed; });
+    q('[data-f=code]').disabled = !ed || !!verrou; q('[data-f=compte]').disabled = !ed || !!verrou; // un tiers utilisé garde son code et son compte collectif
+    var a = q('[data-ti-actions]');
+    a.querySelector('[data-ti-ajouter]').disabled = ed; a.querySelector('[data-ti-modifier]').disabled = ed || sel < 0; a.querySelector('[data-ti-supprimer]').disabled = ed || sel < 0 || (r && r.utilise);
+    a.querySelector('[data-ti-enregistrer]').disabled = !ed; a.querySelector('[data-ti-annuler]').disabled = !ed; a.querySelector('[data-ti-imprimer]').disabled = false; a.querySelector('[data-ti-exporter]').disabled = false;
+  }
+  function onglet(n) { vue = n; qa('[data-ti-pan]').forEach(function (p) { p.hidden = p.dataset.tiPan !== n; }); qa('[data-ti-tab]').forEach(function (b) { var on = b.dataset.tiTab === n; b.classList.toggle('on', on); b.setAttribute('aria-selected', on); }); if (n === 'liste') liste(); }
+  function choisir(i) { if (mode !== 'consultation') return; sel = i; liste(); form(rows[i]); etat(); }
+  qa('[data-ti-tab]').forEach(function (b) { b.addEventListener('click', function () { onglet(b.dataset.tiTab); }); });
+  var tb = q('[data-ti-lignes]');
+  tb.addEventListener('click', function (e) { var tr = e.target.closest('tr[data-i]'); if (tr) choisir(+tr.dataset.i); });
+  tb.addEventListener('dblclick', function (e) { var tr = e.target.closest('tr[data-i]'); if (tr) { choisir(+tr.dataset.i); onglet('saisie'); } });
+  q('[data-f=compte]').addEventListener('change', function () { if (mode === 'creation' && q('[data-f=compte]').value) q('[data-f=sous]').value = sousDe(q('[data-f=compte]').value); });
+
+  // la saisie d'écritures propose les tiers actifs du compte collectif choisi (même tableau, mis à jour sur place)
+  function synchroniser(avant, apres) {
+    var R = window.ECRITURES_REF; if (!R || !R.tiers) return;
+    if (avant) { var k = R.tiers.findIndex(function (t) { return t.code === avant.code && t.collectif === avant.compte; }); if (k >= 0) R.tiers.splice(k, 1); }
+    if (apres && apres.actif) R.tiers.push({ code: apres.code, label: apres.nom, collectif: apres.compte });
+  }
+  function enregistrer() {
+    var r = { code: q('[data-f=code]').value.trim(), nom: q('[data-f=nom]').value.trim(), sous: q('[data-f=sous]').value, compte: q('[data-f=compte]').value, actif: q('[data-f=actif]').checked, utilise: mode === 'edition' ? rows[sel].utilise : false }, ok = true, courant = mode === 'edition' ? sel : -1;
+    CHAMPS.forEach(function (k) { r[k] = q('[data-f=' + k + ']').value.trim(); });
+    ['code', 'nom', 'compte'].forEach(function (k) { err(k); });
+    if (!r.code) { err('code', 'Le code est obligatoire.'); ok = false; }
+    if (!r.nom) { err('nom', "L'intitulé est obligatoire."); ok = false; }
+    if (!r.compte) { err('compte', 'Le compte collectif est obligatoire.'); ok = false; }
+    if (ok && rows.some(function (x, i) { return i !== courant && x.code === r.code && x.compte === r.compte; })) { err('code', 'Ce code existe déjà pour ce compte collectif.'); ok = false; }
+    if (!ok) return;
+    var avant = courant >= 0 ? rows[courant] : null, copieAvant = avant ? { code: avant.code, compte: avant.compte } : null;
+    if (mode === 'creation') { rows.push(r); sel = rows.length - 1; } else rows[sel] = r;
+    synchroniser(copieAvant, r);
+    mode = 'consultation'; form(rows[sel]); etat(); filtres = {}; qa('[data-fc]').forEach(function (e) { e.value = ''; }); tri = { k: 'code', sens: 1 }; calculer(); page = Math.floor(ordre.indexOf(sel) / taille); onglet('liste'); toast(courant >= 0 ? 'Tiers modifié.' : 'Tiers enregistré.');
+  }
+  root.addEventListener('click', function (e) {
+    var b = e.target.closest('button'); if (!b || b.disabled) return;
+    if (b.hasAttribute('data-ti-ajouter')) { onglet('saisie'); mode = 'creation'; sel = -1; form(null); etat(); q('[data-f=code]').focus(); return; }
+    if (b.hasAttribute('data-ti-modifier')) { onglet('saisie'); mode = 'edition'; etat(); q('[data-f=nom]').focus(); return; }
+    if (b.hasAttribute('data-ti-annuler')) { mode = 'consultation'; form(sel >= 0 ? rows[sel] : null); etat(); return; }
+    if (b.hasAttribute('data-ti-enregistrer')) { enregistrer(); return; }
+    if (b.hasAttribute('data-ti-supprimer')) {
+      var r = rows[sel]; if (!r) return;
+      if (r.utilise) { toast('Suppression impossible : ce tiers est utilisé dans des pièces.'); return; }
+      if (!window.confirm('Supprimer le tiers « ' + r.code + ' — ' + r.nom + ' » ?')) return;
+      synchroniser({ code: r.code, compte: r.compte }, null); rows.splice(sel, 1); sel = -1; form(null); etat(); liste(); toast('Tiers supprimé.'); return;
+    }
+    if (b.hasAttribute('data-ti-imprimer')) { window.print(); return; }
+    if (b.hasAttribute('data-ti-exporter')) { toast('Export des tiers (maquette)'); return; }
+  });
+  window.addEventListener('load', function () { if (mode === 'consultation') form(sel >= 0 ? rows[sel] : null); etat(); });
+  form(null); etat(); onglet('liste');
+})();
+</script>

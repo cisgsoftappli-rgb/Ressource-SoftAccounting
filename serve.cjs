@@ -1,0 +1,2 @@
+const http=require('http'),fs=require('fs'),path=require('path');
+http.createServer((q,r)=>{let p=decodeURIComponent(q.url.split('?')[0]);if(p==='/')p='/SoftCompta_Administration_entite.html';const f=path.join(__dirname,p);fs.readFile(f,(e,d)=>{if(e){r.writeHead(404);return r.end();}const t={'.html':'text/html; charset=utf-8','.png':'image/png','.svg':'image/svg+xml','.js':'text/javascript'}[path.extname(f)]||'application/octet-stream';r.writeHead(200,{'Content-Type':t,'Cache-Control':'no-store'});r.end(d);});}).listen(4322);

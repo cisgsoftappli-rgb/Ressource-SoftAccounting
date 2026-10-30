@@ -1,0 +1,207 @@
+<!--
+  Écran « Tchat » (bouton « Tchat » en bas du menu latéral) — messagerie interne de type « Teams » : canaux (« Nouveau canal » : nom, description,
+  membres cochés, au moins un membre en plus de l'utilisateur), messages directs, recherche canal / utilisateur, fil de messages, historique et
+  participants. Aucun canal au départ. Données en mémoire (rien n'est envoyé nulle part).
+  Ne pas nommer de fonction « $$ » (build.cjs).
+-->
+<style>
+.tc-card{display:flex;min-height:calc(100vh - 215px);margin:14px 20px;background:#fff;border:1px solid #E1E5EE;border-radius:20px;overflow:hidden;color:#0B1332;font-size:12px}
+.tc-rail{width:56px;flex:none;padding:14px 8px;border-right:1px solid #E9EBF0}
+.tc-rail i{display:flex;align-items:center;justify-content:center;width:36px;height:36px;border-radius:10px;background:#E3EBFE;color:#2E427B;font-size:18px}
+.tc-liste{width:270px;flex:none;display:flex;flex-direction:column;border-right:1px solid #E9EBF0;padding:14px 14px 10px}
+.tc-tete{display:flex;align-items:center;justify-content:space-between;gap:8px;margin-bottom:12px}
+.tc-tete small{display:block;font-size:10px;letter-spacing:.06em;text-transform:uppercase;color:#6B7280}
+.tc-tete b{font-size:14px}
+.tc-badge{padding:2px 9px;border:1px solid #A7F3D0;border-radius:999px;background:#ECFDF5;color:#047857;font-size:10px;font-weight:600}
+.tc-rech{position:relative;margin-bottom:8px}.tc-rech i{position:absolute;left:10px;top:50%;transform:translateY(-50%);color:#9AA0AE;font-size:14px}
+.tc-rech input{width:100%;padding-left:30px!important}
+.tc-nouveau{display:flex;align-items:center;justify-content:space-between;padding:8px 12px;border:1px dashed #C9CEDA;border-radius:10px;color:#6B7280;cursor:pointer;margin-bottom:6px}
+.tc-nouveau:hover{border-color:#2E427B;color:#2E427B}
+.tc-sec{display:flex;align-items:center;justify-content:space-between;margin:14px 0 4px;font-size:10px;font-weight:700;letter-spacing:.06em;text-transform:uppercase;color:#6B7280}
+.tc-sec span{display:inline-flex;align-items:center;gap:8px}
+.tc-n{min-width:20px;padding:1px 6px;border-radius:999px;background:#F1F2F5;text-align:center;font-weight:600;color:#6B7280}
+.tc-plus{display:inline-flex;align-items:center;justify-content:center;width:20px;height:20px;cursor:pointer;color:#6B7280;border-radius:6px}.tc-plus:hover{background:#E3EBFE;color:#2E427B}
+.tc-item{display:flex;align-items:center;gap:10px;padding:7px 10px;border-left:3px solid transparent;cursor:pointer;font-size:13px;font-weight:600}
+.tc-item:hover{background:#F4F7FE}.tc-item.on{background:#E3EBFE;border-left-color:#2E427B}
+.tc-item .tc-hash{display:inline-flex;align-items:center;justify-content:center;width:22px;height:22px;border-radius:6px;background:#E3EBFE;color:#2E427B;font-size:12px}
+.tc-item .tc-nb{margin-left:auto;min-width:18px;padding:0 5px;border-radius:999px;background:#2E427B;color:#fff;font-size:10px;text-align:center}
+.tc-vide{padding:6px 10px;color:#9AA0AE;font-size:12px}
+.tc-av{display:inline-flex;align-items:center;justify-content:center;flex:none;width:24px;height:24px;border-radius:50%;color:#fff;font-size:11px;font-weight:700}
+.tc-av.g{width:34px;height:34px;font-size:14px}.tc-av.p{width:22px;height:22px;font-size:10px;border:2px solid #fff;margin-left:-6px}.tc-av.p:first-child{margin-left:0}
+.tc-main{flex:1;min-width:0;display:flex;flex-direction:column;background:#F8F9FB}
+.tc-entete{display:flex;align-items:center;justify-content:space-between;gap:12px;padding:12px 20px;background:#fff;border-bottom:1px solid #E9EBF0}
+.tc-entete small{display:block;font-size:10px;letter-spacing:.06em;text-transform:uppercase;color:#6B7280}
+.tc-entete h2{margin:2px 0 0;font-size:18px;font-weight:700}.tc-entete h2 b{color:#2E427B;margin-right:4px}
+.tc-droite{display:flex;align-items:center;gap:12px}
+.tc-fil{flex:1;overflow:auto;padding:16px 20px;display:flex;flex-direction:column;gap:10px}
+.tc-aucun{margin:auto;text-align:center;color:#9AA0AE}.tc-aucun i{font-size:28px;display:block;margin-bottom:6px}
+.tc-msg{display:flex;gap:10px;max-width:72%}.tc-msg.moi{align-self:flex-end;flex-direction:row-reverse}
+.tc-bulle{padding:8px 12px;border-radius:12px;background:#fff;border:1px solid #E9EBF0;line-height:1.4;white-space:pre-wrap;word-break:break-word}
+.tc-msg.moi .tc-bulle{background:#2E427B;border-color:#2E427B;color:#fff}
+.tc-meta{margin-bottom:2px;font-size:10px;color:#6B7280}.tc-msg.moi .tc-meta{text-align:right}
+.tc-saisie{display:flex;align-items:flex-end;gap:10px;padding:12px 20px 16px;background:#F8F9FB}
+.tc-saisie textarea{flex:1;min-height:44px;max-height:120px;resize:none;padding:10px 12px;border:1px solid #D6D9E0;border-radius:12px;background:#fff;font:inherit;font-size:12px}
+.tc-envoi{display:inline-flex;align-items:center;justify-content:center;border:0;border-radius:10px;background:#2E427B;color:#fff;cursor:pointer}.tc-envoi:disabled{background:#E1E5EE;color:#fff;cursor:default}
+.tc-droit{width:210px;flex:none;border-left:1px solid #E9EBF0;padding:16px;background:#fff}
+.tc-droit small{display:block;font-size:10px;font-weight:700;letter-spacing:.06em;text-transform:uppercase;color:#0B1332}
+.tc-histo{padding-bottom:12px;margin-bottom:12px;border-bottom:1px solid #E9EBF0}.tc-histo strong{display:block;margin-top:6px;font-size:22px;color:#2E427B}.tc-histo span{color:#9AA0AE;font-size:11px}
+.tc-part{display:flex;align-items:center;gap:10px;margin-top:12px}.tc-part b{display:block;font-size:12px}.tc-part em{font-style:normal;font-size:11px;color:#0D9488}.tc-part em.s{color:#E4572E}
+.tc-fond{position:fixed;inset:0;z-index:3000;display:none;align-items:center;justify-content:center;background:#0b133266;padding:16px}
+.tc-fond.on{display:flex}
+.tc-fen{width:100%;max-width:440px;max-height:90vh;overflow:auto;padding:22px;background:#fff;border-radius:16px;box-shadow:0 24px 60px #0b13324d}
+.tc-fen h3{margin:0 0 14px;font-size:15px}
+.tc-fen label.t{display:block;margin:10px 0 4px;font-size:12px;font-weight:600}.tc-fen label.t b{color:#B63132}
+.tc-fen .bp-in,.tc-fen input[type=text]{width:100%}
+.tc-aide{margin:4px 0 8px;font-size:11px;color:#6B7280}
+.tc-membres{max-height:220px;overflow:auto;border:1px solid #E1E5EE;border-radius:10px;padding:4px 10px}
+.tc-membre{display:flex;align-items:center;gap:10px;padding:8px 2px;cursor:pointer;font-weight:600;font-size:12px}
+.tc-membre input{width:16px;height:16px;accent-color:#2E427B}
+.tc-er{display:none;margin-top:6px;font-size:12px;color:#B63132}.tc-er.on{display:block}
+.tc-boutons{display:flex;justify-content:flex-end;gap:8px;margin-top:16px}
+@media(max-width:1100px){.tc-droit{display:none}.tc-liste{width:230px}}
+</style>
+
+<h1 style="position:absolute;width:1px;height:1px;overflow:hidden;clip-path:inset(50%);margin:0">Tchat</h1>
+<div class="tc-card" data-tc>
+  <div class="tc-rail"><i class="ti ti-message-circle" aria-hidden="true"></i></div>
+  <aside class="tc-liste" aria-label="Canaux et messages directs">
+    <div class="tc-tete"><div><small>SoftAccounting</small><b>Tchat</b></div><span class="tc-badge">Teams-like</span></div>
+    <div class="tc-rech"><i class="ti ti-search"></i><input type="text" class="bp-in" data-tc-rech placeholder="Rechercher canal ou utilisateur" aria-label="Rechercher un canal ou un utilisateur" autocomplete="off"></div>
+    <div class="tc-nouveau" role="button" tabindex="0" data-tc-nouveau><span>Nouveau canal</span><i class="ti ti-plus"></i></div>
+    <div class="tc-sec"><span>Canaux</span><span class="tc-n" data-tc-ncanaux>0</span></div>
+    <div data-tc-canaux></div>
+    <div class="tc-sec"><span>Messages directs</span><span><span class="tc-n" data-tc-ndm>0</span><span class="tc-plus" role="button" tabindex="0" title="Nouveau message direct" aria-label="Nouveau message direct" data-tc-dm><i class="ti ti-plus"></i></span></span></div>
+    <div data-tc-dms></div>
+    <div data-tc-res></div>
+  </aside>
+
+  <section class="tc-main" data-tc-main aria-label="Conversation"></section>
+  <aside class="tc-droit" data-tc-droit hidden></aside>
+
+  <div class="tc-fond" data-tc-fond-canal>
+    <form class="tc-fen" data-tc-form-canal onsubmit="return false" novalidate role="dialog" aria-label="Nouveau canal">
+      <h3>Nouveau canal</h3>
+      <label class="t">Nom du canal <b>*</b></label><input type="text" class="bp-in" data-tc-nom placeholder="ex: Finance &amp; clôture" maxlength="40" autocomplete="off">
+      <label class="t">Description</label><input type="text" class="bp-in" data-tc-desc placeholder="Optionnel" maxlength="120" autocomplete="off">
+      <label class="t">Membres <b>*</b></label>
+      <p class="tc-aide">Le canal est réservé aux membres cochés, vous compris. Sélectionnez-en au moins un : un canal réunit au minimum deux personnes.</p>
+      <div class="tc-membres" data-tc-membres></div>
+      <div class="tc-er" data-tc-err></div>
+      <div class="tc-boutons"><button type="button" data-tc-annuler-canal>Annuler</button><button type="button" data-tc-creer>Créer le canal</button></div>
+    </form>
+  </div>
+
+  <div class="tc-fond" data-tc-fond-dm>
+    <div class="tc-fen" role="dialog" aria-label="Nouveau message direct">
+      <h3>Nouveau message direct</h3>
+      <p class="tc-aide">Choisissez la personne avec qui discuter.</p>
+      <div class="tc-membres" data-tc-choix-dm></div>
+      <div class="tc-boutons"><button type="button" data-tc-annuler-dm>Annuler</button></div>
+    </div>
+  </div>
+</div>
+
+<script>
+(function () {
+  var root = document.querySelector('[data-tc]'); if (!root) return;
+  function q(s) { return root.querySelector(s); } function qa(s) { return [].slice.call(root.querySelectorAll(s)); }
+  function esc(s) { return String(s == null ? '' : s).replace(/[&<>"]/g, function (c) { return { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c]; }); }
+  var MOI = 'MICHAEL';
+  var USERS = [['ANDRY', 'En ligne'], ['ANDY', 'En ligne'], ['ANGELA', 'Absente'], ['FARAMALALA', 'En ligne'], ['HERY', 'En ligne'], ['JOSIANE', 'Hors ligne'], ['NIRINA', 'En ligne'], ['TOKY', 'Absent']];
+  var COULEURS = ['#7C3AED', '#0D9488', '#DB2777', '#6B7280', '#E4572E', '#2563EB', '#CA8A04', '#059669'];
+  function couleur(n) { var h = 0; for (var i = 0; i < n.length; i++) h = (h * 31 + n.charCodeAt(i)) % 997; return n === MOI ? '#E04848' : COULEURS[h % COULEURS.length]; }
+  function statut(n) { if (n === MOI) return ['Session active', true]; var u = USERS.filter(function (x) { return x[0] === n; })[0]; return [u ? u[1] : '', false]; }
+  function av(n, cl) { return '<span class="tc-av ' + (cl || '') + '" style="background:' + couleur(n) + '" title="' + esc(n) + '">' + esc(n.charAt(0)) + '</span>'; }
+  var convs = [], sel = null, nextId = 1;
+  function heure() { var d = new Date(); return ('0' + d.getHours()).slice(-2) + ':' + ('0' + d.getMinutes()).slice(-2); }
+  function courante() { return convs.filter(function (c) { return c.id === sel; })[0]; }
+
+  function liste() {
+    var f = q('[data-tc-rech]').value.trim().toLowerCase();
+    var canaux = convs.filter(function (c) { return c.type === 'canal' && (!f || c.nom.toLowerCase().indexOf(f) >= 0); });
+    var dms = convs.filter(function (c) { return c.type === 'dm' && (!f || c.nom.toLowerCase().indexOf(f) >= 0); });
+    q('[data-tc-ncanaux]').textContent = convs.filter(function (c) { return c.type === 'canal'; }).length;
+    q('[data-tc-ndm]').textContent = convs.filter(function (c) { return c.type === 'dm'; }).length;
+    function ligne(c) { return '<div class="tc-item' + (c.id === sel ? ' on' : '') + '" role="button" tabindex="0" data-tc-conv="' + c.id + '">' + (c.type === 'canal' ? '<span class="tc-hash">#</span>' : av(c.nom)) + '<span>' + esc(c.nom) + '</span>' + (c.nonlus ? '<span class="tc-nb">' + c.nonlus + '</span>' : '') + '</div>'; }
+    q('[data-tc-canaux]').innerHTML = canaux.map(ligne).join('') || '<div class="tc-vide">' + (f ? 'Aucun canal trouvé' : 'Aucun canal') + '</div>';
+    q('[data-tc-dms]').innerHTML = dms.map(ligne).join('') || '<div class="tc-vide">' + (f ? 'Aucun message direct trouvé' : 'Aucun message direct') + '</div>';
+    // utilisateurs correspondant à la recherche : démarrer un message direct
+    var us = f ? USERS.filter(function (u) { return u[0].toLowerCase().indexOf(f) >= 0 && !convs.some(function (c) { return c.type === 'dm' && c.nom === u[0]; }); }) : [];
+    q('[data-tc-res]').innerHTML = us.length ? '<div class="tc-sec"><span>Utilisateurs</span></div>' + us.map(function (u) { return '<div class="tc-item" role="button" tabindex="0" data-tc-user="' + esc(u[0]) + '">' + av(u[0]) + '<span>' + esc(u[0]) + '</span></div>'; }).join('') : '';
+  }
+  function principal() {
+    var c = courante(), m = q('[data-tc-main]'), d = q('[data-tc-droit]');
+    if (!c) { m.innerHTML = ''; d.hidden = true; return; }
+    var titre = c.type === 'canal' ? '<small>Canal</small><h2><b>#</b>' + esc(c.nom) + '</h2>' : '<small>Message direct</small><h2>' + esc(c.nom) + '</h2>';
+    m.innerHTML = '<div class="tc-entete"><div>' + titre + (c.desc ? '<small style="text-transform:none;letter-spacing:0;margin-top:2px">' + esc(c.desc) + '</small>' : '') + '</div><div class="tc-droite"><span style="display:flex">' + c.membres.map(function (n) { return av(n, 'p'); }).join('') + '</span>' +
+      '<span class="tc-plus" role="button" tabindex="0" title="Supprimer la conversation" aria-label="Supprimer la conversation" data-tc-suppr><i class="ti ti-trash"></i></span></div></div>' +
+      '<div class="tc-fil" data-tc-fil>' + (c.msgs.length ? c.msgs.map(function (x) { var moi = x.de === MOI; return '<div class="tc-msg' + (moi ? ' moi' : '') + '">' + av(x.de) + '<div><div class="tc-meta">' + esc(x.de) + ' · ' + x.h + '</div><div class="tc-bulle">' + esc(x.t) + '</div></div></div>'; }).join('') : '<div class="tc-aucun"><i class="ti ti-message-off"></i>Aucun message dans cette conversation</div>') + '</div>' +
+      '<div class="tc-saisie"><textarea data-tc-texte rows="1" placeholder="Message à ' + (c.type === 'canal' ? '#' : '') + esc(c.nom) + '…" aria-label="Message"></textarea><button type="button" class="tc-envoi tc-icon-envoi" data-tc-envoi disabled title="Envoyer" aria-label="Envoyer"><i class="ti ti-send"></i></button></div>';
+    d.hidden = false;
+    d.innerHTML = '<div class="tc-histo"><small>Historique</small><strong>' + c.msgs.length + '</strong><span>message' + (c.msgs.length > 1 ? 's' : '') + ' conservé' + (c.msgs.length > 1 ? 's' : '') + '</span></div><small>Participants</small>' +
+      c.membres.map(function (n) { var s = statut(n); return '<div class="tc-part">' + av(n, 'g') + '<div><b>' + esc(n) + '</b><em' + (s[1] ? ' class="s"' : '') + '>' + esc(s[0]) + '</em></div></div>'; }).join('');
+    var fil = q('[data-tc-fil]'); fil.scrollTop = fil.scrollHeight;
+  }
+  function choisir(id) { sel = id; var c = courante(); if (c) c.nonlus = 0; liste(); principal(); var t = q('[data-tc-texte]'); if (t) t.focus(); }
+
+  // ---- nouveau canal ----
+  function ouvrirCanal() {
+    q('[data-tc-nom]').value = ''; q('[data-tc-desc]').value = ''; q('[data-tc-err]').className = 'tc-er';
+    q('[data-tc-membres]').innerHTML = USERS.map(function (u) { return '<label class="tc-membre">' + '<input type="checkbox" value="' + esc(u[0]) + '">' + av(u[0]) + esc(u[0]) + '</label>'; }).join('');
+    q('[data-tc-fond-canal]').classList.add('on'); q('[data-tc-nom]').focus();
+  }
+  function erreur(m) { var e = q('[data-tc-err]'); e.textContent = m; e.className = 'tc-er on'; }
+  function creerCanal() {
+    var nom = q('[data-tc-nom]').value.trim(), membres = qa('[data-tc-membres] input:checked').map(function (i) { return i.value; });
+    if (!nom) { erreur('Le nom du canal est obligatoire.'); q('[data-tc-nom]').focus(); return; }
+    if (convs.some(function (c) { return c.type === 'canal' && c.nom.toLowerCase() === nom.toLowerCase(); })) { erreur('Un canal portant ce nom existe déjà.'); return; }
+    if (!membres.length) { erreur('Sélectionnez au moins un membre : un canal réunit au minimum deux personnes.'); return; }
+    var c = { id: nextId++, type: 'canal', nom: nom.toUpperCase(), desc: q('[data-tc-desc]').value.trim(), membres: membres.concat([MOI]).sort(), msgs: [], nonlus: 0 };
+    convs.push(c); q('[data-tc-fond-canal]').classList.remove('on'); choisir(c.id);
+  }
+  // ---- messages directs ----
+  function ouvrirDm() {
+    q('[data-tc-choix-dm]').innerHTML = USERS.map(function (u) { return '<div class="tc-membre" role="button" tabindex="0" data-tc-user="' + esc(u[0]) + '">' + av(u[0]) + esc(u[0]) + '</div>'; }).join('');
+    q('[data-tc-fond-dm]').classList.add('on');
+  }
+  function demarrerDm(nom) {
+    var c = convs.filter(function (x) { return x.type === 'dm' && x.nom === nom; })[0];
+    if (!c) { c = { id: nextId++, type: 'dm', nom: nom, desc: '', membres: [nom, MOI].sort(), msgs: [], nonlus: 0 }; convs.push(c); }
+    q('[data-tc-fond-dm]').classList.remove('on'); q('[data-tc-rech]').value = ''; choisir(c.id);
+  }
+  function envoyer() {
+    var t = q('[data-tc-texte]'), c = courante(); if (!t || !c || !t.value.trim()) return;
+    c.msgs.push({ de: MOI, h: heure(), t: t.value.trim() }); principal(); liste(); var n = q('[data-tc-texte]'); n.focus();
+  }
+
+  root.addEventListener('click', function (e) {
+    var t = e.target;
+    var cv = t.closest('[data-tc-conv]'); if (cv) { choisir(+cv.dataset.tcConv); return; }
+    var us = t.closest('[data-tc-user]'); if (us) { demarrerDm(us.dataset.tcUser); return; }
+    if (t.closest('[data-tc-nouveau]')) { ouvrirCanal(); return; }
+    if (t.closest('[data-tc-dm]')) { ouvrirDm(); return; }
+    if (t.closest('[data-tc-annuler-canal]')) { q('[data-tc-fond-canal]').classList.remove('on'); return; }
+    if (t.closest('[data-tc-annuler-dm]')) { q('[data-tc-fond-dm]').classList.remove('on'); return; }
+    if (t.closest('[data-tc-creer]')) { creerCanal(); return; }
+    if (t.closest('[data-tc-envoi]')) { envoyer(); return; }
+    if (t.closest('[data-tc-suppr]')) {
+      var c = courante(); if (!c) return;
+      if (!window.confirm('Supprimer ' + (c.type === 'canal' ? 'le canal #' : 'la conversation avec ') + c.nom + ' et ses ' + c.msgs.length + ' message(s) ?')) return;
+      convs = convs.filter(function (x) { return x.id !== c.id; }); sel = null; liste(); principal(); return;
+    }
+    if (t.classList.contains('tc-fond')) t.classList.remove('on');
+  });
+  root.addEventListener('input', function (e) {
+    if (e.target.hasAttribute('data-tc-rech')) liste();
+    if (e.target.hasAttribute('data-tc-texte')) { q('[data-tc-envoi]').disabled = !e.target.value.trim(); e.target.style.height = 'auto'; e.target.style.height = Math.min(120, e.target.scrollHeight) + 'px'; }
+    if (e.target.hasAttribute('data-tc-nom') || e.target.closest('[data-tc-membres]')) q('[data-tc-err]').className = 'tc-er';
+  });
+  root.addEventListener('keydown', function (e) {
+    if (e.key === 'Enter' && e.target.hasAttribute('data-tc-texte') && !e.shiftKey) { e.preventDefault(); envoyer(); return; }
+    if (e.key === 'Enter' && (e.target.hasAttribute('data-tc-nom') || e.target.hasAttribute('data-tc-desc'))) { e.preventDefault(); creerCanal(); return; }
+    if ((e.key === 'Enter' || e.key === ' ') && e.target.getAttribute('role') === 'button') { e.preventDefault(); e.target.click(); return; }
+    if (e.key === 'Escape') { q('[data-tc-fond-canal]').classList.remove('on'); q('[data-tc-fond-dm]').classList.remove('on'); }
+  });
+  liste(); principal();
+})();
+</script>

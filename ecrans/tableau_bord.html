@@ -1,0 +1,142 @@
+<!--
+  Écran « Tableau de bord » — synthèse comptable et suivi budgétaire : filtres (exercice, période, site), quatre indicateurs,
+  évolution mensuelle du chiffre d'affaires et des charges, répartition des charges. Données de démonstration, graphiques en SVG.
+  Aligné sur la charte graphique Softwell (aplat marine, pas de dégradé ; or uniquement sur fond marine). Ne pas nommer de fonction « $$ ».
+-->
+<style>
+.tb-root{width:100%;color:#353944;font-size:13px}
+.tb-banner{background:#18244F;color:#fff;border-radius:12px;padding:10px 20px;margin-bottom:12px;display:flex;align-items:center;justify-content:space-between;gap:12px;flex-wrap:wrap}
+.tb-eyebrow{margin:0 0 2px;font-size:12px;font-weight:600;letter-spacing:.1em;text-transform:uppercase;color:#E1C340}
+.tb-h1{margin:0;font-family:var(--font-heading);font-size:20px;font-weight:600;line-height:1.2;color:#fff!important}
+.tb-chips{display:flex;gap:8px;flex-wrap:wrap}
+.tb-chip{display:inline-block;padding:4px 10px;border-radius:6px;background:rgba(255,255,255,.12);color:#fff;font-size:12px;font-weight:600}
+.tb-h2{margin:0;font-family:var(--font-heading);font-size:16px;font-weight:600;color:#0B1332}
+.tb-sub{margin:2px 0 0;color:#5B606D;font-size:12px;text-transform:uppercase;letter-spacing:.04em}
+.tb-card{background:#fff;border:1px solid #E9EBF0;border-radius:12px}
+.tb-filtres{display:flex;align-items:flex-end;gap:12px;padding:10px 14px;margin-bottom:12px;flex-wrap:wrap}
+.tb-filtres .tb-c{flex:1 1 150px}
+.tb-tete{flex:1.4 1 220px;min-width:0}
+.tb-tete .tb-sub{margin:2px 0 0}
+.tb-c{display:flex;flex-direction:column;gap:4px;min-width:0}
+.tb-c>span{font-size:12px;font-weight:600;color:#474C58;text-transform:uppercase;letter-spacing:.04em}
+.tb-sel{width:100%;box-sizing:border-box;height:36px;border:1px solid #878D9A;border-radius:8px;background:#fff;color:#353944;font:inherit;font-size:12px;padding:0 12px}
+.tb-sel:focus-visible{outline:3px solid #2E427B;outline-offset:2px}
+.tb-kpis{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:12px;margin-bottom:12px}
+@media (max-width:1100px){.tb-kpis{grid-template-columns:repeat(2,minmax(0,1fr))}}
+@media (max-width:560px){.tb-kpis{grid-template-columns:1fr}}
+.tb-kpi{display:flex;align-items:center;gap:10px;padding:10px 12px}
+.tb-ico{flex:none;width:34px;height:34px;border-radius:8px;background:#E3EBFE;color:#2E427B;display:flex;align-items:center;justify-content:center;font-size:18px}
+.tb-kl{margin:0;color:#5B606D;font-size:12px}
+.tb-kv{margin:0 0 2px;font-family:var(--font-heading);font-size:18px;font-weight:600;color:#0B1332;font-variant-numeric:tabular-nums}
+.tb-var{margin:0;font-size:12px;font-weight:600}
+.tb-var.ok{color:#047857}.tb-var.ko{color:#B63132}
+.tb-graph{display:grid;grid-template-columns:minmax(0,3fr) minmax(0,2fr);gap:12px}
+@media (max-width:1000px){.tb-graph{grid-template-columns:1fr}}
+.tb-gp{padding:10px 14px}
+.tb-gp h3{margin:0 0 6px;font-family:var(--font-heading);font-size:14px;font-weight:600;color:#0B1332}
+.tb-leg{display:flex;gap:16px;margin:0 0 2px;font-size:12px;font-weight:600}
+.tb-leg i{display:inline-block;width:10px;height:10px;border-radius:2px;margin-right:6px}
+.tb-svg{width:100%;height:auto;display:block}
+.tb-svg text{font-family:var(--font-sans);font-size:11px;fill:#5B606D}
+.tb-don{display:grid;grid-template-columns:minmax(0,150px) minmax(0,1fr);gap:12px;align-items:center}
+@media (max-width:560px){.tb-don{grid-template-columns:1fr}}
+.tb-lg{list-style:none;margin:0;padding:0;display:grid;gap:4px}
+.tb-lg li{display:grid;grid-template-columns:12px 1fr auto;gap:8px;align-items:center;font-size:12px}
+.tb-lg i{width:10px;height:10px;border-radius:50%}
+.tb-lg b{font-variant-numeric:tabular-nums}
+</style>
+
+<div class="tb-root" data-tb>
+  <header class="tb-banner">
+    <div><p class="tb-eyebrow">Pilotage financier</p>
+    <h1 class="tb-h1">Tableau de bord — COMPTA HASINA</h1></div>
+    <div class="tb-chips"><span class="tb-chip">Autre Organisme</span><span class="tb-chip">01/01/2000 - 31/12/2099</span></div>
+  </header>
+
+  <section class="tb-card tb-filtres" aria-label="Filtres">
+    <div class="tb-tete"><h2 class="tb-h2">Synthèse comptable et suivi budgétaire</h2><p class="tb-sub" data-tb-sub>SOFTWELL SA · 2026</p></div>
+    <label class="tb-c"><span>Exercice comptable</span><select class="tb-sel" data-tb-ex><option value="2026">Exercice 2026</option><option value="2025">Exercice 2025</option></select></label>
+    <label class="tb-c"><span>Période</span><select class="tb-sel" data-tb-per>
+      <option value="0-11">Exercice complet</option><option value="0-2">1er trimestre</option><option value="3-5">2e trimestre</option><option value="6-8">3e trimestre</option><option value="9-11">4e trimestre</option></select></label>
+    <label class="tb-c"><span>Site</span><select class="tb-sel" data-tb-site><option value="tous">Tous les sites</option><option value="siege">Siège</option></select></label>
+  </section>
+
+  <section class="tb-kpis" aria-label="Indicateurs">
+    <article class="tb-card tb-kpi"><span class="tb-ico"><i class="ti ti-wallet"></i></span><div><p class="tb-kl">Total produits</p><p class="tb-kv" data-k="produits">0 Ar</p><p class="tb-var ok" data-v="produits"></p></div></article>
+    <article class="tb-card tb-kpi"><span class="tb-ico"><i class="ti ti-receipt"></i></span><div><p class="tb-kl">Total charges</p><p class="tb-kv" data-k="charges"></p><p class="tb-var ko" data-v="charges"></p></div></article>
+    <article class="tb-card tb-kpi"><span class="tb-ico"><i class="ti ti-users"></i></span><div><p class="tb-kl">Créances clients</p><p class="tb-kv" data-k="creances">0 Ar</p><p class="tb-var ok" data-v="creances"></p></div></article>
+    <article class="tb-card tb-kpi"><span class="tb-ico"><i class="ti ti-truck-delivery"></i></span><div><p class="tb-kl">Dettes fournisseurs</p><p class="tb-kv" data-k="dettes"></p><p class="tb-var ok" data-v="dettes"></p></div></article>
+  </section>
+
+  <div class="tb-graph">
+    <section class="tb-card tb-gp" aria-label="Évolution">
+      <h3>Évolution du chiffre d'affaires et des charges</h3>
+      <p class="tb-leg"><span style="color:#2E427B"><i style="background:#2E427B"></i>Chiffre d'affaires</span><span style="color:#B45309"><i style="background:#B45309"></i>Charges</span></p>
+      <svg class="tb-svg" viewBox="0 0 640 190" role="img" aria-label="Courbes mensuelles du chiffre d'affaires et des charges" data-tb-line></svg>
+    </section>
+    <section class="tb-card tb-gp" aria-label="Répartition">
+      <h3>Répartition des charges</h3>
+      <div class="tb-don">
+        <svg class="tb-svg" viewBox="0 0 200 200" role="img" aria-label="Répartition des charges par compte" data-tb-don></svg>
+        <ul class="tb-lg" data-tb-lg></ul>
+      </div>
+    </section>
+  </div>
+</div>
+
+<script>
+(function () {
+  var root = document.querySelector('[data-tb]'); if (!root) return;
+  function q(s) { return root.querySelector(s); }
+  var MOIS = ['janv.', 'févr.', 'mars', 'avr.', 'mai', 'juin', 'juil.', 'août', 'sept.', 'oct.', 'nov.', 'déc.'];
+  var PART = [0.39, 0.10, 0.106, 0.07, 0.085, 0.064, 0.103, 0.018, 0.064, 0, 0, 0];
+  var BASE = { 2026: { charges: 3292270430, dettes: 511304202, ca: [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0], varC: -52.0, varD: 2.0 }, 2025: { charges: 4807828943, dettes: 640120550, ca: [120e6, 90e6, 140e6, 110e6, 95e6, 160e6, 130e6, 100e6, 150e6, 125e6, 135e6, 170e6], varC: 14.3, varD: -3.1 } };
+  var COMPTES = [['622200', 'Honoraires des consultants externes', 34.2, '#2E427B'], ['622100', 'Honoraires des consultants internes', 22.7, '#5F77B9'], ['625200', 'Missions et indemnités', 8.7, '#A9BDEE'],
+    ['621100', 'Frais de nettoyage', 7.6, '#AA9E39'], ['625100', 'Voyage et déplacements', 3.8, '#B45309'], ['613100', 'Location de bureau', 3.4, '#047857'], ['615200', 'Entretien et réparation véhicule', 3, '#747A88'], ['', 'Autres comptes', 16.6, '#D6D9E0']];
+  function fmt(n) { return Math.round(n).toString().replace(/\B(?=(\d{3})+(?!\d))/g, ' ') + ' Ar'; }
+  function pct(v) { return (v > 0 ? '+' : '') + v.toFixed(1).replace('.', ',') + ' % par rapport à la période précédente'; }
+  var NS = 'http://www.w3.org/2000/svg';
+  function el(n, a, p) { var e = document.createElementNS(NS, n); for (var k in a) e.setAttribute(k, a[k]); if (p) p.appendChild(e); return e; }
+
+  function maj() {
+    var an = q('[data-tb-ex]').value, pr = q('[data-tb-per]').value.split('-').map(Number), site = q('[data-tb-site]').value, d = BASE[an];
+    var k = site === 'siege' ? 0.85 : 1;
+    var charges = PART.map(function (p) { return p * d.charges * k; }), ca = d.ca.map(function (v) { return v * k; });
+    var somme = function (t) { var s = 0; for (var i = pr[0]; i <= pr[1]; i++) s += t[i]; return s; };
+    var totC = somme(charges), totP = somme(ca);
+    q('[data-tb-sub]').textContent = 'SOFTWELL SA · ' + an + (site === 'siege' ? ' · Siège' : '');
+    q('[data-k=produits]').textContent = fmt(totP); q('[data-v=produits]').textContent = '+0,0 % par rapport à la période précédente';
+    q('[data-k=charges]').textContent = fmt(totC); q('[data-v=charges]').textContent = pct(d.varC); q('[data-v=charges]').className = 'tb-var ' + (d.varC <= 0 ? 'ok' : 'ko');
+    q('[data-k=creances]').textContent = '0 Ar'; q('[data-v=creances]').textContent = '+0,0 % par rapport à la période précédente';
+    q('[data-k=dettes]').textContent = fmt(d.dettes * k); q('[data-v=dettes]').textContent = pct(d.varD); q('[data-v=dettes]').className = 'tb-var ' + (d.varD <= 0 ? 'ok' : 'ko');
+    courbes(ca, charges); anneau(totC);
+  }
+
+  function courbes(ca, ch) {
+    var svg = q('[data-tb-line]'); svg.innerHTML = '';
+    var W = 640, H = 190, L = 96, R = 16, T = 8, B = 26, max = Math.max.apply(null, ca.concat(ch).concat([1]));
+    var X = function (i) { return L + i * (W - L - R) / 11; }, Y = function (v) { return H - B - v / max * (H - T - B); };
+    for (var g = 0; g <= 4; g++) { var v = max * g / 4, y = Y(v); el('line', { x1: L, x2: W - R, y1: y, y2: y, stroke: '#E9EBF0' }, svg); var t = el('text', { x: L - 8, y: y + 4, 'text-anchor': 'end' }, svg); t.textContent = fmt(v).replace(' Ar', ''); }
+    MOIS.forEach(function (m, i) { var t = el('text', { x: X(i), y: H - 8, 'text-anchor': 'middle' }, svg); t.textContent = m; });
+    [[ch, '#B45309', 'Charges'], [ca, '#2E427B', "Chiffre d'affaires"]].forEach(function (s) {
+      el('polyline', { points: s[0].map(function (v, i) { return X(i) + ',' + Y(v); }).join(' '), fill: 'none', stroke: s[1], 'stroke-width': 2.5, 'stroke-linejoin': 'round' }, svg);
+      s[0].forEach(function (v, i) { var c = el('circle', { cx: X(i), cy: Y(v), r: 4, fill: s[1] }, svg); var tt = el('title', {}, c); tt.textContent = s[2] + ' — ' + MOIS[i] + ' : ' + fmt(v); });
+    });
+  }
+
+  function anneau(total) {
+    var svg = q('[data-tb-don]'); svg.innerHTML = ''; var cx = 100, cy = 100, r = 74, sw = 32, circ = 2 * Math.PI * r, off = 0;
+    COMPTES.forEach(function (c) {
+      var len = circ * c[2] / 100;
+      var a = el('circle', { cx: cx, cy: cy, r: r, fill: 'none', stroke: c[3], 'stroke-width': sw, 'stroke-dasharray': len + ' ' + (circ - len), 'stroke-dashoffset': -off, transform: 'rotate(-90 100 100)' }, svg);
+      var tt = el('title', {}, a); tt.textContent = (c[0] ? c[0] + ' · ' : '') + c[1] + ' : ' + c[2].toFixed(1).replace('.', ',') + ' %'; off += len;
+    });
+    var t1 = el('text', { x: cx, y: cy - 6, 'text-anchor': 'middle' }, svg); t1.textContent = 'Total charges';
+    var t2 = el('text', { x: cx, y: cy + 10, 'text-anchor': 'middle', style: 'font-size:11px;font-weight:700;fill:#0B1332' }, svg); t2.textContent = fmt(total);
+    q('[data-tb-lg]').innerHTML = COMPTES.map(function (c) { return '<li><i style="background:' + c[3] + '"></i><span>' + (c[0] ? c[0] + ' · ' : '') + c[1] + '</span><b>' + c[2].toFixed(1).replace('.', ',') + ' %</b></li>'; }).join('');
+  }
+
+  ['[data-tb-ex]', '[data-tb-per]', '[data-tb-site]'].forEach(function (s) { q(s).addEventListener('change', maj); });
+  maj();
+})();
+</script>

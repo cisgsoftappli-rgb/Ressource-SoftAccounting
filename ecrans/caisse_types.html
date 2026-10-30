@@ -1,0 +1,174 @@
+<!--
+  Écran « Petite caisse › Types d'opération » (Comptabilité générale) — onglets Saisie / Liste. Un type = Libellé (obligatoire, unique), Nature (Dépense | Recette),
+  Compte général (obligatoire, compte de détail du plan comptable) et case « Nécessite une imputation analytique ». Données partagées : window.CAISSE_TYPES
+  = [ { libelle, nature, compte, analytique } ], copie dans localStorage softcompta.caisseTypes. Préfixe tco / data-tco. S'appuie sur les styles bp-*.
+  Ne pas nommer de fonction « $$ » (build.cjs).
+-->
+<style>
+[data-tco] .tco-f{display:grid;gap:12px;padding:16px}
+[data-tco] .tco-b{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:12px 16px;padding:12px;border:1px solid #D5DBE5;border-radius:6px;background:#fff}
+[data-tco] .tco-b .tco-w{grid-column:1/-1}
+@media (max-width:560px){[data-tco] .tco-b{grid-template-columns:1fr}}
+[data-tco] .bp-champ>span{text-transform:uppercase;letter-spacing:.02em;font-size:11px}
+[data-tco] .bp-in.err,[data-tco] .bp-sel.err{border-color:#B63132}
+[data-tco] .tco-er{display:none;font-size:12px;color:#B63132}[data-tco] .tco-er.show{display:block}
+[data-tco] .tco-ck{display:flex;align-items:center;gap:8px;font-size:14px;color:#1B1E27;cursor:pointer}
+[data-tco] .tco-ck input{width:18px;height:18px;min-height:0!important;accent-color:#2E427B}
+[data-tco] .tco-ana{grid-column:1/-1;display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:12px 16px;padding:12px;border:1px dashed #B8C2DA;border-radius:6px;background:#F5F7FB}
+[data-tco] .tco-ana[hidden]{display:none}[data-tco] .tco-ana .tco-t{grid-column:1/-1;font-size:12px;font-weight:600;color:#2E427B;text-transform:uppercase;letter-spacing:.02em}
+@media (max-width:900px){[data-tco] .tco-ana{grid-template-columns:1fr}}
+[data-tco] .tco-ok{font-size:12px;color:#2E427B;margin-left:8px}
+[data-tco] tbody tr{cursor:pointer}[data-tco] tbody tr.tco-sel td{background:#E8ECF6}
+</style>
+
+<div class="bp-root" data-tco>
+  <h1 style="position:absolute;width:1px;height:1px;overflow:hidden;clip-path:inset(50%);margin:0">Petite caisse — Types d'opération</h1>
+
+  <div class="no-print">
+    <button type="button" data-tco-ajouter>Ajouter</button>
+    <button type="button" data-tco-modifier>Modifier</button>
+    <button type="button" data-tco-supprimer>Supprimer</button>
+    <button type="button" data-tco-enregistrer>Enregistrer</button>
+    <button type="button" data-tco-annuler>Annuler</button>
+    <span class="tco-ok" data-tco-msg role="status"></span>
+  </div>
+
+  <div class="bp-tabs" role="tablist">
+    <button type="button" role="tab" data-tco-tab="saisie">Saisie</button>
+    <button type="button" role="tab" class="on" data-tco-tab="liste">Liste <span class="bp-n" data-tco-compte></span></button>
+  </div>
+
+  <div class="bp-grid">
+    <section class="bp-pan" aria-label="Liste des types d'opération" data-tco-pan="liste">
+      <h2>Types d'opération <small>Double-clic ou « Modifier » pour ouvrir la ligne en saisie</small></h2>
+      <div style="overflow:auto;max-height:560px">
+        <div data-tco-tbl></div>
+      </div>
+      <div class="bp-vide" data-tco-vide hidden>Aucun type d'opération : utilisez « Ajouter ».</div>
+    </section>
+
+    <section class="bp-pan" aria-label="Saisie d'un type d'opération" data-tco-pan="saisie" hidden>
+      <form class="tco-f" data-tco-form onsubmit="return false" novalidate>
+        <div class="tco-b">
+          <label class="bp-champ tco-w"><span>Libellé du type d'opération <b>*</b></span><input class="bp-in" data-f="libelle" type="text" maxlength="80" placeholder="Ex : Carburant"><span class="tco-er" data-er="libelle"></span></label>
+          <label class="bp-champ"><span>Nature <b>*</b></span><select class="bp-sel" data-f="nature"><option>Dépense</option><option>Recette</option></select></label>
+          <label class="bp-champ"><span>Compte général <b>*</b></span><select class="bp-sel" data-f="compte"></select><span class="tco-er" data-er="compte"></span></label>
+          <label class="tco-ck tco-w"><input type="checkbox" data-f="analytique"> Nécessite une imputation analytique</label>
+          <div class="tco-ana" data-tco-ana hidden></div>
+        </div>
+      </form>
+    </section>
+  </div>
+</div>
+
+<script>
+(function () {
+  var root = document.querySelector('[data-tco]'); if (!root) return;
+  function q(s) { return root.querySelector(s); } function qa(s) { return [].slice.call(root.querySelectorAll(s)); }
+  function f(n) { return q('[data-f="' + n + '"]'); }
+  function esc(s) { return String(s == null ? '' : s).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;'); }
+  var CLE = 'softcompta.caisseTypes', sel = -1, edit = -1;
+  var data = [
+    { libelle: 'Carburant', nature: 'Dépense', compte: '', analytique: true }, { libelle: 'Fournitures de bureau', nature: 'Dépense', compte: '', analytique: false },
+    { libelle: 'Frais de transport', nature: 'Dépense', compte: '', analytique: true }, { libelle: 'Remboursement avance', nature: 'Recette', compte: '', analytique: false }
+  ];
+  try { var sv = JSON.parse(localStorage.getItem(CLE) || 'null'); if (Array.isArray(sv)) data = sv; } catch (e) {}
+  function comptes() { var pc = window.PLAN_COMPTABLE || []; return pc.filter(function (r) { return !pc.some(function (x) { return x.parent === r.code; }); }); }
+  // plans analytiques activés dans l'administration de l'entité (onglet Analytique) : [ { code, lib, rows:[[code, libellé]] } ]
+  var REFPLAN = { PLAN1: 'activite', PLAN2: 'budget', PLAN4: 'geo' };
+  function plansAna() {
+    var act = window.PLANS_ACTIFS ? window.PLANS_ACTIFS() : ['PC', 'PLAN1', 'PLAN2', 'PLAN3', 'PLAN4'];
+    return act.filter(function (c) { return c !== 'PC'; }).map(function (c) {
+      var cfg = (window.PLANS_CFG || []).filter(function (p) { return p.code === c; })[0] || {}, L = window.PLANS_LIGNES && window.PLANS_LIGNES[c], rows;
+      if (L && L.rows && L.rows.length) rows = L.rows.filter(function (x) { return x.actif !== false; }).map(function (x) { return [x.code, x.libelle]; });
+      else rows = ((window.PLANS_REF || {})[REFPLAN[c]] || []);
+      return { code: c, lib: cfg.abrev || cfg.libelle || c, rows: rows };
+    });
+  }
+  window.CAISSE_PLANS = plansAna;
+  var ANCIENNES = { activite: 'PLAN1', budget: 'PLAN2', geo: 'PLAN4' };
+  data.forEach(function (r) { var a = r.ana || {}; Object.keys(ANCIENNES).forEach(function (k) { if (a[k]) { a[ANCIENNES[k]] = a[k]; delete a[k]; } }); r.ana = a; });
+  function msg(t) { q('[data-tco-msg]').textContent = t || ''; }
+  function effacer() { qa('.tco-er').forEach(function (e) { e.classList.remove('show'); e.textContent = ''; }); qa('.err').forEach(function (e) { e.classList.remove('err'); }); }
+  function err(n, m) { var e = q('[data-er="' + n + '"]'); if (e) { e.textContent = m; e.classList.add('show'); } f(n).classList.add('err'); }
+  function publier() { window.CAISSE_TYPES = data; try { localStorage.setItem(CLE, JSON.stringify(data)); } catch (e) {} window.dispatchEvent(new Event('caisse-types-changed')); }
+  function remplir() {
+    var s = f('compte'), v = s.value, ok = comptes();
+    s.innerHTML = '<option value="">Sélectionner un compte général</option>' + ok.map(function (r) { return '<option value="' + esc(r.code) + '">' + esc(r.code) + ' — ' + esc(r.libelle) + '</option>'; }).join('');
+    if (v && !s.querySelector('option[value="' + v + '"]')) s.insertAdjacentHTML('beforeend', '<option value="' + esc(v) + '">' + esc(v) + ' — (compte hors plan)</option>');
+    s.value = v; if (s.__combo && s.__combo.maj) s.__combo.maj();
+  }
+  var sigPlans = '';
+  function champsAna(an) {
+    var h = '<div class="tco-t">Imputation analytique</div>';
+    plansAna().forEach(function (p) { h += '<label class="bp-champ"><span>' + esc(p.lib) + '</span><select class="bp-sel" data-p="' + esc(p.code) + '"></select></label>'; });
+    h += '<span class="tco-er" data-er="ana" style="grid-column:1/-1"></span>';
+    var z = q('[data-tco-ana]'); z.innerHTML = h;
+    plansAna().forEach(function (p) {
+      var s = q('[data-p="' + p.code + '"]'); s.innerHTML = '<option value="">Sélectionner</option>' + p.rows.map(function (r) { return '<option value="' + esc(r[0]) + '">' + esc(r[0]) + ' — ' + esc(r[1]) + '</option>'; }).join('');
+      var v = (an || {})[p.code] || ''; if (v && !s.querySelector('option[value="' + v + '"]')) s.insertAdjacentHTML('beforeend', '<option value="' + esc(v) + '">' + esc(v) + '</option>');
+      s.value = v; if (s.__combo && s.__combo.maj) s.__combo.maj();
+    });
+  }
+  function majAna() { q('[data-tco-ana]').hidden = !f('analytique').checked; }
+  function charger(r) {
+    remplir(); effacer();
+    f('libelle').value = r ? r.libelle : ''; f('nature').value = r ? r.nature : 'Dépense'; f('compte').value = r ? r.compte : ''; f('analytique').checked = !!(r && r.analytique); champsAna(r && r.ana); majAna();
+    [f('nature'), f('compte')].forEach(function (s) { if (s.__combo && s.__combo.maj) s.__combo.maj(); });
+  }
+  function onglet(n) {
+    qa('[data-tco-tab]').forEach(function (b) { b.classList.toggle('on', b.getAttribute('data-tco-tab') === n); });
+    qa('[data-tco-pan]').forEach(function (p) { p.hidden = p.getAttribute('data-tco-pan') !== n; });
+    qa('[data-tco-enregistrer],[data-tco-annuler]').forEach(function (b) { b.disabled = n !== 'saisie'; });
+    qa('[data-tco-ajouter],[data-tco-modifier],[data-tco-supprimer]').forEach(function (b) { b.disabled = n === 'saisie'; });
+  }
+  function lister() {
+    var pl = plansAna(), sig = pl.map(function (p) { return p.code + p.lib; }).join('|');
+    if (sig !== sigPlans) { // les colonnes suivent les plans activés : le tableau est reconstruit (filtres et tri recréés par tableaux.js)
+      sigPlans = sig;
+      q('[data-tco-tbl]').innerHTML = '<table class="bp-tb" style="min-width:' + (520 + 130 * pl.length) + 'px"><thead><tr><th>Libellé</th><th>Nature</th><th>Compte général</th>' + pl.map(function (p) { return '<th>' + esc(p.lib) + '</th>'; }).join('') + '</tr></thead><tbody data-tco-lignes></tbody></table>';
+    }
+    var h = '';
+    data.forEach(function (r, i) {
+      h += '<tr data-i="' + i + '"' + (i === sel ? ' class="tco-sel"' : '') + '><td>' + esc(r.libelle) + '</td><td>' + esc(r.nature) + '</td><td>' + esc(r.compte) + '</td>' + pl.map(function (p) { return '<td>' + esc(r.analytique ? (r.ana || {})[p.code] || '' : '') + '</td>'; }).join('') + '</tr>';
+    });
+    q('[data-tco-lignes]').innerHTML = h; q('[data-tco-vide]').hidden = data.length > 0; q('[data-tco-compte]').textContent = '(' + data.length + ')';
+  }
+  function ouvrir(i) { edit = i; charger(i >= 0 ? data[i] : null); onglet('saisie'); }
+  f('analytique').addEventListener('change', majAna);
+  q('[data-tco-tab="saisie"]').addEventListener('click', function () { if (q('[data-tco-pan="saisie"]').hidden) ouvrir(sel); });
+  q('[data-tco-tab="liste"]').addEventListener('click', function () { onglet('liste'); lister(); });
+  q('[data-tco-ajouter]').addEventListener('click', function () { msg(); ouvrir(-1); });
+  q('[data-tco-modifier]').addEventListener('click', function () { if (sel < 0) { msg('Sélectionnez un type d’opération dans la liste.'); return; } msg(); ouvrir(sel); });
+  q('[data-tco-supprimer]').addEventListener('click', function () {
+    if (sel < 0) { msg('Sélectionnez un type d’opération dans la liste.'); return; }
+    if (!window.confirm('Supprimer le type d’opération « ' + data[sel].libelle + ' » ?')) return;
+    data.splice(sel, 1); sel = -1; publier(); lister(); msg('Type d’opération supprimé.');
+  });
+  q('[data-tco-annuler]').addEventListener('click', function () { msg(); onglet('liste'); lister(); });
+  q('[data-tco-tbl]').addEventListener('click', function (e) { var tr = e.target.closest('tr[data-i]'); if (!tr) return; sel = +tr.dataset.i; qa('[data-tco-lignes] tr').forEach(function (r) { r.classList.toggle('tco-sel', r === tr); }); msg(); });
+  q('[data-tco-tbl]').addEventListener('dblclick', function (e) { var tr = e.target.closest('tr[data-i]'); if (tr) { sel = +tr.dataset.i; ouvrir(sel); } });
+  q('[data-tco-enregistrer]').addEventListener('click', function () {
+    effacer(); var ok = true, r = { libelle: f('libelle').value.trim(), nature: f('nature').value, compte: f('compte').value, analytique: f('analytique').checked, ana: {} };
+    if (r.analytique) { qa('[data-p]').forEach(function (s) { if (s.value) r.ana[s.getAttribute('data-p')] = s.value; }); if (!Object.keys(r.ana).length) { q('[data-er="ana"]').textContent = 'Renseignez au moins un plan analytique.'; q('[data-er="ana"]').classList.add('show'); ok = false; } }
+    if (!r.libelle) { err('libelle', 'Le libellé est obligatoire.'); ok = false; }
+    else if (data.some(function (x, i) { return i !== edit && x.libelle.toLowerCase() === r.libelle.toLowerCase(); })) { err('libelle', 'Ce type d’opération existe déjà.'); ok = false; }
+    if (!r.compte) { err('compte', 'Le compte général est obligatoire.'); ok = false; }
+    if (!ok) return;
+    if (edit >= 0) data[edit] = r; else { data.push(r); edit = data.length - 1; }
+    sel = edit; publier(); msg('Type d’opération enregistré.'); onglet('liste'); lister();
+  });
+  // comptes d'exemple : premiers comptes de charges (6) / produits (7) du plan, une fois celui-ci publié
+  function initComptes() {
+    if (data.every(function (r) { return r.compte && (!r.analytique || Object.keys(r.ana || {}).length); })) return;
+    var ok = comptes(), ch = ok.filter(function (r) { return /^6/.test(r.code); }), pr = ok.filter(function (r) { return /^7/.test(r.code); }), k = { 'Dépense': 0, 'Recette': 0 };
+    data.forEach(function (r) { if (r.compte) return; var l = r.nature === 'Recette' ? pr : ch; if (l.length) r.compte = l[Math.min(k[r.nature]++, l.length - 1)].code; });
+    var k2 = 0; data.forEach(function (r) { if (!r.analytique || Object.keys(r.ana || {}).length) return; r.ana = {}; plansAna().forEach(function (p) { if (p.rows.length) r.ana[p.code] = p.rows[Math.min(k2, p.rows.length - 1)][0]; }); k2++; });
+    publier(); lister();
+  }
+  window.addEventListener('plans-actifs', function () { lister(); });
+  window.addEventListener('hashchange', function () { if (location.hash === '#caissetypes') { initComptes(); lister(); } });
+  publier(); onglet('liste'); lister();
+  [400, 1200, 3000].forEach(function (t) { setTimeout(function () { initComptes(); }, t); });
+})();
+</script>

@@ -1,0 +1,116 @@
+<!--
+  Écran « Modèle d'état récapitulatif » (États comptables › États personnalisés › Paramètres › Modèle Récapitulatif).
+  Reprise de la capture : titre, bouton « + Nouveau modèle », recherche, ligne TEST (badge État récapitulatif),
+  actions Modifier / Exécuter / Ouvrir le designer / Supprimer. Les fenêtres Nouveau/Modifier/Supprimer sont conçues pour la maquette.
+-->
+<style>
+.ml-card{border:1px solid #e2e8f0;border-radius:12px;background:#fff;box-shadow:0 1px 2px #0f172a0d;color:#1e293b}
+.ml-head{display:flex;flex-wrap:wrap;align-items:center;justify-content:space-between;gap:16px;border-bottom:1px solid #e2e8f0;padding:20px}
+.ml-h1{font-size:20px;font-weight:700;color:#0f172a;margin:0}
+.ml-sub{margin:4px 0 0;font-size:14px;color:#64748b}
+.ml-new{border:0;border-radius:8px;background:#0f766e;color:#fff;padding:8px 16px;font:inherit;font-size:14px;font-weight:600;cursor:pointer}
+.ml-new:hover{background:#115e59}
+.ml-search{padding:16px;border-bottom:1px solid #e2e8f0}
+.ml-ctl{width:100%;border:1px solid #cbd5e1;border-radius:8px;padding:8px 12px;font:inherit;font-size:14px;outline:none;background:#fff}
+.ml-ctl:focus{border-color:#0d9488;box-shadow:0 0 0 2px #ccfbf1}
+.ml-list>div.ml-row{display:flex;flex-wrap:wrap;align-items:center;justify-content:space-between;gap:12px;padding:16px 20px;border-top:1px solid #f1f5f9}
+.ml-list>div.ml-row:first-child{border-top:0}
+.ml-row:hover{background:#f8fafc}
+.ml-name{display:flex;align-items:center;gap:8px}
+.ml-name b{font-weight:600;color:#0f172a}
+.ml-badge{border-radius:999px;background:#f0f9ff;color:#0369a1;padding:2px 8px;font-size:12px;font-weight:600}
+.ml-meta{margin:2px 0 0;font-size:12px;color:#64748b}
+.ml-act{display:flex;align-items:center;gap:8px}
+.ml-b{border-radius:6px;background:#fff;padding:6px 12px;font:inherit;font-size:12px;font-weight:600;cursor:pointer}
+.ml-b.mod{border:1px solid #cbd5e1;color:#334155}.ml-b.mod:hover{background:#f1f5f9}
+.ml-b.run{border:1px solid #99f6e4;color:#0f766e;display:inline-flex;align-items:center;gap:6px}.ml-b.run:hover{background:#f0fdfa}
+.ml-b.des{border:1px solid #fed7aa;color:#c2410c;display:inline-flex;align-items:center;gap:6px}.ml-b.des:hover{background:#fff7ed}
+.ml-b.del{border:1px solid #fecaca;color:#b91c1c;padding:6px 8px}.ml-b.del:hover{background:#fef2f2}
+.ml-empty{padding:40px;text-align:center;font-size:14px;color:#64748b}
+.ml-modal{position:fixed;inset:0;z-index:2000;display:none;align-items:center;justify-content:center;background:#0f172a99;padding:16px}
+.ml-dlg{width:100%;max-width:440px;background:#fff;border-radius:12px;padding:24px;box-shadow:0 20px 50px #0f172a40}
+.ml-dlg h2{font-size:18px;font-weight:700;margin:0 0 16px}
+.ml-fld{margin-bottom:14px}
+.ml-fld label{display:block;margin-bottom:6px;font-size:13px;font-weight:600}
+.ml-foot{display:flex;justify-content:flex-end;gap:8px;margin-top:8px}
+.ml-sec{border:1px solid #cbd5e1;border-radius:8px;background:#fff;padding:8px 16px;font:inherit;font-size:14px;cursor:pointer}
+.ml-err{color:#dc2626;font-size:12px;margin-top:4px;display:none}
+</style>
+<app-modeles-etat-reporting-list>
+<div class="ml-root" style="width:100%;min-width:0">
+  <section class="ml-card">
+    <div class="ml-head">
+      <div><h1 class="ml-h1">Modèle d'état récapitulatif</h1><p class="ml-sub">Paramétrez et personnalisez les modèles d’état de reporting récapitulatif à présenter aux bailleurs.</p></div>
+      <button type="button" class="ml-new" data-ml-new>+ Nouveau modèle</button>
+    </div>
+    <div class="ml-search"><input class="ml-ctl" data-ml-q type="text" placeholder="Rechercher par nom, source ou bailleur..."></div>
+    <div class="ml-list" data-ml-list></div>
+  </section>
+  <div class="ml-modal" data-ml-modal><div class="ml-dlg" role="dialog">
+    <h2 data-ml-mt>Nouveau modèle</h2>
+    <div class="ml-fld"><label>Numéro du modèle *</label><input class="ml-ctl" data-ml-code maxlength="30"></div>
+    <div class="ml-fld"><label>Nom du modèle *</label><input class="ml-ctl" data-ml-nom></div>
+    <div class="ml-fld"><label>Fichier RepX</label><input class="ml-ctl" data-ml-file placeholder="généré automatiquement"></div>
+    <div class="ml-err" data-ml-err></div>
+    <div class="ml-foot"><button type="button" class="ml-sec" data-ml-cancel>Annuler</button><button type="button" class="ml-new" data-ml-save>Enregistrer</button></div>
+  </div></div>
+  <div class="ml-modal" data-ml-confirm><div class="ml-dlg" role="dialog">
+    <h2>Supprimer le modèle</h2><p data-ml-ct style="margin:0 0 12px;font-size:14px;color:#475569"></p>
+    <div class="ml-foot"><button type="button" class="ml-sec" data-ml-ccancel>Annuler</button><button type="button" class="ml-new" style="background:#dc2626" data-ml-cok>Supprimer</button></div>
+  </div></div>
+</div>
+<script>
+(function () {
+  var root = document.currentScript.parentElement;
+  function q(s) { return root.querySelector(s); }
+  function esc(s) { var d = document.createElement('div'); d.textContent = s == null ? '' : s; return d.innerHTML; }
+  var models = window.__recapModelsList2 = window.__recapModelsList2 || [{ code: 'TEST', nom: 'TEST', file: 'TEST.repx' }];
+  var editing = null, pendingDel = null;
+  var ICON_EDIT = '<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/></svg>';
+  var ICON_DEL = '<svg width="14" height="14" viewBox="0 0 20 20" fill="currentColor"><path fill-rule="evenodd" d="M8.75 1A2.75 2.75 0 0 0 6 3.75v.443c-.795.077-1.584.176-2.365.298a.75.75 0 1 0 .23 1.482l.149-.022.841 10.518A2.75 2.75 0 0 0 7.596 19h4.807a2.75 2.75 0 0 0 2.742-2.53l.841-10.52.149.023a.75.75 0 0 0 .23-1.482A41.03 41.03 0 0 0 14 4.193V3.75A2.75 2.75 0 0 0 11.25 1h-2.5ZM10 4c.84 0 1.673.025 2.5.075V3.75c0-.69-.56-1.25-1.25-1.25h-2.5c-.69 0-1.25.56-1.25 1.25v.325C8.327 4.025 9.16 4 10 4Z" clip-rule="evenodd"/></svg>';
+  function draw() {
+    var t = q('[data-ml-q]').value.trim().toLowerCase();
+    var l = models.filter(function (m) { return !t || (m.code + ' ' + m.nom + ' ' + m.file).toLowerCase().indexOf(t) >= 0; });
+    q('[data-ml-list]').innerHTML = l.length ? l.map(function (m) {
+      var i = models.indexOf(m);
+      return '<div class="ml-row"><div><div class="ml-name"><b>' + esc(m.nom) + '</b><span class="ml-badge">État récapitulatif</span></div><p class="ml-meta">N° ' + esc(m.code) + ' · Fichier : ' + esc(m.file) + '</p></div>' +
+        '<div class="ml-act"><button type="button" class="ml-b mod" data-ml-mod="' + i + '">Modifier</button><button type="button" class="ml-b run" data-ml-run="' + i + '">→ Exécuter</button><button type="button" class="ml-b des" data-ml-des="' + i + '">' + ICON_EDIT + ' Ouvrir le designer</button><button type="button" class="ml-b mod" data-ml-dup="' + i + '">⧉ Dupliquer</button><button type="button" class="ml-b del" aria-label="Supprimer" data-ml-del="' + i + '">' + ICON_DEL + '</button></div></div>';
+    }).join('') : '<div class="ml-empty">Aucun modèle trouvé.</div>';
+  }
+  function open(i) {
+    editing = i; var m = i == null ? { code: '', nom: '', file: '' } : models[i];
+    q('[data-ml-mt]').textContent = i == null ? 'Nouveau modèle' : 'Modifier le modèle';
+    q('[data-ml-code]').value = m.code; q('[data-ml-nom]').value = m.nom; q('[data-ml-file]').value = m.file;
+    q('[data-ml-err]').style.display = 'none'; q('[data-ml-modal]').style.display = 'flex'; q('[data-ml-code]').focus();
+  }
+  root.addEventListener('input', function (e) { if (e.target.matches('[data-ml-q]')) draw(); });
+  root.addEventListener('click', function (e) {
+    var t = e.target;
+    if (t.closest('[data-ml-new]')) open(null);
+    else if (t.closest('[data-ml-mod]')) open(+t.closest('[data-ml-mod]').dataset.mlMod);
+    else if (t.closest('[data-ml-cancel]')) q('[data-ml-modal]').style.display = 'none';
+    else if (t.closest('[data-ml-save]')) {
+      var code = q('[data-ml-code]').value.trim(), nom = q('[data-ml-nom]').value.trim(), file = q('[data-ml-file]').value.trim(), er = q('[data-ml-err]');
+      if (!code || !nom) { er.textContent = 'Le numéro et le nom du modèle sont obligatoires.'; er.style.display = 'block'; return; }
+      if (models.some(function (m, k) { return k !== editing && m.code.toLowerCase() === code.toLowerCase(); })) { er.textContent = 'Ce numéro de modèle existe déjà.'; er.style.display = 'block'; return; }
+      if (!file) file = code.replace(/[^A-Za-z0-9_-]+/g, '_') + '.repx';
+      if (!/\.repx$/i.test(file)) file += '.repx';
+      if (editing == null) models.push({ code: code, nom: nom, file: file }); else models[editing] = { code: code, nom: nom, file: file };
+      q('[data-ml-modal]').style.display = 'none'; draw();
+    }
+    else if (t.closest('[data-ml-del]')) { pendingDel = +t.closest('[data-ml-del]').dataset.mlDel; q('[data-ml-ct]').textContent = 'Supprimer définitivement le modèle « ' + models[pendingDel].nom + ' » ?'; q('[data-ml-confirm]').style.display = 'flex'; }
+    else if (t.closest('[data-ml-dup]')) {
+      var src = models[+t.closest('[data-ml-dup]').dataset.mlDup];
+      window.__dupModele({ source: { code: src.code, nom: src.nom }, exists: function (c) { return models.some(function (m) { return String(m.code).toLowerCase() === c.toLowerCase(); }); }, onOk: function (c, n, fl) {
+        models.push({ code: c, nom: n, file: fl + '.repx' }); draw();
+      } });
+    }
+    else if (t.closest('[data-ml-ccancel]')) q('[data-ml-confirm]').style.display = 'none';
+    else if (t.closest('[data-ml-cok]')) { models.splice(pendingDel, 1); q('[data-ml-confirm]').style.display = 'none'; draw(); }
+    else if (t.closest('[data-ml-des]')) { var m = models[+t.closest('[data-ml-des]').dataset.mlDes]; window.__mfDesigner = { code: m.code, nom: m.nom, def: false, type: 'Récapitulatif', file: m.file.replace(/.repx$/i, ''), src: 'Comptabilité générale' }; window.__designerFrom = 'listing2'; location.hash = 'designer2'; }
+    else if (t.closest('[data-ml-run]')) { location.hash = 'recapexec'; }
+  });
+  draw();
+})();
+</script>
+</app-modeles-etat-reporting-list>

@@ -1,0 +1,252 @@
+<!--
+  Écran « Devise » (Paramètres généraux › Devise) — onglets Saisie / Liste : liste filtrable des devises, saisie
+  (Code *, Libellé *, Nom des décimales, Nombre de décimales *) et section « Billetage » (lignes Type * Billet / Pièce + Valeur faciale *).
+  Boutons dans la barre d'actions (Ajouter, Modifier, Supprimer, Enregistrer, Annuler, Imprimer, PDF, Excel). Données en mémoire ;
+  liste exposée en window.DEVISES (événement « devises-changed »). S'appuie sur les styles bp-* de l'écran « Paramétrage du bilan ».
+  Ne pas nommer de fonction « $$ » (build.cjs).
+-->
+<style>
+.dv-code{font-family:ui-monospace,Consolas,monospace;font-weight:600}
+.dv-help{font-size:12px;color:#5B606D}
+.dv-er{display:none;font-size:12px;color:#B63132}.dv-er.show{display:block}
+.bp-in.err,.bp-sel.err{border-color:#B63132}
+.dv-sec{margin-top:18px;padding-top:14px;border-top:1px solid #E9EBF0}
+.dv-sec h3{margin:0 0 4px;font-size:14px;font-weight:700;color:#0B1332}
+.dv-add{display:grid;grid-template-columns:minmax(150px,200px) minmax(150px,200px) auto;gap:12px;align-items:end;margin:10px 0 12px}
+.dv-tabs2 .dv-bt{width:100%;table-layout:fixed}.dv-tabs2 .dv-bt td.r{padding-right:28px}
+.dv-tabs2{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1fr);gap:24px;align-items:start;margin-top:8px}.dv-th{display:flex;align-items:center;gap:8px;margin:0 0 6px;font-size:13px;font-weight:700;color:#0B1332}
+.dv-bt{width:auto;min-width:260px;border-collapse:collapse;font-size:13px}
+.dv-bt th{background:#F5F7F9;border-top:1px solid #E9EBF0;border-bottom:1px solid #E9EBF0;padding:9px 20px;white-space:nowrap;text-align:left;font-size:11px;font-weight:700;letter-spacing:.06em;text-transform:uppercase;color:#5B606D}
+.dv-bt th.r,.dv-bt td.r{text-align:right}
+.dv-bt td{padding:8px 20px;white-space:nowrap;border-bottom:1px solid #EEF0F4;background:#fff}
+.dv-bt tr.edit td{background:#EEF1FA}
+.dv-tp{display:inline-block;padding:2px 10px;border:1px solid #D6D9E0;border-radius:6px;background:#F5F7F9;font-size:12px;font-weight:600;color:#474C58}
+.dv-tp.b{background:#E3EBFE;border-color:#C5D3F7;color:#243569}
+.dv-ic{width:30px!important;height:30px!important;min-width:30px!important;min-height:30px!important;padding:0!important;border:1px solid #D6D9E0;border-radius:6px;background:#fff;color:#0B1332;cursor:pointer;font-size:14px}
+.dv-ic:disabled{opacity:.35;cursor:not-allowed}
+.dv-badge{display:inline-flex;align-items:center;padding:2px 10px;border:1px solid;border-radius:6px;font-size:12px;font-weight:600}.dv-badge.on{background:#ECFDF5;border-color:#A7F3D0;color:#047857}.dv-badge.off{background:#F5F7F9;border-color:#D6D9E0;color:#5B606D}
+.dv-bh{display:flex;justify-content:space-between;align-items:flex-start;gap:16px}.dv-sep{width:1px;align-self:stretch;background:#D6D9E0;margin:2px 4px}.dv-bt tbody tr{cursor:pointer}.dv-bt tbody tr.sel td{background:#E3EBFE}
+.dv-ia{display:flex;align-items:center;gap:8px;flex:none}.dv-ib{width:36px!important;height:36px!important;min-width:36px!important;padding:0!important;border:1px solid #D6D9E0;border-radius:8px;background:#fff;color:#0B1332;cursor:pointer;font-size:16px;line-height:1}.dv-ib:hover:not(:disabled){background:#F5F7F9}.dv-ib:disabled{opacity:.4;cursor:not-allowed}
+.dv-vide{padding:14px;text-align:center;color:#747A88;font-size:13px;border:1px dashed #D6D9E0;border-radius:8px}
+@media (max-width:760px){.dv-add{grid-template-columns:1fr}.dv-tabs2{grid-template-columns:1fr}}
+</style>
+
+<div class="bp-root" data-dv>
+  <h1 style="position:absolute;width:1px;height:1px;overflow:hidden;clip-path:inset(50%);margin:0">Devise</h1>
+
+  <div class="no-print" data-dv-actions>
+    <button type="button" data-dv-ajouter>Ajouter</button>
+    <button type="button" data-dv-modifier>Modifier</button>
+    <button type="button" data-dv-supprimer>Supprimer</button>
+    <button type="button" data-dv-enregistrer>Enregistrer</button>
+    <button type="button" data-dv-annuler>Annuler</button>
+    <button type="button" data-dv-imprimer>Imprimer</button>
+    <button type="button" data-dv-pdf>PDF</button>
+    <button type="button" data-dv-xlsx>Excel (XLSX)</button>
+  </div>
+
+  <div class="bp-tabs" role="tablist">
+    <button type="button" role="tab" class="on" data-dv-tab="saisie">Saisie</button>
+    <button type="button" role="tab" data-dv-tab="liste">Liste <span class="bp-n" data-dv-compte></span></button>
+  </div>
+
+  <div class="bp-grid">
+    <section class="bp-pan" aria-label="Liste des devises" data-dv-pan="liste" hidden>
+      <h2>Devises <small>Double-clic ou « Modifier » pour ouvrir la ligne en saisie</small></h2>
+      <div style="overflow:auto;max-height:560px">
+        <table class="bp-tb" style="min-width:640px"><thead>
+          <tr><th>Code</th><th>Libellé</th><th>Nom des décimales</th><th>Décimales</th><th>Billetage</th><th>Statut</th></tr>
+          <tr class="flt"><th><input class="bp-in" data-fc="0" aria-label="Filtrer Code"></th><th><input class="bp-in" data-fc="1" aria-label="Filtrer Libellé"></th>
+            <th><input class="bp-in" data-fc="2" aria-label="Filtrer Nom des décimales"></th><th><input class="bp-in" data-fc="3" aria-label="Filtrer Décimales"></th><th></th><th><select class="bp-sel" data-fc="5" aria-label="Filtrer Statut"><option value=""></option><option value="actif">Actif</option><option value="inactif">Inactif</option></select></th></tr>
+        </thead><tbody data-dv-lignes></tbody></table>
+      </div>
+      <div class="bp-vide" data-dv-vide hidden>Aucune devise : utilisez « Ajouter ».</div>
+    </section>
+
+    <section class="bp-pan" aria-label="Saisie d'une devise" data-dv-pan="saisie">
+      <form class="bp-form" data-dv-form onsubmit="return false" novalidate>
+        <div style="display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:12px">
+          <label class="bp-champ"><span>Code <b>*</b></span><input class="bp-in" data-f="code" maxlength="3" autocomplete="off" placeholder="MGA"><span class="dv-help">3 lettres (code ISO), par exemple MGA. Non modifiable après création.</span><span class="dv-er" data-er="code"></span></label>
+          <label class="bp-champ"><span>Libellé <b>*</b></span><input class="bp-in" data-f="lib" maxlength="60" autocomplete="off" placeholder="Ariary"><span class="dv-er" data-er="lib"></span></label>
+          <label class="bp-champ"><span>Nom des décimales</span><input class="bp-in" data-f="nomdec" maxlength="30" autocomplete="off" placeholder="Centime"><span class="dv-help">Nom de la sous-unité (centime, cent…).</span></label>
+          <label class="bp-champ"><span>Nombre de décimales <b>*</b></span><input class="bp-in" data-f="nbdec" type="number" min="0" max="6" step="1" inputmode="numeric" placeholder="2"><span class="dv-help">Entier de 0 à 6, utilisé pour l'affichage des montants.</span><span class="dv-er" data-er="nbdec"></span></label>
+          <div class="bp-chk" style="align-self:end"><label><input type="checkbox" data-f="actif" checked>Actif</label><span class="dv-help" style="display:block">Une devise inactive n'est plus proposée.</span></div>
+        </div>
+
+        <div class="dv-sec" data-dv-bil>
+          <div class="dv-bh">
+            <div><h3>Billetage</h3><p class="dv-help" style="margin:0">Coupures et pièces en circulation, utilisées pour le comptage de la caisse. Sélectionnez une ligne du tableau pour la modifier ou la supprimer.</p></div>
+            <div class="dv-ia" role="toolbar" aria-label="Actions du billetage">
+              <button type="button" class="dv-ib" data-dv-bnew title="Nouvelle ligne" aria-label="Nouvelle ligne"><i class="ti ti-plus"></i></button>
+              <button type="button" class="dv-ib" data-dv-bmod title="Modifier la ligne sélectionnée" aria-label="Modifier la ligne sélectionnée"><i class="ti ti-pencil"></i></button>
+              <button type="button" class="dv-ib" data-dv-bsup title="Supprimer la ligne sélectionnée" aria-label="Supprimer la ligne sélectionnée"><i class="ti ti-trash"></i></button>
+              <span class="dv-sep" aria-hidden="true"></span>
+              <button type="button" class="dv-ib" data-dv-bajout title="Enregistrer la ligne" aria-label="Enregistrer la ligne"><i class="ti ti-device-floppy"></i></button>
+              <button type="button" class="dv-ib" data-dv-bcancel title="Annuler la saisie de la ligne" aria-label="Annuler la saisie de la ligne"><i class="ti ti-arrow-back-up"></i></button>
+            </div>
+          </div>
+          <div class="dv-add">
+            <label class="bp-champ"><span>Type <b>*</b></span><select class="bp-sel" data-b="type"><option value="Billet">Billet</option><option value="Pièce">Pièce</option></select></label>
+            <label class="bp-champ"><span>Valeur faciale <b>*</b></span><input class="bp-in" data-b="val" type="number" min="0" step="any" inputmode="decimal" placeholder="10000"></label>
+            <div class="bp-chk" style="align-self:end"><label><input type="checkbox" data-b="actif" checked>Actif</label></div>
+          </div>
+          <span class="dv-er" data-er="bil"></span>
+          <div class="dv-tabs2">
+            <div>
+              <table class="dv-bt"><colgroup><col style="width:30%"><col style="width:35%"><col style="width:35%"></colgroup><thead><tr><th>Type</th><th class="r">Valeur faciale</th><th>Statut</th></tr></thead><tbody data-dv-blignes-b></tbody></table>
+              <div class="dv-vide" data-dv-bvide-b>Aucun billet : renseignez la valeur faciale, puis enregistrez la ligne (disquette).</div>
+            </div>
+            <div>
+              <table class="dv-bt"><colgroup><col style="width:30%"><col style="width:35%"><col style="width:35%"></colgroup><thead><tr><th>Type</th><th class="r">Valeur faciale</th><th>Statut</th></tr></thead><tbody data-dv-blignes-p></tbody></table>
+              <div class="dv-vide" data-dv-bvide-p>Aucune pièce : choisissez le type « Pièce », puis enregistrez la ligne (disquette).</div>
+            </div>
+          </div>
+        </div>
+      </form>
+    </section>
+  </div>
+  <div class="bp-toast" role="status" hidden data-dv-toast></div>
+</div>
+
+<script>
+(function () {
+  var root = document.querySelector('[data-dv]'); if (!root) return;
+  function q(s) { return root.querySelector(s); } function qa(s) { return [].slice.call(root.querySelectorAll(s)); }
+  function B(t, v) { return { type: t, val: v, actif: true }; }
+  var data = [
+    { code: 'MGA', lib: 'Ariary', nomdec: 'Centime', nbdec: 2, bil: [B('Billet', 20000), B('Billet', 10000), B('Billet', 5000), B('Billet', 2000), B('Billet', 1000), B('Billet', 500), B('Billet', 200), B('Billet', 100), B('Pièce', 50), B('Pièce', 20), B('Pièce', 10)] },
+    { code: 'USD', lib: 'Dollar américain', nomdec: 'Cent', nbdec: 2, bil: [B('Billet', 100), B('Billet', 50), B('Billet', 20), B('Billet', 10), B('Billet', 5), B('Billet', 1), B('Pièce', 0.25), B('Pièce', 0.1), B('Pièce', 0.05), B('Pièce', 0.01)] },
+    { code: 'EUR', lib: 'Euro', nomdec: 'Centime', nbdec: 2, bil: [B('Billet', 500), B('Billet', 200), B('Billet', 100), B('Billet', 50), B('Billet', 20), B('Billet', 10), B('Billet', 5), B('Pièce', 2), B('Pièce', 1), B('Pièce', 0.5)] },
+    { code: 'MUR', lib: 'Roupie mauricienne', nomdec: 'Cent', nbdec: 2, bil: [] },
+    { code: 'XOF', lib: 'Franc CFA', nomdec: 'Centime', nbdec: 0, bil: [] }
+  ];
+  var sel = -1, mode = 'consultation', bil = [], bedit = -1, bsel = -1;
+  data.forEach(function (d) { d.actif = true; });
+  function esc(s) { return String(s == null ? '' : s).replace(/[&<>"]/g, function (c) { return { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c]; }); }
+  function toast(m) { var t = q('[data-dv-toast]'); t.textContent = m; t.hidden = false; clearTimeout(toast.t); toast.t = setTimeout(function () { t.hidden = true; }, 2500); }
+  function err(k, m) { var e = q('[data-er="' + k + '"]'); e.textContent = m || ''; e.classList.toggle('show', !!m); }
+  function nombre(v, d) { var p = Number(v).toFixed(d == null || isNaN(d) ? 2 : d).split('.'); return p[0].replace(/\B(?=(\d{3})+(?!\d))/g, ' ') + (p[1] ? ',' + p[1] : ''); }
+  function decimales(v) { var s = String(v); var i = s.indexOf('.'); return i < 0 ? 0 : s.length - i - 1; }
+  function publier() { window.DEVISES = data.map(function (d) { return { code: d.code, libelle: d.lib, nomDecimales: d.nomdec, nbDecimales: d.nbdec, actif: d.actif, billetage: d.bil.map(function (b) { return { type: b.type, valeur: b.val, actif: b.actif !== false }; }) }; }); window.dispatchEvent(new Event('devises-changed')); }
+  function trier(l) { return l.slice().sort(function (a, b) { return a.type === b.type ? b.val - a.val : (a.type === 'Billet' ? -1 : 1); }); }
+  function resume(d) { var b = d.bil.filter(function (x) { return x.type === 'Billet'; }).length, p = d.bil.length - b; return d.bil.length ? b + ' billet' + (b > 1 ? 's' : '') + ' · ' + p + ' pièce' + (p > 1 ? 's' : '') : '—'; }
+  function filtrer() {
+    var F = []; qa('[data-fc]').forEach(function (e) { F[+e.dataset.fc] = e.value.trim().toLowerCase(); });
+    qa('[data-dv-lignes] tr').forEach(function (tr) { tr.hidden = F.some(function (v, k) { if (!v) return false; var t = tr.children[k].textContent.trim().toLowerCase(); return k === 5 ? t !== v : t.indexOf(v) < 0; }); });
+  }
+  qa('[data-fc]').forEach(function (e) { e.addEventListener('input', filtrer); e.addEventListener('change', filtrer); });
+  function liste() {
+    q('[data-dv-compte]').textContent = data.length ? data.length + (data.length > 1 ? ' lignes' : ' ligne') : '';
+    q('[data-dv-vide]').hidden = data.length > 0;
+    q('[data-dv-lignes]').innerHTML = data.map(function (d, i) {
+      return '<tr data-i="' + i + '"' + (i === sel ? ' class="sel"' : '') + '><td><span class="dv-code">' + esc(d.code) + '</span></td><td>' + esc(d.lib) + '</td><td>' + (d.nomdec ? esc(d.nomdec) : '—') + '</td><td>' + d.nbdec + '</td><td>' + esc(resume(d)) + '</td><td class="c" data-v="' + (d.actif ? 'actif' : 'inactif') + '"><span class="dv-badge ' + (d.actif ? 'on' : 'off') + '">' + (d.actif ? 'Actif' : 'Inactif') + '</span></td></tr>';
+    }).join(''); filtrer();
+  }
+  var ed = function () { return mode !== 'consultation'; };
+  function bdessiner() {
+    var nb = +q('[data-f=nbdec]').value; if (isNaN(nb)) nb = 2;
+    ['Billet', 'Pièce'].forEach(function (t, i) {
+      var c = i ? 'p' : 'b', L = trier(bil).filter(function (x) { return x.type === t; });
+      q('[data-dv-bvide-' + c + ']').hidden = L.length > 0;
+      q('[data-dv-blignes-' + c + ']').innerHTML = L.map(function (b) {
+        var k = bil.indexOf(b), on = b.actif !== false;
+        return '<tr data-bk="' + k + '" class="' + (k === bedit ? 'edit ' : '') + (k === bsel ? 'sel' : '') + '"><td><span class="dv-tp' + (b.type === 'Billet' ? ' b' : '') + '">' + b.type + '</span></td><td class="r">' + nombre(b.val, Math.max(nb, decimales(b.val))) + '</td><td class="c"><span class="dv-badge ' + (on ? 'on' : 'off') + '">' + (on ? 'Actif' : 'Inactif') + '</span></td></tr>';
+      }).join('');
+    });
+    btnsBil();
+  }
+  function btnsBil() { var e = ed(); q('[data-dv-bnew]').disabled = !e; q('[data-dv-bajout]').disabled = !e; q('[data-dv-bcancel]').disabled = !e; q('[data-dv-bmod]').disabled = !e || bsel < 0; q('[data-dv-bsup]').disabled = !e || bsel < 0; }
+  function bform(b) { q('[data-b=type]').value = b ? b.type : 'Billet'; q('[data-b=val]').value = b ? b.val : ''; q('[data-b=actif]').checked = b ? b.actif !== false : true; q('[data-dv-bajout]').title = b ? 'Mettre à jour la ligne' : 'Enregistrer la ligne'; q('[data-dv-bajout]').setAttribute('aria-label', q('[data-dv-bajout]').title); q('[data-b=val]').classList.remove('err'); err('bil'); }
+  function form(d) {
+    d = d || { code: '', lib: '', nomdec: '', nbdec: 2, actif: true, bil: [] };
+    q('[data-f=code]').value = d.code; q('[data-f=lib]').value = d.lib; q('[data-f=nomdec]').value = d.nomdec; q('[data-f=nbdec]').value = d.nbdec; q('[data-f=actif]').checked = d.actif !== false;
+    bil = d.bil.map(function (b) { return { type: b.type, val: b.val, actif: b.actif !== false }; }); bedit = -1; bsel = -1; bform(null); bdessiner();
+    ['code', 'lib', 'nbdec'].forEach(function (k) { err(k); q('[data-f=' + k + ']').classList.remove('err'); });
+  }
+  function etat() {
+    var e = ed();
+    qa('[data-dv-form] input,[data-dv-form] select').forEach(function (x) { x.disabled = !e; });
+    q('[data-f=code]').disabled = mode !== 'creation'; bdessiner();
+    var a = q('[data-dv-actions]');
+    a.querySelector('[data-dv-ajouter]').disabled = e; a.querySelector('[data-dv-modifier]').disabled = e || sel < 0; a.querySelector('[data-dv-supprimer]').disabled = e || sel < 0;
+    a.querySelector('[data-dv-enregistrer]').disabled = !e; a.querySelector('[data-dv-annuler]').disabled = !e;
+    ['imprimer', 'pdf', 'xlsx'].forEach(function (k) { a.querySelector('[data-dv-' + k + ']').disabled = !data.length; });
+  }
+  function onglet(n) { qa('[data-dv-pan]').forEach(function (p) { p.hidden = p.dataset.dvPan !== n; }); qa('[data-dv-tab]').forEach(function (t) { var on = t.dataset.dvTab === n; t.classList.toggle('on', on); t.setAttribute('aria-selected', on); }); }
+  function choisir(i) { if (ed()) return; sel = i; liste(); form(data[i]); etat(); }
+  qa('[data-dv-tab]').forEach(function (t) { t.addEventListener('click', function () { onglet(t.dataset.dvTab); }); });
+  var tb = q('[data-dv-lignes]');
+  tb.addEventListener('click', function (e) { var tr = e.target.closest('tr[data-i]'); if (tr) choisir(+tr.dataset.i); });
+  tb.addEventListener('dblclick', function (e) { var tr = e.target.closest('tr[data-i]'); if (tr) { choisir(+tr.dataset.i); onglet('saisie'); } });
+  q('[data-f=code]').addEventListener('input', function () { this.value = this.value.toUpperCase().replace(/[^A-Z]/g, ''); });
+  q('[data-f=nbdec]').addEventListener('input', bdessiner);
+  // ligne de billetage : ajout / mise à jour
+  function bvalider() {
+    var v = q('[data-b=val]').value.trim(), n = parseFloat(v), t = q('[data-b=type]').value, nb = parseInt(q('[data-f=nbdec]').value, 10);
+    q('[data-b=val]').classList.remove('err'); err('bil');
+    function ko(m) { q('[data-b=val]').classList.add('err'); err('bil', m); return null; }
+    if (v === '' || isNaN(n)) return ko('La valeur faciale est obligatoire.');
+    if (!(n > 0)) return ko('La valeur faciale doit être supérieure à 0.');
+    if (!isNaN(nb) && decimales(v) > nb) return ko('La valeur comporte plus de décimales que la devise (' + nb + ').');
+    if (bil.some(function (b, k) { return k !== bedit && b.type === t && b.val === n; })) return ko('Cette ligne existe déjà pour ce type.');
+    return { type: t, val: n, actif: q('[data-b=actif]').checked };
+  }
+  function bajouter() {
+    var b = bvalider(); if (!b) return;
+    var pos = bedit >= 0 ? bedit : bil.length; bil[pos] = b; bsel = pos;
+    bedit = -1; bform(null); bdessiner(); q('[data-b=val]').focus();
+  }
+  function enregistrer() {
+    var code = q('[data-f=code]').value.trim(), lib = q('[data-f=lib]').value.trim(), nbs = q('[data-f=nbdec]').value.trim(), ok = true, ancien = mode === 'edition' ? data[sel].code : null;
+    ['code', 'lib', 'nbdec'].forEach(function (k) { err(k); q('[data-f=' + k + ']').classList.remove('err'); });
+    function ko(k, m) { err(k, m); q('[data-f=' + k + ']').classList.add('err'); ok = false; }
+    if (code.length !== 3) ko('code', code ? 'Le code doit comporter 3 lettres.' : 'Le code est obligatoire.'); else if (data.some(function (x) { return x.code === code && x.code !== ancien; })) ko('code', 'Ce code existe déjà.');
+    if (!lib) ko('lib', 'Le libellé est obligatoire.');
+    var nb = parseInt(nbs, 10);
+    if (nbs === '' || isNaN(nb) || String(nb) !== nbs || nb < 0 || nb > 6) ko('nbdec', 'Saisissez un entier entre 0 et 6.');
+    else if (bil.some(function (b) { return decimales(b.val) > nb; })) ko('nbdec', 'Une valeur faciale du billetage comporte plus de ' + nb + ' décimale(s).');
+    if (!ok) return;
+    var rec = { code: code, lib: lib, nomdec: q('[data-f=nomdec]').value.trim(), nbdec: nb, actif: q('[data-f=actif]').checked, bil: bil.map(function (b) { return { type: b.type, val: b.val, actif: b.actif !== false }; }) };
+    if (mode === 'creation') { data.push(rec); sel = data.length - 1; } else data[sel] = rec;
+    mode = 'consultation'; liste(); form(data[sel]); etat(); onglet('liste'); publier(); toast(ancien ? 'Devise modifiée.' : 'Devise enregistrée.');
+  }
+  // exports : une ligne par devise (liste filtrée)
+  function table() { var L = data.filter(function (d, i) { var tr = tb.children[i]; return !tr || !tr.hidden; }); return { tete: ['Code', 'Libellé', 'Nom des décimales', 'Nombre de décimales', 'Billetage', 'Statut'], lignes: L.map(function (d) { return [d.code, d.lib, d.nomdec || '—', String(d.nbdec), resume(d), d.actif ? 'Actif' : 'Inactif']; }) }; }
+  function exporter(k) {
+    var X = window.EXPORT_TABLEAU, t = table(); if (!X) { toast('Module d’export indisponible.'); return; } if (!t.lignes.length) { toast('Rien à exporter.'); return; }
+    if (k === 'pdf') X.pdf('devises.pdf', 'Devises', t.lignes.length + ' ligne(s)', t.tete, t.lignes); else X.xlsx('devises.xlsx', 'Devises', t.tete, t.lignes);
+    toast('Export ' + (k === 'pdf' ? 'PDF' : 'Excel (XLSX)') + ' généré : ' + t.lignes.length + ' ligne(s).');
+  }
+  function imprimer() {
+    var t = table(), w = window.open('', '_blank'); if (!w) { toast('Autorisez les fenêtres pop-up pour imprimer.'); return; }
+    w.document.write('<!doctype html><meta charset="utf-8"><title>Devises</title><style>body{font:13px system-ui,sans-serif;color:#0B1332;margin:24px}h1{font-size:18px}table{border-collapse:collapse;width:100%}th{background:#2E427B;color:#fff;text-align:left;padding:8px 10px;font-size:11px;text-transform:uppercase;-webkit-print-color-adjust:exact;print-color-adjust:exact}td{padding:8px 10px;border-bottom:1px solid #D6D9E0}</style><h1>Devises</h1><table><thead><tr>' +
+      t.tete.map(function (h) { return '<th>' + esc(h) + '</th>'; }).join('') + '</tr></thead><tbody>' + t.lignes.map(function (r) { return '<tr>' + r.map(function (c) { return '<td>' + esc(c) + '</td>'; }).join('') + '</tr>'; }).join('') + '</tbody></table>');
+    w.document.close(); w.focus(); setTimeout(function () { w.print(); }, 300);
+  }
+  root.addEventListener('click', function (e) {
+    var b = e.target.closest('button'); if (!b || b.disabled) return;
+    if (b.hasAttribute('data-dv-ajouter')) { onglet('saisie'); mode = 'creation'; sel = -1; liste(); form(null); etat(); q('[data-f=code]').focus(); return; }
+    if (b.hasAttribute('data-dv-modifier')) { onglet('saisie'); mode = 'edition'; etat(); q('[data-f=lib]').focus(); return; }
+    if (b.hasAttribute('data-dv-annuler')) { mode = 'consultation'; liste(); form(sel >= 0 ? data[sel] : null); etat(); return; }
+    if (b.hasAttribute('data-dv-enregistrer')) { enregistrer(); return; }
+    if (b.hasAttribute('data-dv-supprimer')) {
+      var d = data[sel]; if (!d) return;
+      if (!window.confirm('Supprimer la devise « ' + d.lib + ' » (' + d.code + ') et son billetage ? Cette action est définitive.')) return;
+      data.splice(sel, 1); sel = -1; liste(); form(null); etat(); publier(); toast('Devise supprimée.'); return;
+    }
+    if (b.hasAttribute('data-dv-bajout')) { bajouter(); return; }
+    if (b.hasAttribute('data-dv-bnew') || b.hasAttribute('data-dv-bcancel')) { bedit = -1; bform(null); bdessiner(); q(b.hasAttribute('data-dv-bnew') ? '[data-b=type]' : '[data-b=val]').focus(); return; }
+    if (b.hasAttribute('data-dv-bmod')) { if (bsel < 0) return; bedit = bsel; bform(bil[bedit]); bdessiner(); q('[data-b=val]').focus(); return; }
+    if (b.hasAttribute('data-dv-bsup')) { if (bsel < 0) return; bil.splice(bsel, 1); bsel = -1; bedit = -1; bform(null); bdessiner(); return; }
+    if (b.hasAttribute('data-dv-imprimer')) { imprimer(); return; }
+    if (b.hasAttribute('data-dv-pdf')) { exporter('pdf'); return; }
+    if (b.hasAttribute('data-dv-xlsx')) { exporter('xlsx'); return; }
+  });
+  qa('[data-dv-blignes-b],[data-dv-blignes-p]').forEach(function (t) {
+    t.addEventListener('click', function (e) { var tr = e.target.closest('tr[data-bk]'); if (!tr) return; bsel = +tr.dataset.bk; bdessiner(); });
+    t.addEventListener('dblclick', function (e) { var tr = e.target.closest('tr[data-bk]'); if (!tr || !ed()) return; bsel = +tr.dataset.bk; bedit = bsel; bform(bil[bedit]); bdessiner(); q('[data-b=val]').focus(); });
+  });
+  q('[data-b=val]').addEventListener('keydown', function (e) { if (e.key === 'Enter') { e.preventDefault(); if (ed()) bajouter(); } });
+  liste(); form(null); etat(); onglet('liste'); publier();
+})();
+</script>

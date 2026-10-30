@@ -1,0 +1,211 @@
+<!--
+  Écran « Modèle d'état » (Comptabilité Projets & Bailleurs › Gestion des demandes de remboursement › Paramétrages › Modèle d'état).
+  Liste les modèles d'état cochés dans Paramétrages › Paramètres financiers › Procédures financières
+  (lus dans window.__pfProcs, publié par l'écran Procédures financières). Les modèles seront détaillés un par un.
+-->
+<style>
+.md-card{border:1px solid #e2e8f0;border-radius:12px;background:#fff;box-shadow:0 1px 2px #0f172a0d;color:#1e293b}
+.md-head{padding:20px;border-bottom:1px solid #e2e8f0}
+.md-h1{margin:0;font-size:20px;font-weight:700;color:#0f172a}
+.md-sub{margin:4px 0 0;font-size:14px;color:#64748b}
+.md-search{padding:16px;border-bottom:1px solid #e2e8f0}
+.md-ctl{width:100%;border:1px solid #cbd5e1;border-radius:8px;padding:8px 12px;font:inherit;font-size:14px;outline:none;background:#fff}
+.md-ctl:focus{border-color:#0d9488;box-shadow:0 0 0 2px #ccfbf1}
+.md-empty{padding:40px;text-align:center}
+.md-empty b{display:block;font-size:14px;color:#334155}
+.md-empty span{display:block;margin-top:4px;font-size:12px;color:#64748b}
+.md-wrap{overflow-x:auto}
+.md-table{width:100%;border-collapse:collapse;font-size:14px}
+.md-table th{background:#f8fafc;color:#475569;font-size:11px;font-weight:700;letter-spacing:.06em;text-transform:uppercase;text-align:left;padding:12px 16px}
+.md-table td{padding:12px 16px;border-top:1px solid #e2e8f0;vertical-align:middle}
+.md-pill{display:inline-flex;border-radius:999px;background:#ecfeff;color:#155e75;border:1px solid #a5f3fc;padding:2px 10px;font-size:12px;font-weight:700}
+.md-conv{display:inline-flex;border-radius:6px;background:#f1f5f9;color:#475569;padding:2px 8px;font-size:12px;font-weight:600;margin:0 4px 4px 0}
+.md-btn{border:1px solid #cbd5e1;border-radius:8px;background:#fff;color:#334155;padding:6px 12px;font:inherit;font-size:13px;font-weight:600;cursor:pointer}
+.md-btn:hover{background:#f8fafc}
+.md4-ov{position:fixed;inset:0;z-index:2000;background:#0f172a8c;display:flex;align-items:center;justify-content:center;padding:16px}
+.md4-box{background:#fff;border-radius:12px;width:min(1280px,100%);max-height:calc(100vh - 32px);display:flex;flex-direction:column;overflow:hidden;box-shadow:0 20px 60px #0000004d}
+.md4-hd{display:flex;justify-content:space-between;align-items:flex-start;gap:12px;padding:14px 18px;background:#0f766e;color:#fff}
+.md4-hd h2{margin:0;font-size:16px;font-weight:700}.md4-hd p{margin:4px 0 0;font-size:12px;opacity:.9}
+.md4-tabs{display:flex;align-items:center;gap:4px;padding:0 18px;border-bottom:1px solid #e2e8f0;background:#f8fafc}.md4-tabs button{border:0;background:none;padding:10px 14px;font:inherit;font-size:13px;font-weight:600;color:#64748b;cursor:pointer;border-bottom:2px solid transparent}.md4-tabs button.on{color:#0f766e;border-bottom-color:#0f766e}.md4-rep{margin-left:auto;font-size:12px;color:#475569;display:flex;gap:6px;align-items:center;cursor:pointer}
+.md4-bdg{display:inline-flex;align-items:center;justify-content:center;min-width:20px;height:20px;border-radius:99px;background:#b91c1c;color:#fff;font-size:11px;font-weight:700;padding:0 5px}.md4-na{color:#94a3b8}
+.md4-fill{width:100%;border-collapse:collapse;font-size:13px}.md4-fill th{background:#0c4a6e;color:#fff;text-align:left;padding:8px 10px;font-size:12px}.md4-fill td{border:1px solid #e2e8f0;padding:8px 10px;vertical-align:top}.md4-fill ul{margin:0;padding-left:18px}.md4-fill li{margin:2px 0}.md4-note{font-size:12px;color:#64748b;margin:12px 0 0}
+.md4-x{border:0;background:none;color:#fff;font-size:24px;line-height:1;cursor:pointer}
+.md4-bd{padding:16px 18px;overflow:auto}
+.md4-st{display:flex;flex-wrap:wrap;gap:6px;margin-bottom:12px}.md4-st span{background:#f1f5f9;border-radius:6px;padding:3px 9px;font-size:12px;color:#475569;font-weight:600}
+.md4-doc{background:transparent;padding:0;color:#0f172a;font-size:11px;display:flex;flex-direction:column;gap:12px}.md4-pg{background:#fff;border:1px solid #cbd5e1;padding:26px 34px 20px;box-shadow:0 1px 4px #0002;box-sizing:border-box;width:1122px;height:794px;flex:none;display:flex;flex-direction:column;overflow:hidden;margin:0 auto}.md4-pg .md4-wrap{overflow:hidden}.md4-ft{margin-top:auto}
+.md4-band{background:#eceeef;text-align:center;padding:10px 8px 8px;margin-bottom:6px}.md4-band .md4-t{color:#1d4e89;font-size:13px;margin:0 0 6px}.md4-sub{margin:0;font-weight:700;color:#1d4e89;font-size:12px}
+.md4-fl{display:flex;justify-content:space-between;gap:12px;font-size:10px;margin:4px 0 4px}.md4-ft{display:flex;justify-content:space-between;align-items:center;background:#eceeef;margin-top:8px;padding:6px 8px;font-size:10px;font-weight:700;color:#1d4e89}
+.md4-catrow td{background:#eceeef;font-weight:700;color:#1d4e89}
+.md4-top{display:flex;justify-content:space-between;font-size:10px;color:#475569;border-bottom:1px solid #e2e8f0;padding-bottom:4px;margin-bottom:6px}
+.md4-t{margin:0 0 8px;font-size:13px;font-weight:700}
+.md4-fin{margin:10px 0 2px;font-weight:700;font-size:11.5px}.md4-cur{margin:0 0 6px;font-size:11px;color:#475569}
+.md4-tb{width:100%;border-collapse:collapse;font-size:9px;table-layout:fixed}.md4-tb td{overflow-wrap:anywhere;word-break:normal}.md4-tb th{white-space:normal!important;overflow-wrap:anywhere;font-size:8.5px;line-height:1.15}.md4-tb td.md4-r{white-space:normal}
+.md4-tb th{background:#2f5f98;color:#fff;border:1px solid #9aa9d8;padding:4px 5px;text-align:center;font-weight:700;font-size:9.5px;vertical-align:middle}
+.md4-tb td{border:1px solid #b9c2ea;padding:4px 5px;vertical-align:top}.md4-r{text-align:right;white-space:nowrap}
+.md4-tot td{font-weight:700;background:#f8fafc}
+.md4-sig{margin-top:16px;font-size:11px}.md4-sig b{display:block;margin-top:2px}
+.md4-wrap{overflow-x:auto}.md4-brk{border-top:2px dashed #db2777;margin-top:14px;padding-top:2px;break-before:page;page-break-before:always}.md4-brk:before{content:'Saut de page';color:#db2777;font-size:9px;font-weight:700}
+.md-toast{position:fixed;right:24px;bottom:24px;z-index:2100;background:#0f172a;color:#fff;border-radius:10px;padding:10px 16px;font-size:13px}
+</style>
+<app-modeles-etat-drf>
+<div data-md-root>
+  <section class="md-card">
+    <div class="md-head">
+      <h1 class="md-h1">Modèle d'état</h1>
+      <p class="md-sub">Modèles d'état disponibles pour les demandes, selon les procédures financières paramétrées.</p>
+    </div>
+    <div class="md-search"><input type="text" class="md-ctl" data-md-q placeholder="Rechercher par modèle, procédure ou convention..."></div>
+    <div class="md-empty" data-md-empty><b>Aucun modèle trouvé</b><span>Cochez des modèles dans Paramétrages › Paramètres financiers › Procédures financières.</span></div>
+    <div class="md-wrap" data-md-list style="display:none"><table class="md-table">
+      <thead><tr><th>Modèle d'état</th><th>Procédure financière</th><th>Conventions</th><th style="text-align:right">Actions</th></tr></thead>
+      <tbody data-md-rows></tbody>
+    </table></div>
+  </section>
+</div>
+<script>
+(function () {
+  var root = document.currentScript.parentElement.querySelector('[data-md-root]');
+  var q = function (s) { return root.querySelector(s); };
+  var rows = q('[data-md-rows]'), search = q('[data-md-q]');
+  function esc(s) { var d = document.createElement('div'); d.textContent = s; return d.innerHTML; }
+  function say(t) { var d = document.createElement('div'); d.className = 'md-toast'; d.textContent = t; document.body.appendChild(d); setTimeout(function () { d.remove(); }, 2400); }
+  function nf(v, d) { var p = Math.abs(v).toFixed(d == null ? 2 : d).split('.'); p[0] = p[0].replace(/\B(?=(\d{3})+(?!\d))/g, ' '); return (v < 0 ? '-' : '') + p.join(','); }
+  // Modèle « Formulaire 4F » (Taux 3) : rend le document à partir de lignes {cat,ben,desc,marche,net,fin,usd,pct,date,rel,taux,ref,fac}
+  window.__render4F = function (rows, info) {
+    info = info || {};
+    var cats = {}, ord = [], ROWS = 9;
+    rows.forEach(function (r) { if (!cats[r.cat]) { cats[r.cat] = []; ord.push(r.cat); } cats[r.cat].push(r); });
+    var brk = info.sautCat != null ? info.sautCat : (window.__soe4F ? window.__soe4F.sautCat : true);
+    var org = esc(info.org || 'SOFTWELL - Version partenaire SOFTWELL - FOOD SYSTEM RESILIENCE PROGRAM - MADAGASCAR');
+    var titre = esc(info.titre || 'Demande de retrait de fonds n° 0038 du 01/06/2026 au 30/06/2026 - Formulaire 4F (4F)');
+    var CW = [3, 8, 17, 8, 8, 10, 7, 6, 7, 10, 5, 6, 5], TH = '<colgroup>' + CW.map(function (w) { return '<col style="width:' + w + '%">'; }).join('') + '</colgroup><thead><tr><th>Art. N°</th><th>Bénéficiaires</th><th>Description sommaire</th><th>Monnaie et montant Total du Marché</th><th class="md4-r">Montant Total net</th><th class="md4-r">Montant Total des Factures dont le Financement est autorisé</th><th class="md4-r">Montant (USD)</th><th class="md4-r">% Eligibilité</th><th>Date de Règlement</th><th>Ref. relevé</th><th class="md4-r">Taux</th><th>Numéro du Marché ou BC (ou autre réf.)</th><th>Référence Facture</th></tr></thead>';
+    var fin = function (c) { return 'FINANCEMENT 01 E083-MG - Cat. ' + esc(c) + ' : ' + esc((info.catLib && info.catLib[c]) || 'Biens, travaux, services non-consultants, part'); };
+    var pages = [], cur = null, n = {}, tot = {};
+    function newPage(c) { cur = { cat: c, lines: [], n: 0 }; pages.push(cur); }
+    ord.forEach(function (c, ci) {
+      if (!cur || (brk && ci > 0) || cur.n >= ROWS) newPage(c);
+      else cur.lines.push('<tr class="md4-catrow"><td colspan="13">' + fin(c) + '</td></tr>');
+      n[c] = 0; tot[c] = 0;
+      cats[c].forEach(function (r) {
+        if (cur.n >= ROWS) newPage(c);
+        n[c]++; tot[c] += r.usd; cur.n++;
+        cur.lines.push('<tr><td>' + n[c] + '</td><td>' + esc(r.ben) + '</td><td>' + esc(r.desc) + '</td><td class="md4-r">' + esc(r.marche) + '</td><td class="md4-r">' + nf(r.net) + ' MGA</td><td class="md4-r">' + nf(r.fin) + ' MGA</td><td class="md4-r">' + nf(r.usd) + '</td><td class="md4-r">' + nf(r.pct) + '</td><td>' + esc(r.date) + '</td><td>' + esc(r.rel) + '</td><td class="md4-r">' + nf(r.taux, 4) + '</td><td>' + esc(r.ref) + '</td><td>' + esc(r.fac) + '</td></tr>');
+      });
+      if (cur.n >= ROWS) newPage(c);
+      cur.lines.push('<tr class="md4-tot"><td colspan="6">Total cat. ' + esc(c) + '</td><td class="md4-r">' + nf(tot[c]) + '</td><td colspan="6"></td></tr>'); cur.n++;
+    });
+    var d = new Date(), p2 = function (x) { return ('0' + x).slice(-2); };
+    var stamp = p2(d.getDate()) + '/' + p2(d.getMonth() + 1) + '/' + d.getFullYear() + ' à ' + p2(d.getHours()) + ':' + p2(d.getMinutes()) + ' (UTC+3)';
+    var N = pages.length;
+    return '<div class="md4-doc">' + pages.map(function (pg, i) {
+      return '<div class="md4-pg"><div class="md4-top"><span>' + org + '</span></div>' +
+        '<div class="md4-band"><p class="md4-t">' + titre + '</p><p class="md4-sub">E083-MG</p></div>' +
+        '<div class="md4-fl"><span>' + fin(pg.cat) + '</span><span>Monnaie : USD</span><span>Page ' + (i + 1) + '/' + N + '</span></div>' +
+        '<div class="md4-wrap"><table class="md4-tb">' + TH + '<tbody>' + pg.lines.join('') + '</tbody></table></div>' +
+        (i === N - 1 ? '<div class="md4-sig">Responsable Financier<b>' + esc(info.resp || 'RAVELOSON Ndretsa Mamy Tantely') + '</b></div>' : '') +
+        '<div class="md4-ft"><span>SOFTWELL - Madagascar</span><span>Edité le ' + stamp + '</span></div></div>';
+    }).join('') + '</div>';
+  };
+  var SAMPLE4F = [
+    { cat: '01', ben: 'RAKOTOSON Lalaina Billie - MADAGASCAR', desc: 'Indemnité mission à Sahasinaka de CDEDD du 14-25/05/2026 : Préparatifs de la célébration de la journée Internationale de la Biodiversité du 22 mai 2026', marche: '287 701 100,00 MGA', net: 674000, fin: 170000, usd: 38.01, pct: 100, date: '01/06/2026', rel: 'BR N°0540/26 MGA', taux: 4472, ref: 'PROT N°05/25/DREDD/FITOVINANY du 06/10/2025', fac: 'Etat 59/26/TAN/7VY du 14/05/2026' },
+    { cat: '01', ben: 'BEMANAMBY Edmond - MANAKARA', desc: 'Carburant mission à Sahasinaka de CSREDD du 14-25/05/2026', marche: '287 701 100,00 MGA', net: 674000, fin: 164000, usd: 36.67, pct: 100, date: '01/06/2026', rel: 'BR N°0540/26 MGA', taux: 4472, ref: 'PROT N°05/25/DREDD/FITOVINANY du 06/10/2025', fac: 'Etat 59/26/TAN/7VY du 14/05/2026' },
+    { cat: '01', ben: 'FANOMEZANTSOA Zina Seta Abrahama Vincent - Farafangana', desc: 'Indemnités de mission à Farafangana du Chef CIRASA Sud-Est du 18-20/05/2026', marche: '157 481 365,00 MGA', net: 519000, fin: 145000, usd: 32.42, pct: 100, date: '01/06/2026', rel: 'BR N°0553/26 MGA', taux: 4472, ref: 'PROT N°03/25/DAPV/FITOVINANY du 10/06/2025', fac: 'Etat 58/26/TAN/7VY du 14/05/2026' },
+    { cat: '03', ben: 'LH HOTEL - MANGARIVOTRA MAHAJANGA', desc: 'Paiement LH HOTEL location salle atelier réunion de coordination FSRP Boeny juin 2026', marche: '540,58 USD', net: 506000, fin: 506000, usd: 114.93, pct: 100, date: '30/06/2026', rel: 'BRBOENY/222/26', taux: 4402.67, ref: 'BC N°021/2026/FSRP/UEIR BB du 15/06/26', fac: 'FC N°032 DU 17/06/26' },
+    { cat: '03', ben: 'BMOI - Analamahitsy', desc: 'Frais virement BMOI juin 2026', marche: '263 500,00 MGA', net: 263500, fin: 263500, usd: 58.92, pct: 100, date: '30/06/2026', rel: 'RLVBMOI06/26', taux: 4472, ref: '', fac: 'Relevé juin 26 du 30/06/26' }
+  ];
+  window.__sample4F = SAMPLE4F;
+  // Détail de remplissage du formulaire 4F (variante Taux 3 — IDA) : [colonne du modèle, n° de repère, règles]
+  var FILL4F = [
+    ['Art. N°',null,['Numéro d’ordre de la ligne dans la catégorie (numérotation automatique).']],
+    ['Bénéficiaires',1,['Modification du mouvement › Description › Nom du bénéficiaire.']],
+    ['Description sommaire',4,['Modification du mouvement › Description › Description du bien.']],
+    ['Monnaie et montant Total du Marché',5,['Modification du mouvement › Montant › Montant du contrat, suivi de la Monnaie du contrat.']],
+    ['Montant Total net',6,['Modification du mouvement › Montant › Montant en monnaie locale.']],
+    ['Montant Total des Factures dont le Financement est autorisé',7,['Modification du mouvement › Montant › Montant en monnaie locale.']],
+    ['Montant (USD)',8,['Modification du mouvement › Montant › Montant à émettre (USD).']],
+    ['% Eligibilité',null,['Modification du mouvement › Montant › Pourcentage d’éligibilité (%).']],
+    ['Date de Règlement',9,['Modification du mouvement › Autre › Date du règlement.']],
+    ['Ref. relevé',11,['Modification du mouvement › Autre › N° du relevé.']],
+    ['Taux',10,['Modification du mouvement › Montant › Cours.']],
+    ['Numéro du Marché ou BC (ou autre réf.)',2,['Modification du mouvement › Comptabilité › N° du contrat.']],
+    ['Référence Facture',3,['Modification du mouvement › Comptabilité › Référence facture.']]
+  ];
+  function fillHtml() {
+    return '<table class="md4-fill"><thead><tr><th style="width:56px">Repère</th><th style="width:26%">Colonne du formulaire</th><th>Règle de remplissage</th></tr></thead><tbody>' +
+      FILL4F.map(function (f) { return '<tr><td>' + (f[1] ? '<span class="md4-bdg">' + f[1] + '</span>' : '<span class="md4-na">—</span>') + '</td><td><b>' + esc(f[0]) + '</b></td><td><ul>' + f[2].map(function (r) { return '<li>' + esc(r) + '</li>'; }).join('') + '</ul></td></tr>'; }).join('') + '</tbody></table>' +
+      '<p class="md4-note">Source : « Comment bien remplir les informations lors de l’édition d’un SOE ? (Modèle Taux 3 – IDA) ». Les informations sont saisies dans la fiche marché, le plan des tiers, le champ NOTE de l’écriture et le bordereau de paiement.</p>';
+  }
+  function open4F(name) {
+    var ov = document.createElement('div'); ov.className = 'md4-ov';
+    ov.innerHTML = '<div class="md4-box"><div class="md4-hd"><div><h2>Modèle d’état — ' + esc(name) + '</h2><p>Variante « Taux 3 » · aperçu du document avec des données d’exemple</p></div><button type="button" class="md4-x" aria-label="Fermer">×</button></div>' +
+      '<div class="md4-tabs"><button type="button" class="on" data-md4-t="prev">Aperçu</button><button type="button" data-md4-t="fill">Détail de remplissage</button><label class="md4-rep"><input type="checkbox" data-md4-rep> Afficher les repères sur l’aperçu</label></div>' +
+      '<div class="md4-bd"><div data-md4-p="prev"><div class="md4-st"><span>Regroupement : financement / catégorie</span><span>Monnaie : USD</span><span>Colonnes : 13</span><span>Total par catégorie</span><span>Rupture : saut de page par catégorie</span><span>Signature : Responsable Financier</span></div>' + window.__render4F(SAMPLE4F) + '</div><div data-md4-p="fill" style="display:none">' + fillHtml() + '</div></div></div>';
+    function marks(on) {
+      ov.querySelectorAll('.md4-tb thead').forEach(function (th) {
+        th.querySelectorAll('.md4-bdg').forEach(function (b) { b.remove(); });
+        if (on) [].slice.call(th.querySelectorAll('th')).forEach(function (c, k) { var f = FILL4F[k]; if (f && f[1]) c.insertAdjacentHTML('beforeend', ' <span class="md4-bdg">' + f[1] + '</span>'); });
+      });
+    }
+    ov.addEventListener('click', function (e) {
+      if (e.target === ov || e.target.closest('.md4-x')) { ov.remove(); return; }
+      var t = e.target.closest('[data-md4-t]');
+      if (t) { ov.querySelectorAll('[data-md4-t]').forEach(function (b) { b.classList.toggle('on', b === t); }); ov.querySelectorAll('[data-md4-p]').forEach(function (p) { p.style.display = p.dataset.md4P === t.dataset.md4T ? '' : 'none'; }); }
+    });
+    ov.addEventListener('change', function (e) { if (e.target.matches('[data-md4-rep]')) marks(e.target.checked); });
+    document.body.appendChild(ov);
+  }
+  window.__open4F = open4F;
+  var EXTRA = [];
+  function build() {
+    var map = {}, order = [];
+    (window.__pfProcs || []).forEach(function (p) {
+      p.models.forEach(function (m) {
+        var k = p.proc + '|' + m;
+        if (!map[k]) { map[k] = { proc: p.proc, model: m, convs: [] }; order.push(k); }
+        map[k].convs.push(p.conv);
+      });
+    });
+    rows.innerHTML = order.map(function (k) {
+      var r = map[k];
+      return '<tr><td><b>' + esc(r.model) + '</b></td><td><span class="md-pill">' + esc(r.proc) + '</span></td>' +
+        '<td>' + r.convs.map(function (c) { return '<span class="md-conv">' + esc(c) + '</span>'; }).join('') + '</td>' +
+        '<td><div style="display:flex;justify-content:flex-end;gap:6px">' + (/4F/.test(r.model) ? '<button type="button" class="md-btn" data-md-prev data-md-name="' + esc(r.model) + '" style="margin-right:6px">Aperçu</button>' : '') + '<button type="button" class="md-btn" data-md-dup>Dupliquer</button><button type="button" class="md-btn" data-md-open data-md-name="' + esc(r.model) + '">Ouvrir le designer</button></div></td></tr>';
+    }).join('') + EXTRA.map(function (x) { return x.html; }).join('');
+    refresh();
+  }
+  function refresh() {
+    var t = search.value.trim().toLowerCase(), shown = 0;
+    Array.prototype.slice.call(rows.querySelectorAll('tr')).forEach(function (r) {
+      var on = !t || r.textContent.toLowerCase().indexOf(t) >= 0; r.style.display = on ? '' : 'none'; if (on) shown++;
+    });
+    q('[data-md-empty]').style.display = shown ? 'none' : '';
+    q('[data-md-list]').style.display = shown ? '' : 'none';
+  }
+  search.addEventListener('input', refresh);
+  function rinfo(tr) { var td = tr.querySelectorAll('td'); return { nom: td[0].textContent.trim(), proc: td[1].textContent.trim(), convs: td[2].innerHTML, base: tr.dataset.mdBase || td[0].textContent.trim(), code: tr.dataset.mdCode || '' }; }
+  function addDupRow(src, code, nom) {
+    var h = '<tr data-md-extra data-md-code="' + esc(code) + '" data-md-base="' + esc(src.base) + '"><td><b>' + esc(nom) + '</b></td><td><span class="md-pill">' + esc(src.proc) + '</span></td><td>' + src.convs + '</td>' +
+      '<td><div style="display:flex;justify-content:flex-end;gap:6px"><button type="button" class="md-btn" data-md-dup>Dupliquer</button><button type="button" class="md-btn" data-md-open data-md-name="' + esc(nom) + '" data-md-code="' + esc(code) + '" data-md-base="' + esc(src.base) + '">Ouvrir le designer</button></div></td></tr>';
+    EXTRA.push({ html: h }); rows.insertAdjacentHTML('beforeend', h); refresh();
+  }
+  window.addEventListener('mf-model-dup', function (e) {
+    var d = e.detail || {}; if (d.from !== 'modfisc2') return;
+    var tr = Array.prototype.filter.call(rows.querySelectorAll('tr'), function (t) { return t.querySelector('b') && t.querySelector('b').textContent.trim() === d.srcNom; })[0];
+    if (tr) addDupRow(rinfo(tr), d.code, d.nom);
+  });
+  rows.addEventListener('click', function (e) {
+    var du = e.target.closest('[data-md-dup]');
+    if (du) { var src = rinfo(du.closest('tr')); window.__dupModele({ source: { code: src.code, nom: src.nom }, exists: function (c) { return EXTRA.some(function (x) { return x.html.indexOf('data-md-code="' + esc(c) + '"') >= 0; }); }, onOk: function (c, n) { addDupRow(src, c, n); } }); return; }
+    var pb = e.target.closest('[data-md-prev]'); if (pb) { open4F(pb.dataset.mdName); return; }
+    var ob = e.target.closest('[data-md-open]'); if (!ob) return;
+    var nom = ob.dataset.mdName, base = ob.dataset.mdBase || nom, ejcd = /EJCD/i.test(base), decl = ejcd || /déclaration/i.test(base);
+    window.__mfDesigner = { code: ob.dataset.mdCode || (ejcd ? 'EJCD' : decl ? 'DECLARATION' : 'SOE'), nom: nom, def: false };
+    window.__designerFrom = 'modfisc2';
+    location.hash = decl ? 'designer2' : 'designer';
+  });
+  window.addEventListener('pf-change', build);
+  window.addEventListener('hashchange', function () { if (location.hash === '#modfisc2') build(); });
+  build();
+})();
+</script>
+</app-modeles-etat-drf>

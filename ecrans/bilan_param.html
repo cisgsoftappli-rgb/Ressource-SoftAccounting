@@ -1,0 +1,351 @@
+<!--
+  Écran « Paramétrage du bilan » (États financiers › Bilan › Paramétrages) — modèles de bilan, lignes du bilan et
+  formulaire de la ligne sélectionnée (code, ordre, libellé, type, nature, fourchettes de comptes, amortissements /
+  provisions, options de présentation). Données en mémoire (réinitialisées au rechargement). Charte graphique Softwell.
+-->
+<style>
+.bp-root{width:100%;color:#353944;font-size:12px}
+.bp-eyebrow{margin:0 0 4px;font-size:12px;font-weight:600;letter-spacing:.08em;text-transform:uppercase;color:#706000}
+.bp-h1{margin:0;font-family:var(--font-heading);font-size:24px;font-weight:600;line-height:1.2;color:#0B1332}
+.bp-sub{margin:4px 0 16px;color:#5B606D;font-size:14px}
+.bp-modele{display:flex;align-items:flex-end;gap:8px;flex-wrap:wrap;padding:12px 0 16px;border-top:1px solid #E9EBF0}
+.bp-champ{display:flex;flex-direction:column;gap:4px;min-width:0}
+.bp-champ>span,.bp-lab{font-size:12px;font-weight:600;color:#474C58}
+.bp-champ>span b,.bp-lab b{color:#B63132;font-weight:600}
+.bp-in,.bp-sel,.bp-ta{width:100%;box-sizing:border-box;border:1px solid #878D9A;border-radius:8px;background:#fff;color:#353944;font:inherit;font-size:12px;padding:0 12px}
+.bp-in,.bp-sel{height:36px}
+.bp-ta{padding:8px 12px;min-height:64px;resize:vertical}
+.bp-in:disabled,.bp-sel:disabled,.bp-ta:disabled{background:#F5F7F9;border-color:#D6D9E0;color:#747A88;cursor:not-allowed}
+.bp-in:focus-visible,.bp-sel:focus-visible,.bp-ta:focus-visible,.bp-b:focus-visible{outline:3px solid #2E427B;outline-offset:2px}
+.bp-b{display:inline-flex;align-items:center;justify-content:center;gap:6px;height:36px;padding:0 14px;border:1px solid #D6D9E0;border-radius:8px;background:#fff;color:#474C58;font:inherit;font-size:12px;font-weight:700;cursor:pointer;white-space:nowrap}
+.bp-b:hover:not(:disabled){background:#E9EBF0}.bp-b:disabled{opacity:.5;cursor:not-allowed}
+.bp-b.ico{width:36px;padding:0}
+.bp-grid{display:block}
+.bp-pan[hidden]{display:none}
+.bp-pan[data-bp-pan=saisie]>h2{display:none}
+.bp-tabs{display:flex;gap:4px;border-bottom:1px solid #E9EBF0;margin-bottom:16px}
+.bp-tabs button{height:36px;padding:0 16px;border:0;border-bottom:2px solid transparent;background:none;font:inherit;font-size:12px;font-weight:600;color:#5B606D;cursor:pointer}
+.bp-tabs button.on{color:#2E427B;border-bottom-color:#2E427B}
+.bp-tabs button:focus-visible{outline:3px solid #2E427B;outline-offset:-3px}
+.bp-n{display:inline-block;margin-left:4px;padding:0 6px;border-radius:6px;background:#E9EBF0;color:#474C58;font-weight:600}
+.bp-n:empty{display:none}
+.bp-pan{background:#fff;border:1px solid #E9EBF0;border-radius:12px;overflow:hidden}
+.bp-pan>h2{margin:0;padding:12px 16px;border-bottom:1px solid #E9EBF0;font-family:var(--font-heading);font-size:14px;font-weight:600;color:#0B1332;display:flex;justify-content:space-between;align-items:center}
+.bp-pan>h2 small{font:400 12px var(--font-sans);color:#5B606D}
+.bp-tb{width:100%;border-collapse:collapse}
+.bp-tb th{padding:8px 12px;background:#F5F7F9;border-bottom:1px solid #E9EBF0;text-align:left;font-size:12px;font-weight:600;letter-spacing:.05em;text-transform:uppercase;color:#5B606D;white-space:nowrap}
+.bp-tb td{padding:8px 12px;border-bottom:1px solid #E9EBF0}
+.bp-tb tbody tr{cursor:pointer}.bp-tb tbody tr:hover td{background:#F4F7FE}
+.bp-tb tbody tr.sel td{background:#E3EBFE;box-shadow:inset 3px 0 0 #2E427B}
+.bp-tb tbody tr.sel td:not(:first-child){box-shadow:none}
+.bp-tb{min-width:1200px}
+.bp-tb th:nth-child(2),.bp-tb td:nth-child(2){min-width:280px}
+.bp-tb th:nth-child(1),.bp-tb td:nth-child(1){min-width:70px}
+.bp-tb th{text-align:center;text-transform:none;letter-spacing:0;font-size:12px;color:#0B1332}
+.bp-tb td{text-align:left}
+.bp-tb td.c,.bp-tb th.c{text-align:center}
+.bp-tb tr.flt th{padding:4px;background:#F5F7F9;font-weight:400}
+.bp-tb tr.flt input,.bp-tb tr.flt select{width:100%;min-width:0;border-color:#D6D9E0;padding:0 6px}
+.bp-tb tr.t-titre td:nth-child(2),.bp-tb tr.t-total td:nth-child(2){font-weight:700}
+.bp-tb input[type=checkbox]{width:16px;height:16px;accent-color:#2E427B;margin:0;pointer-events:none}
+.bp-pill{display:inline-block;padding:2px 8px;border-radius:6px;background:#E9EBF0;color:#474C58;font-size:12px;font-weight:600}
+.bp-pill.actif{background:#E3EBFE;color:#243569}.bp-pill.passif{background:#F9F8E7;color:#706000}
+.bp-vide{padding:32px 16px;text-align:center;color:#5B606D}
+.bp-form{padding:16px;display:grid;gap:16px}
+.bp-l3{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:12px}
+.bp-l3 .bp-span2{grid-column:span 2}
+@media (max-width:700px){.bp-l3{grid-template-columns:1fr}.bp-l3 .bp-span2{grid-column:auto}}
+.bp-2{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:16px;align-items:start}
+@media (max-width:900px){.bp-2{grid-template-columns:1fr}}
+.bp-2[hidden],.bp-champ[hidden]{display:none!important}
+.bp-gr{display:grid;gap:8px;min-width:0}
+.bp-gr h3{margin:0;font-size:12px;font-weight:700;color:#0B1332}
+.bp-gb{display:flex;align-items:center;justify-content:space-between;gap:8px}
+.bp-gtools{display:flex;gap:4px}
+.bp-gw{border:1px solid #D6D9E0;min-height:220px;background:#fff}
+.bp-gt{width:100%;border-collapse:collapse;table-layout:fixed}
+.bp-gt td .bp-in,.bp-gt td .bp-sel{border-color:transparent;background:transparent;text-align:center;padding:0 4px}
+.bp-gt td .bp-in:hover:not(:disabled),.bp-gt td .bp-sel:hover:not(:disabled),.bp-gt td .bp-in:focus,.bp-gt td .bp-sel:focus{border-color:#878D9A;background:#fff}
+.bp-gt td .bp-in:disabled,.bp-gt td .bp-sel:disabled{background:transparent;border-color:transparent;color:#353944}
+.bp-gt td .bp-sel{appearance:none;-webkit-appearance:none}
+.bp-gt td .bp-b.ico{border-color:transparent;color:#2E427B}
+.bp-gt th{padding:8px;border:1px solid #E9EBF0;background:#fff;font-size:12px;font-weight:700;text-align:center;color:#0B1332}
+.bp-gt td{padding:4px;border:1px solid #E9EBF0}
+.bp-gt th:last-child,.bp-gt td:last-child{width:44px;text-align:center}
+.bp-gt th:nth-child(3),.bp-gt td:nth-child(3){width:72px}
+.bp-gt .bp-in,.bp-gt .bp-sel{border-color:#D6D9E0}
+.bp-ge{min-height:150px;display:flex;align-items:center;justify-content:center;color:#747A88;font-size:16px}
+.bp-ge[hidden]{display:none}
+.bp-aide{margin:0;padding:10px 12px;border-left:3px solid #2E427B;background:#F5F7F9;color:#474C58;font-size:12px}
+.bp-radios{display:flex;flex-wrap:wrap;gap:6px 16px}
+.bp-radios label,.bp-chk label{display:inline-flex;align-items:center;gap:6px;font-size:12px;cursor:pointer}
+.bp-radios input,.bp-chk input{width:16px;height:16px;accent-color:#2E427B;margin:0}
+.bp-sect{border:1px solid #E9EBF0;border-radius:8px;padding:12px;display:grid;gap:8px}
+.bp-sect>.hd{display:flex;align-items:center;justify-content:space-between;gap:8px}
+.bp-sect>.hd strong{font-size:12px;font-weight:700;color:#0B1332}
+.bp-note{margin:0;font-size:12px;color:#5B606D}
+.bp-opt-t{display:inline-flex;align-items:center;gap:6px;border:0;background:none;padding:0;font:inherit;font-size:12px;font-weight:700;color:#2E427B;cursor:pointer;height:36px}
+.bp-opt{display:grid;gap:12px;padding-top:4px}
+.bp-chk{display:flex;flex-wrap:wrap;gap:8px 16px}
+.bp-ov{position:fixed;inset:0;z-index:50;background:rgba(11,19,50,.5);display:flex;align-items:center;justify-content:center;padding:16px}
+.bp-ov[hidden]{display:none}
+.bp-dlg{width:100%;max-width:420px;background:#fff;border-radius:12px;padding:20px;display:grid;gap:12px;box-shadow:0 12px 32px -8px rgba(11,19,50,.3)}
+.bp-dlg h3{margin:0;font-family:var(--font-heading);font-size:16px;font-weight:600;color:#0B1332}
+.bp-dlg .ft{display:flex;justify-content:flex-end;gap:8px}
+.bp-b.pri{background:#2E427B;border-color:#2E427B;color:#fff}.bp-b.pri:hover:not(:disabled){background:#243569}
+.bp-toast{position:fixed;top:16px;right:16px;z-index:50;background:#0B1332;color:#fff;border-radius:8px;padding:10px 16px;font-size:12px;font-weight:600}
+.bp-toast[hidden]{display:none}
+</style>
+
+<div class="bp-root" data-bp>
+  <h1 style="position:absolute;width:1px;height:1px;overflow:hidden;clip-path:inset(50%);margin:0">Paramétrage du bilan</h1>
+
+  <div class="bp-modele">
+    <label class="bp-champ" style="flex:1;max-width:420px"><span>Sélection du modèle</span>
+      <select class="bp-sel" data-bp-modele><option value="">— Sélectionner un modèle —</option></select></label>
+  </div>
+
+  <div class="no-print" data-bp-actions>
+    <button type="button" data-bp-ajouter>Ajouter</button>
+    <button type="button" data-bp-nouveau>Nouveau modèle</button>
+    <button type="button" data-bp-dupliquer disabled>Dupliquer</button>
+    <button type="button" data-bp-supprimer-modele disabled>Supprimer</button>
+    <button type="button" data-bp-modifier>Modifier</button>
+    <button type="button" data-bp-enregistrer>Enregistrer</button>
+    <button type="button" data-bp-annuler>Annuler</button>
+    <button type="button" data-bp-imprimer>Imprimer</button>
+    <button type="button" data-bp-exporter>Exporter</button>
+    <button type="button" data-bil-vers="biledit">Édition</button>
+  </div>
+
+  <div class="bp-tabs" role="tablist">
+    <button type="button" role="tab" class="on" data-bp-tab="saisie">Saisie</button>
+    <button type="button" role="tab" data-bp-tab="liste">Liste <span class="bp-n" data-bp-compte></span></button>
+  </div>
+  <div class="bp-grid">
+    <section class="bp-pan" aria-label="Lignes du bilan" data-bp-pan="liste" hidden>
+      <h2>Lignes du bilan <small>Double-clic ou « Modifier » pour ouvrir la ligne en saisie</small></h2>
+      <div style="overflow:auto;max-height:560px">
+        <table class="bp-tb"><thead>
+          <tr><th>Code</th><th>Libellé</th><th>Type</th><th>Résultat</th><th>Brut(mini)</th><th>Brut(maxi)</th><th>S</th><th>Amort(mini)</th><th>Amort(maxi)</th><th>S</th><th>Nature</th><th>Formule</th></tr>
+          <tr class="flt" data-bp-flt>
+            <th><input class="bp-in" data-fc="0" aria-label="Filtrer Code"></th><th><input class="bp-in" data-fc="1" aria-label="Filtrer Libellé"></th><th><input class="bp-in" data-fc="2" aria-label="Filtrer Type"></th>
+            <th><select class="bp-sel" data-fc="3" aria-label="Filtrer Résultat"><option value=""></option><option value="oui">Oui</option><option value="non">Non</option></select></th>
+            <th><input class="bp-in" data-fc="4" aria-label="Filtrer Brut mini"></th><th><input class="bp-in" data-fc="5" aria-label="Filtrer Brut maxi"></th><th><input class="bp-in" data-fc="6" aria-label="Filtrer S"></th>
+            <th><input class="bp-in" data-fc="7" aria-label="Filtrer Amort mini"></th><th><input class="bp-in" data-fc="8" aria-label="Filtrer Amort maxi"></th><th><input class="bp-in" data-fc="9" aria-label="Filtrer S"></th>
+            <th><input class="bp-in" data-fc="10" aria-label="Filtrer Nature"></th><th><input class="bp-in" data-fc="11" aria-label="Filtrer Formule"></th>
+          </tr></thead><tbody data-bp-lignes></tbody></table>
+      </div>
+      <div class="bp-vide" data-bp-vide>Sélectionnez ou créez un modèle pour afficher ses lignes.</div>
+    </section>
+
+    <section class="bp-pan" aria-label="Ligne sélectionnée" data-bp-pan="saisie">
+      <h2>Ligne sélectionnée <small data-bp-mode>Consultation</small></h2>
+      <form class="bp-form" data-bp-form onsubmit="return false">
+        <div class="bp-l3">
+          <label class="bp-champ"><span>Code <b>*</b></span><input class="bp-in" data-f="code" maxlength="12"></label>
+          <label class="bp-champ"><span>Ordre</span><input class="bp-in" data-f="ordre" inputmode="numeric"></label>
+          <label class="bp-champ"><span>Référence</span><input class="bp-in" data-f="reference" maxlength="40"></label>
+          <label class="bp-champ bp-span2"><span>Libellé <b>*</b></span><input class="bp-in" data-f="libelle"></label>
+          <label class="bp-champ"><span>Note</span><input class="bp-in" data-f="note" maxlength="120"></label>
+        </div>
+        <div class="bp-chk">
+          <label><input type="checkbox" data-c="gras">Gras</label><label><input type="checkbox" data-c="italique">Italique</label>
+          <label><input type="checkbox" data-c="vide">Ligne vide</label><label><input type="checkbox" data-c="fond">Fond gris</label>
+          <label><input type="checkbox" data-c="imprimer">À imprimer</label><label><input type="checkbox" data-c="afficher">À afficher</label>
+        </div>
+        <div><div class="bp-lab">Type <b>*</b></div>
+          <div class="bp-radios" data-r="type"><label><input type="radio" name="bp-type" value="actif">Actif</label><label><input type="radio" name="bp-type" value="passif">Passif</label></div></div>
+        <div><div class="bp-lab">Nature <b>*</b></div>
+          <div class="bp-radios" data-r="nature">
+            <label><input type="radio" name="bp-nature" value="titre">Titre</label><label><input type="radio" name="bp-nature" value="soustitre">Sous-titre</label>
+            <label><input type="radio" name="bp-nature" value="ligne">Ligne comptable</label><label><input type="radio" name="bp-nature" value="soustotal">Sous-total</label>
+            <label><input type="radio" name="bp-nature" value="total">Total</label><label><input type="radio" name="bp-nature" value="resultat">Résultat</label>
+            <label><input type="radio" name="bp-nature" value="formule">Formule</label><label><input type="radio" name="bp-nature" value="constante">Constante</label>
+          </div></div>
+
+        <label class="bp-champ" data-bp-formule hidden><span>Formule / Constante</span><input class="bp-in" data-f="formule" placeholder="Ex : AZ + CZ"></label>
+
+        <div class="bp-2" data-bp-grilles>
+          <div class="bp-gr" data-sect="fourchettes">
+            <div class="bp-gb"><h3>Fourchettes de comptes</h3><span class="bp-gtools"><button type="button" class="bp-b ico" title="Ajouter une fourchette" aria-label="Ajouter une fourchette" data-add-f="fourchettes"><i class="ti ti-plus"></i></button><button type="button" class="bp-b ico" title="Valider la grille" aria-label="Valider la grille" data-g-save="fourchettes"><i class="ti ti-device-floppy"></i></button><button type="button" class="bp-b ico" title="Annuler les modifications de la grille" aria-label="Annuler les modifications de la grille" data-g-undo="fourchettes"><i class="ti ti-arrow-back-up"></i></button></span></div>
+            <div class="bp-gw"><table class="bp-gt"><thead><tr><th>Min</th><th>Max</th><th>S</th><th></th></tr></thead><tbody data-rows="fourchettes"></tbody></table><div class="bp-ge" data-vide="fourchettes">Aucun enregistrement</div></div>
+            <p class="bp-aide">Saisissez les comptes comptables constituant le montant brut. Zone S : (S)olde, (D)ébit, (C)rédit.</p>
+          </div>
+          <div class="bp-gr" data-sect="amort">
+            <div class="bp-gb"><h3>Amortissements / provisions</h3><span class="bp-gtools"><button type="button" class="bp-b ico" title="Ajouter une fourchette" aria-label="Ajouter une fourchette" data-add-f="amort"><i class="ti ti-plus"></i></button><button type="button" class="bp-b ico" title="Valider la grille" aria-label="Valider la grille" data-g-save="amort"><i class="ti ti-device-floppy"></i></button><button type="button" class="bp-b ico" title="Annuler les modifications de la grille" aria-label="Annuler les modifications de la grille" data-g-undo="amort"><i class="ti ti-arrow-back-up"></i></button></span></div>
+            <div class="bp-gw"><table class="bp-gt"><thead><tr><th>Min</th><th>Max</th><th>S</th><th></th></tr></thead><tbody data-rows="amort"></tbody></table><div class="bp-ge" data-vide="amort">Aucun enregistrement</div></div>
+            <p class="bp-aide">Saisissez les comptes comptables constituant éventuellement l'amortissement ou la provision.</p>
+          </div>
+        </div>
+
+      </form>
+    </section>
+  </div>
+
+  <div class="bp-ov" hidden data-bp-ov>
+    <div class="bp-dlg" role="dialog" aria-modal="true" aria-labelledby="bp-dt">
+      <h3 id="bp-dt">Nouveau modèle</h3>
+      <label class="bp-champ"><span>Code <b>*</b></span><input class="bp-in" data-n="code" maxlength="12"></label>
+      <label class="bp-champ"><span>Libellé <b>*</b></span><input class="bp-in" data-n="libelle"></label>
+      <p class="bp-note" data-n-err style="color:#B63132" hidden></p>
+      <div class="ft"><button type="button" class="bp-b" data-n-annuler>Annuler</button><button type="button" class="bp-b pri" data-n-ok>Créer</button></div>
+    </div>
+  </div>
+  <div class="bp-toast" role="status" hidden data-bp-toast></div>
+</div>
+
+<script>
+(function () {
+  var root = document.querySelector('[data-bp]'); if (!root) return;
+  function q(s) { return root.querySelector(s); } function qa(s) { return [].slice.call(root.querySelectorAll(s)); }
+  var NAT = { titre: 'Titre', soustitre: 'Sous-titre', ligne: 'Ligne comptable', soustotal: 'Sous-total', total: 'Total', resultat: 'Résultat', formule: 'Formule', constante: 'Constante' };
+  function L(code, ordre, libelle, type, nature, f, a) { return { code: code, ordre: ordre, libelle: libelle, type: type, nature: nature, fourchettes: f || [], amort: a || [], reference: '', note: '', gras: nature !== 'ligne', italique: false, vide: false, fond: nature === 'total', imprimer: true, afficher: true }; }
+  var modeles = [{ id: 'SYSCOHADA', libelle: 'Bilan SYSCOHADA révisé', lignes: [
+    L('AZ', 10, 'ACTIF IMMOBILISÉ', 'actif', 'titre'),
+    L('AD', 20, 'Immobilisations incorporelles', 'actif', 'soustitre'),
+    L('AE', 30, 'Frais de développement et de prototypes', 'actif', 'ligne', [{ d: '211', f: '2119', s: 'D' }], [{ d: '2811', f: '2819', s: 'C' }]),
+    L('AF', 40, 'Brevets, licences, logiciels', 'actif', 'ligne', [{ d: '212', f: '2129', s: 'D' }], [{ d: '2812', f: '2819', s: 'C' }]),
+    L('AJ', 50, 'Immobilisations corporelles', 'actif', 'soustitre'),
+    L('AL', 60, 'Terrains', 'actif', 'ligne', [{ d: '221', f: '229', s: 'D' }]),
+    L('AZT', 70, 'TOTAL ACTIF IMMOBILISÉ', 'actif', 'formule'),
+    L('CA', 10, 'CAPITAUX PROPRES ET RESSOURCES ASSIMILÉES', 'passif', 'titre'),
+    L('CB', 20, 'Capital', 'passif', 'ligne', [{ d: '101', f: '109', s: 'C' }]),
+    L('CJ', 30, 'Résultat net de l\'exercice', 'passif', 'resultat', [{ d: '131', f: '139', s: 'C' }]),
+    L('CZ', 40, 'TOTAL CAPITAUX PROPRES', 'passif', 'total')
+  ] }, { id: 'ALLEGE', libelle: 'Bilan système allégé', lignes: [] }];
+  var cur = null, sel = -1, mode = 'consultation', copie = null, optOuvert = false;
+  var sM = q('[data-bp-modele]'), tb = q('[data-bp-lignes]');
+
+  function toast(m) { var t = q('[data-bp-toast]'); t.textContent = m; t.hidden = false; clearTimeout(toast.t); toast.t = setTimeout(function () { t.hidden = true; }, 2200); }
+  function refModeles(garder) {
+    sM.innerHTML = '<option value="">— Sélectionner un modèle —</option>' + modeles.map(function (m) { return '<option value="' + m.id + '">' + m.id + ' — ' + m.libelle + '</option>'; }).join('');
+    sM.value = garder || '';
+  }
+  function modele() { return modeles.filter(function (m) { return m.id === sM.value; })[0] || null; }
+  function esc(s) { return String(s == null ? '' : s).replace(/[&<>"]/g, function (c) { return { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c]; }); }
+
+  function renderLignes() {
+    var m = modele(); cur = m;
+    q('[data-bp-dupliquer]').disabled = !m; q('[data-bp-supprimer-modele]').disabled = !m;
+    q('[data-bp-vide]').hidden = !!m && m.lignes.length > 0;
+    q('[data-bp-vide]').textContent = !m ? 'Sélectionnez ou créez un modèle pour afficher ses lignes.' : 'Ce modèle n\'a pas encore de ligne : utilisez « Ajouter ».';
+    q('[data-bp-compte]').textContent = m ? m.lignes.length + ' ligne' + (m.lignes.length > 1 ? 's' : '') : '';
+    var LET = { ligne: 'G', formule: 'F', constante: 'C' };
+    tb.innerHTML = m ? m.lignes.map(function (l, i) { return { l: l, i: i }; }).sort(function (a, b) { return (a.l.type === b.l.type ? 0 : a.l.type === 'actif' ? -1 : 1) || (+a.l.ordre || 0) - (+b.l.ordre || 0); }).map(function (o) {
+      var l = o.l, i = o.i, f = l.fourchettes[0] || {}, a = l.amort[0] || {}, res = l.nature === 'resultat';
+      function c(v, cl) { return '<td' + (cl ? ' class="' + cl + '"' : '') + '>' + esc(v) + '</td>'; }
+      return '<tr data-i="' + i + '" class="t-' + l.nature + (i === sel ? ' sel' : '') + '">' + c(l.code) + c(l.libelle) + c(l.type === 'actif' ? 'A' : 'P', 'c') +
+        '<td class="c" data-v="' + (res ? 'oui' : 'non') + '"><input type="checkbox" tabindex="-1" aria-label="Résultat"' + (res ? ' checked' : '') + '></td>' +
+        c(f.d) + c(f.f) + c(f.s, 'c') + c(a.d) + c(a.f) + c(a.s, 'c') +
+        '<td class="c" title="' + NAT[l.nature] + '">' + (LET[l.nature] || 'R') + '</td>' + c(l.formule) + '</tr>';
+    }).join('') : '';
+    filtrer();
+  }
+
+  function filtrer() {
+    var F = qa('[data-fc]').map(function (e) { return e.value.trim().toLowerCase(); });
+    qa('[data-bp-lignes] tr').forEach(function (tr) {
+      tr.hidden = F.some(function (v, k) { if (!v) return false; var td = tr.children[k]; var t = (td.dataset.v || td.textContent).toLowerCase(); return k === 3 ? t !== v : t.indexOf(v) < 0; });
+    });
+  }
+  qa('[data-fc]').forEach(function (e) { e.addEventListener('input', filtrer); e.addEventListener('change', filtrer); });
+  function ligneFl(kind, v) {
+    v = v || { d: '', f: '', s: 'S' };
+    var d = document.createElement('tr'); d.className = 'bp-fl';
+    d.innerHTML = '<td><input class="bp-in" data-k="d" aria-label="Compte min" value="' + esc(v.d) + '"></td>' +
+      '<td><input class="bp-in" data-k="f" aria-label="Compte max" value="' + esc(v.f) + '"></td>' +
+      '<td><select class="bp-sel" data-k="s" aria-label="Sens"><option value="S">S</option><option value="D">D</option><option value="C">C</option></select></td>' +
+      '<td><button type="button" class="bp-b ico" title="Retirer la ligne" aria-label="Retirer la ligne" data-rm><i class="ti ti-trash"></i></button></td>';
+    d.querySelector('select').value = v.s || 'S';
+    return d;
+  }
+  function majVide(kind) { var n = q('[data-rows="' + kind + '"]').children.length; q('[data-vide="' + kind + '"]').hidden = n > 0; }
+  var snap = {};
+  function remplirRows(kind, arr) {
+    snap[kind] = JSON.stringify(arr || []);
+    var c = q('[data-rows="' + kind + '"]'); c.innerHTML = '';
+    (arr || []).forEach(function (v) { c.appendChild(ligneFl(kind, v)); }); majVide(kind);
+  }
+  function lireRows(kind) {
+    return qa('[data-rows="' + kind + '"] .bp-fl').map(function (r) { return { d: r.querySelector('[data-k=d]').value.trim(), f: r.querySelector('[data-k=f]').value.trim(), s: r.querySelector('[data-k=s]').value }; });
+  }
+  function majSections() { var n = qa('[name=bp-nature]:checked')[0]; q('[data-bp-grilles]').hidden = !(n && n.value === 'ligne'); q('[data-bp-formule]').hidden = !(n && (n.value === 'formule' || n.value === 'constante')); }
+  qa('[name=bp-nature]').forEach(function (r) { r.addEventListener('change', majSections); });
+
+  function remplirForm(l) {
+    l = l || L('', '', '', 'actif', 'ligne'); if (!l.code && !l.libelle) { l.gras = false; l.fond = false; }
+    qa('[data-f]').forEach(function (e) { e.value = l[e.dataset.f] == null ? '' : l[e.dataset.f]; });
+    qa('[name=bp-type]').forEach(function (r) { r.checked = r.value === l.type && (l.code || l.libelle || sel >= 0 || mode === 'edition'); });
+    qa('[name=bp-nature]').forEach(function (r) { r.checked = r.value === l.nature && (l.code || l.libelle || sel >= 0 || mode === 'edition'); });
+    qa('[data-c]').forEach(function (c) { c.checked = !!l[c.dataset.c]; });
+    remplirRows('fourchettes', l.fourchettes); remplirRows('amort', l.amort); majSections();
+  }
+  function appliquerMode() {
+    var ed = mode !== 'consultation';
+    qa('[data-bp-form] input,[data-bp-form] select,[data-bp-form] textarea,[data-bp-form] [data-add-f],[data-bp-form] [data-g-save],[data-bp-form] [data-g-undo],[data-bp-form] [data-rm]').forEach(function (e) { e.disabled = !ed; });
+    q('[data-bp-mode]').textContent = mode === 'creation' ? 'Création' : mode === 'edition' ? 'Modification' : 'Consultation';
+    var m = modele(), a = root.querySelector('[data-bp-actions]');
+    a.querySelector('[data-bp-ajouter]').disabled = !m || ed;
+    a.querySelector('[data-bp-modifier]').disabled = !m || ed || sel < 0;
+    a.querySelector('[data-bp-enregistrer]').disabled = !ed;
+    a.querySelector('[data-bp-annuler]').disabled = !ed;
+    a.querySelector('[data-bp-imprimer]').disabled = !m;
+    a.querySelector('[data-bp-exporter]').disabled = !m;
+  }
+  function onglet(n) { qa('[data-bp-pan]').forEach(function (p) { p.hidden = p.dataset.bpPan !== n; }); qa('[data-bp-tab]').forEach(function (t) { var on = t.dataset.bpTab === n; t.classList.toggle('on', on); t.setAttribute('aria-selected', on); }); }
+  function choisir(i) {
+    if (mode !== 'consultation') return;
+    sel = i; renderLignes(); remplirForm(cur.lignes[i]); appliquerMode();
+  }
+  qa('[data-bil-vers]').forEach(function (b) { b.addEventListener('click', function () { location.hash = '#' + b.dataset.bilVers; }); });
+  qa('[data-bp-tab]').forEach(function (t) { t.addEventListener('click', function () { onglet(t.dataset.bpTab); }); });
+  tb.addEventListener('dblclick', function (e) { var tr = e.target.closest('tr[data-i]'); if (tr) { choisir(+tr.dataset.i); onglet('saisie'); } });
+
+  tb.addEventListener('click', function (e) { var tr = e.target.closest('tr[data-i]'); if (tr) choisir(+tr.dataset.i); });
+  sM.addEventListener('change', function () { sel = -1; mode = 'consultation'; renderLignes(); remplirForm(null); appliquerMode(); });
+
+  root.addEventListener('click', function (e) {
+    var b = e.target.closest('button'); if (!b || b.disabled) return;
+    if (b.hasAttribute('data-add-f')) { q('[data-rows="' + b.dataset.addF + '"]').appendChild(ligneFl(b.dataset.addF)); majVide(b.dataset.addF); return; }
+    if (b.hasAttribute('data-g-save')) { var kk = b.dataset.gSave; snap[kk] = JSON.stringify(lireRows(kk)); toast('Grille validée'); return; }
+    if (b.hasAttribute('data-g-undo')) { var ku = b.dataset.gUndo; var sv = snap[ku]; remplirRows(ku, JSON.parse(sv || '[]')); appliquerMode(); return; }
+    if (b.hasAttribute('data-rm')) { var row = b.closest('.bp-fl'), kd = row.parentNode.dataset.rows; row.remove(); majVide(kd); return; }
+    if (b.hasAttribute('data-bp-opt-t')) { optOuvert = !optOuvert; q('[data-bp-opt]').hidden = !optOuvert; b.setAttribute('aria-expanded', optOuvert); b.querySelector('i').className = 'ti ti-chevron-' + (optOuvert ? 'up' : 'down'); return; }
+    if (b.hasAttribute('data-bp-ajouter')) { onglet('saisie'); mode = 'creation'; sel = -1; renderLignes(); copie = null; var nl = L('', (cur.lignes.length + 1) * 10, '', 'actif', 'ligne'); remplirForm(nl); qa('[name=bp-type][value=actif]')[0].checked = true; qa('[name=bp-nature][value=ligne]')[0].checked = true; appliquerMode(); q('[data-f=code]').focus(); return; }
+    if (b.hasAttribute('data-bp-modifier')) { onglet('saisie'); mode = 'edition'; appliquerMode(); q('[data-f=code]').focus(); return; }
+    if (b.hasAttribute('data-bp-annuler')) { mode = 'consultation'; renderLignes(); remplirForm(sel >= 0 ? cur.lignes[sel] : null); appliquerMode(); return; }
+    if (b.hasAttribute('data-bp-enregistrer')) { enregistrer(); return; }
+    if (b.hasAttribute('data-bp-imprimer')) { window.print(); return; }
+    if (b.hasAttribute('data-bp-exporter')) { toast('Export du modèle ' + cur.id + ' (maquette)'); return; }
+    if (b.hasAttribute('data-bp-nouveau')) { var o = q('[data-bp-ov]'); o.hidden = false; q('[data-n-err]').hidden = true; qa('[data-n]').forEach(function (i) { i.value = ''; }); q('[data-n=code]').focus(); return; }
+    if (b.hasAttribute('data-bp-dupliquer')) { var m0 = modele(), n = 2; while (modeles.some(function (x) { return x.id === m0.id + '-' + n; })) n++; var cp = JSON.parse(JSON.stringify(m0)); cp.id = m0.id + '-' + n; cp.libelle = m0.libelle + ' (copie)'; modeles.push(cp); refModeles(cp.id); sM.dispatchEvent(new Event('change')); toast('Modèle dupliqué'); return; }
+    if (b.hasAttribute('data-bp-supprimer-modele')) { var m1 = modele(); if (!window.confirm('Supprimer le modèle « ' + m1.id + ' » ?')) return; modeles = modeles.filter(function (x) { return x !== m1; }); refModeles(''); sM.dispatchEvent(new Event('change')); toast('Modèle supprimé'); return; }
+    if (b.hasAttribute('data-n-annuler')) { q('[data-bp-ov]').hidden = true; return; }
+    if (b.hasAttribute('data-n-ok')) {
+      var c = q('[data-n=code]').value.trim().toUpperCase(), lb = q('[data-n=libelle]').value.trim(), er = q('[data-n-err]');
+      if (!c || !lb) { er.textContent = 'Le code et le libellé sont obligatoires.'; er.hidden = false; return; }
+      if (modeles.some(function (x) { return x.id === c; })) { er.textContent = 'Ce code existe déjà.'; er.hidden = false; return; }
+      modeles.push({ id: c, libelle: lb, lignes: [] }); refModeles(c); sM.dispatchEvent(new Event('change')); q('[data-bp-ov]').hidden = true; toast('Modèle créé'); return;
+    }
+  });
+  root.addEventListener('keydown', function (e) { if (e.key === 'Escape' && !q('[data-bp-ov]').hidden) q('[data-bp-ov]').hidden = true; });
+
+  function enregistrer() {
+    var l = { fourchettes: lireRows('fourchettes'), amort: lireRows('amort').filter(function (x) { return x.d || x.f; }) };
+    qa('[data-f]').forEach(function (e) { l[e.dataset.f] = e.value.trim(); });
+    qa('[data-c]').forEach(function (c) { l[c.dataset.c] = c.checked; });
+    var t = qa('[name=bp-type]:checked')[0], n = qa('[name=bp-nature]:checked')[0];
+    l.type = t && t.value; l.nature = n && n.value; if (l.nature !== 'ligne') { l.fourchettes = []; l.amort = []; } l.ordre = parseInt(l.ordre, 10) || '';
+    var err = !l.code ? 'Le code est obligatoire.' : !l.libelle ? 'Le libellé est obligatoire.' : !l.type ? 'Choisissez le type (Actif ou Passif).' : !l.nature ? 'Choisissez la nature de la ligne.'
+      : (l.nature === 'ligne' && !l.fourchettes.some(function (x) { return x.d && x.f; })) ? 'Au moins une fourchette de comptes est obligatoire.' : '';
+    if (!err && cur.lignes.some(function (x, i) { return x.code === l.code && i !== sel; })) err = 'Ce code existe déjà dans le modèle.';
+    if (err) { toast(err); return; }
+    if (mode === 'creation') { cur.lignes.push(l); sel = cur.lignes.length - 1; } else cur.lignes[sel] = l;
+    mode = 'consultation'; renderLignes(); remplirForm(cur.lignes[sel]); appliquerMode(); onglet('liste'); toast('Ligne enregistrée');
+  }
+
+  refModeles(''); renderLignes(); remplirForm(null); appliquerMode();
+  sM.value = 'SYSCOHADA'; sM.dispatchEvent(new Event('change')); onglet('liste');
+})();
+</script>

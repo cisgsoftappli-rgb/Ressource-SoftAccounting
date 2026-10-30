@@ -1,0 +1,227 @@
+<!--
+  Écran « Exercices comptables » (Paramètres comptables › Exercices comptables) — onglets Saisie / Liste : liste filtrable des exercices
+  (année, société, dates, statut, en cours) et saisie d'un exercice (année, dates de début et de fin, statut, exercice en cours).
+  Remplace la reprise de capture : le formulaire d'ajout / modification n'avait pas été capturé. Les statuts (Préparatoire, Ouvert, Clôture totale)
+  sont ceux de la capture ; leur définition reste « à revoir » (voir cahier des charges). Données en mémoire.
+  S'appuie sur les styles bp-* de l'écran « Paramétrage du bilan » (présents dans la page). Ne pas nommer de fonction « $$ » (build.cjs).
+-->
+<style>
+.ex-badge{display:inline-flex;align-items:center;padding:2px 10px;border:1px solid;border-radius:6px;font-size:12px;font-weight:600}
+.ex-badge.o{background:#ECFDF5;border-color:#A7F3D0;color:#047857}.ex-badge.p{background:#FFFBEB;border-color:#FDE68A;color:#B45309}.ex-badge.c{background:#F5F7F9;border-color:#D6D9E0;color:#5B606D}
+.ex-cours{display:inline-flex;align-items:center;justify-content:center;width:20px;height:20px;border:1px solid #D6D9E0;border-radius:4px;color:#2E427B;font-size:14px}
+.ex-cours.on{background:#E3EBFE;border-color:#2E427B}
+.ex-er{display:none;font-size:12px;color:#B63132}.ex-er.show{display:block}
+.bp-in.err,.bp-sel.err{border-color:#B63132}
+.ex-ov{position:fixed;inset:0;z-index:2500;display:flex;align-items:center;justify-content:center;padding:16px;background:rgba(11,19,50,.55)}.ex-ov[hidden]{display:none}
+.ex-md{display:flex;flex-direction:column;width:min(680px,100%);max-height:calc(100vh - 32px);border-radius:12px;background:#fff;box-shadow:0 28px 70px rgba(11,19,50,.35)}
+.ex-md h2{margin:0;padding:16px 20px;border-bottom:1px solid #E9EBF0;font-size:18px}.ex-md h2 small{display:block;margin-top:2px;font-size:12px;font-weight:400;color:#5B606D}
+.ex-ckl{flex:1;overflow:auto;margin:0;padding:0 20px;list-style:none}.ex-ckl li{display:grid;grid-template-columns:28px minmax(0,1fr) auto;gap:10px;align-items:center;padding:12px 0;border-bottom:1px solid #E9EBF0}
+.ex-ckl .i{display:flex;align-items:center;justify-content:center;width:24px;height:24px;border-radius:50%;font-size:14px}.ex-ckl .i.ok{background:#ECFDF5;color:#047857}.ex-ckl .i.ko{background:#FDE4E1;color:#B63132}.ex-ckl .i.wa{background:#FBF3C7;color:#706000}
+.ex-ckl b{display:block;font-size:14px;color:#0B1332}.ex-ckl small{display:block;margin-top:2px;font-size:13px;color:#5B606D}.ex-ckl .bl{margin-left:8px;padding:1px 8px;border-radius:10px;background:#FDE4E1;color:#B63132;font-size:11px;font-weight:700;vertical-align:1px}
+.ex-ckl button{min-height:32px;padding:0 12px;border:1px solid #D6D9E0;border-radius:8px;background:#fff;color:#2E427B;font-weight:600;font-size:13px;cursor:pointer}.ex-ckl button:hover{background:#F4F7FE}
+.ex-mf{display:flex;align-items:center;justify-content:space-between;gap:12px;padding:14px 20px;border-top:1px solid #E9EBF0}.ex-mf span{flex:1;font-size:13px;color:#5B606D}
+.ex-mf button{min-height:38px;padding:0 16px;border:1px solid #2E427B;border-radius:8px;background:#fff;color:#2E427B;font-weight:600;font-size:14px;cursor:pointer}.ex-mf button.p{background:#2E427B;color:#fff}.ex-mf button[disabled]{opacity:.45;cursor:not-allowed}
+</style>
+
+<div class="bp-root" data-ex>
+  <h1 style="position:absolute;width:1px;height:1px;overflow:hidden;clip-path:inset(50%);margin:0">Exercices comptables</h1>
+
+  <div class="no-print" data-ex-actions>
+    <button type="button" data-ex-ajouter>Ajouter</button>
+    <button type="button" data-ex-modifier>Modifier</button>
+    <button type="button" data-ex-supprimer>Supprimer</button>
+    <button type="button" data-ex-cours>Définir en cours</button>
+    <button type="button" data-ex-cloturer>Clôturer l'exercice</button>
+    <button type="button" data-ex-enregistrer>Enregistrer</button>
+    <button type="button" data-ex-annuler>Annuler</button>
+    <button type="button" data-ex-imprimer>Imprimer</button>
+    <button type="button" data-ex-exporter>Exporter</button>
+  </div>
+
+  <div class="bp-tabs" role="tablist">
+    <button type="button" role="tab" class="on" data-ex-tab="saisie">Saisie</button>
+    <button type="button" role="tab" data-ex-tab="liste">Liste <span class="bp-n" data-ex-compte></span></button>
+  </div>
+
+  <div class="bp-grid">
+    <section class="bp-pan" aria-label="Liste des exercices" data-ex-pan="liste" hidden>
+      <h2>Exercices comptables <small>Double-clic ou « Modifier » pour ouvrir la ligne en saisie</small></h2>
+      <div style="overflow:auto;max-height:560px">
+        <table class="bp-tb" style="min-width:720px"><thead>
+          <tr><th>Année <i class="ti ti-arrow-up" aria-label="Tri croissant" style="font-size:12px"></i></th><th class="c">Date début</th><th class="c">Date fin</th><th class="c">En cours</th><th class="c">Date de clôture</th></tr>
+          <tr class="flt">
+            <th><input class="bp-in" data-fc="0" aria-label="Filtrer Année"></th>
+            <th><input class="bp-in" type="date" data-fc="1" aria-label="Filtrer Date début"></th>
+            <th><input class="bp-in" type="date" data-fc="2" aria-label="Filtrer Date fin"></th>
+            <th><select class="bp-sel" data-fc="3" aria-label="Filtrer En cours"><option value="">(tous)</option><option value="oui">Oui</option><option value="non">Non</option></select></th>
+            <th><input class="bp-in" type="date" data-fc="4" aria-label="Filtrer Date de clôture"></th>
+          </tr>
+          </thead><tbody data-ex-lignes></tbody></table>
+      </div>
+      <div class="bp-vide" data-ex-vide hidden>Aucun exercice : utilisez « Ajouter ».</div>
+    </section>
+
+    <section class="bp-pan" aria-label="Saisie d'un exercice" data-ex-pan="saisie">
+      <form class="bp-form" data-ex-form onsubmit="return false" novalidate>
+        <div style="display:grid;gap:12px;max-width:420px">
+          <label class="bp-champ"><span>Année <b>*</b></span><input class="bp-in" data-f="annee" maxlength="4" inputmode="numeric" placeholder="2026" autocomplete="off"><span class="ex-er" data-er="annee"></span></label>
+          <label class="bp-champ"><span>Date début <b>*</b></span><input class="bp-in" type="date" data-f="debut"><span class="ex-er" data-er="debut"></span></label>
+          <label class="bp-champ"><span>Date fin <b>*</b></span><input class="bp-in" type="date" data-f="fin"><span class="ex-er" data-er="fin"></span></label>
+        </div>
+        <div class="bp-chk"><label><input type="checkbox" data-f="cours">En cours</label></div>
+      </form>
+    </section>
+  </div>
+  <div class="ex-ov" data-ex-ov hidden><div class="ex-md" role="dialog" aria-modal="true" aria-label="Checklist de clôture d'exercice">
+    <h2>Checklist de clôture d'exercice <small data-ex-ovsub></small></h2><ul class="ex-ckl" data-ex-ckl></ul>
+    <div class="ex-mf"><span data-ex-ovinfo></span><button type="button" data-ex-ovx>Annuler</button><button type="button" class="p" data-ex-ovok>Clôturer l'exercice</button></div></div></div>
+  <div class="bp-toast" role="status" hidden data-ex-toast></div>
+</div>
+
+<script>
+(function () {
+  var root = document.querySelector('[data-ex]'); if (!root) return;
+  function q(s) { return root.querySelector(s); } function qa(s) { return [].slice.call(root.querySelectorAll(s)); }
+  
+  function byAnnee(x, y) { return +x.annee - +y.annee; }
+  var data = [2021, 2022, 2023, 2024, 2025, 2026, 2027].map(function (a) { return { annee: String(a), debut: '01/01/' + a, fin: '31/12/' + a, cloture: '', cours: a === 2021 }; });
+  var sel = -1, mode = 'consultation';
+  function esc(s) { return String(s == null ? '' : s).replace(/[&<>"]/g, function (c) { return { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c]; }); }
+  function toast(m) { var t = q('[data-ex-toast]'); t.textContent = m; t.hidden = false; clearTimeout(toast.t); toast.t = setTimeout(function () { t.hidden = true; }, 2800); }
+  function err(k, m) { var e = q('[data-er="' + k + '"]'); e.textContent = m || ''; e.classList.toggle('show', !!m); q('[data-f=' + k + ']').classList.toggle('err', !!m); }
+  function toD(t) { var p = (t || '').split('/'); return new Date(+p[2], +p[1] - 1, +p[0]); }
+  function iso(t) { var p = (t || '').split('/'); return p.length === 3 ? p[2] + '-' + p[1] + '-' + p[0] : ''; }
+  function fr(v) { var p = (v || '').split('-'); return p.length === 3 ? p[2] + '/' + p[1] + '/' + p[0] : ''; }
+  function dateOk(t) { if (!/^\d{2}\/\d{2}\/\d{4}$/.test(t)) return false; var d = toD(t); return !isNaN(d) && d.getDate() === +t.slice(0, 2) && d.getMonth() === +t.slice(3, 5) - 1; }
+  function filtrer() {
+    var F = []; qa('[data-fc]').forEach(function (e) { F[+e.dataset.fc] = e.value.trim().toLowerCase(); });
+    qa('[data-ex-lignes] tr').forEach(function (tr) {
+      tr.hidden = F.some(function (v, k) { if (!v) return false; var td = tr.children[k]; var t = (td.dataset.v || td.textContent).toLowerCase(); return k === 0 ? t.indexOf(v) < 0 : t !== v; });
+    });
+  }
+  qa('[data-fc]').forEach(function (e) { e.addEventListener('input', filtrer); e.addEventListener('change', filtrer); });
+  function liste() {
+    q('[data-ex-compte]').textContent = data.length ? data.length + (data.length > 1 ? ' exercices' : ' exercice') : '';
+    q('[data-ex-vide]').hidden = data.length > 0;
+    q('[data-ex-lignes]').innerHTML = data.map(function (r, i) {
+      return '<tr data-i="' + i + '"' + (i === sel ? ' class="sel"' : '') + '><td>' + esc(r.annee) + '</td><td class="c" data-v="' + iso(r.debut) + '">' + esc(r.debut) + '</td><td class="c" data-v="' + iso(r.fin) + '">' + esc(r.fin) + '</td>' +
+        '<td class="c" data-v="' + (r.cours ? 'oui' : 'non') + '"><span class="ex-cours' + (r.cours ? ' on' : '') + '" aria-label="' + (r.cours ? 'En cours' : 'Non') + '">' + (r.cours ? '<i class="ti ti-check"></i>' : '') + '</span></td>' +
+        '<td class="c" data-v="' + iso(r.cloture) + '">' + esc(r.cloture) + '</td></tr>';
+    }).join(''); filtrer();
+  }
+  function form(r) {
+    r = r || { annee: '', debut: '', fin: '', cloture: '', cours: false };
+    q('[data-f=annee]').value = r.annee; q('[data-f=debut]').value = iso(r.debut); q('[data-f=fin]').value = iso(r.fin); q('[data-f=cours]').checked = !!r.cours;
+    err('annee'); err('debut'); err('fin');
+  }
+  function etat() {
+    var ed = mode !== 'consultation', r = data[sel];
+    qa('[data-ex-form] input').forEach(function (e) { e.disabled = !ed; });
+    q('[data-f=annee]').disabled = mode !== 'creation';
+    var a = q('[data-ex-actions]');
+    a.querySelector('[data-ex-ajouter]').disabled = ed; a.querySelector('[data-ex-modifier]').disabled = ed || sel < 0;
+    a.querySelector('[data-ex-supprimer]').disabled = ed || sel < 0 || (r && r.cours); a.querySelector('[data-ex-cours]').disabled = ed || sel < 0 || (r && r.cours);
+    a.querySelector('[data-ex-cloturer]').disabled = ed || sel < 0 || !!(r && (r.cloture || precedent(r))); a.querySelector('[data-ex-enregistrer]').disabled = !ed; a.querySelector('[data-ex-annuler]').disabled = !ed; a.querySelector('[data-ex-imprimer]').disabled = !data.length; a.querySelector('[data-ex-exporter]').disabled = !data.length;
+  }
+  function onglet(n) { qa('[data-ex-pan]').forEach(function (p) { p.hidden = p.dataset.exPan !== n; }); qa('[data-ex-tab]').forEach(function (t) { var on = t.dataset.exTab === n; t.classList.toggle('on', on); t.setAttribute('aria-selected', on); }); }
+  function choisir(i) { if (mode !== 'consultation') return; sel = i; liste(); form(data[i]); etat(); }
+  qa('[data-ex-tab]').forEach(function (t) { t.addEventListener('click', function () { onglet(t.dataset.exTab); }); });
+  var tb = q('[data-ex-lignes]');
+  tb.addEventListener('click', function (e) { var tr = e.target.closest('tr[data-i]'); if (tr) choisir(+tr.dataset.i); });
+  tb.addEventListener('dblclick', function (e) { var tr = e.target.closest('tr[data-i]'); if (tr) { choisir(+tr.dataset.i); onglet('saisie'); } });
+  q('[data-f=annee]').addEventListener('input', function () { this.value = this.value.replace(/\D/g, ''); });
+  q('[data-f=annee]').addEventListener('change', function () {
+    var a = this.value; if (mode === 'creation' && /^\d{4}$/.test(a)) { if (!q('[data-f=debut]').value) q('[data-f=debut]').value = a + '-01-01'; if (!q('[data-f=fin]').value) q('[data-f=fin]').value = a + '-12-31'; }
+  });
+
+  function enregistrer() {
+    var a = q('[data-f=annee]').value.trim(), d = fr(q('[data-f=debut]').value), f = fr(q('[data-f=fin]').value), ok = true, courant = mode === 'edition' ? sel : -1;
+    err('annee'); err('debut'); err('fin');
+    if (!/^\d{4}$/.test(a)) { err('annee', a ? "L'année doit comporter 4 chiffres." : "L'année est obligatoire."); ok = false; }
+    else if (data.some(function (x, i) { return x.annee === a && i !== courant; })) { err('annee', 'Cet exercice existe déjà.'); ok = false; }
+    if (!dateOk(d)) { err('debut', 'La date de début est obligatoire.'); ok = false; }
+    if (!dateOk(f)) { err('fin', 'La date de fin est obligatoire.'); ok = false; }
+    if (ok && toD(f) <= toD(d)) { err('fin', 'La date de fin doit suivre la date de début.'); ok = false; }
+    if (ok) { var chev = data.filter(function (x, i) { return i !== courant && toD(d) <= toD(x.fin) && toD(f) >= toD(x.debut); })[0]; if (chev) { err('debut', "Les dates chevauchent l'exercice " + chev.annee + '.'); ok = false; } }
+    if (!ok) return;
+    var rec = { annee: a, debut: d, fin: f, cloture: courant >= 0 ? data[courant].cloture : '', par: courant >= 0 ? data[courant].par : '', cours: q('[data-f=cours]').checked };
+    if (rec.cours) data.forEach(function (x) { x.cours = false; });
+    else if (courant >= 0 && data[courant].cours) rec.cours = true; // l'exercice en cours ne peut pas perdre ce statut sans en désigner un autre
+    if (mode === 'creation') data.push(rec); else data[sel] = rec;
+    data.sort(byAnnee); sel = data.indexOf(rec);
+    mode = 'consultation'; liste(); form(data[sel]); etat(); onglet('liste'); toast(courant >= 0 ? 'Exercice modifié.' : 'Exercice enregistré.');
+  }
+  // ---- Clôture de l'exercice : si la « Checklist clôture d'exercice » est activée (Administration de l'entité), la clôture ne se poursuit que
+  //      lorsque les contrôles bloquants inclus dans Paramétrages › Clôture comptable sont satisfaits. Résultats d'exemple (simulés).
+  var OVL = q('[data-ex-ov]'); document.body.appendChild(OVL);
+  var q0 = q; q = function (s) { return s === '[data-ex-ov]' ? OVL : (/data-ex-(ov|ckl)/.test(s) ? OVL.querySelector(s) : q0(s)); };
+  // un exercice ne peut être clôturé que si tous les exercices précédents le sont
+  function precedent(r) { return data.filter(function (x) { return r && +x.annee < +r.annee && !x.cloture; }).sort(function (a, b) { return +a.annee - +b.annee; })[0]; }
+  var RESULTATS = {
+    periodes: { ok: false, detail: 'Octobre à décembre encore ouvertes' }, brouillons: { ok: false, detail: '4 pièces à traiter (3 brouillons, 1 en attente)' },
+    rapprochements: { ok: false, detail: 'BNI : 24/10 · BOA : 30/09' }, amortissements: { ok: false, detail: '9 / 12 mois générés' },
+    analytique: { ok: true, detail: '100 % des écritures de classes 6/7 ventilées' }, attente: { ok: true, detail: 'Soldés' },
+    tva: { ok: false, detail: 'Déclarations jusqu\'à septembre' }, balance: { ok: true, detail: 'D = C = 1 486 320 000 Ar' },
+    lettrage: { ok: false, detail: '96 % lettrés – 12 écritures anciennes' }, inventaire: { ok: false, detail: 'À saisir en décembre' }
+  };
+  var resExo = {};   // résultats par exercice (copie des résultats d'exemple, modifiable par « Marquer comme traité »)
+  function aujourdhui() { var d = new Date(); return ('0' + d.getDate()).slice(-2) + '/' + ('0' + (d.getMonth() + 1)).slice(-2) + '/' + d.getFullYear(); }
+  function finaliser(r) { r.cloture = aujourdhui(); r.par = 'superadmin'; liste(); form(r); etat(); toast('Exercice ' + r.annee + ' clôturé le ' + r.cloture + '.'); window.dispatchEvent(new CustomEvent('exercices-changed', { detail: { annee: r.annee, date: r.cloture } })); }
+  function controles() {
+    var cfg = (window.CLOTURE_CFG && window.CLOTURE_CFG.checklist) || [], ctl = window.CLOTURE_CONTROLES || [];
+    return cfg.filter(function (c) { return c.actif; }).map(function (c) { var d = ctl.filter(function (x) { return x.id === c.id; })[0] || { titre: c.id, description: '' }; return { id: c.id, titre: d.titre, bloquant: !!c.bloquant }; });
+  }
+  function dessinerCk(r) {
+    var L = controles(), R = resExo[r.annee], ov = q('[data-ex-ov]');
+    var bloc = L.filter(function (c) { return c.bloquant && !R[c.id].ok; }).length, rest = L.filter(function (c) { return !c.bloquant && !R[c.id].ok; }).length;
+    q('[data-ex-ckl]').innerHTML = L.map(function (c) {
+      var o = R[c.id].ok, ic = o ? 'ok' : (c.bloquant ? 'ko' : 'wa');
+      return '<li><span class="i ' + ic + '"><i class="ti ti-' + (o ? 'check' : (c.bloquant ? 'x' : 'alert-triangle')) + '"></i></span><div><b>' + esc(c.titre) + (c.bloquant ? '<span class="bl">Bloquant</span>' : '') + '</b><small>' + esc(R[c.id].detail) + '</small></div>' +
+        (o ? '<span></span>' : '<button type="button" data-ex-trait="' + esc(c.id) + '">Marquer comme traité</button>') + '</li>';
+    }).join('');
+    q('[data-ex-ovinfo]').textContent = bloc ? bloc + ' contrôle(s) bloquant(s) à traiter avant la clôture.' : (rest ? rest + ' contrôle(s) non bloquant(s) restent à traiter : la clôture reste possible.' : 'Tous les contrôles sont satisfaits.');
+    q('[data-ex-ovok]').disabled = bloc > 0;
+  }
+  var ckExo = null;
+  function cloturer() {
+    var r = data[sel]; if (!r || r.cloture) return;
+    var prec = precedent(r); if (prec) { window.alert('L\'exercice ' + prec.annee + ' doit être clôturé avant l\'exercice ' + r.annee + '.'); return; }
+    var actif = !!(window.ENTITE_OPTIONS && window.ENTITE_OPTIONS.checklistCloture), L = actif ? controles() : [];
+    if (!L.length) {
+      if (!window.confirm('Clôturer l\'exercice ' + r.annee + ' ? Cette opération est définitive.')) return;
+      finaliser(r); return;
+    }
+    ckExo = r; if (!resExo[r.annee]) { resExo[r.annee] = {}; Object.keys(RESULTATS).forEach(function (k) { resExo[r.annee][k] = { ok: RESULTATS[k].ok, detail: RESULTATS[k].detail }; }); }
+    q('[data-ex-ovsub]').textContent = 'Exercice ' + r.annee + ' — du ' + r.debut + ' au ' + r.fin;
+    dessinerCk(r); q('[data-ex-ov]').hidden = false;
+  }
+  q('[data-ex-ov]').addEventListener('click', function (e) {
+    var ov = q('[data-ex-ov]'), t = e.target.closest('[data-ex-trait]');
+    if (t) { var R = resExo[ckExo.annee][t.dataset.exTrait]; R.ok = true; R.detail = 'Traité (simulation)'; dessinerCk(ckExo); return; }
+    if (e.target === ov || e.target.closest('[data-ex-ovx]')) { ov.hidden = true; return; }
+    if (e.target.closest('[data-ex-ovok]') && !q('[data-ex-ovok]').disabled) { ov.hidden = true; finaliser(ckExo); }
+  });
+  root.addEventListener('click', function (e) {
+    var b = e.target.closest('button'); if (!b || b.disabled) return;
+    if (b.hasAttribute('data-ex-ajouter')) { onglet('saisie'); mode = 'creation'; sel = -1; liste(); form(null); etat(); q('[data-f=annee]').focus(); return; }
+    if (b.hasAttribute('data-ex-modifier')) { onglet('saisie'); mode = 'edition'; etat(); q('[data-f=debut]').focus(); return; }
+    if (b.hasAttribute('data-ex-annuler')) { mode = 'consultation'; liste(); form(sel >= 0 ? data[sel] : null); etat(); return; }
+    if (b.hasAttribute('data-ex-cloturer')) { cloturer(); return; }
+    if (b.hasAttribute('data-ex-enregistrer')) { enregistrer(); return; }
+    if (b.hasAttribute('data-ex-cours')) { data.forEach(function (x, i) { x.cours = i === sel; }); liste(); form(data[sel]); etat(); toast("L'exercice " + data[sel].annee + " est maintenant l'exercice en cours."); return; }
+    if (b.hasAttribute('data-ex-supprimer')) {
+      var r = data[sel]; if (!r) return;
+      if (r.cours) { toast("Un exercice « En cours » ne peut pas être supprimé."); return; }
+      if (!window.confirm("Supprimer l'exercice " + r.annee + ' ?')) return;
+      data.splice(sel, 1); sel = -1; liste(); form(null); etat(); toast('Exercice ' + r.annee + ' supprimé.'); return;
+    }
+    if (b.hasAttribute('data-ex-imprimer')) { window.print(); return; }
+    if (b.hasAttribute('data-ex-exporter')) { toast('Export des exercices (maquette)'); return; }
+  });
+  window.EXERCICES_API = {
+    liste: function () { return data.map(function (r) { return { annee: r.annee, debut: r.debut, fin: r.fin, cloture: r.cloture, par: r.par || '', cours: r.cours }; }); },
+    cloturer: function (annee) { var i = data.findIndex(function (r) { return r.annee === annee; }); if (i < 0) return false; mode = 'consultation'; choisir(i); onglet('liste'); cloturer(); return true; }
+  };
+  liste(); form(null); etat(); onglet('liste');
+})();
+</script>

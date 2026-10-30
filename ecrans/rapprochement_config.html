@@ -1,0 +1,178 @@
+<!--
+  Écran « Rapprochement bancaire › Configuration » (Comptabilité générale) — onglets Saisie / Liste.
+  Une configuration par compte bancaire : Banque*, Compte bancaire* (comptes 512 du plan comptable, window.PLAN_COMPTABLE), Libellé du compte, Devise (monnaie locale, lecture seule),
+  À nouveau (monnaie locale), Date de début de rapprochement*, À nouveau devise 1 (USD), devises 2 et 3 (désactivées), Signataires 1 et 2 (issus des journaux).
+  Liste : filtres par colonne, clic = sélection, double-clic ou « Modifier » = ouverture en saisie. Données en mémoire.
+  S'appuie sur les styles bp-* (présents dans la page). Ne pas nommer de fonction « $$ » (build.cjs).
+-->
+<style>
+[data-rb] .rb-f{display:grid;gap:12px;padding:16px}
+[data-rb] .rb-b{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:12px 16px;padding:12px;border:1px solid #D5DBE5;border-radius:6px;background:#fff}
+[data-rb] .bp-champ>span{text-transform:uppercase;letter-spacing:.02em;font-size:11px}
+[data-rb] .bp-in:disabled,[data-rb] .bp-in[readonly]{background:#F5F7F9;color:#474C58}
+[data-rb] .bp-in.err,[data-rb] .bp-sel.err{border-color:#B63132}
+[data-rb] .rb-er{display:none;font-size:12px;color:#B63132}[data-rb] .rb-er.show{display:block}
+[data-rb] .rb-ok{font-size:12px;color:#2E427B;margin-left:8px}
+[data-rb] tbody tr{cursor:pointer}[data-rb] tbody tr.rb-sel td{background:#E8ECF6}
+[data-rb] td.r{text-align:right}
+@media (max-width:760px){[data-rb] .rb-b{grid-template-columns:1fr}}
+</style>
+
+<div class="bp-root" data-rb>
+  <h1 style="position:absolute;width:1px;height:1px;overflow:hidden;clip-path:inset(50%);margin:0">Rapprochement bancaire — Configuration</h1>
+
+  <div class="no-print">
+    <button type="button" data-rb-ajouter>Ajouter</button>
+    <button type="button" data-rb-modifier>Modifier</button>
+    <button type="button" data-rb-supprimer>Supprimer</button>
+    <button type="button" data-rb-enregistrer>Enregistrer</button>
+    <button type="button" data-rb-annuler>Annuler</button>
+    <span class="rb-ok" data-rb-msg role="status"></span>
+  </div>
+
+  <div class="bp-tabs" role="tablist">
+    <button type="button" role="tab" data-rb-tab="saisie">Saisie</button>
+    <button type="button" role="tab" class="on" data-rb-tab="liste">Liste <span class="bp-n" data-rb-compte></span></button>
+  </div>
+
+  <div class="bp-grid">
+    <section class="bp-pan" aria-label="Liste des configurations" data-rb-pan="liste">
+      <h2>Configurations du rapprochement <small>Double-clic ou « Modifier » pour ouvrir la ligne en saisie</small></h2>
+      <div style="overflow:auto;max-height:560px">
+        <table class="bp-tb" style="min-width:900px"><thead>
+          <tr><th>Banque</th><th>Compte bancaire</th><th>Libellé du compte</th><th>Devise</th><th class="c">Début de rapprochement</th><th class="r">À nouveau</th><th>Signataire 1</th><th>Signataire 2</th></tr>
+          <tr class="flt">
+            <th><input class="bp-in" data-fc="0" aria-label="Filtrer Banque"></th>
+            <th><input class="bp-in" data-fc="1" aria-label="Filtrer Compte bancaire"></th>
+            <th><input class="bp-in" data-fc="2" aria-label="Filtrer Libellé"></th>
+            <th><input class="bp-in" data-fc="3" aria-label="Filtrer Devise"></th>
+            <th><input class="bp-in" data-fc="4" aria-label="Filtrer Début"></th>
+            <th><input class="bp-in" data-fc="5" aria-label="Filtrer À nouveau"></th>
+            <th><input class="bp-in" data-fc="6" aria-label="Filtrer Signataire 1"></th>
+            <th><input class="bp-in" data-fc="7" aria-label="Filtrer Signataire 2"></th>
+          </tr>
+        </thead><tbody data-rb-lignes></tbody></table>
+      </div>
+      <div class="bp-vide" data-rb-vide hidden>Aucune configuration : utilisez « Ajouter ».</div>
+    </section>
+
+    <section class="bp-pan" aria-label="Saisie d'une configuration" data-rb-pan="saisie" hidden>
+      <form class="rb-f" data-rb-form onsubmit="return false" novalidate>
+        <div class="rb-b">
+          <label class="bp-champ"><span>Banque <b>*</b></span><select class="bp-sel" data-f="banque"></select><span class="rb-er" data-er="banque"></span></label>
+          <label class="bp-champ"><span>Compte bancaire <b>*</b></span><select class="bp-sel" data-f="compte"></select><span class="rb-er" data-er="compte"></span></label>
+          <label class="bp-champ"><span>Libellé du compte</span><input class="bp-in" data-f="libelle" maxlength="80" autocomplete="off"></label>
+          <label class="bp-champ"><span>Devise (monnaie locale)</span><input class="bp-in" data-f="devise" value="MGA" readonly></label>
+        </div>
+        <div class="rb-b">
+          <label class="bp-champ"><span>Date de début de rapprochement <b>*</b></span><input class="bp-in" data-f="debut" type="date"><span class="rb-er" data-er="debut"></span></label>
+          <label class="bp-champ"><span>À nouveau (monnaie locale)</span><input class="bp-in" data-f="an0" type="number" step="0.01"></label>
+          <label class="bp-champ"><span>À nouveau devise 1 (USD)</span><input class="bp-in" data-f="an1" type="number" step="0.01"></label>
+          <label class="bp-champ"><span>À nouveau devise 2</span><input class="bp-in" data-f="an2" disabled></label>
+          <label class="bp-champ"><span>À nouveau devise 3</span><input class="bp-in" data-f="an3" disabled></label>
+        </div>
+        <div class="rb-b">
+          <label class="bp-champ"><span>Signataire 1</span><select class="bp-sel" data-f="sign1"></select></label>
+          <label class="bp-champ"><span>Signataire 2</span><select class="bp-sel" data-f="sign2"></select><span class="rb-er" data-er="sign2"></span></label>
+        </div>
+      </form>
+    </section>
+  </div>
+</div>
+
+<script>
+(function () {
+  var root = document.querySelector('[data-rb]'); if (!root) return;
+  function q(s) { return root.querySelector(s); } function qa(s) { return [].slice.call(root.querySelectorAll(s)); }
+  function f(n) { return q('[data-f="' + n + '"]'); }
+  function esc(s) { return String(s == null ? '' : s).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/"/g, '&quot;'); }
+  var BANQUES = [['BCM', 'Banque Centrale de Madagascar'], ['BOA', 'Bank of Africa Madagascar'], ['BNI', 'BNI Madagascar'], ['BMOI', 'BMOI'], ['BFV', 'BFV – Société Générale'], ['MCB', 'MCB Madagascar']];
+  var CH = ['banque', 'compte', 'libelle', 'an0', 'debut', 'an1', 'sign1', 'sign2'];
+  var data = [
+    { banque: 'BNI', compte: '512100', libelle: '', an0: '0', an1: '', debut: '2026-01-01', sign1: '', sign2: '' },
+    { banque: 'BOA', compte: '512101', libelle: '', an0: '1500000', an1: '', debut: '2026-01-01', sign1: '', sign2: '' }
+  ];
+  var sel = -1, edit = -1, filt = {};
+  function aujourdhui() { var d = new Date(); return d.getFullYear() + '-' + ('0' + (d.getMonth() + 1)).slice(-2) + '-' + ('0' + d.getDate()).slice(-2); }
+  function pc() { return window.PLAN_COMPTABLE || []; }
+  function comptes() { var p = pc(); return p.filter(function (r) { return /^512/.test(r.code) && !p.some(function (x) { return x.parent === r.code; }); }); }
+  function libCompte(c) { var r = pc().filter(function (x) { return x.code === c; })[0]; return r ? r.libelle : ''; }
+  function signataires() {
+    var s = {}; (window.JOURNAUX_PLAN || []).forEach(function (j) { if (j.sign1) s[j.sign1] = 1; if (j.sign2) s[j.sign2] = 1; });
+    return Object.keys(s).sort();
+  }
+  function date(d) { return d ? d.split('-').reverse().join('/') : ''; }
+  function montant(v) { return v === '' || v == null ? '' : Number(v).toLocaleString('fr-FR', { minimumFractionDigits: 2, maximumFractionDigits: 2 }); }
+  function remplir() {
+    var b = f('banque'), c = f('compte'), s1 = f('sign1'), s2 = f('sign2'), vb = b.value, vc = c.value, v1 = s1.value, v2 = s2.value;
+    b.innerHTML = '<option value="">— Sélectionner —</option>' + BANQUES.map(function (x) { return '<option value="' + x[0] + '">' + x[0] + ' — ' + esc(x[1]) + '</option>'; }).join('');
+    c.innerHTML = '<option value="">— Sélectionner —</option>' + comptes().map(function (r) { return '<option value="' + esc(r.code) + '" data-l="' + esc(r.libelle) + '">' + esc(r.code) + ' — ' + esc(r.libelle) + '</option>'; }).join('');
+    var sg = '<option value="">— Aucun —</option>' + signataires().map(function (x) { return '<option>' + esc(x) + '</option>'; }).join('');
+    s1.innerHTML = sg; s2.innerHTML = sg;
+    b.value = vb; c.value = vc; s1.value = v1; s2.value = v2;
+  }
+  function effacer() {
+    qa('.rb-er').forEach(function (e) { e.classList.remove('show'); e.textContent = ''; });
+    qa('.err').forEach(function (e) { e.classList.remove('err'); });
+  }
+  function err(n, m) { var e = q('[data-er="' + n + '"]'); if (e) { e.textContent = m; e.classList.add('show'); } f(n).classList.add('err'); }
+  function charger(r) {
+    remplir(); effacer();
+    CH.forEach(function (n) { var el = f(n), v = r ? r[n] : (n === 'debut' ? aujourdhui() : ''); if (n === 'compte' && v && !el.querySelector('option[value="' + v + '"]')) el.insertAdjacentHTML('beforeend', '<option value="' + esc(v) + '">' + esc(v) + '</option>'); el.value = v; });
+  }
+  function onglet(n) {
+    qa('[data-rb-tab]').forEach(function (b) { b.classList.toggle('on', b.getAttribute('data-rb-tab') === n); });
+    qa('[data-rb-pan]').forEach(function (p) { p.hidden = p.getAttribute('data-rb-pan') !== n; });
+    qa('[data-rb-enregistrer],[data-rb-annuler]').forEach(function (b) { b.disabled = n !== 'saisie'; });
+    qa('[data-rb-ajouter],[data-rb-modifier],[data-rb-supprimer]').forEach(function (b) { b.disabled = n === 'saisie'; });
+  }
+  function lister() {
+    var tb = q('[data-rb-lignes]'), n = 0, h = '';
+    data.forEach(function (r, i) {
+      var cel = [r.banque, r.compte, r.libelle || libCompte(r.compte), 'MGA', date(r.debut), montant(r.an0), r.sign1, r.sign2];
+      for (var k = 0; k < 8; k++) if (filt[k] && String(cel[k]).toLowerCase().indexOf(filt[k]) < 0) return;
+      n++;
+      h += '<tr data-i="' + i + '"' + (i === sel ? ' class="rb-sel"' : '') + '>' + cel.map(function (c, k) { return '<td' + (k === 4 ? ' class="c"' : k === 5 ? ' class="r"' : '') + '>' + esc(c) + '</td>'; }).join('') + '</tr>';
+    });
+    publier(); tb.innerHTML = h; q('[data-rb-vide]').hidden = n > 0; q('[data-rb-compte]').textContent = '(' + data.length + ')';
+  }
+  function publier() { // configurations partagées avec « Pointage »
+    window.RAPPROCH_CONFIG = data.map(function (r) { var b = BANQUES.filter(function (x) { return x[0] === r.banque; })[0]; return { compte: r.compte, banque: r.banque, banqueLib: b ? b[1] : r.banque, sign1: r.sign1, sign2: r.sign2 }; });
+    window.dispatchEvent(new Event('rapprochement-changed'));
+  }
+  function msg(t) { q('[data-rb-msg]').textContent = t || ''; }
+  function ouvrir(i) { edit = i; charger(i >= 0 ? data[i] : null); onglet('saisie'); }
+  q('[data-rb-tab="saisie"]').addEventListener('click', function () { if (q('[data-rb-pan="saisie"]').hidden) ouvrir(sel); });
+  q('[data-rb-tab="liste"]').addEventListener('click', function () { onglet('liste'); lister(); });
+  q('[data-rb-ajouter]').addEventListener('click', function () { msg(); ouvrir(-1); });
+  q('[data-rb-modifier]').addEventListener('click', function () { if (sel < 0) { msg('Sélectionnez une ligne dans la liste.'); return; } msg(); ouvrir(sel); });
+  q('[data-rb-supprimer]').addEventListener('click', function () {
+    if (sel < 0) { msg('Sélectionnez une ligne dans la liste.'); return; }
+    if (!window.confirm('Supprimer la configuration du compte ' + data[sel].compte + ' ?')) return;
+    data.splice(sel, 1); sel = -1; lister(); msg('Configuration supprimée.');
+  });
+  q('[data-rb-annuler]').addEventListener('click', function () { msg(); onglet('liste'); lister(); });
+  q('[data-rb-enregistrer]').addEventListener('click', function () {
+    effacer(); var ok = true, r = {}; CH.forEach(function (n) { r[n] = f(n).value; });
+    if (!r.banque) { err('banque', 'La banque est obligatoire.'); ok = false; }
+    if (!r.compte) { err('compte', 'Le compte bancaire est obligatoire.'); ok = false; }
+    else if (data.some(function (x, i) { return i !== edit && x.compte === r.compte; })) { err('compte', 'Ce compte bancaire est déjà configuré.'); ok = false; }
+    if (!r.debut) { err('debut', 'La date de début de rapprochement est obligatoire.'); ok = false; }
+    if (r.sign1 && r.sign1 === r.sign2) { err('sign2', 'Le signataire 2 doit différer du signataire 1.'); ok = false; }
+    if (!ok) return;
+    if (edit >= 0) data[edit] = r; else { data.push(r); edit = data.length - 1; }
+    sel = edit; onglet('liste'); lister(); msg('Configuration enregistrée.');
+  });
+  f('compte').addEventListener('change', function () {
+    var o = f('compte').selectedOptions[0]; if (o && o.getAttribute('data-l') && !f('libelle').value) f('libelle').value = o.getAttribute('data-l');
+  });
+  q('[data-rb-lignes]').addEventListener('click', function (e) { var tr = e.target.closest('tr'); if (!tr) return; sel = +tr.getAttribute('data-i'); lister(); });
+  q('[data-rb-lignes]').addEventListener('dblclick', function (e) { var tr = e.target.closest('tr'); if (tr) { sel = +tr.getAttribute('data-i'); ouvrir(sel); } });
+  qa('[data-fc]').forEach(function (i) { i.addEventListener('input', function () { filt[i.getAttribute('data-fc')] = i.value.toLowerCase(); lister(); }); });
+  remplir(); onglet('liste'); lister();
+  ['plans-changed', 'journaux-changed'].forEach(function (e) { window.addEventListener(e, function () { remplir(); lister(); }); });
+  window.addEventListener('hashchange', function () { remplir(); lister(); });
+  window.addEventListener('load', function () { remplir(); lister(); });
+  q('[data-rb-form]').addEventListener('mousedown', remplir, true); // le plan comptable est chargé après cet écran
+})();
+</script>

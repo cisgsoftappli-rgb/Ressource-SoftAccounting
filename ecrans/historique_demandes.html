@@ -1,0 +1,183 @@
+<!--
+  Écran « Historique des demandes » (Comptabilité Projets & Bailleurs › Suivi › Historique des demandes).
+  Fenêtre de filtrage : Paramètre de sélection, N° de sélection, Période de tri (début / fin), Monnaie d'édition,
+  Centres de saisie *, Journaux comptables *, Statut. « Rechercher » affiche l'historique des demandes correspondantes.
+  Données de démonstration en mémoire ; colonnes du résultat à confirmer.
+-->
+<style>
+.hd{color:#212529;width:100%;min-width:0}
+.hd-h{margin:0;font-size:20px;font-weight:700;color:#0f172a}.hd-sub{margin:6px 0 0;font-size:13px;color:#64748b}
+.hd-head{display:flex;justify-content:space-between;align-items:flex-start;gap:16px;flex-wrap:wrap;margin-bottom:16px}
+.hd-btn{border:0;border-radius:8px;min-height:38px;padding:0 16px;font:inherit;font-size:13px;font-weight:600;cursor:pointer;background:#0c4a6e;color:#fff;display:inline-flex;align-items:center;gap:6px}
+.hd-acts{display:flex;gap:8px;flex-wrap:wrap}.hd-fil{background:#0f766e}.hd-fil:hover{background:#0b5d56}.hd-btn:disabled{opacity:.5;cursor:not-allowed}
+.hd-btn:hover{background:#083a57}.hd-btn.sec{background:#fff;color:#334155;border:1px solid #cbd5e1}.hd-btn.sec:hover{background:#f1f5f9}
+.hd-crit{display:flex;flex-wrap:wrap;gap:8px;align-items:center;padding:12px 16px;margin-bottom:16px;background:#fdf6e3;border:1px solid #f0e2b6;border-radius:12px;font-size:12.5px;color:#4b5563}
+.hd-crit b{color:#2c2c2a}.hd-chip{background:#fff;border:1px solid #e8dcae;border-radius:999px;padding:2px 10px}
+.hd-card{background:#fff;border:1px solid #e5e9f2;border-radius:12px;box-shadow:0 1px 2px #0f172a0d;overflow:hidden}
+.hd-empty{padding:48px 24px;text-align:center;color:#78829d;font-size:13px}
+.hd-t{width:100%;border-collapse:collapse;font-size:12.5px}
+.hd-t th{background:#0c4a6e;color:#fff;text-align:left;padding:10px 12px;font-size:11px;text-transform:uppercase;letter-spacing:.04em;white-space:nowrap}
+.hd-t td{padding:10px 12px;border-bottom:1px solid #eef1f6;white-space:nowrap}.hd-t tr:hover td{background:#f8fafc}
+.hd-t .n{text-align:right;font-variant-numeric:tabular-nums}
+.hd-st{display:inline-block;border-radius:999px;padding:2px 10px;font-size:11.5px;font-weight:600}
+.hd-st.p{background:#e5f7ee;color:#1f9d63}.hd-st.c{background:#e8eef7;color:#2563a8}.hd-st.l{background:#fdf1de;color:#b97812}.hd-st.a{background:#eef0f5;color:#4b5675}.hd-st.r{background:#fbe9e7;color:#d0473d}
+.hd-foot{padding:10px 14px;font-size:12px;color:#78829d;border-top:1px solid #eef1f6}
+.hd-ov{position:fixed;inset:0;z-index:2000;display:none;align-items:center;justify-content:center;background:#0f172a99;padding:16px}
+.hd-md{display:flex;flex-direction:column;width:100%;max-width:720px;max-height:92vh;background:#fff;border-radius:16px;box-shadow:0 25px 50px -12px #0f172a40;overflow:hidden}
+.hd-mh{background:#0c4a6e;color:#fff;padding:16px 22px;display:flex;justify-content:space-between;align-items:flex-start;gap:12px}
+.hd-mh h2{margin:0;font-size:16px;font-weight:700}.hd-mh p{margin:4px 0 0;font-size:12px;color:#d6e6f1}
+.hd-x{border:0;background:none;color:#fff;font-size:24px;line-height:1;cursor:pointer}
+.hd-mb{padding:20px 22px;overflow:auto;display:grid;grid-template-columns:1fr 1fr;gap:14px 18px}
+.hd-f{display:flex;flex-direction:column;gap:5px;min-width:0}.hd-f.full{grid-column:1/-1}
+.hd-f>label,.hd-f>span.l{font-size:12px;font-weight:700;color:#334155}.hd-f i{color:#d1416c;font-style:normal}
+.hd-in{border:1px solid #dbdfe9;border-radius:8px;padding:9px 11px;font:inherit;font-size:13px;background:#fff;width:100%;min-height:38px}
+.hd-in:focus{outline:2px solid #3e97ff55;border-color:#3e97ff}.hd-in.bad{border-color:#d1416c}
+.hd-pp{display:grid;grid-template-columns:1fr 1fr;gap:10px}.hd-pp small{display:block;font-size:11px;color:#78829d;margin-bottom:3px}
+.hd-ms{position:relative}.hd-msb{display:flex;justify-content:space-between;align-items:center;gap:8px;text-align:left;cursor:pointer;background:#fff}
+.hd-msb span{overflow:hidden;text-overflow:ellipsis;white-space:nowrap}.hd-msb em{font-style:normal;font-size:11px;color:#78829d;flex:none}
+.hd-msp{display:none;position:absolute;left:0;right:0;top:calc(100% + 4px);z-index:5;background:#fff;border:1px solid #dbdfe9;border-radius:8px;box-shadow:0 10px 24px #0f172a22;max-height:210px;overflow:auto;padding:6px}
+.hd-ms.open .hd-msp{display:block}.hd-msp label{display:flex;align-items:center;gap:8px;padding:5px 8px;font-size:13px;border-radius:6px;cursor:pointer}.hd-msp label:hover{background:#f1f5f9}
+.hd-msp .all{border-bottom:1px solid #eef1f6;margin-bottom:4px;font-weight:600}
+.hd-note{grid-column:1/-1;background:#e8f1f7;border:1px solid #c6dcec;color:#0c4a6e;border-radius:8px;padding:8px 12px;font-size:12px}.hd-err{grid-column:1/-1;color:#d1416c;font-size:12px;min-height:16px}
+.hd-mf{display:flex;justify-content:flex-end;gap:10px;padding:14px 22px;border-top:1px solid #f1f5f9;background:#f8fafc}
+@media(max-width:700px){.hd-mb{grid-template-columns:1fr}}
+</style>
+<app-historique-demandes>
+<div class="hd" data-hd-root>
+  <div class="hd-head">
+    <div><h1 class="hd-h">Historique des demandes</h1><p class="hd-sub">Suivi des demandes confectionnées : retrouvez une demande par sélection, période, monnaie, centre, journal ou statut.</p></div>
+    <div class="hd-acts"><button type="button" class="hd-btn hd-fil" data-hd-open><i class="ti ti-adjustments-horizontal"></i> Filtre</button><button type="button" class="hd-btn sec" data-hd-exp="csv">CSV</button><button type="button" class="hd-btn sec" data-hd-exp="xls"><i class="ti ti-file-spreadsheet"></i> EXCEL</button><button type="button" class="hd-btn sec" data-hd-exp="print"><i class="ti ti-printer"></i> Imprimer</button></div>
+  </div>
+  <div class="hd-crit" data-hd-crit style="display:none"></div>
+  <div class="hd-card" data-hd-card><div class="hd-empty">Renseignez les critères de filtrage pour afficher l'historique des demandes.</div></div>
+
+  <div class="hd-ov" data-hd-ov><div class="hd-md" role="dialog" aria-modal="true" aria-label="Critères de filtrage">
+    <header class="hd-mh"><div><h2>Critères de filtrage</h2><p>Filtrez l'historique des demandes. Les champs marqués d'un astérisque sont obligatoires.</p></div><button type="button" class="hd-x" data-hd-close aria-label="Fermer">×</button></header>
+    <div class="hd-mb">
+      <div class="hd-f"><label for="hd-param">Paramètre de sélection</label><select class="hd-in" id="hd-param" data-hd-f="param"><option value="">Tous les paramètres</option><option>SOE — STATE OF EXPENDITURE</option><option>REC — ÉTAT RÉCAPITULATIF</option></select></div>
+      <div class="hd-f"><label for="hd-num">N° de sélection</label><select class="hd-in" id="hd-num" data-hd-f="num"></select></div>
+      <div class="hd-f full"><span class="l">Période de tri</span><div class="hd-pp"><div><small>Début</small><input type="date" class="hd-in" data-hd-f="d1"></div><div><small>Fin</small><input type="date" class="hd-in" data-hd-f="d2"></div></div></div>
+      <div class="hd-f"><label for="hd-dev">Monnaie d'édition</label><select class="hd-in" id="hd-dev" data-hd-f="dev"><option value="">Toutes les monnaies</option><option value="MGA">MGA — Ariary</option><option value="USD">USD — Dollar Américain</option><option value="EUR">EUR — Euro</option></select></div>
+      <div class="hd-f"><label for="hd-st">Statut</label><select class="hd-in" id="hd-st" data-hd-f="st"><option value="">Tous les statuts</option><option>En cours</option><option>Confectionnée</option><option>Payée</option><option>En litige</option><option>Apurée</option><option>Rejetée</option><option>Annulée</option></select></div>
+      <div class="hd-f"><label>Centres de saisie <i>*</i></label><div class="hd-ms" data-hd-ms="cs"><button type="button" class="hd-in hd-msb" data-hd-msb><span>Sélectionner</span><em></em></button><div class="hd-msp" data-hd-msp></div></div></div>
+      <div class="hd-f"><label>Journaux comptables <i>*</i></label><div class="hd-ms" data-hd-ms="jn"><button type="button" class="hd-in hd-msb" data-hd-msb><span>Sélectionner</span><em></em></button><div class="hd-msp" data-hd-msp></div></div></div>
+      <div class="hd-note" data-hd-pre style="display:none"></div>
+      <div class="hd-err" data-hd-err></div>
+    </div>
+    <footer class="hd-mf"><button type="button" class="hd-btn sec" data-hd-reset>Réinitialiser</button><button type="button" class="hd-btn sec" data-hd-close>Annuler</button><button type="button" class="hd-btn" data-hd-go>Rechercher</button></footer>
+  </div></div>
+</div>
+<script>
+(function () {
+  var root = document.currentScript.parentElement.querySelector('[data-hd-root]');
+  var q = function (s) { return root.querySelector(s); }, qa = function (s) { return Array.prototype.slice.call(root.querySelectorAll(s)); };
+  function esc(s) { var d = document.createElement('div'); d.textContent = s == null ? '' : s; return d.innerHTML; }
+  function fd(v) { return v ? v.split('-').reverse().join('/') : ''; }
+  var CS = ['Siège'], JN = ['ACHMGA', 'ACHUSD', 'AUDIT', 'BFM', 'BQ1', 'BQ2', 'CAISSE', 'OD', 'PD', 'RAN', 'RMBT', 'SGMA', 'SGMB'];
+  var ST = { 'En cours': 'c', 'Confectionnée': 'c', 'Payée': 'p', 'En litige': 'l', 'Apurée': 'a', 'Rejetée': 'r', 'Annulée': 'r' };
+  function SELS() { return window.__selectionsDRF || []; }
+  var sel = { cs: CS.slice(), jn: JN.slice() }, crit = null;
+  function msDraw(k) {
+    var box = q('[data-hd-ms="' + k + '"]'), list = k === 'cs' ? CS : JN, p = box.querySelector('[data-hd-msp]');
+    p.innerHTML = '<label class="all"><input type="checkbox" data-hd-all="' + k + '"' + (sel[k].length === list.length ? ' checked' : '') + '> Tout sélectionner</label>' +
+      list.map(function (x) { return '<label><input type="checkbox" data-hd-opt="' + k + '" value="' + esc(x) + '"' + (sel[k].indexOf(x) >= 0 ? ' checked' : '') + '> ' + esc(x) + '</label>'; }).join('');
+    var n = sel[k].length; box.querySelector('span').textContent = n === 0 ? 'Sélectionner' : n === list.length && k === 'cs' ? 'Siège' : n + ' sélectionné' + (n > 1 ? 's' : '');
+    box.querySelector('em').textContent = n + '/' + list.length; box.querySelector('[data-hd-msb]').classList.remove('bad');
+  }
+  function f(k) { return q('[data-hd-f="' + k + '"]'); }
+  /* liste des N° de sélection : sélections créées dans l'état de dépense, filtrées par paramètre */
+  function fillNums(keep) {
+    var p = f('param').value, h = '<option value="">Tous les N° de sélection</option>';
+    SELS().filter(function (s) { return !p || s.param === p; }).forEach(function (s) { h += '<option value="' + esc(s.num) + '">' + esc(s.num) + ' — ' + esc(s.conv) + ' · ' + esc(s.exo) + '</option>'; });
+    f('num').innerHTML = h; if (keep) f('num').value = keep;
+    if (f('num').value !== keep) f('num').value = '';
+  }
+  function fillParams() {
+    var seen = {}, h = '<option value="">Tous les paramètres</option>';
+    SELS().forEach(function (s) { if (!seen[s.param]) { seen[s.param] = 1; h += '<option>' + esc(s.param) + '</option>'; } });
+    var cur = f('param').value; f('param').innerHTML = h; f('param').value = cur;
+  }
+  /* préremplissage des autres champs depuis la sélection choisie */
+  function prefill() {
+    var n = f('num').value; if (!n) return;
+    var s = SELS().filter(function (x) { return x.num === n && (!f('param').value || x.param === f('param').value); })[0]; if (!s) return;
+    f('param').value = s.param; f('d1').value = s.d1; f('d2').value = s.d2; f('dev').value = s.dev; f('st').value = s.st;
+    sel.cs = s.cs.slice(); sel.jn = s.jn.slice(); msDraw('cs'); msDraw('jn');
+    var m = q('[data-hd-pre]'); m.textContent = 'Champs préremplis depuis la sélection n° ' + s.num + ' (modifiables).'; m.style.display = '';
+  }
+  function openM() { fillParams(); fillNums(f('num').value); q('[data-hd-ov]').style.display = 'flex'; q('[data-hd-err]').textContent = ''; }
+  function closeM() { q('[data-hd-ov]').style.display = 'none'; }
+  function reset() { ['param', 'num', 'd1', 'd2', 'dev', 'st'].forEach(function (k) { f(k).value = ''; }); fillNums(''); sel.cs = CS.slice(); sel.jn = JN.slice(); msDraw('cs'); msDraw('jn'); q('[data-hd-err]').textContent = ''; q('[data-hd-pre]').style.display = 'none'; }
+  function search() {
+    var er = q('[data-hd-err]'); er.textContent = '';
+    ['cs', 'jn'].forEach(function (k) { q('[data-hd-ms="' + k + '"] [data-hd-msb]').classList.toggle('bad', !sel[k].length); });
+    if (!sel.cs.length || !sel.jn.length) { er.textContent = 'Renseignez les champs obligatoires : centres de saisie et journaux comptables.'; return; }
+    var d1 = f('d1').value, d2 = f('d2').value;
+    if (d1 && d2 && d2 < d1) { er.textContent = 'La fin de la période de tri doit être postérieure au début.'; return; }
+    crit = { param: f('param').value, num: f('num').value, d1: d1, d2: d2, dev: f('dev').value, st: f('st').value };
+    closeM(); draw();
+  }
+  function inter(a, b) { return a.some(function (x) { return b.indexOf(x) >= 0; }); }
+  var cur = [];
+  function draw() {
+    var c = crit; if (!c) return;
+    var rows = SELS().filter(function (r) {
+      return (!c.param || r.param === c.param) && (!c.num || r.num === c.num) && (!c.d1 || r.d2 >= c.d1) && (!c.d2 || r.d1 <= c.d2) && (!c.dev || r.dev === c.dev) && (!c.st || r.st === c.st) && inter(r.cs, sel.cs) && inter(r.jn, sel.jn);
+    });
+    var chips = [['Paramètre', c.param], ['N° de sélection', c.num], ['Période de tri', c.d1 || c.d2 ? (fd(c.d1) || '…') + ' → ' + (fd(c.d2) || '…') : ''], ['Monnaie', c.dev], ['Statut', c.st], ['Centres', sel.cs.join(', ')], ['Journaux', sel.jn.length === JN.length ? 'Tous (' + JN.length + ')' : sel.jn.join(', ')]].filter(function (x) { return x[1]; });
+    var cr = q('[data-hd-crit]'); cr.style.display = ''; cr.innerHTML = '<b>Filtres :</b>' + chips.map(function (x) { return '<span class="hd-chip">' + esc(x[0]) + ' : <b>' + esc(x[1]) + '</b></span>'; }).join('');
+    var lines = []; rows.forEach(function (r, k) { mvts(r, k).forEach(function (m) { lines.push(m); }); });
+    cur = lines; qa('[data-hd-exp]').forEach(function (b) { b.disabled = !lines.length; });
+    var num = function (v) { return Number(v).toLocaleString('fr-FR', { minimumFractionDigits: 2, maximumFractionDigits: 2 }); };
+    q('[data-hd-card]').innerHTML = lines.length ?
+      '<div style="overflow:auto"><table class="hd-t"><thead><tr>' + HEAD.map(function (h, x) { return '<th' + (x >= 12 && x <= 15 ? ' style="text-align:right"' : '') + '>' + esc(h) + '</th>'; }).join('') + '</tr></thead><tbody>' +
+      lines.map(function (l) { return '<tr>' + l.map(function (v, x) { if (x === 0) return '<td><b>' + esc(v) + '</b></td>'; if (x >= 12 && x <= 15) return '<td class="n">' + (x === 14 ? Number(v).toFixed(4) : x === 15 ? Number(v).toFixed(2) + ' %' : num(v)) + '</td>'; if (x === HEAD.length - 1) return '<td><span class="hd-st ' + (ST[v] || 'c') + '">' + esc(v) + '</span></td>'; return '<td>' + esc(v) + '</td>'; }).join('') + '</tr>'; }).join('') +
+      '</tbody></table></div><div class="hd-foot">' + lines.length + ' mouvement(s) dans ' + rows.length + ' demande(s)</div>' :
+      '<div class="hd-empty">Aucune demande ne correspond aux critères de filtrage.</div>';
+  }
+  var HEAD = ['N° de la demande', 'Date', 'N° de pièce', 'N° du contrat', 'Site', 'Activité', 'Poste budgétaire', 'Financement', 'Géographique', 'Compte collectif', 'Nom du bénéficiaire', 'Libellé complémentaire', 'Montant monnaie locale', 'Montant en devise', 'Cours', '% éligibilité', 'Statut de facturation', 'Référence facture', 'Date du règlement', 'Mode de paiement', 'Statut'];
+  var MV = [['03/04', '010002', 'MP-2024-011', '401100', 'CPA Digital', 'Honoraires coordination — mars', 117099.23, 100, 'Facturé', 'FA-0412', '12/04', 'Virement', '622100'], ['11/04', '010004', 'MP-2024-014', '401200', 'Cabinet Audit Plus', 'Mission d’audit — acompte', 24040.59, 80, 'Facturé', 'FA-0431', '25/04', 'Chèque', '622600'], ['19/04', '010007', 'BC-2024-203', '401300', 'Imprimerie Nationale', 'Fournitures et impressions', 13195.68, 100, 'Non facturé', '', '', 'Virement', '606400'], ['28/04', '010011', 'MP-2024-011', '421000', 'Équipe projet', 'Frais de mission terrain', 4825.2, 60, 'Facturé', 'FA-0458', '06/05', 'Espèces', '625100']];
+  function mvts(r, k) {
+    var rt = r.dev === 'MGA' ? 1 : r.dev === 'USD' ? 4580.5 : 4975.25, y = r.d1.slice(0, 4), st = r.st;
+    return MV.slice(0, 2 + (k % 3)).map(function (m, x) {
+      var mt = Math.round(m[6] * (1 + k * 0.17 + x * 0.05) * 100) / 100;
+      return [r.num, m[0] + '/' + y, y + m[0].slice(3) + m[0].slice(0, 2) + m[1], m[2], r.cs[0], 'ACT.' + (1 + (k + x) % 4) + '.1', m[12], ['IDA', 'DA-A', 'DA-B', 'PD'][(k + x) % 4], ['Analamanga', 'Atsinanana', 'Boeny', 'Siège'][(k + x) % 4], m[3], m[4], m[5], mt, Math.round(mt / rt * 100) / 100, rt, m[7], m[8], m[9], m[10] ? m[10] + '/' + y : '', m[11], st];
+    });
+  }
+  function line(l) { return l; }
+  function say(m) { var n = q('[data-hd-crit]'); n.style.display = ''; if (!crit) n.innerHTML = '<b>' + esc(m) + '</b>'; else { var o = n.innerHTML; n.innerHTML = '<b>' + esc(m) + '</b>'; setTimeout(function () { n.innerHTML = o; }, 2500); } }
+  function dl(name, type, txt) { var a = document.createElement('a'); a.href = URL.createObjectURL(new Blob(['\ufeff' + txt], { type: type })); a.download = name; document.body.appendChild(a); a.click(); a.remove(); }
+  function exportRows(k) {
+    var L = cur.map(line);
+    if (k === 'csv') dl('historique_demandes.csv', 'text/csv;charset=utf-8', [HEAD].concat(L).map(function (l) { return l.map(function (v) { return '"' + String(v).replace(/"/g, '""') + '"'; }).join(';'); }).join('\r\n'));
+    else {
+      var tb = '<table border="1"><thead><tr>' + HEAD.map(function (h) { return '<th>' + esc(h) + '</th>'; }).join('') + '</tr></thead><tbody>' + L.map(function (l) { return '<tr>' + l.map(function (v) { return '<td>' + esc(v) + '</td>'; }).join('') + '</tr>'; }).join('') + '</tbody></table>';
+      if (k === 'xls') dl('historique_demandes.xls', 'application/vnd.ms-excel', '<html><head><meta charset="utf-8"></head><body>' + tb + '</bo'+'dy></html>');
+      else { var w = window.open('', '_blank'); if (!w) { say('Fenêtre d’impression bloquée par le navigateur.'); return; } w.document.write('<html><head><meta charset="utf-8"><title>Historique des demandes</title><style>body{font:12px Arial}table{border-collapse:collapse;width:100%}th,td{border:1px solid #999;padding:4px 6px;text-align:left}th{background:#0c4a6e;color:#fff}</style></head><body><h2>Historique des demandes</h2>' + tb + '</bo'+'dy></html>'); w.document.close(); w.focus(); w.print(); }
+    }
+  }
+  root.addEventListener('click', function (e) {
+    var t = e.target;
+    var ex = t.closest('[data-hd-exp]');
+    if (ex) { if (!cur.length) { say('Lancez d’abord une recherche avec « Filtre ».'); return; } exportRows(ex.dataset.hdExp); return; }
+    if (t.closest('[data-hd-open]')) openM();
+    else if (t.closest('[data-hd-close]')) closeM();
+    else if (t.closest('[data-hd-reset]')) reset();
+    else if (t.closest('[data-hd-go]')) search();
+    else if (t.closest('[data-hd-msb]')) { var b = t.closest('[data-hd-ms]'), was = b.classList.contains('open'); qa('.hd-ms').forEach(function (x) { x.classList.remove('open'); }); if (!was) b.classList.add('open'); }
+    else if (!t.closest('.hd-msp')) qa('.hd-ms').forEach(function (x) { x.classList.remove('open'); });
+  });
+  root.addEventListener('change', function (e) {
+    var a = e.target.closest('[data-hd-all]'), o = e.target.closest('[data-hd-opt]');
+    if (a) { var k = a.dataset.hdAll; sel[k] = a.checked ? (k === 'cs' ? CS : JN).slice() : []; msDraw(k); qa('[data-hd-ms="' + k + '"]')[0].classList.add('open'); }
+    else if (o) { var k2 = o.dataset.hdOpt, v = o.value, i = sel[k2].indexOf(v); if (o.checked && i < 0) sel[k2].push(v); else if (!o.checked && i >= 0) sel[k2].splice(i, 1); msDraw(k2); qa('[data-hd-ms="' + k2 + '"]')[0].classList.add('open'); }
+    else if (e.target === f('param')) { var keep = f('num').value; fillNums(keep); if (!f('num').value) q('[data-hd-pre]').style.display = 'none'; else prefill(); }
+    else if (e.target === f('num')) { if (f('num').value) prefill(); else q('[data-hd-pre]').style.display = 'none'; }
+  });
+  window.addEventListener('selections-change', function () { if (q('[data-hd-ov]').style.display === 'flex') { fillParams(); fillNums(f('num').value); } if (crit) draw(); });
+  msDraw('cs'); msDraw('jn'); fillParams(); fillNums('');
+  window.addEventListener('hashchange', function () { if (location.hash === '#histdem' && !crit) openM(); });
+  if (location.hash === '#histdem') openM();
+})();
+</script>
+</app-historique-demandes>

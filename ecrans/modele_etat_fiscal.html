@@ -1,0 +1,193 @@
+<!--
+  Écran « Modèle d'état — Déclaration fiscale » (États comptables › Déclaration fiscale › Paramétrages › Modèle d'état).
+  Reprise de la capture : deux sections (ANNEXE / DÉCLARATION) avec un modèle officiel par défaut chacun.
+  Fenêtres « Ajouter » et « Modifier » conçues pour la maquette (non capturées). Le designer n'est pas inclus.
+-->
+<style>
+.mf-card{border:1px solid #e2e8f0;border-radius:12px;background:#fff;box-shadow:0 1px 2px #0f172a0d;color:#1e293b}
+.mf-head{display:flex;flex-wrap:wrap;align-items:center;justify-content:space-between;gap:16px;border-bottom:1px solid #e2e8f0;padding:20px}
+.mf-h1{font-size:20px;font-weight:700;color:#0f172a;margin:0}
+.mf-sub{margin:4px 0 0;max-width:70ch;font-size:14px;color:#64748b}
+.mf-btn{border:0;border-radius:8px;background:#0f766e;color:#fff;padding:8px 16px;font:inherit;font-size:14px;font-weight:600;cursor:pointer}
+.mf-btn:hover{background:#115e59}
+.mf-btn.mf-sec{background:#fff;color:#334155;border:1px solid #cbd5e1;font-weight:500}
+.mf-btn.mf-sec:hover{background:#f8fafc}
+.mf-search{display:flex;align-items:center;justify-content:space-between;gap:16px;padding:16px;border-bottom:1px solid #e2e8f0}
+.mf-ctl{width:100%;border:1px solid #cbd5e1;border-radius:8px;padding:8px 12px;font:inherit;font-size:14px;outline:none;background:#fff}
+.mf-ctl:focus{border-color:#0d9488;box-shadow:0 0 0 2px #ccfbf1}
+.mf-ctl.mf-bad{border-color:#ef4444}
+.mf-ctl:disabled{background:#f1f5f9;color:#64748b;cursor:not-allowed}
+.mf-note{flex:0 0 auto;max-width:340px;font-size:12px;color:#64748b}
+.mf-sec-h{display:flex;align-items:center;justify-content:space-between;padding:12px 20px;background:#f8fafc}
+.mf-sec-h h2{margin:0;font-size:12px;font-weight:600;letter-spacing:.05em;text-transform:uppercase;color:#475569}
+.mf-count{border-radius:999px;background:#e2e8f0;color:#475569;padding:2px 8px;font-size:12px;font-weight:600}
+.mf-row{display:flex;flex-wrap:wrap;align-items:center;justify-content:space-between;gap:12px;padding:16px 20px;border-top:1px solid #f1f5f9}
+.mf-row:hover{background:#f8fafc}
+.mf-name{display:flex;align-items:center;gap:8px;flex-wrap:wrap}
+.mf-name b{font-weight:600;color:#0f172a}
+.mf-tag{border-radius:999px;padding:2px 8px;font-size:12px;font-weight:600}
+.mf-tag.annexe{background:#f0f9ff;color:#0369a1}.mf-tag.decl{background:#eef2ff;color:#4338ca}.mf-tag.def{background:#fffbeb;color:#b45309}
+.mf-meta{margin:2px 0 0;font-size:12px;color:#64748b}
+.mf-acts{display:flex;align-items:center;gap:8px}
+.mf-a{border:1px solid #cbd5e1;border-radius:6px;background:#fff;color:#334155;padding:6px 12px;font:inherit;font-size:12px;font-weight:600;cursor:pointer}
+.mf-a:hover{background:#f1f5f9}
+.mf-a.mf-or{border-color:#fed7aa;color:#c2410c}.mf-a.mf-or:hover{background:#fff7ed}
+.mf-trash{border:1px solid #e2e8f0;border-radius:6px;background:#fff;color:#94a3b8;width:30px;height:30px;cursor:not-allowed}
+.mf-trash.mf-on{color:#dc2626;border-color:#fecaca;cursor:pointer}
+.mf-empty{padding:40px;text-align:center;font-size:14px;color:#64748b}
+.mf-toast{margin:0 20px 16px;border-radius:8px;background:#fffbeb;border:1px solid #fde68a;color:#92400e;padding:8px 12px;font-size:13px}
+.mf-modal{position:fixed;inset:0;z-index:2000;display:flex;align-items:center;justify-content:center;background:#00000080;padding:16px}
+.mf-dialog{width:100%;max-width:448px;background:#fff;border-radius:12px;padding:24px;box-shadow:0 20px 50px #0f172a40}
+.mf-dialog h2{font-size:18px;font-weight:700;margin:0 0 16px}
+.mf-field{margin-bottom:16px}
+.mf-label{display:block;margin-bottom:6px;font-size:13px;font-weight:600}
+.mf-req{color:#ef4444}
+.mf-foot{display:flex;align-items:center;justify-content:flex-end;gap:8px}
+.mf-btn:disabled{opacity:.6;cursor:not-allowed}
+.mf-help{margin:4px 0 0;font-size:12px;color:#64748b}
+.mf-msg{margin-right:auto;font-size:12.5px;font-weight:600;color:#ef4444}
+</style>
+<app-modeles-etat-reporting-list>
+<div data-mf-root>
+  <section class="mf-card">
+    <div class="mf-head">
+      <div>
+        <h1 class="mf-h1">Modèle d'état — Déclaration fiscale</h1>
+        <p class="mf-sub">Configurez les modèles officiels de la déclaration fiscale : le bordereau récapitulatif « Déclaration » et le modèle SOE « Annexes » (pièces justificatives jointes à la déclaration).</p>
+      </div>
+      <button type="button" class="mf-btn" data-mf-new>+ Ajouter</button>
+    </div>
+    <div class="mf-search">
+      <input type="text" class="mf-ctl" data-mf-q placeholder="Rechercher par nom, source ou bailleur...">
+      <span class="mf-note">Modèle officiel : code technique et nom de fichier verrouillés, seul l'intitulé est modifiable.</span>
+    </div>
+    <div data-mf-toast class="mf-toast" style="display:none;margin-top:16px"></div>
+
+    <div data-mf-sec="ANNEXE">
+      <div class="mf-sec-h"><h2>Annexe</h2><span class="mf-count" data-mf-count>3</span></div>
+      <div data-mf-list>
+        <div class="mf-row" data-mf-item data-def="1">
+          <div><div class="mf-name"><b data-mf-title>Annexes</b><span class="mf-tag annexe">Annexe</span><span class="mf-tag def">Par défaut</span></div>
+            <p class="mf-meta">N° FISCAL_ANNEXES · Fichier : annexes</p></div>
+          <div class="mf-acts"><button type="button" class="mf-a" data-mf-edit>Modifier</button><button type="button" class="mf-a mf-or" data-mf-design>Ouvrir le designer</button><button type="button" class="mf-trash" disabled title="Suppression interdite : modèle officiel par défaut" aria-label="Supprimer"><i class="ti ti-trash"></i></button></div>
+        </div>
+        <div class="mf-row" data-mf-item data-def="1">
+          <div><div class="mf-name"><b data-mf-title>Annexe IRSA</b><span class="mf-tag annexe">Annexe</span><span class="mf-tag def">Par défaut</span></div>
+            <p class="mf-meta">N° FISCAL_ANNEXE_IRSA · Fichier : DGI_Annexe_IRSA</p></div>
+          <div class="mf-acts"><button type="button" class="mf-a" data-mf-edit>Modifier</button><button type="button" class="mf-a mf-or" data-mf-design>Ouvrir le designer</button><button type="button" class="mf-trash" disabled title="Suppression interdite : modèle officiel par défaut" aria-label="Supprimer"><i class="ti ti-trash"></i></button></div>
+        </div>
+        <div class="mf-row" data-mf-item data-def="1">
+          <div><div class="mf-name"><b data-mf-title>Annexe TVA</b><span class="mf-tag annexe">Annexe</span><span class="mf-tag def">Par défaut</span></div>
+            <p class="mf-meta">N° FISCAL_ANNEXE_TVA · Fichier : DGI_Annexe_TVA</p></div>
+          <div class="mf-acts"><button type="button" class="mf-a" data-mf-edit>Modifier</button><button type="button" class="mf-a mf-or" data-mf-design>Ouvrir le designer</button><button type="button" class="mf-trash" disabled title="Suppression interdite : modèle officiel par défaut" aria-label="Supprimer"><i class="ti ti-trash"></i></button></div>
+        </div>
+      </div>
+    </div>
+    <div data-mf-sec="DÉCLARATION">
+      <div class="mf-sec-h"><h2>Déclaration</h2><span class="mf-count" data-mf-count>2</span></div>
+      <div data-mf-list>
+        <div class="mf-row" data-mf-item data-def="1">
+          <div><div class="mf-name"><b data-mf-title>Déclaration</b><span class="mf-tag decl">Déclaration</span><span class="mf-tag def">Par défaut</span></div>
+            <p class="mf-meta">N° DECLARATION · Fichier : Declaration_Fiscale</p></div>
+          <div class="mf-acts"><button type="button" class="mf-a" data-mf-edit>Modifier</button><button type="button" class="mf-a mf-or" data-mf-design>Ouvrir le designer</button><button type="button" class="mf-trash" disabled title="Suppression interdite : modèle officiel par défaut" aria-label="Supprimer"><i class="ti ti-trash"></i></button></div>
+        </div>
+        <div class="mf-row" data-mf-item data-def="1">
+          <div><div class="mf-name"><b data-mf-title>Déclaration TMP</b><span class="mf-tag decl">Déclaration</span><span class="mf-tag def">Par défaut</span></div>
+            <p class="mf-meta">N° TMP_DECLARATION · Fichier : Declaration_TMP</p></div>
+          <div class="mf-acts"><button type="button" class="mf-a" data-mf-edit>Modifier</button><button type="button" class="mf-a mf-or" data-mf-design>Ouvrir le designer</button><button type="button" class="mf-trash" disabled title="Suppression interdite : modèle officiel par défaut" aria-label="Supprimer"><i class="ti ti-trash"></i></button></div>
+        </div>
+      </div>
+    </div>
+    <div class="mf-empty" data-mf-none style="display:none">Aucun modèle trouvé</div>
+  </section>
+
+  <div class="mf-modal" data-mf-modal style="display:none">
+    <div class="mf-dialog">
+      <h2 data-mf-mtitle>Nouveau modèle listing</h2>
+      <div class="mf-field"><label class="mf-label">Numéro du modèle *</label><input class="mf-ctl" data-mf-f="code" placeholder="Ex. LST-004"></div>
+      <div class="mf-field"><label class="mf-label">Nom du modèle *</label><input class="mf-ctl" data-mf-f="nom" placeholder="Ex. Listing standard des mouvements"></div>
+      <div class="mf-field"><label class="mf-label">Type d'état *</label>
+        <select class="mf-ctl" data-mf-f="type"><option value="ANNEXE">Annexe</option><option value="DÉCLARATION">Déclaration</option></select></div>
+      <div class="mf-field"><label class="mf-label">Nom du fichier RepX créé après enregistrement *</label><input class="mf-ctl" data-mf-f="file" placeholder="Ex. listing_modele_04"><p class="mf-help">L'extension .repx sera ajoutée automatiquement.</p></div>
+      <div class="mf-foot">
+        <button type="button" class="mf-btn mf-sec" data-mf-cancel>Annuler</button>
+        <button type="button" class="mf-btn" data-mf-save disabled>Enregistrer</button></div>
+    </div>
+  </div>
+</div>
+<script>
+(function () {
+  var root = document.currentScript.parentElement.querySelector('[data-mf-root]');
+  var q = function (s) { return root.querySelector(s); }, qa = function (s) { return Array.prototype.slice.call(root.querySelectorAll(s)); };
+  var modal = q('[data-mf-modal]'), toast = q('[data-mf-toast]'), editing = null;
+  var F = ['nom', 'type', 'code', 'file'], f = function (k) { return q('[data-mf-f="' + k + '"]'); };
+  function esc(s) { var d = document.createElement('div'); d.textContent = s; return d.innerHTML; }
+  function refresh() {
+    var t = q('[data-mf-q]').value.trim().toLowerCase(), shown = 0;
+    qa('[data-mf-item]').forEach(function (r) { var on = !t || r.textContent.toLowerCase().indexOf(t) >= 0; r.style.display = on ? '' : 'none'; if (on) shown++; });
+    qa('[data-mf-sec]').forEach(function (s) {
+      var n = s.querySelectorAll('[data-mf-item]').length, v = Array.prototype.filter.call(s.querySelectorAll('[data-mf-item]'), function (r) { return r.style.display !== 'none'; }).length;
+      s.querySelector('[data-mf-count]').textContent = n; s.style.display = v ? '' : 'none';
+    });
+    q('[data-mf-none]').style.display = shown ? 'none' : '';
+  }
+  function say(t) { toast.textContent = t; toast.style.display = ''; clearTimeout(say.t); say.t = setTimeout(function () { toast.style.display = 'none'; }, 3500); }
+  function open(item) {
+    editing = item || null;
+    F.forEach(function (k) { f(k).value = ''; f(k).disabled = false; f(k).classList.remove('mf-bad'); });
+    q('[data-mf-mtitle]').textContent = item ? 'Modifier le modèle' : 'Nouveau modèle listing';
+    if (!item) f('type').value = 'ANNEXE';
+    if (item) {
+      f('nom').value = item.querySelector('[data-mf-title]').textContent;
+      if (item.dataset.def) { f('type').value = item.closest('[data-mf-sec]').dataset.mfSec; f('code').value = item.dataset.code || item.querySelector('.mf-meta').textContent.split('·')[0].replace('N°', '').trim(); f('file').value = item.querySelector('.mf-meta').textContent.split('Fichier :')[1].trim(); ['type', 'code', 'file'].forEach(function (k) { f(k).disabled = true; }); }
+    }
+    modal.style.display = ''; sync(); f('nom').focus();
+  }
+  function sync() { q('[data-mf-save]').disabled = editing ? !f('nom').value.trim() : F.some(function (k) { return !f(k).value.trim(); }); }
+  function close() { modal.style.display = 'none'; editing = null; }
+  q('[data-mf-new]').addEventListener('click', function () { open(null); });
+  q('[data-mf-cancel]').addEventListener('click', close);
+  q('[data-mf-q]').addEventListener('input', refresh);
+  F.forEach(function (k) { f(k).addEventListener('input', sync); f(k).addEventListener('change', sync); });
+  q('[data-mf-save]').addEventListener('click', function () {
+    if (q('[data-mf-save]').disabled) return;
+    if (editing) { editing.querySelector('[data-mf-title]').textContent = f('nom').value.trim(); close(); refresh(); return; }
+    var annexe = f('type').value === 'ANNEXE', row = document.createElement('div');
+    row.className = 'mf-row'; row.setAttribute('data-mf-item', '');
+    row.innerHTML = '<div><div class="mf-name"><b data-mf-title>' + esc(f('nom').value.trim()) + '</b><span class="mf-tag ' + (annexe ? 'annexe">Annexe' : 'decl">Déclaration') + '</span></div>' +
+      '<p class="mf-meta">N° ' + esc(f('code').value.trim()) + ' · Fichier : ' + esc(f('file').value.trim()) + '</p></div>' +
+      '<div class="mf-acts"><button type="button" class="mf-a" data-mf-edit>Modifier</button><button type="button" class="mf-a mf-or" data-mf-design>Ouvrir le designer</button>' +
+      '<button type="button" class="mf-trash mf-on" data-mf-del aria-label="Supprimer"><i class="ti ti-trash"></i></button></div>';
+    q('[data-mf-sec="' + f('type').value + '"] [data-mf-list]').appendChild(row); close(); addDup(); refresh();
+  });
+  function addDup(root0) { qa('.mf-acts').forEach(function (a) { if (!a.querySelector('[data-mf-dup]')) { var b = document.createElement('button'); b.type = 'button'; b.className = 'mf-a'; b.setAttribute('data-mf-dup', ''); b.textContent = '⧉ Dupliquer'; var t = a.querySelector('.mf-trash'); a.insertBefore(b, t || null); } }); }
+  function dupItem(item, code, nom, file) {
+    var c = item.cloneNode(true); c.removeAttribute('data-def'); c.removeAttribute('data-code');
+    var df = c.querySelector('.mf-tag.def'); if (df) df.remove();
+    c.querySelector('[data-mf-title]').textContent = nom;
+    c.querySelector('.mf-meta').textContent = 'N° ' + code + ' · Fichier : ' + file;
+    var tr = c.querySelector('.mf-trash'); if (tr) { tr.disabled = false; tr.classList.add('mf-on'); tr.setAttribute('data-mf-del', ''); }
+    item.parentNode.insertBefore(c, item.nextSibling); addDup(); refresh(); say('Modèle dupliqué : ' + code + ' — ' + nom + '.');
+  }
+  function codeOf(item) { var m = item.querySelector('.mf-meta').textContent; return item.dataset.code || m.split('·')[0].replace('N°', '').trim(); }
+  function codes() { return qa('[data-mf-item]').map(function (i) { return codeOf(i).toLowerCase(); }); }
+  window.addEventListener('mf-model-dup', function (e) {
+    var d = e.detail || {}; if (d.from !== 'modfisc') return;
+    var it = qa('[data-mf-item]').filter(function (i) { return codeOf(i) === d.src; })[0]; if (it) dupItem(it, d.code, d.nom, d.file);
+  });
+  addDup();
+  root.addEventListener('click', function (e) {
+    var item = e.target.closest('[data-mf-item]'); if (!item) return;
+    if (e.target.closest('[data-mf-dup]')) { window.__dupModele({ source: { code: codeOf(item), nom: item.querySelector('[data-mf-title]').textContent }, exists: function (c) { return codes().indexOf(c.toLowerCase()) >= 0; }, onOk: function (c, n, fl) { dupItem(item, c, n, fl); } }); return; }
+    if (e.target.closest('[data-mf-edit]')) open(item);
+    else if (e.target.closest('[data-mf-design]')) {
+      var meta = item.querySelector('.mf-meta').textContent;
+      window.__mfDesigner = { code: meta.split('·')[0].replace('N°', '').trim(), nom: item.querySelector('[data-mf-title]').textContent, def: !!item.dataset.def, type: item.closest('[data-mf-sec]').dataset.mfSec === 'ANNEXE' ? 'Annexe' : 'Déclaration', file: (meta.split('Fichier :')[1] || '').trim(), src: 'Comptabilité générale' };
+      window.__designerFrom = 'modfisc';
+      location.hash = /^(TMP_)?DECLARATION$/.test(window.__mfDesigner.code) ? 'designer2' : 'designer';
+    }
+    else if (e.target.closest('[data-mf-del]')) { item.remove(); refresh(); }
+  });
+})();
+</script>
+</app-modeles-etat-reporting-list>

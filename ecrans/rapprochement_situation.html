@@ -1,0 +1,245 @@
+<!--
+  Écran « Rapprochement bancaire › Situation » (Comptabilité générale) — trois onglets : Situation du compte, Écritures non rapprochées, Écritures non passées.
+  Entête : Compte (comptes configurés dans « Configuration », window.RAPPROCH_CONFIG), Relevé (relevés du compte, window.RELEVES, « numéro -- date »), Date du relevé,
+  Date du relevé (une seule ligne).
+  Situation : solde initial du relevé, recettes / dépenses rapprochées (lignes du relevé pointées), solde, recettes / dépenses non rapprochées (écritures comptables non pointées,
+  window.POINTAGE_API.etat / ecrDe), solde dans nos livres, mouvements non passés dans nos livres (lignes du relevé sans écriture), solde du relevé bancaire, solde corrigé.
+  Colonnes Monnaie (MGA), Devise, Nombre d'écritures. Écritures non rapprochées : OK, N° ordre, N° pièce, libellé, débit / crédit (monnaie locale et devise), date pièce.
+  Écritures non passées : relevé, date, libellé, débit / crédit, montant en devise. Impressions : boutons « loc » et Fiche = masque « État de rapprochement bancaire » (monnaie locale, deux demi-tableaux, signataires) ; boutons « devise » = impression de l'écran et export CSV (Exporter).
+  Préfixe sit / data-sit. S'appuie sur les styles bp-*. Ne pas nommer de fonction « $$ » (build.cjs).
+-->
+<style>
+[data-sit] .sit-ent{display:grid;grid-template-columns:minmax(0,1.4fr) minmax(0,1.4fr) minmax(0,1fr);gap:12px 16px;margin:16px 16px 0;padding:12px;border:1px solid #D5DBE5;border-radius:6px;background:#fff}
+@media (max-width:700px){[data-sit] .sit-ent{grid-template-columns:1fr}}
+[data-sit] .bp-champ>span{text-transform:uppercase;letter-spacing:.02em;font-size:11px}
+[data-sit] .bp-in[readonly]{background:#F5F7F9;color:#474C58}
+[data-sit] .sit-prt{display:flex;flex-wrap:wrap;gap:8px;margin:0 0 10px}
+[data-sit] .sit-prt button{display:inline-flex;align-items:center;gap:6px;height:36px;padding:0 14px;border:1px solid #D5DBE5;border-radius:8px;background:#fff;color:#0B1332;font:600 12px var(--font-sans);cursor:pointer}
+[data-sit] .sit-prt button:hover{background:#F5F7F9}
+[data-sit] .sit-xl{display:flex;justify-content:flex-end;padding:8px 12px}
+[data-sit] .sit-xl button{display:inline-flex;align-items:center;justify-content:center;width:36px;height:36px;border:1px solid #D5DBE5;border-radius:8px;background:#fff;color:#2E427B;cursor:pointer}[data-sit] .sit-xl button:hover{background:#F5F7F9}
+[data-sit] td.r,[data-sit] th.r{text-align:right;font-variant-numeric:tabular-nums}
+[data-sit] .sit-sg td{font-weight:600;background:#F5F7F9}
+[data-sit] .sit-sp td{height:14px;padding:0;background:#fff}
+[data-sit] .sit-msg{font-size:12px;color:#2E427B;margin:0 0 8px;min-height:16px}
+[data-sit] .sit-pied{padding:8px 12px;font-size:12px;color:#5B606D;border-top:1px solid #E9EBF0}
+@media print{
+  [data-sit] .no-print,[data-sit] .bp-tabs,[data-sit] .sit-prt,[data-sit] .sit-xl{display:none!important}
+  [data-sit][data-sit-mode] .bp-pan{display:none}
+  [data-sit][data-sit-mode~="s"] .bp-pan[data-sit-pan="situation"],[data-sit][data-sit-mode~="n"] .bp-pan[data-sit-pan="nonrapp"],[data-sit][data-sit-mode~="p"] .bp-pan[data-sit-pan="nonpasse"]{display:block}
+  [data-sit][data-sit-cols="loc"] .sit-dev{display:none}
+}
+</style>
+
+<div class="bp-root" data-sit>
+  <h1 style="position:absolute;width:1px;height:1px;overflow:hidden;clip-path:inset(50%);margin:0">Rapprochement bancaire — Situation</h1>
+
+  <div class="no-print" data-sit-barre>
+    <button type="button" data-sit-p="s n p|dev">Détail (devise)</button>
+    <button type="button" data-sit-p="s n|dev">Détail-2 (devise)</button>
+    <button type="button" data-sit-p="s n p|loc">Détail-1 (loc)</button>
+    <button type="button" data-sit-p="s n|loc">Détail-2 (loc)</button>
+    <button type="button" data-sit-p="n p|loc">Détail-3 (loc)</button>
+    <button type="button" data-sit-p="s|loc">Fiche</button>
+    <button type="button" data-sit-p="s p|loc">Fiche 2</button>
+    <button type="button" data-sit-b="exporter">Exporter</button>
+    <span class="sit-msg" data-sit-msg role="status" style="margin:0 0 0 8px"></span>
+  </div>
+
+  <div class="bp-tabs" role="tablist">
+    <button type="button" role="tab" class="on" data-sit-tab="situation">Situation du compte</button>
+    <button type="button" role="tab" data-sit-tab="rapp">Écritures rapprochées <span class="bp-n" data-sit-n0></span></button>
+    <button type="button" role="tab" data-sit-tab="nonrapp">Écritures non rapprochées <span class="bp-n" data-sit-n1></span></button>
+    <button type="button" role="tab" data-sit-tab="nonpasse">Écritures non passées <span class="bp-n" data-sit-n2></span></button>
+  </div>
+
+  <div class="bp-grid">
+    <section class="bp-pan" aria-label="Situation du compte" data-sit-pan="situation">
+      <div class="sit-ent">
+        <label class="bp-champ"><span>Compte</span><select class="bp-sel" data-sit-compte></select></label>
+        <label class="bp-champ"><span>Relevé</span><select class="bp-sel" data-sit-rel></select></label>
+        <label class="bp-champ"><span>Date du relevé</span><input class="bp-in" data-sit-date readonly></label>
+      </div>
+      <div style="overflow:auto">
+        <table class="bp-tb" data-no-tf style="min-width:760px"><thead>
+          <tr><th></th><th class="r">Monnaie (<span data-sit-loc>MGA</span>)</th><th class="r sit-dev">Devise</th><th class="r">Nombre d'écritures</th></tr>
+        </thead><tbody data-sit-elem></tbody></table>
+      </div>
+    </section>
+
+    <section class="bp-pan" aria-label="Écritures rapprochées" data-sit-pan="rapp" hidden>
+      <div style="overflow:auto;max-height:520px">
+        <table class="bp-tb" style="min-width:900px"><thead>
+          <tr><th>N° ordre</th><th class="c">Date relevé</th><th>Libellé</th><th class="r">Débit (<span data-sit-loc>MGA</span>)</th><th class="r">Crédit (<span data-sit-loc>MGA</span>)</th><th class="r sit-dev">Débit (dev.)</th><th class="r sit-dev">Crédit (dev.)</th><th class="c">Rapprochement</th></tr>
+        </thead><tbody data-sit-l0></tbody></table>
+      </div>
+      <div class="bp-vide" data-sit-v0 hidden>Aucune ligne rapprochée pour ce relevé.</div>
+      <div class="sit-pied" data-sit-t0></div>
+    </section>
+
+    <section class="bp-pan" aria-label="Écritures non rapprochées" data-sit-pan="nonrapp" hidden>
+      <div style="overflow:auto;max-height:520px">
+        <table class="bp-tb" style="min-width:900px"><thead>
+          <tr><th class="c">OK</th><th>N° ordre</th><th>N° pièce</th><th>Libellé</th><th class="r">Débit (<span data-sit-loc>MGA</span>)</th><th class="r">Crédit (<span data-sit-loc>MGA</span>)</th><th class="r sit-dev">Débit (dev.)</th><th class="r sit-dev">Crédit (dev.)</th><th class="c">Date pièce</th></tr>
+        </thead><tbody data-sit-l1></tbody></table>
+      </div>
+      <div class="bp-vide" data-sit-v1 hidden>Aucune écriture non rapprochée pour ce relevé.</div>
+      <div class="sit-pied" data-sit-sel>Cochez des écritures pour en cumuler les montants.</div>
+    </section>
+
+    <section class="bp-pan" aria-label="Écritures non passées" data-sit-pan="nonpasse" hidden>
+      <div style="overflow:auto;max-height:520px">
+        <table class="bp-tb" style="min-width:820px"><thead>
+          <tr><th>Relevé</th><th class="c">Date</th><th>Libellé</th><th class="r">Débit (<span data-sit-loc>MGA</span>)</th><th class="r">Crédit (<span data-sit-loc>MGA</span>)</th><th class="r sit-dev">Montant (en devise)</th></tr>
+        </thead><tbody data-sit-l2></tbody></table>
+      </div>
+      <div class="bp-vide" data-sit-v2 hidden>Aucune écriture non passée : toutes les lignes du relevé ont une écriture.</div>
+    </section>
+  </div>
+</div>
+
+<script>
+(function () {
+  var root = document.querySelector('[data-sit]'); if (!root) return;
+  function q(s) { return root.querySelector(s); } function qa(s) { return [].slice.call(root.querySelectorAll(s)); }
+  function esc(s) { return String(s == null ? '' : s).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;'); }
+  var cle = '', numero = '', cache = null;
+  function cfg() { return window.RAPPROCH_CONFIG || []; }
+  function releves(c) { return (window.RELEVES || []).filter(function (r) { return r.compte === c; }); }
+  function nb(v) { return Number(v || 0).toLocaleString('fr-FR', { minimumFractionDigits: 2, maximumFractionDigits: 2 }); }
+  function date(d) { return d ? d.split('-').reverse().join('/') : ''; }
+  function msg(t) { q('[data-sit-msg]').textContent = t || ''; }
+  function locale() { var l = 'MGA'; [].slice.call(document.querySelectorAll('.ig-f')).forEach(function (x) { var a = x.querySelector('.ig-l'), s = x.querySelector('select'); if (a && s && a.textContent.trim() === 'Monnaie locale' && s.value) l = s.value; }); return l; }
+  function maj(s) { if (s && s.__combo && s.__combo.maj) s.__combo.maj(); }
+
+  function selecteurs() {
+    var sc = q('[data-sit-compte]'), v = sc.value || cle;
+    sc.innerHTML = cfg().length ? cfg().map(function (c) { return '<option value="' + esc(c.compte) + '">' + esc(c.compte) + ' — ' + esc(c.banqueLib || c.banque) + '</option>'; }).join('') : '<option value="">Aucun compte configuré</option>';
+    if (v && sc.querySelector('option[value="' + v + '"]')) sc.value = v; cle = sc.value; maj(sc);
+    var sr = q('[data-sit-rel]'), l = releves(cle);
+    sr.innerHTML = l.length ? l.map(function (r) { return '<option value="' + esc(r.numero) + '">' + esc(r.numero) + ' — ' + date(r.date) + '</option>'; }).join('') : '<option value="">— Aucun relevé —</option>';
+    if (!l.some(function (r) { return r.numero === numero; })) numero = l.length ? l[0].numero : '';
+    sr.value = numero; maj(sr);
+  }
+  function releve() { return releves(cle).filter(function (r) { return r.numero === numero; })[0]; }
+  // écritures comptables non pointées du relevé : état du pointage s'il porte sur ce relevé, sinon simulation partagée
+  function ecritures(rel) {
+    var api = window.POINTAGE_API, e = api && api.etat ? api.etat(rel.compte) : null;
+    if (e && e.releve === rel.numero) return e.ecr;
+    return api && api.ecrDe ? api.ecrDe(rel) : [];
+  }
+  function calcul() {
+    var rel = releve(); if (!rel) return null;
+    var ecr = ecritures(rel), lg = rel.lignes || [], rap = lg.filter(function (x) { return x.r; });
+    var np = lg.filter(function (x) { return !x.r && !ecr.some(function (e) { return e.m === x.m; }); });
+    function som(l, f) { return l.filter(f).reduce(function (a, x) { return a + Math.abs(x.m); }, 0); }
+    var r = { rel: rel, ecr: ecr, np: np };
+    r.ini = rel.soldeIni; r.rr = som(rap, function (x) { return x.m > 0; }); r.nrr = rap.filter(function (x) { return x.m > 0; }).length;
+    r.dr = som(rap, function (x) { return x.m < 0; }); r.ndr = rap.filter(function (x) { return x.m < 0; }).length;
+    r.solde = r.ini + r.rr - r.dr;
+    r.rn = som(ecr, function (x) { return x.m > 0; }); r.nrn = ecr.filter(function (x) { return x.m > 0; }).length;
+    r.dn = som(ecr, function (x) { return x.m < 0; }); r.ndn = ecr.filter(function (x) { return x.m < 0; }).length;
+    r.sn = r.rn - r.dn; r.livres = r.solde + r.sn;
+    r.mv = np.reduce(function (a, x) { return a + x.m; }, 0); r.bq = rel.soldeFin; r.corr = r.livres + r.mv;
+    return r;
+  }
+  function lignes(r) {
+    if (!r) return [];
+    return [['Solde Initial', r.ini, ''], ['Recettes rapprochées(+)', r.rr, r.nrr], ['Dépenses rapprochées (-)', r.dr, r.ndr], ['Solde', r.solde, '', 1], null,
+      ['Recettes non rapprochées (+)', r.rn, r.nrn], ['Dépenses non rapprochées (-)', r.dn, r.ndn], ['Solde non rapprochées', r.sn, '', 1], null,
+      ['Solde dans nos livres', r.livres, '', 1], null, ['Mvts non passés dans nos livres', r.mv, r.np.length], ['Solde relevé bancaire', r.bq, '', 1], ['Solde corrigé', r.corr, '', 1]];
+  }
+  function rendre() {
+    var r = cache = calcul(), rel = r && r.rel, h = '';
+    qa('[data-sit-loc]').forEach(function (e) { e.textContent = locale(); });
+    q('[data-sit-date]').value = rel ? date(rel.date) : '';
+    lignes(r).forEach(function (l) {
+      if (!l) { h += '<tr class="sit-sp"><td colspan="4"></td></tr>'; return; }
+      var vide = r == null;
+      h += '<tr' + (l[3] ? ' class="sit-sg"' : '') + '><td>' + l[0] + '</td><td class="r">' + nb(l[1]) + '</td><td class="r sit-dev"></td><td class="r">' + (l[2] === '' ? '' : l[2]) + '</td></tr>';
+    });
+    q('[data-sit-elem]').innerHTML = h || '<tr><td colspan="4" style="text-align:center;color:#5B606D">Aucun relevé pour ce compte.</td></tr>';
+    var e0 = '', e1 = '', e2 = '', td0 = 0, tc0 = 0, nr0 = 0;
+    if (r) {
+      (r.rel.lignes || []).forEach(function (x, i) {
+        if (!x.r) return; nr0++; if (x.m > 0) td0 += x.m; else tc0 -= x.m;
+        e0 += '<tr><td>' + (i + 1) + '</td><td class="c">' + date(x.d) + '</td><td>' + esc(x.l) + '</td><td class="r">' + (x.m > 0 ? nb(x.m) : '') + '</td><td class="r">' + (x.m < 0 ? nb(-x.m) : '') + '</td><td class="r sit-dev"></td><td class="r sit-dev"></td><td class="c">R</td></tr>';
+      });
+      r.ecr.forEach(function (x, i) {
+        e1 += '<tr><td class="c"><input type="checkbox" data-sit-ok="' + i + '" aria-label="Sélectionner l’écriture ' + (i + 1) + '"></td><td>' + (i + 1) + '</td><td>' + esc(x.p) + '</td><td>' + esc(x.l) + '</td><td class="r">' + (x.m > 0 ? nb(x.m) : '') + '</td><td class="r">' + (x.m < 0 ? nb(-x.m) : '') + '</td><td class="r sit-dev"></td><td class="r sit-dev"></td><td class="c">' + date(x.d) + '</td></tr>';
+      });
+      r.np.forEach(function (x) { e2 += '<tr><td>' + esc(r.rel.numero) + '</td><td class="c">' + date(x.d) + '</td><td>' + esc(x.l) + '</td><td class="r">' + (x.m > 0 ? nb(x.m) : '') + '</td><td class="r">' + (x.m < 0 ? nb(-x.m) : '') + '</td><td class="r sit-dev"></td></tr>'; });
+    }
+    q('[data-sit-l0]').innerHTML = e0; q('[data-sit-v0]').hidden = !!e0; q('[data-sit-n0]').textContent = r ? '(' + nr0 + ')' : '';
+    q('[data-sit-t0]').textContent = nr0 ? nr0 + ' ligne(s) rapprochée(s) — Débit ' + nb(td0) + ' · Crédit ' + nb(tc0) : '';
+    q('[data-sit-l1]').innerHTML = e1; q('[data-sit-v1]').hidden = !!e1; q('[data-sit-n1]').textContent = r ? '(' + r.ecr.length + ')' : '';
+    q('[data-sit-l2]').innerHTML = e2; q('[data-sit-v2]').hidden = !!e2; q('[data-sit-n2]').textContent = r ? '(' + r.np.length + ')' : '';
+    q('[data-sit-sel]').textContent = 'Cochez des écritures pour en cumuler les montants.';
+  }
+  function init() { selecteurs(); rendre(); }
+  function onglet(n) {
+    qa('[data-sit-tab]').forEach(function (b) { b.classList.toggle('on', b.getAttribute('data-sit-tab') === n); });
+    qa('[data-sit-pan]').forEach(function (p) { p.hidden = p.getAttribute('data-sit-pan') !== n; });
+  }
+  qa('[data-sit-tab]').forEach(function (b) { b.addEventListener('click', function () { rendre(); onglet(b.getAttribute('data-sit-tab')); }); });
+  q('[data-sit-compte]').addEventListener('change', function () { cle = this.value; numero = ''; selecteurs(); rendre(); });
+  q('[data-sit-rel]').addEventListener('change', function () { numero = this.value; rendre(); });
+  q('[data-sit-l1]').addEventListener('change', function () {
+    var n = 0, d = 0, c = 0; qa('[data-sit-ok]:checked').forEach(function (k) { var x = cache.ecr[+k.getAttribute('data-sit-ok')]; n++; if (x.m > 0) d += x.m; else c -= x.m; });
+    q('[data-sit-sel]').textContent = n ? n + ' écriture(s) cochée(s) — Débit ' + nb(d) + ' · Crédit ' + nb(c) : 'Cochez des écritures pour en cumuler les montants.';
+  });
+  // masque d'impression « État de rapprochement bancaire » en monnaie locale (boutons « loc » et Fiche) : deux demi-tableaux, soldes, sous-totaux, signataires
+  function imprimerEtat() {
+    rendre(); var r = cache; if (!r) { msg('Aucun relevé à imprimer.'); return; }
+    var c = cfg().filter(function (x) { return x.compte === cle; })[0] || {}, M = window.__MASQUE || {}, loc = locale();
+    function ligne(d, l, db, cr) { return { d: d, l: l, db: db || 0, cr: cr || 0 }; }
+    var G = [ligne('', 'Solde relevé bancaire', 0, r.bq)], D = [ligne('', 'Solde dans nos livres', r.livres, 0)];
+    r.ecr.forEach(function (x) { G.push(ligne(date(x.d), x.l, x.m < 0 ? -x.m : 0, x.m > 0 ? x.m : 0)); });
+    r.np.forEach(function (x) { D.push(ligne(date(x.d), x.l, x.m > 0 ? x.m : 0, x.m < 0 ? -x.m : 0)); });
+    function tot(L, k) { return L.reduce(function (a, x) { return a + x[k]; }, 0); }
+    var gd = tot(G, 'db'), gc = tot(G, 'cr'), dd = tot(D, 'db'), dc = tot(D, 'cr'), n = Math.max(G.length, D.length), body = '';
+    function cel(x, i) { return x ? '<td class="c">' + esc(x.d) + '</td><td class="' + (i === 0 ? 'u' : '') + '">' + esc(x.l) + '</td><td class="r">' + (x.db ? nb(x.db) : '') + '</td><td class="r">' + (x.cr ? nb(x.cr) : '') + '</td>' : '<td></td><td></td><td></td><td></td>'; }
+    for (var i = 0; i < n; i++) body += '<tr class="' + (i === 0 ? 'g' : '') + '">' + cel(G[i], i) + cel(D[i], i) + '</tr>';
+    var colg = '<colgroup><col style="width:7%"><col style="width:26%"><col style="width:8.5%"><col style="width:8.5%"><col style="width:7%"><col style="width:26%"><col style="width:8.5%"><col style="width:8.5%"></colgroup>';
+    var css = '@page{size:A4 portrait;margin:8mm}*{box-sizing:border-box}html,body{margin:0;padding:0;font:8px Arial,Helvetica,sans-serif;color:#1e293b;-webkit-print-color-adjust:exact;print-color-adjust:exact}' +
+      '.ent{display:flex;align-items:flex-start;justify-content:space-between;background:#ececec;padding:5mm 5mm 3mm;text-align:center;color:#0c2d6b;font-weight:700}.ent .t{flex:1}.ent h1{margin:0 0 4px;font-size:11px}.ent p{margin:2px 0;font-size:8.5px}.ent .p{font-weight:400;font-size:8px;white-space:nowrap}.ent img{height:13mm;margin-left:4mm}' +
+      '.pg{display:flex;flex-direction:column;min-height:252mm;margin-top:3mm}table{width:100%;border-collapse:collapse;table-layout:fixed}' +
+      'th{background:#2E427B;color:#fff;font-size:7.5px;padding:3px 2px;border:1px solid #fff}td{padding:2px 3px;font-size:7.5px}' +
+      '.bd{flex:1;border-left:1px solid #cbd2e0;border-right:1px solid #cbd2e0;border-bottom:1px solid #cbd2e0;background:linear-gradient(#cbd2e0,#cbd2e0) 7% 0/1px 100% no-repeat,linear-gradient(#cbd2e0,#cbd2e0) 33% 0/1px 100% no-repeat,linear-gradient(#cbd2e0,#cbd2e0) 41.5% 0/1px 100% no-repeat,linear-gradient(#2E427B,#2E427B) 50% 0/2px 100% no-repeat,linear-gradient(#cbd2e0,#cbd2e0) 57% 0/1px 100% no-repeat,linear-gradient(#cbd2e0,#cbd2e0) 83% 0/1px 100% no-repeat,linear-gradient(#cbd2e0,#cbd2e0) 91.5% 0/1px 100% no-repeat}' +
+      'tr.g td{background:#ececec;font-weight:700}td.u{text-decoration:underline;color:#0c2d6b}td.r{text-align:right;white-space:nowrap}td.c{text-align:center}' +
+      '.ft td{background:#ececec;font-weight:700;border-top:1px solid #cbd2e0}' +
+      '.sg{display:flex;justify-content:space-between;margin-top:6mm;font-size:7.5px}.sg div{width:45%}.sg b{display:block;margin-top:10mm;text-decoration:underline;color:#0c2d6b}';
+    var h = '<div class="ent"><div class="t"><h1>ETAT DE RAPPROCHEMENT BANCAIRE AU ' + date(r.rel.date) + '</h1><p>COMPTE BANCAIRE ' + esc(cle) + ' ( ' + esc(c.banqueLib || c.banque || '') + ' )</p><p>Compte N° ' + esc(cle) + ' — montants en ' + esc(loc) + '</p></div>' +
+      '<div class="p">Page 1/1' + (M.logo ? '<br><img src="' + M.logo + '" alt="">' : '') + '</div></div>' +
+      '<div class="pg"><table>' + colg + '<thead><tr><th colspan="4">Écritures non encore passées par la banque</th><th colspan="4">Écritures non encore passées par l\u2019entité</th></tr>' +
+      '<tr><th>Date pièce</th><th>Libellé</th><th>Débit</th><th>Crédit</th><th>Date pièce</th><th>Libellé</th><th>Débit</th><th>Crédit</th></tr></thead></table>' +
+      '<div class="bd"><table>' + colg + '<tbody>' + body + '</tbody></table></div>' +
+      '<table>' + colg + '<tbody class="ft"><tr><td></td><td>Sous-Total</td><td class="r">' + nb(gd) + '</td><td class="r">' + nb(gc) + '</td><td></td><td>Sous-Total</td><td class="r">' + nb(dd) + '</td><td class="r">' + nb(dc) + '</td></tr>' +
+      '<tr><td></td><td>Solde corrigé</td><td></td><td class="r">' + nb(gc - gd) + '</td><td></td><td>Solde corrigé</td><td class="r">' + nb(dd - dc) + '</td><td></td></tr></tbody></table></div>' +
+      '<div class="sg"><div>Responsable Administratif et financier<b>' + esc(c.sign1 || '') + '</b></div><div style="text-align:right">Coordonnateur du Projet<b>' + esc(c.sign2 || '') + '</b></div></div>';
+    var w = window.open('', '_blank'); if (!w) { alert('Fenêtre bloquée par le navigateur.'); return; }
+    w.document.open(); w.document.write('<!doctype html><html><head><meta charset="utf-8"><title>État de rapprochement bancaire</title><style>' + css + '</style></he' + 'ad><bo' + 'dy>' + h + '</bo' + 'dy></ht' + 'ml>'); w.document.close();
+    var go = function () { try { w.focus(); w.print(); } catch (e) {} }, im = [].slice.call(w.document.images);
+    if (!im.length) setTimeout(go, 200); else { var k = 0; im.forEach(function (x) { var f2 = function () { if (++k === im.length) setTimeout(go, 100); }; if (x.complete) f2(); else { x.onload = f2; x.onerror = f2; } }); }
+  }
+  // impressions : Détail / Fiche (sections et colonnes devise selon le bouton)
+  qa('[data-sit-p]').forEach(function (b) {
+    b.addEventListener('click', function () {
+      var p = b.getAttribute('data-sit-p').split('|'); if (p[1] === 'loc') { imprimerEtat(); return; } rendre();
+      root.setAttribute('data-sit-mode', p[0]); root.setAttribute('data-sit-cols', p[1]);
+      var fin = function () { root.removeAttribute('data-sit-mode'); root.removeAttribute('data-sit-cols'); window.removeEventListener('afterprint', fin); };
+      window.addEventListener('afterprint', fin); window.print(); setTimeout(fin, 1500);
+    });
+  });
+  function exporter() {
+    var r = cache; if (!r) { msg('Aucun relevé à exporter.'); return; }
+    var l = ['Element;Monnaie (' + locale() + ');Nombre d\'ecritures'].concat(lignes(r).filter(Boolean).map(function (x) { return [x[0], x[1], x[2]].join(';'); }));
+    var a = document.createElement('a'); a.href = URL.createObjectURL(new Blob(['﻿' + l.join('\n')], { type: 'text/csv;charset=utf-8' })); a.download = 'situation_' + cle + '.csv'; document.body.appendChild(a); a.click(); a.remove();
+  }
+  qa('[data-sit-b="exporter"]').forEach(function (b) { b.addEventListener('click', exporter); });
+  window.addEventListener('rapprochement-changed', init);
+  window.addEventListener('hashchange', function () { if (location.hash === '#situation') init(); });
+  window.addEventListener('load', init);
+  init(); [500, 1500, 3500].forEach(function (t) { setTimeout(function () { if (!cle || !numero) init(); }, t); });
+})();
+</script>

@@ -1,0 +1,199 @@
+<!--
+  Écran « Gestion des sélections » (Comptabilité Projets & Bailleurs › Gestion des demandes de remboursement › Paramétrages › Gestion des sélections).
+  Reprise de la capture de l'application : onglet « Axe de la convention » (formulaire). L'onglet « Sélection »
+  n'était pas capturé : simple emplacement. Styles préfixés gs- (la feuille globale ne contient pas les classes arbitraires d'origine).
+-->
+<style>
+.gs-page{background:#FBF9F5;padding:24px;border-radius:12px;min-height:420px;color:#2c2c2a}
+.gs-h1{font-size:20px;font-weight:700;margin:0}
+.gs-lead{margin:4px 0 24px;max-width:72ch;font-size:13px;line-height:1.6;color:#888780}
+.gs-tabs{display:flex;gap:32px;border-bottom:1px solid #e7e3da;margin-bottom:24px}
+.gs-tab{position:relative;padding:0 0 12px;border:0;background:none;font:inherit;font-size:14px;font-weight:600;color:#888780;cursor:pointer}
+.gs-tab:hover{color:#5f5f5a}
+.gs-tab.gs-on{color:#7a5c2e}
+.gs-tab.gs-on:after{content:"";position:absolute;left:0;right:0;bottom:0;height:2px;border-radius:99px;background:#a8843c}
+.gs-card{max-width:672px;border:1px solid #edf1f5;border-radius:12px;background:#fff;box-shadow:0 10px 30px #4c577d14}
+.gs-card-in{padding:24px}
+.gs-card h2{font-size:20px;font-weight:700;margin:0}
+.gs-card .gs-sub{margin:4px 0 20px;font-size:13px;color:#888780}
+.gs-field{margin-bottom:20px}
+.gs-row{display:grid;grid-template-columns:1fr 1fr;gap:16px;margin-bottom:20px}
+.gs-row .gs-field{margin:0}
+.gs-label{display:block;margin-bottom:6px;font-size:13px;font-weight:600}
+.gs-req{margin-left:2px;color:#e0554f}
+.gs-ctl{width:100%;border:1px solid #d3d1c7;border-radius:8px;background:#fff;padding:10px 12px;font:inherit;font-size:13px;color:#2c2c2a;outline:none}
+.gs-ctl:focus{border-color:#3e97ff;box-shadow:0 0 0 2px #3e97ff33}
+.gs-ctl.gs-bad{border-color:#e0554f}
+.gs-hint{margin:6px 0 0;font-size:12px;color:#888780}
+.gs-actions{display:flex;justify-content:flex-end;align-items:center;gap:8px;border-top:1px solid #edf1f5;padding-top:20px}
+.gs-btn{min-height:40px;border-radius:8px;padding:0 16px;font:inherit;font-size:13px;font-weight:500;cursor:pointer;border:1px solid #d3d1c7;background:#fff;color:#2c2c2a}
+.gs-btn:hover{background:#f4f6fa}
+.gs-btn.gs-pri{border-color:#0f1b2d;background:#0f1b2d;color:#fff;font-weight:700;padding:0 20px}
+.gs-btn.gs-pri:hover{background:#1c2c47}
+.gs-msg{margin-right:auto;font-size:12.5px;font-weight:600}
+.gs-msg.ok{color:#15803d}.gs-msg.ko{color:#e0554f}
+.gs-bar{display:flex;justify-content:flex-end;margin-bottom:20px}
+.gs-btn.gs-green{border-color:#0A3925;background:#0A3925;color:#fff;font-weight:700;padding:0 20px}
+.gs-btn.gs-green:hover{background:#0f4a31}
+.gs-tablewrap{overflow-x:auto;border:1px solid #edf1f5;border-radius:12px;background:#fff;box-shadow:0 10px 30px #4c577d14}
+.gs-table{width:100%;border-collapse:collapse;font-size:13px}
+.gs-table th{background:#f3ede2;color:#7a5c2e;font-size:11px;font-weight:700;letter-spacing:.06em;text-transform:uppercase;text-align:left;padding:12px 16px}
+.gs-table td{padding:12px 16px;color:#4b5675;border-top:1px solid #edf1f5;vertical-align:middle}
+.gs-table tr:hover td{background:#faf7f1}
+.gs-table .gs-b{font-weight:600;color:#2c2c2a}
+.gs-pill{display:inline-flex;border-radius:999px;background:#e6f4ea;color:#1d7a3f;padding:4px 10px;font-size:11px;font-weight:600}
+.gs-chips{display:flex;flex-wrap:wrap;gap:6px}
+.gs-chip{border:1px solid #e5e1d6;background:#faf7f1;color:#5f5f5a;border-radius:6px;padding:2px 8px;font-size:11px}
+.gs-acts{display:flex;justify-content:flex-end;gap:6px}
+.gs-ico{width:32px;height:32px;display:inline-flex;align-items:center;justify-content:center;border:1px solid #e5e1d6;border-radius:8px;background:#fff;color:#9aa0a6;font-size:15px;cursor:pointer}
+.gs-ico.gs-edit{border-color:#f0c98c;color:#c77e1e}
+.gs-ico:disabled{opacity:.4;cursor:not-allowed}
+.gs-modal{position:fixed;inset:0;z-index:2000;display:flex;align-items:center;justify-content:center;background:#0f172a99;padding:16px}
+.gs-dialog{width:100%;max-width:480px;max-height:90vh;overflow:auto;background:#fff;border-radius:12px;padding:24px;box-shadow:0 20px 50px #0f172a40}
+.gs-dialog h2{font-size:18px;font-weight:700;margin:0 0 16px}
+</style>
+<app-gestion-tris>
+<div class="gs-page" data-gs-root>
+  <div>
+    <h1 class="gs-h1">Gestion des sélections</h1>
+    <p class="gs-lead">Paramétrer l'axe analytique de la convention et les sélections de mouvements (type de dépense, journaux, centre de saisie).</p>
+  </div>
+  <div class="gs-tabs">
+    <button type="button" class="gs-tab gs-on" data-gs-tab="axe">Axe de la convention</button>
+    <button type="button" class="gs-tab" data-gs-tab="selection">Sélection</button>
+  </div>
+
+  <div data-gs-panel="axe">
+    <div class="gs-card"><div class="gs-card-in">
+      <h2>Axe de la convention</h2>
+      <p class="gs-sub">Définir l'axe analytique utilisé pour filtrer l'ensemble des mouvements du module des demandes de remboursement.</p>
+      <form novalidate onsubmit="return false">
+        <div class="gs-field">
+          <label class="gs-label">Axe principal <span class="gs-req">*</span></label>
+          <select class="gs-ctl" data-gs-req>
+            <option value="">— Sélectionner un axe analytique —</option>
+            <option value="1">PC — PLAN COMPTABLE</option>
+            <option value="3">PLAN1 — ACTIVITE</option>
+            <option value="4">PLAN2 — POSTE BUDGETAIRE</option>
+            <option value="5">PLAN3 — FINANCEMENT</option>
+            <option value="6">PLAN4 — GEOGRAPHIQUE</option>
+          </select>
+          <p class="gs-hint">Parmi les plans analytiques activés pour cette société.</p>
+        </div>
+        <div class="gs-row">
+          <div class="gs-field">
+            <label class="gs-label">Niveau de la convention <span class="gs-req">*</span></label>
+            <select class="gs-ctl" data-gs-req>
+              <option value="">— Sélectionner un niveau —</option>
+              <option value="48">1 — BAILLEUR</option><option value="49">2 — CONVENTION</option><option value="50">3 — CATEGORIE</option>
+            </select>
+          </div>
+          <div class="gs-field">
+            <label class="gs-label">Niveau du catégorie associé <span class="gs-req">*</span></label>
+            <select class="gs-ctl" data-gs-req>
+              <option value="">— Sélectionner un niveau —</option>
+              <option value="48">1 — BAILLEUR</option><option value="49">2 — CONVENTION</option><option value="50">3 — CATEGORIE</option>
+            </select>
+          </div>
+        </div>
+        <div class="gs-field">
+          <label class="gs-label">Nom personnalisé de l'axe <span class="gs-req">*</span></label>
+          <input type="text" class="gs-ctl" data-gs-req placeholder="Ex : Convention / Catégorie">
+          <p class="gs-hint">Nom libre affiché dans le module à la place du libellé technique de l'axe.</p>
+        </div>
+        <div class="gs-actions">
+          <span class="gs-msg" data-gs-msg></span>
+          <button type="button" class="gs-btn" data-gs-annuler>Annuler</button>
+          <button type="button" class="gs-btn gs-pri" data-gs-save>Enregistrer le paramétrage</button>
+        </div>
+      </form>
+    </div></div>
+  </div>
+
+  <div data-gs-panel="selection" style="display:none">
+    <p class="gs-lead" style="margin-bottom:20px">Paramétrer les sélections de mouvements disponibles : type de dépense, journaux et centre de saisie concernés.</p>
+    <div class="gs-bar"><button type="button" class="gs-btn gs-green" data-gs-new>+ Nouvelle sélection</button></div>
+    <div class="gs-tablewrap"><table class="gs-table">
+      <thead><tr><th>N° paramètre</th><th>Description</th><th>Type de dépense</th><th>Journaux</th><th>Centre de saisie</th><th style="text-align:right">Actions</th></tr></thead>
+      <tbody data-gs-rows>
+        <tr>
+          <td class="gs-b">SOE</td><td>STATE OF EXPENDITURE</td>
+          <td><span class="gs-pill">Décaissement</span></td>
+          <td><div class="gs-chips">
+            <span class="gs-chip">BFM — Journal Banque BFM</span><span class="gs-chip">BSGA2 — Journal Banque SGM A -MGA</span><span class="gs-chip">CA — Journal Caisse</span><span class="gs-chip">FID — Journal Fonds confiés FID</span><span class="gs-chip">JAVNU — Journal Avance Agence des Nations Unies</span><span class="gs-chip">JPDNU — Journal Paiement Direct Des Nations Unies</span><span class="gs-chip">MISS — Journal mission</span><span class="gs-chip">JPR — Journal Pénalité de retard</span><span class="gs-chip">JPDFR — Journal Paiement Direct Fournisseur</span><span class="gs-chip">FONDS — Journal Avance de Fonds</span><span class="gs-chip">CREDOC — Journal CREDOC</span><span class="gs-chip">BSGB1 — Journal Banque SGM B -USD</span><span class="gs-chip">BSGA1 — Journal Banque SGM A - USD</span>
+          </div></td>
+          <td><div class="gs-chips"><span class="gs-chip">Siège</span></div></td>
+          <td><div class="gs-acts">
+            <button type="button" class="gs-ico gs-edit" disabled title="Ce paramétrage ne peut être ni modifié ni supprimé car il est déjà rattaché à une demande." aria-label="Éditer"><i class="ti ti-pencil"></i></button>
+            <button type="button" class="gs-ico" disabled title="Ce paramétrage ne peut être ni modifié ni supprimé car il est déjà rattaché à une demande." aria-label="Supprimer"><i class="ti ti-trash"></i></button>
+          </div></td>
+        </tr>
+      </tbody>
+    </table></div>
+
+    <div class="gs-modal" data-gs-modal style="display:none">
+      <div class="gs-dialog">
+        <h2>Nouvelle sélection</h2>
+        <div class="gs-field"><label class="gs-label">N° paramètre <span class="gs-req">*</span></label><input class="gs-ctl" data-gs-m="num" placeholder="Ex : SOE"></div>
+        <div class="gs-field"><label class="gs-label">Description <span class="gs-req">*</span></label><input class="gs-ctl" data-gs-m="desc" placeholder="Ex : STATE OF EXPENDITURE"></div>
+        <div class="gs-field"><label class="gs-label">Type de dépense <span class="gs-req">*</span></label>
+          <select class="gs-ctl" data-gs-m="type"><option value="">— Sélectionner —</option><option>Décaissement</option><option>Engagement</option><option>Prévision</option></select></div>
+        <div class="gs-field"><label class="gs-label">Journaux <span class="gs-req">*</span></label>
+          <select class="gs-ctl" data-gs-m="jnl"><option value="">— Sélectionner —</option><option>BFM — Journal Banque BFM</option><option>CA — Journal Caisse</option><option>FID — Journal Fonds confiés FID</option><option>MISS — Journal mission</option><option>CREDOC — Journal CREDOC</option></select></div>
+        <div class="gs-field"><label class="gs-label">Centre de saisie <span class="gs-req">*</span></label>
+          <select class="gs-ctl" data-gs-m="cs"><option value="">— Sélectionner —</option><option>Siège</option></select></div>
+        <div class="gs-actions"><span class="gs-msg ko" data-gs-mmsg></span>
+          <button type="button" class="gs-btn" data-gs-mcancel>Annuler</button>
+          <button type="button" class="gs-btn gs-pri" data-gs-madd>Enregistrer</button></div>
+      </div>
+    </div>
+  </div>
+</div>
+<script>
+(function () {
+  var root = document.currentScript.parentElement.querySelector('[data-gs-root]');
+  var $ = function (s) { return Array.prototype.slice.call(root.querySelectorAll(s)); };
+  $('[data-gs-tab]').forEach(function (b) {
+    b.addEventListener('click', function () {
+      $('[data-gs-tab]').forEach(function (t) { t.classList.toggle('gs-on', t === b); });
+      $('[data-gs-panel]').forEach(function (p) { p.style.display = p.dataset.gsPanel === b.dataset.gsTab ? '' : 'none'; });
+    });
+  });
+  var msg = root.querySelector('[data-gs-msg]');
+  function say(t, c) { msg.textContent = t; msg.className = 'gs-msg ' + (c || ''); }
+  $('[data-gs-req]').forEach(function (f) { f.addEventListener('input', function () { f.classList.remove('gs-bad'); say(''); }); });
+  root.querySelector('[data-gs-save]').addEventListener('click', function () {
+    var ko = 0;
+    $('[data-gs-req]').forEach(function (f) { var bad = !f.value.trim(); f.classList.toggle('gs-bad', bad); if (bad) ko++; });
+    say(ko ? 'Renseignez les champs obligatoires.' : 'Paramétrage enregistré.', ko ? 'ko' : 'ok');
+  });
+  var modal = root.querySelector('[data-gs-modal]'), mmsg = root.querySelector('[data-gs-mmsg]');
+  var mf = function (k) { return modal.querySelector('[data-gs-m="' + k + '"]'); };
+  function closeModal() { modal.style.display = 'none'; ['num', 'desc', 'type', 'jnl', 'cs'].forEach(function (k) { mf(k).value = ''; mf(k).classList.remove('gs-bad'); }); mmsg.textContent = ''; }
+  function esc(s) { var d = document.createElement('div'); d.textContent = s; return d.innerHTML; }
+  root.querySelector('[data-gs-new]').addEventListener('click', function () { modal.style.display = ''; mf('num').focus(); });
+  root.querySelector('[data-gs-mcancel]').addEventListener('click', closeModal);
+  root.querySelector('[data-gs-madd]').addEventListener('click', function () {
+    var ko = 0;
+    ['num', 'desc', 'type', 'jnl', 'cs'].forEach(function (k) { var bad = !mf(k).value.trim(); mf(k).classList.toggle('gs-bad', bad); if (bad) ko++; });
+    if (ko) { mmsg.textContent = 'Renseignez les champs obligatoires.'; return; }
+    var tr = document.createElement('tr');
+    tr.innerHTML = '<td class="gs-b">' + esc(mf('num').value.trim()) + '</td><td>' + esc(mf('desc').value.trim()) + '</td>' +
+      '<td><span class="gs-pill">' + esc(mf('type').value) + '</span></td>' +
+      '<td><div class="gs-chips"><span class="gs-chip">' + esc(mf('jnl').value) + '</span></div></td>' +
+      '<td><div class="gs-chips"><span class="gs-chip">' + esc(mf('cs').value) + '</span></div></td>' +
+      '<td><div class="gs-acts"><button type="button" class="gs-ico gs-edit" aria-label="Éditer"><i class="ti ti-pencil"></i></button>' +
+      '<button type="button" class="gs-ico" data-gs-del aria-label="Supprimer" style="color:#e0554f;cursor:pointer"><i class="ti ti-trash"></i></button></div></td>';
+    root.querySelector('[data-gs-rows]').appendChild(tr);
+    closeModal();
+  });
+  root.querySelector('[data-gs-rows]').addEventListener('click', function (e) {
+    var b = e.target.closest('[data-gs-del]'); if (b) b.closest('tr').remove();
+  });
+  root.querySelector('[data-gs-annuler]').addEventListener('click', function () {
+    $('[data-gs-req]').forEach(function (f) { f.value = ''; f.classList.remove('gs-bad'); });
+    say('');
+  });
+})();
+</script>
+</app-gestion-tris>

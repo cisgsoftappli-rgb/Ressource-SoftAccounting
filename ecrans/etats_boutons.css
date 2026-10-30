@@ -1,0 +1,23 @@
+/* Barre d'actions unifiée des états comptables : Filtre (principal) | CSV | EXCEL | PDF — charte §8.1 */
+[data-screen] .etb-bar{display:flex!important;justify-content:flex-end!important;align-items:center;margin:0 0 12px}
+.etb-group{display:flex;flex-wrap:wrap;gap:8px;align-items:center}
+.etb,.etb-group .toolbar-btn{display:inline-flex;align-items:center;justify-content:center;gap:8px;min-height:44px;padding:0 20px;border:1px solid #D6D9E0;border-radius:8px;background:#fff;color:#5B606D;font:inherit;font-size:14px;font-weight:700;cursor:pointer;white-space:nowrap}
+.etb:hover:not(:disabled),.etb-group .toolbar-btn:hover:not(:disabled){background:#F5F7F9;border-color:#B9BEC8;color:#353944}
+.etb.pri,.etb-group .toolbar-btn-primary{background:#2E427B!important;border-color:#2E427B!important;color:#fff!important}
+.etb.pri:hover:not(:disabled),.etb-group .toolbar-btn-primary:hover:not(:disabled){background:#243569!important;border-color:#243569!important}
+.etb i{font-size:16px;line-height:1}
+.etb:disabled{opacity:.5;cursor:not-allowed}
+.etb:focus-visible{outline:3px solid #2E427B;outline-offset:2px}
+/* Éditions personnalisées : le groupe remplace le menu « Exporter » */
+.el-exp .etb-group{display:flex}
+@media (max-width:640px){.etb-group{width:100%}.etb{flex:1 1 calc(50% - 8px)}}
+/* Titre de l'état aligné sur la barre d'actions */
+[data-screen] .etb-bar.etb-avec-titre{justify-content:space-between!important;gap:16px}
+.etb-avec-titre .bx-titre{margin:0;min-width:0;flex:1 1 auto}
+.etb-avec-titre .etb-group{flex:none}
+/* En-tête d'état unifié : même titre sur tous les états standard */
+.etb-avec-titre :is(.bx-titre,.etb-titre){margin:0;min-width:0;flex:1 1 auto;font:700 14px/1.3 var(--font-sans);text-transform:uppercase;letter-spacing:0;color:#0B1332}
+app-bg-resultat .result-bar .result-title,app-balance-analytique .result-meta-bloc .result-title{display:none}
+app-bg-resultat .page-breadcrumb{display:none}
+app-bg-resultat .page-header,app-balance-analytique .page-header>:is(h1,p){position:absolute!important;width:1px;height:1px;overflow:hidden;clip-path:inset(50%);white-space:nowrap}
+app-balance-analytique :is(.page-title,.page-subtitle){position:absolute!important;width:1px;height:1px;overflow:hidden;clip-path:inset(50%);white-space:nowrap}

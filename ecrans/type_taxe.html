@@ -1,0 +1,182 @@
+<!--
+  Écran « Type de taxe » (États comptables › Déclaration fiscale › Paramétrages › Type de taxe) — capture Angular app-type-taxe.
+  Liste des types de taxe (IR, IRSA, TVA) avec « n compte(s) rattaché(s) », Modifier / Supprimer, bouton « Nouveau type de taxe ».
+  Fenêtre « Nouveau type de taxe » : Numéro, Libellé, puis section Comptes (Ajout / Modifier / Supprimer / Enregistrer / Annuler)
+  activée seulement après enregistrement du type. Données en mémoire. Sens proposés (Débit / Crédit / Les deux) : à confirmer.
+-->
+<style>
+.tt-main{min-height:100%;background:#fff;padding:24px;color:#0f172a}
+.tt-hd{display:flex;flex-wrap:wrap;align-items:flex-end;justify-content:space-between;gap:16px;margin-bottom:24px}
+.tt-hd p.k{margin:0 0 8px;font-size:12px;font-weight:600;color:#64748b}.tt-hd h1{margin:0;font-size:24px;font-weight:700;letter-spacing:-.01em}
+.tt-hd p.s{margin:4px 0 0;font-size:14px;color:#64748b}
+.tt-new{border:0;border-radius:8px;background:#134e4a;color:#fff;padding:8px 16px;min-height:40px;font:inherit;font-size:14px;font-weight:600;cursor:pointer;display:inline-flex;align-items:center;gap:8px}.tt-new:hover{background:#115e59}
+.tt-list{display:flex;flex-direction:column;gap:12px}
+.tt-row{display:flex;align-items:center;justify-content:space-between;gap:16px;min-height:76px;border:1px solid #e7e5e4;border-radius:12px;background:#fff;padding:16px 20px;box-shadow:0 1px 2px #0000000d;cursor:pointer;transition:.15s}
+.tt-row:hover{border-color:#5eead4;background:#f0fdfa66}
+.tt-row h2{margin:0;font-size:14px;font-weight:700}.tt-row p{margin:4px 0 0;font-size:12px;color:#78716c}
+.tt-act{display:flex;gap:8px;flex-shrink:0}
+.tt-b{border:1px solid #d6d3d1;background:#fff;border-radius:8px;font:inherit;cursor:pointer;color:#334155;transition:.15s}.tt-b:hover:not(:disabled){background:#fafaf9}.tt-b:disabled{opacity:.4;cursor:not-allowed}
+.tt-b.t{min-height:36px;padding:6px 12px;font-size:12px;font-weight:600}.tt-b.i{width:36px;height:36px;color:#64748b}.tt-b.i:hover:not(:disabled){background:#fef2f2;border-color:#fca5a5;color:#b91c1c}
+.tt-empty{padding:32px;text-align:center;font-size:13px;color:#94a3b8;border:1px dashed #d6d3d1;border-radius:12px}
+.tt-ov{position:fixed;inset:0;z-index:2000;display:none;align-items:center;justify-content:center;background:#0f172a99;padding:16px}
+.tt-md{display:flex;flex-direction:column;width:100%;max-width:768px;max-height:90vh;background:#fff;border:1px solid #e2e8f099;border-radius:16px;box-shadow:0 25px 50px -12px #0f172a40}
+.tt-mh{padding:24px 32px;border-bottom:1px solid #f1f5f9}.tt-mh h2{margin:0;font-size:20px;font-weight:700}.tt-mh p{margin:4px 0 0;font-size:14px;color:#78716c}
+.tt-mb{flex:1;overflow:auto;padding:24px 32px;display:flex;flex-direction:column;gap:24px}
+.tt-fg{display:grid;grid-template-columns:1fr 1fr;gap:16px}@media(max-width:640px){.tt-fg{grid-template-columns:1fr}}
+.tt-fg label{display:block;margin-bottom:6px;font-size:12px;font-weight:700;color:#1e293b}.tt-fg label i{color:#dc2626;font-style:normal}
+.tt-in{width:100%;height:40px;border:1px solid #d6d3d1;border-radius:8px;background:#fff;padding:0 12px;font:inherit;font-size:14px;outline:none}.tt-in:focus{border-color:#0f766e;box-shadow:0 0 0 2px #0f766e26}.tt-in:disabled{background:#f5f5f4;color:#78716c}.tt-in.bad{border-color:#ef4444}
+.tt-er{margin:4px 0 0;font-size:12px;color:#dc2626;display:none}
+.tt-sec h3{margin:0 0 12px;font-size:14px;font-weight:700;display:flex;align-items:center;gap:8px}.tt-sec h3 svg{width:16px;height:16px;color:#8b5cf6}
+.tt-warn{margin:0 0 12px;border-radius:8px;background:#fffbeb;color:#92400e;padding:8px 12px;font-size:12px}
+.tt-box{border:1px solid #e7e5e4;border-radius:12px;overflow:hidden;background:#fff}
+.tt-tb{display:flex;flex-wrap:wrap;align-items:center;justify-content:flex-end;gap:8px;border-bottom:1px solid #e7e5e4;background:#fafaf9;padding:10px 12px}
+.tt-tb .tt-b{width:32px;height:32px;font-size:14px}.tt-tb .sv{background:#134e4a;border-color:#134e4a;color:#fff}.tt-tb .sv:hover:not(:disabled){background:#115e59}
+.tt-tb .rd{color:#dc2626}.tt-sep{width:1px;height:20px;background:#d6d3d1;margin:0 4px}
+.tt-t{width:100%;border-collapse:collapse;font-size:14px}.tt-t th{text-align:left;padding:8px 12px;border-bottom:1px solid #e7e5e4;font-size:10px;font-weight:700;letter-spacing:.04em;text-transform:uppercase;color:#57534e}
+.tt-t td{padding:6px 12px;border-top:1px solid #f5f5f4}.tt-t tr.sel td{background:#f0fdfa}.tt-t tbody tr[data-i]{cursor:pointer}
+.tt-t .tt-in{height:34px;font-size:13px}.tt-t td.e{text-align:center;padding:32px 12px;font-size:12px;color:#94a3b8;cursor:default}
+.tt-mf{display:flex;justify-content:flex-end;gap:12px;border-top:1px solid #f1f5f9;background:#f8fafc80;padding:20px 32px;border-radius:0 0 16px 16px}
+.tt-mf button{border-radius:6px;border:1px solid transparent;color:#fff;font:inherit;font-size:14px;font-weight:600;min-height:40px;padding:8px 16px;cursor:pointer}
+.tt-mf .c{background:#5c6b73}.tt-mf .c:hover{background:#505e65}.tt-mf .s{background:#00875a}.tt-mf .s:hover{background:#00764f}
+.tt-cf{position:fixed;inset:0;z-index:2100;display:none;align-items:center;justify-content:center;background:#0f172a99}
+.tt-cfb{background:#fff;border-radius:12px;padding:24px;max-width:380px;width:100%;box-shadow:0 25px 50px -12px #0f172a40}.tt-cfb p{margin:0 0 16px;font-size:14px}
+</style>
+<app-type-taxe>
+<div data-tt-root style="width:100%">
+  <main class="tt-main">
+    <header class="tt-hd">
+      <div><p class="k">Déclaration fiscale</p><h1>Type de taxe</h1><p class="s">Rattacher et configurer les comptes comptables associés à un type de taxe (compte, libellé, sens de filtrage débit/crédit).</p></div>
+      <button type="button" class="tt-new" data-tt-new><span aria-hidden="true">+</span> Nouveau type de taxe</button>
+    </header>
+    <section class="tt-list" data-tt-list aria-label="Liste des types de taxe"></section>
+  </main>
+
+  <div class="tt-ov" data-tt-ov>
+    <div class="tt-md" role="dialog" aria-modal="true">
+      <div class="tt-mh"><h2 data-tt-title>Nouveau type de taxe</h2><p>Rattacher et configurer les comptes comptables associés à un type de taxe (compte, libellé, sens de filtrage débit/crédit).</p></div>
+      <div class="tt-mb">
+        <div class="tt-fg">
+          <div><label>Numéro <i>*</i></label><input class="tt-in" data-tt-code maxlength="20" autocomplete="off" placeholder="Ex. : 01"><p class="tt-er" data-tt-ecode>Le code est obligatoire.</p></div>
+          <div><label>Libellé <i>*</i></label><input class="tt-in" data-tt-lib maxlength="100" placeholder="Ex. : TVA"><p class="tt-er" data-tt-elib>Le libellé est obligatoire.</p></div>
+        </div>
+        <section class="tt-sec">
+          <h3><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M4 4h14v16H4zM7 8h8M7 12h8M7 16h5"/></svg> Comptes</h3>
+          <p class="tt-warn" data-tt-warn>Enregistrez d'abord le type de taxe (Numéro et Libellé) pour pouvoir lui rattacher des comptes.</p>
+          <div class="tt-box">
+            <div class="tt-tb">
+              <button type="button" class="tt-b" data-tt-a="add" title="Ajout" disabled>➕</button>
+              <button type="button" class="tt-b" data-tt-a="edit" title="Modifier" disabled>✏️</button>
+              <button type="button" class="tt-b rd" data-tt-a="del" title="Supprimer" disabled>🗑</button>
+              <span class="tt-sep"></span>
+              <button type="button" class="tt-b sv" data-tt-a="save" title="Enregistrer" disabled>💾</button>
+              <button type="button" class="tt-b" data-tt-a="cancel" title="Annuler" disabled>✕</button>
+            </div>
+            <div style="overflow:auto"><table class="tt-t"><thead><tr><th>Compte</th><th>Libellé</th><th>Sens</th></tr></thead><tbody data-tt-rows></tbody></table></div>
+          </div>
+        </section>
+      </div>
+      <div class="tt-mf"><button type="button" class="c" data-tt-close>Fermer</button><button type="button" class="s" data-tt-save>Enregistrer</button></div>
+    </div>
+  </div>
+
+  <div class="tt-cf" data-tt-cf><div class="tt-cfb"><p data-tt-cft></p><div style="display:flex;justify-content:flex-end;gap:8px"><button type="button" class="tt-b t" data-tt-cfn>Annuler</button><button type="button" class="tt-b t" style="background:#dc2626;border-color:#dc2626;color:#fff" data-tt-cfy>Supprimer</button></div></div></div>
+</div>
+<script>
+(function () {
+  var root = document.currentScript.parentElement.querySelector('[data-tt-root]');
+  var q = function (s) { return root.querySelector(s); };
+  var TYPES = [
+    { code: 'IR', lib: 'IR', cpt: [] }, { code: 'IRSA', lib: 'IRSA', cpt: [] }, { code: 'TVA', lib: 'TVA', cpt: [] }
+  ];
+  window.__taxTypes = TYPES;
+  var cur = null, saved = false, selI = -1, editing = null; // editing = {i, row} (i=-1 → ajout)
+  var SENS = ['Débit', 'Crédit', 'Débit et crédit'];
+  function esc(s) { var d = document.createElement('div'); d.textContent = s == null ? '' : s; return d.innerHTML; }
+  var TRASH = '<svg aria-hidden="true" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M4 7h16M9 7V4h6v3m-8 0 1 13h8l1-13M10 11v5m4-5v5"/></svg>';
+
+  function drawList() {
+    q('[data-tt-list]').innerHTML = TYPES.length ? TYPES.map(function (t, i) {
+      return '<article class="tt-row" data-tt-open="' + i + '"><div style="min-width:0"><h2>' + esc(t.code) + ' — ' + esc(t.lib) + '</h2><p>' + t.cpt.length + ' compte(s) rattaché(s)</p></div>' +
+        '<div class="tt-act"><button type="button" class="tt-b t" data-tt-open="' + i + '">Modifier</button><button type="button" class="tt-b i" data-tt-rm="' + i + '" aria-label="Supprimer le type de taxe ' + esc(t.code) + '">' + TRASH + '</button></div></article>';
+    }).join('') : '<div class="tt-empty">Aucun type de taxe.</div>';
+  }
+  function setBar() {
+    var ed = !!editing, has = saved && !ed;
+    q('[data-tt-a="add"]').disabled = !(saved && !ed);
+    q('[data-tt-a="edit"]').disabled = !(has && selI >= 0);
+    q('[data-tt-a="del"]').disabled = !(has && selI >= 0);
+    q('[data-tt-a="save"]').disabled = !ed;
+    q('[data-tt-a="cancel"]').disabled = !ed;
+    q('[data-tt-warn]').style.display = saved ? 'none' : '';
+    q('[data-tt-code]').disabled = saved;
+  }
+  function drawRows() {
+    var h = '';
+    cur.cpt.forEach(function (c, i) {
+      if (editing && editing.i === i) h += editRow(editing.row, i);
+      else h += '<tr data-i="' + i + '" class="' + (i === selI ? 'sel' : '') + '"><td>' + esc(c.compte) + '</td><td>' + esc(c.lib) + '</td><td>' + esc(c.sens) + '</td></tr>';
+    });
+    if (editing && editing.i === -1) h += editRow(editing.row, -1);
+    if (!h) h = '<tr><td class="e" colspan="3">Aucun compte rattaché pour l’instant.</td></tr>';
+    q('[data-tt-rows]').innerHTML = h; setBar();
+  }
+  function editRow(r, i) {
+    return '<tr class="sel"><td><input class="tt-in" data-tt-f="compte" value="' + esc(r.compte) + '" placeholder="Ex. : 4457"></td><td><input class="tt-in" data-tt-f="lib" value="' + esc(r.lib) + '"></td><td><select class="tt-in" data-tt-f="sens">' +
+      SENS.map(function (s) { return '<option' + (s === r.sens ? ' selected' : '') + '>' + s + '</option>'; }).join('') + '</select></td></tr>';
+  }
+  function openModal(i) {
+    selI = -1; editing = null;
+    if (i == null) { cur = { code: '', lib: '', cpt: [] }; saved = false; q('[data-tt-title]').textContent = 'Nouveau type de taxe'; }
+    else { cur = TYPES[i]; cur._i = i; saved = true; q('[data-tt-title]').textContent = 'Modifier le type de taxe'; }
+    q('[data-tt-code]').value = cur.code; q('[data-tt-lib]').value = cur.lib;
+    ['code', 'lib'].forEach(function (k) { q('[data-tt-e' + k + ']').style.display = 'none'; q('[data-tt-' + k + ']').classList.remove('bad'); });
+    drawRows(); q('[data-tt-ov]').style.display = 'flex'; q(i == null ? '[data-tt-code]' : '[data-tt-lib]').focus();
+  }
+  function close() { q('[data-tt-ov]').style.display = 'none'; cur = null; drawList(); }
+  function saveType() {
+    var c = q('[data-tt-code]').value.trim(), l = q('[data-tt-lib]').value.trim(), ok = true;
+    q('[data-tt-ecode]').style.display = c ? 'none' : 'block'; q('[data-tt-code]').classList.toggle('bad', !c);
+    q('[data-tt-elib]').style.display = l ? 'none' : 'block'; q('[data-tt-lib]').classList.toggle('bad', !l);
+    if (!c || !l) return;
+    if (!saved && TYPES.some(function (t) { return t.code.toLowerCase() === c.toLowerCase(); })) { q('[data-tt-ecode]').textContent = 'Ce numéro existe déjà.'; q('[data-tt-ecode]').style.display = 'block'; q('[data-tt-code]').classList.add('bad'); return; }
+    q('[data-tt-ecode]').textContent = 'Le code est obligatoire.';
+    cur.code = c; cur.lib = l;
+    if (!saved) { TYPES.push(cur); cur._i = TYPES.length - 1; saved = true; }
+    drawRows(); drawList();
+  }
+  var pendingDel = null;
+  function confirmDel(txt, fn) { q('[data-tt-cft]').textContent = txt; pendingDel = fn; q('[data-tt-cf]').style.display = 'flex'; }
+
+  q('[data-tt-new]').addEventListener('click', function () { openModal(null); });
+  q('[data-tt-list]').addEventListener('click', function (e) {
+    var rm = e.target.closest('[data-tt-rm]');
+    if (rm) { e.stopPropagation(); var i = +rm.dataset.ttRm; confirmDel('Supprimer le type de taxe « ' + TYPES[i].code + ' » ?', function () { TYPES.splice(i, 1); drawList(); }); return; }
+    var o = e.target.closest('[data-tt-open]'); if (o) openModal(+o.dataset.ttOpen);
+  });
+  q('[data-tt-cfn]').addEventListener('click', function () { q('[data-tt-cf]').style.display = 'none'; pendingDel = null; });
+  q('[data-tt-cfy]').addEventListener('click', function () { q('[data-tt-cf]').style.display = 'none'; if (pendingDel) pendingDel(); pendingDel = null; });
+  q('[data-tt-close]').addEventListener('click', close);
+  q('[data-tt-save]').addEventListener('click', saveType);
+  q('[data-tt-rows]').addEventListener('click', function (e) {
+    var tr = e.target.closest('tr[data-i]'); if (!tr || editing) return; selI = +tr.dataset.i; drawRows();
+  });
+  q('[data-tt-rows]').addEventListener('input', function (e) { var f = e.target.dataset.ttF; if (f && editing) editing.row[f] = e.target.value; });
+  q('[data-tt-rows]').addEventListener('change', function (e) { var f = e.target.dataset.ttF; if (f && editing) editing.row[f] = e.target.value; });
+  root.addEventListener('click', function (e) {
+    var b = e.target.closest('[data-tt-a]'); if (!b || b.disabled) return;
+    var a = b.dataset.ttA;
+    if (a === 'add') { editing = { i: -1, row: { compte: '', lib: '', sens: 'Débit' } }; drawRows(); }
+    else if (a === 'edit') { editing = { i: selI, row: Object.assign({}, cur.cpt[selI]) }; drawRows(); }
+    else if (a === 'del') { var i = selI; confirmDel('Supprimer le compte « ' + cur.cpt[i].compte + ' » ?', function () { cur.cpt.splice(i, 1); selI = -1; drawRows(); drawList(); }); }
+    else if (a === 'cancel') { editing = null; drawRows(); }
+    else if (a === 'save') {
+      var r = editing.row; if (!String(r.compte).trim()) { var inp = q('[data-tt-f="compte"]'); inp.classList.add('bad'); inp.focus(); return; }
+      r.compte = String(r.compte).trim();
+      if (editing.i === -1) { cur.cpt.push(r); selI = cur.cpt.length - 1; } else cur.cpt[editing.i] = r;
+      editing = null; drawRows(); drawList();
+    }
+  });
+  drawList();
+})();
+</script>
+</app-type-taxe>

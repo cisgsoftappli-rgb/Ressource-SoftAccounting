@@ -1,0 +1,75 @@
+/* Pop-up modale des critères d'édition (États comptables › Général) — charte Softwell §8.6 / §13.7 */
+/* Voile : plein écran quand le bloc « critères » est affiché (les scripts le masquent avec display:none inline) */
+.etm-voile{position:fixed!important;inset:0;z-index:50;display:flex;align-items:center;justify-content:center;padding:16px;background:rgba(11,19,50,.5);overflow:auto}
+.etm-voile > main,.etm-voile > .bg-page{display:contents}
+.etm-dialog{width:100%;max-width:960px;max-height:94vh;display:flex;flex-direction:column;background:#fff;border:1px solid #E9EBF0;border-radius:16px;box-shadow:0 24px 48px rgba(11,19,50,.28);font-family:var(--font-sans)}
+.etm-head{display:flex;align-items:flex-start;justify-content:space-between;gap:12px;padding:20px 24px 12px}
+.etm-titre{display:flex;gap:12px;min-width:0}
+.etm-icone{display:grid;place-items:center;width:40px;height:40px;flex:none;border-radius:8px;background:#E3EBFE;color:#2E427B;font-size:20px}
+.etm-eyebrow{margin:0 0 2px;font-size:12px;font-weight:600;letter-spacing:.08em;text-transform:uppercase;color:#706000}
+.etm-h{margin:0;font-family:var(--font-heading);font-size:18px;font-weight:600;color:#2E427B}
+.etm-sub{margin:4px 0 0;font-size:13px;color:#5B606D;max-width:70ch;line-height:1.45}
+.etm-x{flex:none;width:44px;height:44px;margin:-8px -10px 0 0;border:0;border-radius:8px;background:none;color:#5B606D;font-size:20px;cursor:pointer}
+.etm-x:hover{background:#F5F7F9;color:#0B1332}
+.etm-body{padding:4px 24px 16px;overflow:visible}
+.etm-body .etf-carte{border:0;padding:0;box-shadow:none}
+.etm-foot{display:flex;align-items:center;justify-content:space-between;gap:12px;flex-wrap:wrap;padding:14px 24px;border-top:1px solid #E9EBF0}
+.etm-droite{display:flex;gap:8px;margin-left:auto}
+.etm-foot .toolbar-btn{min-height:44px}
+/* Fond de page tant que la fenêtre est fermée */
+.etm-fond{max-width:960px;margin:0 auto;padding:8px 4px}
+.etm-fond-titre{margin:0;font-family:var(--font-heading);font-size:24px;font-weight:600;color:#0B1332}
+.etm-fond-sub{margin:4px 0 16px;font-size:14px;color:#5B606D;max-width:70ch}
+.etm-fond-aide{margin:12px 0 0;font-size:13px;color:#5B606D}
+.etm-ouvrir{min-height:44px}
+/* Le fond disparaît dès que le résultat est affiché */
+[data-screen="balance"]:has(app-bg-resultat:not([style*="none"])) .etm-fond,
+app-balance-auxiliaire:has(.bx-res:not([style*="none"])) .etm-fond,
+app-grand-livre-general:has(.bx-res:not([style*="none"])) .etm-fond{display:none}
+@media (max-width:640px){.etm-dialog{max-height:100vh;border-radius:16px 16px 0 0}.etm-voile{align-items:flex-end;padding:0}.etm-droite{width:100%;flex-direction:column-reverse}.etm-foot .toolbar-btn{width:100%;justify-content:center}}
+
+/* Critères d'édition : champs harmonisés (même hauteur, même police, mêmes colonnes dans tous les blocs), sans notes */
+.etm-dialog .filters-hint{display:none}
+.etm-dialog .etf-bloc{padding:16px}
+.etm-dialog .etf-ligne{display:grid!important;grid-template-columns:repeat(auto-fill,minmax(150px,1fr))!important;gap:16px!important;align-items:start}
+.etm-dialog .etf-ligne>div{display:flex;flex-direction:column;gap:6px;min-width:0}
+.etm-dialog .filter-label{display:block;margin:0;line-height:18px}
+.etm-dialog :is(select.filter-input,input.filter-input,soft-multi-select-checkbox button){box-sizing:border-box;width:100%;height:44px;min-height:44px;padding:0 12px;border:1px solid #878D9A;border-radius:8px;background-color:#fff;color:#353944;font:400 14px/1.3 var(--font-sans)}
+.etm-dialog soft-multi-select-checkbox{display:block;width:100%}
+.etm-dialog soft-multi-select-checkbox .relative{width:100%}
+.etm-dialog soft-multi-select-checkbox button span.truncate{color:#353944;font-size:14px}
+.etm-dialog soft-multi-select-checkbox button span:not(.truncate){color:#5B606D;font-size:14px}
+/* Bloc Présentation sur la même grille de 5 colonnes */
+.etm-dialog .etf-presentation{display:grid!important;grid-template-columns:repeat(auto-fill,minmax(150px,1fr));gap:16px}
+.etm-dialog .etf-presentation>div{display:flex;flex-direction:column;gap:6px;min-width:0}
+.etm-dialog .etf-presentation>div:nth-child(1){grid-column:span 3}
+.etm-dialog .etf-presentation>div:nth-child(2){grid-column:span 2}
+.etm-dialog .etf-pastilles{display:flex;flex-wrap:wrap;gap:8px}
+.etm-dialog .etf-pastilles label{display:inline-flex;align-items:center;gap:8px;min-height:44px;box-sizing:border-box;padding:0 12px;border:1px solid #878D9A;border-radius:8px!important;font-size:14px;color:#353944}
+@media (max-width:760px){.etm-dialog .etf-presentation>div:nth-child(n){grid-column:1/-1}}
+.etm-dialog .etf-ligne{align-items:stretch!important}
+.etm-dialog .etf-ligne>div{justify-content:flex-end}
+/* Balance auxiliaire / Grand livre : sélecteurs multiples identiques aux autres champs, une colonne par champ */
+.etm-dialog .bx-multi{display:block;width:100%;position:relative}
+.etm-dialog .bx-multi>button{box-sizing:border-box;width:100%;height:44px;min-height:44px;padding:0 12px;border:1px solid #878D9A;border-radius:8px;background:#fff;color:#353944;font:400 14px/1.3 var(--font-sans);display:flex;align-items:center;justify-content:space-between;gap:8px;text-align:left}
+.etm-dialog .etf-ligne>div{grid-column:auto!important}
+
+/* Distribution à plat sur deux colonnes (modèle « Critères de sélection ») : plus de cartes par bloc, libellé au-dessus, cases à cocher en pied */
+.etm-dialog{max-width:760px}
+.etm-dialog .etm-body .etf-carte{display:grid!important;grid-template-columns:repeat(2,minmax(0,1fr));gap:16px 24px;padding:0;border:0}
+.etm-dialog :is(.etf-bloc,.etf-ligne,.etf-presentation){display:contents!important}
+.etm-dialog .etf-bloc-titre{display:none}
+.etm-dialog .etf-ligne>div,.etm-dialog .etf-presentation>div{display:flex;flex-direction:column;gap:6px;min-width:0;grid-column:auto!important}
+.etm-dialog .etf-bloc:first-of-type .etf-ligne:first-of-type>div:first-child{grid-column:1/-1!important}
+.etm-dialog .filter-label{text-transform:none;letter-spacing:0;font:600 14px/18px var(--font-sans);color:#353944}
+/* Groupes de cases à cocher : pleine largeur, sous un filet, sans pastille encadrée */
+.etm-dialog .etf-presentation>div:has(.etf-pastilles){grid-column:1/-1!important;padding-top:16px;border-top:1px solid #E9EBF0}
+.etm-dialog .etf-pastilles{gap:8px 24px}
+.etm-dialog .etf-pastilles label{border:0!important;background:none!important;padding:0;min-height:44px;border-radius:0!important;box-shadow:none}
+@media (max-width:640px){.etm-dialog .etm-body .etf-carte{grid-template-columns:1fr}}
+.etm-dialog .etf-presentation>div:has(input[type=radio]){grid-column:auto!important;border-top:0;padding-top:0}
+.etm-dialog .etm-body{overflow-y:auto;min-height:0}
+.etm-dialog .etf-pastilles{gap:0 16px}
+.etm-dialog .etf-pastilles label{white-space:nowrap}
+/* Édition : pas d'écran d'attente, la fenêtre de critères s'ouvre directement */
+.etm-fond{display:none!important}

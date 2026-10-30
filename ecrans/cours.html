@@ -1,0 +1,206 @@
+<!--
+  Écran « Gestion des cours › Saisie » (Comptabilité générale) — onglets Saisie / Liste. Un cours = Code monnaie (devise, hors monnaie locale), Date et Parité
+  (valeur d'une unité de la devise en monnaie locale, ex. 1 USD = 4 400 MGA, soit USDMGA) avec sa contrevaleur (MGAUSD = 1 / parité), saisissable dans les deux sens.
+  Cours cloisonnés par monnaie (sélecteur en tête ; import limité à la monnaie choisie). Unique par devise et par date. Monnaie locale lue dans Informations générales
+  (défaut MGA). Import Excel : colonnes Devise, Date, Parité. Données partagées : window.COURS = [ { devise, date, parite } ] et
+  window.COURS_API.taux(devise, date) (dernier cours à la date ou avant), copie dans localStorage softcompta.cours. Préfixe crs / data-crs.
+  S'appuie sur les styles bp-*. Ne pas nommer de fonction « $$ » (build.cjs).
+-->
+<style>
+[data-crs] .crs-mon{display:flex;align-items:flex-end;gap:16px;flex-wrap:wrap;padding:8px 12px;margin-bottom:10px;background:#fff;border:1px solid #E9EBF0;border-radius:12px}
+[data-crs] .crs-mon .bp-champ{flex:0 1 380px;min-width:240px}[data-crs] .crs-mn{padding-bottom:8px;font-size:12px;color:#5B606D}
+[data-crs] .crs-f{display:grid;gap:12px;padding:16px}
+[data-crs] .crs-b{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:12px 16px;padding:12px;border:1px solid #D5DBE5;border-radius:6px;background:#fff}
+@media (max-width:900px){[data-crs] .crs-b{grid-template-columns:repeat(2,minmax(0,1fr))}}
+@media (max-width:560px){[data-crs] .crs-b{grid-template-columns:1fr}}
+[data-crs] .bp-champ>span{text-transform:uppercase;letter-spacing:.02em;font-size:11px}
+[data-crs] .bp-in[readonly]{background:#F5F7F9;color:#474C58}
+[data-crs] .bp-in.err,[data-crs] .bp-sel.err{border-color:#B63132}
+[data-crs] .crs-er{display:none;font-size:12px;color:#B63132}[data-crs] .crs-er.show{display:block}
+[data-crs] .crs-help{display:block;margin-top:2px;font-size:12px;color:#5B606D}
+[data-crs] .crs-ok{font-size:12px;color:#2E427B;margin-left:8px}
+[data-crs] tbody tr{cursor:pointer}[data-crs] tbody tr.crs-sel td{background:#E8ECF6}
+[data-crs] td.r,[data-crs] th.r{text-align:right;font-variant-numeric:tabular-nums}
+</style>
+
+<div class="bp-root" data-crs>
+  <h1 style="position:absolute;width:1px;height:1px;overflow:hidden;clip-path:inset(50%);margin:0">Gestion des cours — Saisie</h1>
+
+  <div class="no-print">
+    <button type="button" data-crs-ajouter>Ajouter</button>
+    <button type="button" data-crs-modifier>Modifier</button>
+    <button type="button" data-crs-supprimer>Supprimer</button>
+    <button type="button" data-crs-importer>Importer</button>
+    <button type="button" data-crs-enregistrer>Enregistrer</button>
+    <button type="button" data-crs-annuler>Annuler</button>
+    <span class="crs-ok" data-crs-msg role="status"></span>
+  </div>
+
+  <div class="crs-mon"><label class="bp-champ"><span>Monnaie</span><select class="bp-sel" data-crs-mon aria-label="Monnaie des cours"></select></label><span class="crs-mn">Les cours sont cloisonnés par monnaie.</span></div>
+
+  <div class="bp-tabs" role="tablist">
+    <button type="button" role="tab" data-crs-tab="saisie">Saisie</button>
+    <button type="button" role="tab" class="on" data-crs-tab="liste">Liste <span class="bp-n" data-crs-compte></span></button>
+  </div>
+
+  <div class="bp-grid">
+    <section class="bp-pan" aria-label="Liste des cours" data-crs-pan="liste">
+      <h2>Cours des monnaies <small>Double-clic ou « Modifier » pour ouvrir la ligne en saisie</small></h2>
+      <div style="overflow:auto;max-height:560px">
+        <table class="bp-tb" style="min-width:700px"><thead>
+          <tr><th>Code monnaie</th><th>Libellé</th><th class="c">Date</th><th class="r" data-crs-thp>Parité</th><th class="r" data-crs-thc>Contrevaleur</th></tr>
+        </thead><tbody data-crs-lignes></tbody></table>
+      </div>
+      <div class="bp-vide" data-crs-vide hidden>Aucun cours pour cette monnaie : utilisez « Ajouter » ou « Importer ».</div>
+    </section>
+
+    <section class="bp-pan" aria-label="Saisie d'un cours" data-crs-pan="saisie" hidden>
+      <form class="crs-f" data-crs-form onsubmit="return false" novalidate>
+        <div class="crs-b">
+          <label class="bp-champ"><span>Code monnaie (devise) <b>*</b></span><select class="bp-sel" data-f="devise"></select><span class="crs-er" data-er="devise"></span></label>
+          <label class="bp-champ"><span>Date <b>*</b></span><input class="bp-in" data-f="date" type="date"><span class="crs-er" data-er="date"></span></label>
+          <label class="bp-champ"><span>Monnaie locale</span><input class="bp-in" data-f="locale" readonly></label>
+          <label class="bp-champ"><span data-crs-lp>Parité <b>*</b></span><input class="bp-in" data-f="parite" type="number" min="0" step="any" inputmode="decimal"><span class="crs-er" data-er="parite"></span></label>
+          <label class="bp-champ"><span data-crs-lc>Contrevaleur</span><input class="bp-in" data-f="contre" type="number" min="0" step="any" inputmode="decimal"></label>
+          <small class="crs-help" data-crs-eq style="grid-column:1/-1"></small>
+        </div>
+      </form>
+    </section>
+  </div>
+</div>
+
+<script>
+(function () {
+  var root = document.querySelector('[data-crs]'); if (!root) return;
+  function q(s) { return root.querySelector(s); } function qa(s) { return [].slice.call(root.querySelectorAll(s)); }
+  function f(n) { return q('[data-f="' + n + '"]'); }
+  function esc(s) { return String(s == null ? '' : s).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;'); }
+  var CLE = 'softcompta.cours', sel = -1, edit = -1, mon = '';
+  var data = [
+    { devise: 'USD', date: '2026-10-01', parite: 4350 }, { devise: 'USD', date: '2026-10-15', parite: 4380 }, { devise: 'USD', date: '2026-10-29', parite: 4400 },
+    { devise: 'EUR', date: '2026-10-01', parite: 4720 }, { devise: 'EUR', date: '2026-10-29', parite: 4755 }, { devise: 'MUR', date: '2026-10-01', parite: 96.5 }
+  ];
+  try { var sv = JSON.parse(localStorage.getItem(CLE) || 'null'); if (Array.isArray(sv)) data = sv; } catch (e) {}
+  function locale() {
+    var l = 'MGA'; [].slice.call(document.querySelectorAll('.ig-f')).forEach(function (x) { var a = x.querySelector('.ig-l'), s = x.querySelector('select'); if (a && s && a.textContent.trim() === 'Monnaie locale' && s.value) l = s.value; });
+    return l;
+  }
+  function devises() { return (window.DEVISES || []).filter(function (d) { return d.actif !== false && d.code !== locale(); }); }
+  function libDev(c) { var d = (window.DEVISES || []).filter(function (x) { return x.code === c; })[0]; return d ? (d.libelle || d.lib || '') : ''; }
+  function date(d) { return d ? d.split('-').reverse().join('/') : ''; }
+  function nb(v) { return Number(v).toLocaleString('fr-FR', { minimumFractionDigits: 2, maximumFractionDigits: 4 }); }
+  function msg(t) { q('[data-crs-msg]').textContent = t || ''; }
+  function effacer() { qa('.crs-er').forEach(function (e) { e.classList.remove('show'); e.textContent = ''; }); qa('.err').forEach(function (e) { e.classList.remove('err'); }); }
+  function err(n, m) { var e = q('[data-er="' + n + '"]'); if (e) { e.textContent = m; e.classList.add('show'); } f(n).classList.add('err'); }
+  function publier() {
+    window.COURS = data;
+    window.COURS_API = { taux: function (devise, d) { var r = null; data.forEach(function (x) { if (x.devise === devise && (!d || x.date <= d) && (!r || x.date > r.date)) r = x; }); return r ? r.parite : null; } };
+    try { localStorage.setItem(CLE, JSON.stringify(data)); } catch (e) {}
+    window.dispatchEvent(new Event('cours-changed'));
+  }
+  function eq6(v) { return Number(v.toPrecision(8)); }
+  function equiv() {
+    var pr = paire(), p = Number(f('parite').value);
+    q('[data-crs-lp]').innerHTML = 'Parité ' + esc(pr.p) + ' <b>*</b>'; q('[data-crs-lc]').textContent = 'Contrevaleur ' + pr.c;
+    q('[data-crs-eq]').textContent = p > 0 ? '1 ' + mon + ' = ' + nb(p) + ' ' + locale() + ' (' + pr.p + ') · 1 ' + locale() + ' = ' + eq6(1 / p).toLocaleString('fr-FR', { maximumFractionDigits: 8 }) + ' ' + mon + ' (' + pr.c + ')' : pr.p + ' : valeur d\u2019une unité de ' + mon + ' en ' + locale() + ' ; ' + pr.c + ' : valeur d\u2019une unité de ' + locale() + ' en ' + mon + '.';
+  }
+  function paire() { return { p: mon + locale(), c: locale() + mon }; }
+  function remplirMon() {
+    var s = q('[data-crs-mon]');
+    s.innerHTML = devises().map(function (d) { return '<option value="' + esc(d.code) + '">' + esc(d.code) + ' — ' + esc(d.libelle || d.lib || '') + '</option>'; }).join('') || '<option value="">Aucune devise</option>';
+    if (!mon || !s.querySelector('option[value="' + mon + '"]')) mon = s.value; else s.value = mon;
+    if (s.__combo && s.__combo.maj) s.__combo.maj();
+    var pr = paire(); q('[data-crs-thp]').textContent = 'Parité ' + pr.p; q('[data-crs-thc]').textContent = 'Contrevaleur ' + pr.c;
+  }
+  function remplir() {
+    var s = f('devise'), v = s.value;
+    s.innerHTML = '<option value="">— Sélectionner —</option>' + devises().map(function (d) { return '<option value="' + esc(d.code) + '">' + esc(d.code) + ' — ' + esc(d.libelle || d.lib || '') + '</option>'; }).join('');
+    if (v && !s.querySelector('option[value="' + v + '"]')) s.insertAdjacentHTML('beforeend', '<option value="' + esc(v) + '">' + esc(v) + '</option>');
+    s.value = v; if (s.__combo && s.__combo.maj) s.__combo.maj();
+  }
+  function aujourdhui() { var d = new Date(); return d.getFullYear() + '-' + ('0' + (d.getMonth() + 1)).slice(-2) + '-' + ('0' + d.getDate()).slice(-2); }
+  function charger(r) {
+    remplir(); effacer(); f('locale').value = locale();
+    f('devise').value = mon; f('devise').disabled = true; f('date').value = r ? r.date : aujourdhui(); f('parite').value = r ? r.parite : '';
+    f('contre').value = r && r.parite > 0 ? eq6(1 / r.parite) : '';
+    var s = f('devise'); if (s.__combo && s.__combo.maj) s.__combo.maj(); equiv();
+  }
+  function onglet(n) {
+    qa('[data-crs-tab]').forEach(function (b) { b.classList.toggle('on', b.getAttribute('data-crs-tab') === n); });
+    qa('[data-crs-pan]').forEach(function (p) { p.hidden = p.getAttribute('data-crs-pan') !== n; });
+    qa('[data-crs-enregistrer],[data-crs-annuler]').forEach(function (b) { b.disabled = n !== 'saisie'; });
+    qa('[data-crs-ajouter],[data-crs-modifier],[data-crs-supprimer],[data-crs-importer]').forEach(function (b) { b.disabled = n === 'saisie'; }); q('[data-crs-mon]').disabled = n === 'saisie';
+  }
+  function lister() {
+    if (!mon || !q('[data-crs-mon]').options.length) remplirMon();
+    var h = '', n = 0;
+    data.forEach(function (r, i) {
+      if (r.devise !== mon) return; n++;
+      var cel = [r.devise, libDev(r.devise), date(r.date), nb(r.parite), r.parite > 0 ? eq6(1 / r.parite).toLocaleString('fr-FR', { maximumFractionDigits: 8 }) : ''];
+      h += '<tr data-i="' + i + '"' + (i === sel ? ' class="crs-sel"' : '') + '>' + cel.map(function (c, k) { return '<td' + (k === 2 ? ' class="c"' : k >= 3 ? ' class="r"' : '') + '>' + esc(c) + '</td>'; }).join('') + '</tr>';
+    });
+    q('[data-crs-lignes]').innerHTML = h; q('[data-crs-vide]').hidden = n > 0; q('[data-crs-compte]').textContent = '(' + n + ')';
+  }
+  function ouvrir(i) {
+    if (!mon) remplirMon(); edit = i; charger(i >= 0 ? data[i] : null); onglet('saisie'); }
+  q('[data-crs-tab="saisie"]').addEventListener('click', function () { if (q('[data-crs-pan="saisie"]').hidden) ouvrir(sel); });
+  q('[data-crs-tab="liste"]').addEventListener('click', function () { onglet('liste'); lister(); });
+  q('[data-crs-ajouter]').addEventListener('click', function () { msg(); ouvrir(-1); });
+  q('[data-crs-modifier]').addEventListener('click', function () { if (sel < 0) { msg('Sélectionnez un cours dans la liste.'); return; } msg(); ouvrir(sel); });
+  q('[data-crs-supprimer]').addEventListener('click', function () {
+    if (sel < 0) { msg('Sélectionnez un cours dans la liste.'); return; }
+    if (!window.confirm('Supprimer le cours ' + data[sel].devise + ' du ' + date(data[sel].date) + ' ?')) return;
+    data.splice(sel, 1); sel = -1; publier(); lister(); msg('Cours supprimé.');
+  });
+  q('[data-crs-annuler]').addEventListener('click', function () { msg(); onglet('liste'); lister(); });
+  q('[data-crs-lignes]').addEventListener('click', function (e) { var tr = e.target.closest('tr[data-i]'); if (!tr) return; sel = +tr.dataset.i; qa('[data-crs-lignes] tr').forEach(function (r) { r.classList.toggle('crs-sel', r === tr); }); msg(); });
+  q('[data-crs-lignes]').addEventListener('dblclick', function (e) { var tr = e.target.closest('tr[data-i]'); if (tr) { sel = +tr.dataset.i; ouvrir(sel); } });
+  q('[data-crs-mon]').addEventListener('change', function () { mon = this.value; sel = -1; msg(); remplirMon(); lister(); });
+  f('parite').addEventListener('input', function () { var p = Number(this.value); f('contre').value = p > 0 ? eq6(1 / p) : ''; equiv(); });
+  f('contre').addEventListener('input', function () { var c = Number(this.value); f('parite').value = c > 0 ? eq6(1 / c) : ''; equiv(); });
+
+  q('[data-crs-enregistrer]').addEventListener('click', function () {
+    effacer(); var ok = true, r = { devise: f('devise').value, date: f('date').value, parite: f('parite').value === '' ? null : Number(f('parite').value) };
+    if (!r.devise) { err('devise', 'Le code monnaie est obligatoire.'); ok = false; }
+    if (!r.date) { err('date', 'La date est obligatoire.'); ok = false; }
+    if (r.parite === null || !(r.parite > 0)) { err('parite', 'La parité doit être un nombre supérieur à 0.'); ok = false; }
+    if (ok && data.some(function (x, i) { return i !== edit && x.devise === r.devise && x.date === r.date; })) { err('date', 'Un cours existe déjà pour ' + r.devise + ' à cette date.'); ok = false; }
+    if (!ok) return;
+    if (edit >= 0) data[edit] = r; else { data.push(r); edit = data.length - 1; }
+    sel = edit; publier(); msg('Cours enregistré.'); onglet('liste'); lister();
+  });
+
+  // Import Excel : colonnes Devise, Date, Parité
+  function parseDate(v) {
+    if (v == null || v === '') return '';
+    if (typeof v === 'number' || /^\d{5}(\.\d+)?$/.test(String(v))) return new Date(Date.UTC(1899, 11, 30) + Math.floor(Number(v)) * 864e5).toISOString().slice(0, 10);
+    var s = String(v).trim(), m = s.match(/^(\d{1,2})[\/.-](\d{1,2})[\/.-](\d{4})/); if (m) return m[3] + '-' + ('0' + m[2]).slice(-2) + '-' + ('0' + m[1]).slice(-2);
+    m = s.match(/^(\d{4})-(\d{2})-(\d{2})/); return m ? m[0] : '';
+  }
+  var MODELE = { titre: 'Importer des cours', fichier: 'modele_cours.xlsx',
+    champs: [{ col: 'Devise', oblig: true, format: 'Code de la monnaie sélectionnée (les autres sont rejetées)', exemple: 'USD' }, { col: 'Date', oblig: true, format: 'jj/mm/aaaa', exemple: '29/10/2026' }, { col: 'Parité', oblig: true, format: 'Nombre > 0 (valeur d’une unité en monnaie locale)', exemple: '4400' }],
+    exemples: [['USD', '29/10/2026', 4400], ['USD', '30/10/2026', 4410]],
+    onFichier: function (file) {
+      window.IMPORT_ASSISTANT.lireFichier(file).then(function (rows) {
+        var ent = (rows[0] || []).map(function (c) { return String(c == null ? '' : c).toLowerCase().normalize('NFD').replace(/[̀-ͯ]/g, '').replace(/[^a-z]/g, ''); });
+        var ci = { d: Math.max(ent.indexOf('devise'), ent.indexOf('codemonnaie')), t: ent.indexOf('date'), p: Math.max(ent.indexOf('parite'), ent.indexOf('taux')) };
+        if (ci.d < 0 || ci.t < 0 || ci.p < 0) { msg('Colonnes attendues : Devise, Date, Parité.'); return; }
+        var ajoutes = 0, maj = 0, ko = 0, loc = locale();
+        rows.slice(1).forEach(function (r) {
+          if (!r || r.every(function (c) { return c === '' || c == null; })) return;
+          var dev = String(r[ci.d] == null ? '' : r[ci.d]).trim().toUpperCase(), d = parseDate(r[ci.t]), p = parseFloat(String(r[ci.p] == null ? '' : r[ci.p]).replace(/[\s ]/g, '').replace(',', '.'));
+          if (!dev || dev === loc || dev !== mon || !d || !(p > 0)) { ko++; return; }
+          var ex = data.filter(function (x) { return x.devise === dev && x.date === d; })[0];
+          if (ex) { ex.parite = p; maj++; } else { data.push({ devise: dev, date: d, parite: p }); ajoutes++; }
+        });
+        publier(); lister(); msg(ajoutes + ' cours ajouté(s), ' + maj + ' mis à jour' + (ko ? ', ' + ko + ' ligne(s) rejetée(s)' : '') + '.');
+      });
+    } };
+  q('[data-crs-importer]').addEventListener('click', function () { if (window.IMPORT_ASSISTANT) window.IMPORT_ASSISTANT.ouvrir(MODELE); });
+  window.addEventListener('devises-changed', function () { remplirMon(); remplir(); lister(); });
+  window.addEventListener('hashchange', function () { if (location.hash === '#cours') { remplirMon(); lister(); } });
+  remplirMon(); publier(); onglet('liste'); lister();
+  // les devises sont publiées par l'écran Devise, parfois après celui-ci au chargement de la page
+  [400, 1200, 3000].forEach(function (t) { setTimeout(function () { if (!mon) { remplirMon(); lister(); } }, t); });
+})();
+</script>

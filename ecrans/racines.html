@@ -1,0 +1,146 @@
+<!--
+  Écran « Racine des comptes » (Paramètres comptables › Racine des comptes) — onglets Saisie / Liste.
+  Une racine de compte (classe C1 à C8, fixes : pas d'ajout ni de suppression) précise, pour chaque autre plan activé, si les comptes de la classe sont
+  ventilés sur ce plan (liaison plan comptable ↔ plans analytiques : saisie d'opération avec ou sans imputation analytique) et fixe ainsi le comportement
+  des classes comptables. Interface dynamique : une colonne / une case par plan activé dans « Administration de l'entité › Analytique »
+  (window.PLANS_ACTIFS, window.PLANS_CFG, événements plans-actifs et plans-changed). Données en mémoire.
+  S'appuie sur les styles bp-* de l'écran « Paramétrage du bilan » (présents dans la page). Ne pas nommer de fonction « $$ » (build.cjs).
+-->
+<style>
+.rc-tuiles{display:grid;grid-template-columns:repeat(auto-fill,minmax(150px,1fr));gap:12px;margin-top:8px}
+.rc-tuile{display:flex;flex-direction:column;align-items:center;gap:8px;padding:12px 8px;border:1px solid #D6D9E0;border-radius:8px;background:#F5F7F9;font-size:12px;font-weight:600;color:#0B1332;text-align:center;cursor:pointer}
+.rc-tuile.on{background:#E3EBFE;border-color:#2E427B}
+.rc-tuile.off{cursor:default;opacity:.8}
+.rc-tuile input{width:16px;height:16px}
+.rc-sec{margin:18px 0 0;padding-bottom:6px;border-bottom:1px solid #E9EBF0;font-size:12px;font-weight:600;color:#2E427B}
+.rc-code{color:#2E427B;font-weight:600}
+.rc-chk{display:inline-flex;align-items:center;justify-content:center;width:18px;height:18px;border:1px solid #D6D9E0;border-radius:4px;color:#2E427B;font-size:13px;background:#fff}
+.rc-chk.on{background:#E3EBFE;border-color:#2E427B}
+.rc-vide{padding:16px;color:#5B606D;font-size:13px}
+</style>
+
+<div class="bp-root" data-rc>
+  <h1 style="position:absolute;width:1px;height:1px;overflow:hidden;clip-path:inset(50%);margin:0">Racine des comptes</h1>
+
+  <div class="no-print" data-rc-actions>
+    <button type="button" data-rc-modifier>Modifier</button>
+    <button type="button" data-rc-enregistrer>Enregistrer</button>
+    <button type="button" data-rc-annuler>Annuler</button>
+    <button type="button" data-rc-imprimer>Imprimer</button>
+    <button type="button" data-rc-exporter>Exporter</button>
+  </div>
+
+  <div class="bp-tabs" role="tablist">
+    <button type="button" role="tab" class="on" data-rc-tab="saisie">Saisie</button>
+    <button type="button" role="tab" data-rc-tab="liste">Liste <span class="bp-n" data-rc-compte></span></button>
+  </div>
+
+  <div class="bp-grid">
+    <section class="bp-pan" aria-label="Liste des racines de comptes" data-rc-pan="liste" hidden>
+      <h2>Racine des comptes <small>Double-clic ou « Modifier » pour ouvrir la ligne en saisie</small></h2>
+      <div style="overflow:auto;max-height:560px">
+        <table class="bp-tb" data-rc-table style="min-width:0"><thead data-rc-head></thead><tbody data-rc-lignes></tbody></table>
+      </div>
+    </section>
+
+    <section class="bp-pan" aria-label="Saisie d'une racine de compte" data-rc-pan="saisie">
+      <form class="bp-form" data-rc-form onsubmit="return false" novalidate>
+        <div class="bp-l3">
+          <label class="bp-champ"><span>Code</span><input class="bp-in" data-f="code" disabled></label>
+          <label class="bp-champ bp-span2"><span>Libellé <b>*</b></span><input class="bp-in" data-f="libelle" maxlength="60" autocomplete="off"><span class="rc-er" data-rc-er style="display:none;font-size:12px;color:#B63132"></span></label>
+        </div>
+        <div class="rc-sec">Caractéristiques de la ventilation</div>
+        <p style="margin:6px 0 0;font-size:12px;color:#5B606D">Cochez les plans sur lesquels les comptes de cette racine sont ventilés (imputation analytique). Seuls les plans activés dans l'entité sont proposés.</p>
+        <div class="rc-tuiles" data-rc-tuiles></div>
+      </form>
+    </section>
+  </div>
+  <div class="bp-toast" role="status" hidden data-rc-toast></div>
+</div>
+
+<script>
+(function () {
+  var root = document.querySelector('[data-rc]'); if (!root) return;
+  function q(s) { return root.querySelector(s); } function qa(s) { return [].slice.call(root.querySelectorAll(s)); }
+  var PLANS = ['PLAN1', 'PLAN2', 'PLAN3', 'PLAN4', 'PLAN5', 'PLAN6', 'PLAN7', 'PLAN8', 'PLAN9', 'PLAN10']; // plans liés au plan comptable (PC)
+  function ventile(l) { var o = {}; (l || []).forEach(function (c) { o[c] = true; }); return o; }
+  var data = [['C1', 'Capitaux', []], ['C2', 'Immobilisations', ['PLAN1', 'PLAN2', 'PLAN3', 'PLAN4']], ['C3', 'Stocks', []], ['C4', 'Tiers', []], ['C5', 'Financier', []],
+    ['C6', 'Charges Ordinaires', ['PLAN1', 'PLAN2', 'PLAN3', 'PLAN4']], ['C7', 'Produits Ordinaires', []], ['C8', 'HAO', ['PLAN1', 'PLAN2', 'PLAN3', 'PLAN4']]]
+    .map(function (r) { return { code: r[0], libelle: r[1], plans: ventile(r[2]) }; });
+  window.RACINES = data; // exposé pour les autres écrans (saisie d'opération : imputation analytique selon la classe)
+  var sel = -1, mode = 'consultation', draft = null, filtres = {};
+  function esc(s) { return String(s == null ? '' : s).replace(/[&<>"]/g, function (c) { return { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c]; }); }
+  function toast(m) { var t = q('[data-rc-toast]'); t.textContent = m; t.hidden = false; clearTimeout(toast.t); toast.t = setTimeout(function () { t.hidden = true; }, 2800); }
+  function actifs() { var a = window.PLANS_ACTIFS ? window.PLANS_ACTIFS() : PLANS.slice(0, 4); return PLANS.filter(function (c) { return a.indexOf(c) >= 0; }); }
+  function libelle(c) { var p = (window.PLANS_CFG || []).filter(function (x) { return x.code === c; })[0]; return p ? (p.abrev || p.libelle) : c; } // abréviation du plan
+
+  function entete() {
+    var A = actifs();
+    q('[data-rc-head]').innerHTML = '<tr><th>Code</th><th>Libellé</th>' + A.map(function (c) { return '<th class="c">' + esc(libelle(c)) + '</th>'; }).join('') + '</tr>' +
+      '<tr class="flt"><th><input class="bp-in" data-fc="code" placeholder="Rechercher…" aria-label="Filtrer Code" value="' + esc(filtres.code || '') + '"></th><th><input class="bp-in" data-fc="libelle" placeholder="Rechercher…" aria-label="Filtrer Libellé" value="' + esc(filtres.libelle || '') + '"></th>' +
+      A.map(function (c) { return '<th><select class="bp-sel" data-fc="' + c + '" aria-label="Filtrer ' + esc(libelle(c)) + '"><option value="">(tous)</option><option value="oui"' + (filtres[c] === 'oui' ? ' selected' : '') + '>Oui</option><option value="non"' + (filtres[c] === 'non' ? ' selected' : '') + '>Non</option></select></th>'; }).join('') + '</tr>';
+  }
+  function liste() {
+    var A = actifs();
+    q('[data-rc-compte]').textContent = data.length + ' racines';
+    q('[data-rc-lignes]').innerHTML = data.map(function (r, i) {
+      return '<tr data-i="' + i + '"' + (i === sel ? ' class="sel"' : '') + '><td class="rc-code">' + esc(r.code) + '</td><td>' + esc(r.libelle) + '</td>' +
+        A.map(function (c) { var on = !!r.plans[c]; return '<td class="c" data-v="' + (on ? 'oui' : 'non') + '" data-c="' + c + '"><span class="rc-chk' + (on ? ' on' : '') + '" aria-label="' + (on ? 'Oui' : 'Non') + '">' + (on ? '<i class="ti ti-check"></i>' : '') + '</span></td>'; }).join('') + '</tr>';
+    }).join(''); filtrer();
+  }
+  function filtrer() {
+    qa('[data-rc-lignes] tr').forEach(function (tr) {
+      var r = data[+tr.dataset.i], ok = true;
+      if (filtres.code && r.code.toLowerCase().indexOf(filtres.code.toLowerCase()) < 0) ok = false;
+      if (filtres.libelle && r.libelle.toLowerCase().indexOf(filtres.libelle.toLowerCase()) < 0) ok = false;
+      actifs().forEach(function (c) { if (filtres[c] && (filtres[c] === 'oui') !== !!r.plans[c]) ok = false; });
+      tr.hidden = !ok;
+    });
+  }
+  q('[data-rc-head]').addEventListener('input', function (e) { var k = e.target.getAttribute('data-fc'); if (k) { filtres[k] = e.target.value; filtrer(); } });
+  q('[data-rc-head]').addEventListener('change', function (e) { var k = e.target.getAttribute('data-fc'); if (k) { filtres[k] = e.target.value; filtrer(); } });
+
+  function tuiles() {
+    var A = actifs(), src = mode === 'edition' ? draft : (sel >= 0 ? data[sel].plans : {}), ed = mode === 'edition';
+    q('[data-rc-tuiles]').innerHTML = A.length ? A.map(function (c) {
+      return '<label class="rc-tuile' + (src[c] ? ' on' : '') + (ed ? '' : ' off') + '">' + esc(libelle(c)) + '<input type="checkbox" data-p="' + c + '"' + (src[c] ? ' checked' : '') + (ed ? '' : ' disabled') + '></label>';
+    }).join('') : '<div class="rc-vide">Aucun autre plan n\'est activé : activez-en dans « Administration de l\'entité › Analytique ».</div>';
+  }
+  q('[data-rc-tuiles]').addEventListener('change', function (e) { var c = e.target.getAttribute('data-p'); if (c && draft) { draft[c] = e.target.checked; tuiles(); } });
+  function form() {
+    var r = sel >= 0 ? data[sel] : { code: '', libelle: '' };
+    q('[data-f=code]').value = r.code; q('[data-f=libelle]').value = r.libelle; q('[data-rc-er]').style.display = 'none'; q('[data-f=libelle]').classList.remove('err'); tuiles();
+  }
+  function etat() {
+    var ed = mode === 'edition';
+    q('[data-f=libelle]').disabled = !ed; tuiles();
+    var a = q('[data-rc-actions]');
+    a.querySelector('[data-rc-modifier]').disabled = ed || sel < 0; a.querySelector('[data-rc-enregistrer]').disabled = !ed; a.querySelector('[data-rc-annuler]').disabled = !ed;
+  }
+  function onglet(n) { qa('[data-rc-pan]').forEach(function (p) { p.hidden = p.dataset.rcPan !== n; }); qa('[data-rc-tab]').forEach(function (t) { var on = t.dataset.rcTab === n; t.classList.toggle('on', on); t.setAttribute('aria-selected', on); }); }
+  function choisir(i) { if (mode !== 'consultation') return; sel = i; liste(); form(); etat(); }
+  qa('[data-rc-tab]').forEach(function (t) { t.addEventListener('click', function () { onglet(t.dataset.rcTab); }); });
+  var tb = q('[data-rc-lignes]');
+  tb.addEventListener('click', function (e) { var tr = e.target.closest('tr[data-i]'); if (tr) choisir(+tr.dataset.i); });
+  tb.addEventListener('dblclick', function (e) { var tr = e.target.closest('tr[data-i]'); if (tr) { choisir(+tr.dataset.i); onglet('saisie'); } });
+
+  function enregistrer() {
+    var l = q('[data-f=libelle]').value.trim();
+    if (!l) { var e = q('[data-rc-er]'); e.textContent = 'Le libellé est obligatoire.'; e.style.display = 'block'; q('[data-f=libelle]').classList.add('err'); return; }
+    var plans = {}; Object.keys(draft).forEach(function (c) { if (draft[c]) plans[c] = true; });
+    data[sel].libelle = l; data[sel].plans = plans; // les plans désactivés conservent leur valeur tant qu'ils ne sont pas décochés
+    mode = 'consultation'; draft = null; liste(); form(); etat(); onglet('liste'); toast('Racine ' + data[sel].code + ' enregistrée.'); window.dispatchEvent(new Event('racines-changed'));
+  }
+  function rafraichir() { entete(); liste(); tuiles(); }
+  window.addEventListener('plans-actifs', rafraichir); window.addEventListener('plans-changed', rafraichir);
+  root.addEventListener('click', function (e) {
+    var b = e.target.closest('button'); if (!b || b.disabled) return;
+    if (b.hasAttribute('data-rc-modifier')) { onglet('saisie'); mode = 'edition'; draft = JSON.parse(JSON.stringify(data[sel].plans)); etat(); q('[data-f=libelle]').focus(); return; }
+    if (b.hasAttribute('data-rc-annuler')) { mode = 'consultation'; draft = null; form(); etat(); return; }
+    if (b.hasAttribute('data-rc-enregistrer')) { enregistrer(); return; }
+    if (b.hasAttribute('data-rc-imprimer')) { window.print(); return; }
+    if (b.hasAttribute('data-rc-exporter')) { toast('Export des racines de comptes (maquette)'); return; }
+  });
+  entete(); liste(); form(); etat(); onglet('liste');
+})();
+</script>

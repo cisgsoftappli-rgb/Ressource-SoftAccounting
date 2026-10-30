@@ -1,0 +1,86 @@
+<!--
+  Écran « Clôture périodique » (Comptabilité générale › Travaux périodiques › Clôture périodique) — clôture d'une période libre (du … au …) d'un exercice :
+  la saisie est bloquée sur la période. Une période ne peut pas chevaucher une période déjà clôturée ; seule la dernière clôture peut être annulée.
+  Boutons relayés par la barre d'actions de page (CFG « clotper »). État partagé : window.CLOTURES_PERIODIQUES = [ { exercice, du, au, le, par } ].
+  Ne pas nommer de fonction « $$ » (build.cjs).
+-->
+<style>
+.cp-f{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:16px;max-width:760px;margin:0 0 18px}@media (max-width:760px){.cp-f{grid-template-columns:1fr}}
+.cp-t{margin:0 0 8px;font-size:12px;font-weight:700;letter-spacing:.04em;text-transform:uppercase;color:#2E427B}
+.cp-er{display:none;margin:-8px 0 12px;font-size:12px;color:#B63132}.cp-er.show{display:block}
+</style>
+
+<div class="bp-root" data-cp>
+  <h1 style="position:absolute;width:1px;height:1px;overflow:hidden;clip-path:inset(50%);margin:0">Clôture périodique</h1>
+  <div class="no-print" data-cp-actions>
+    <button type="button" data-cp-cloturer>Clôturer la période</button>
+    <button type="button" data-cp-annuler>Annuler la clôture</button>
+  </div>
+  <div class="bp-grid"><section class="bp-pan" aria-label="Clôture périodique">
+    <div class="cp-t">Période à clôturer</div>
+    <div class="cp-f">
+      <label class="bp-champ"><span>Exercice <b>*</b></span><select class="bp-sel" data-f="ex" data-no-combo></select></label>
+      <label class="bp-champ"><span>Du <b>*</b></span><input class="bp-in" type="date" data-f="du"></label>
+      <label class="bp-champ"><span>Au <b>*</b></span><input class="bp-in" type="date" data-f="au"></label>
+    </div>
+    <div class="cp-er" data-cp-er></div>
+    <div class="cp-t">Périodes clôturées</div>
+    <div style="overflow:auto;max-height:420px"><table class="bp-tb" style="min-width:640px"><thead><tr><th class="c">Exercice</th><th class="c">Du</th><th class="c">Au</th><th class="c">Clôturée le</th><th>Par</th></tr></thead><tbody data-cp-lignes></tbody></table></div>
+    <div class="bp-vide" data-cp-vide>Aucune période clôturée.</div>
+  </section></div>
+  <div class="bp-toast" role="status" hidden data-cp-toast></div>
+</div>
+
+<script>
+(function () {
+  var root = document.querySelector('[data-cp]'); if (!root) return;
+  function q(s) { return root.querySelector(s); }
+  var L = window.CLOTURES_PERIODIQUES = window.CLOTURES_PERIODIQUES || [];
+  var sel = -1;
+  function toast(m) { var t = q('[data-cp-toast]'); t.textContent = m; t.hidden = false; clearTimeout(toast.t); toast.t = setTimeout(function () { t.hidden = true; }, 2500); }
+  function fr(iso) { var p = iso.split('-'); return p[2] + '/' + p[1] + '/' + p[0]; }
+  function iso(f) { var p = f.split('/'); return p[2] + '-' + p[1] + '-' + p[0]; }
+  function exercices() { return (window.EXERCICES_API && window.EXERCICES_API.liste()) || []; }
+  function exo() { var v = q('[data-f=ex]').value; return exercices().filter(function (e) { return e.annee === v; })[0]; }
+  function etat() {
+    var a = q('[data-cp-actions]'), e = exo();
+    var off = document.documentElement.classList.contains('sans-periodique');
+    a.querySelector('[data-cp-cloturer]').disabled = off || !e || !!e.cloture;
+    a.querySelector('[data-cp-annuler]').disabled = off || sel < 0 || sel !== L.length - 1 || (L[sel] && exercices().some(function (x) { return x.annee === L[sel].exercice && x.cloture; }));
+  }
+  function liste() {
+    q('[data-cp-vide]').hidden = L.length > 0;
+    q('[data-cp-lignes]').innerHTML = L.map(function (r, i) { return '<tr data-i="' + i + '"' + (i === sel ? ' class="sel"' : '') + '><td class="c">' + r.exercice + '</td><td class="c">' + r.du + '</td><td class="c">' + r.au + '</td><td class="c">' + r.le + '</td><td>' + r.par + '</td></tr>'; }).join('');
+    etat();
+  }
+  function remplir() {
+    var s = q('[data-f=ex]'), v = s.value, E = exercices();
+    s.innerHTML = E.map(function (e) { return '<option value="' + e.annee + '">' + e.annee + (e.cours ? ' (en cours)' : '') + (e.cloture ? ' — clôturé' : '') + '</option>'; }).join('');
+    var cours = E.filter(function (e) { return e.cours; })[0];
+    s.value = v && E.some(function (e) { return e.annee === v; }) ? v : (cours ? cours.annee : (E[0] || {}).annee);
+    liste();
+  }
+  q('[data-f=ex]').addEventListener('change', function () { q('[data-cp-er]').classList.remove('show'); etat(); });
+  q('[data-cp-lignes]').addEventListener('click', function (ev) { var tr = ev.target.closest('tr[data-i]'); if (tr) { sel = +tr.dataset.i; liste(); } });
+  function err(m) { var e = q('[data-cp-er]'); e.textContent = m || ''; e.classList.toggle('show', !!m); }
+  root.addEventListener('click', function (ev) {
+    var b = ev.target.closest('button'); if (!b || b.disabled) return;
+    if (b.hasAttribute('data-cp-cloturer')) {
+      var e = exo(), du = q('[data-f=du]').value, au = q('[data-f=au]').value; err('');
+      if (!du || !au) return err('Renseignez les dates de début et de fin de la période.');
+      if (au < du) return err('La date de fin doit suivre la date de début.');
+      if (du < iso(e.debut) || au > iso(e.fin)) return err('La période doit être comprise dans l\'exercice ' + e.annee + ' (du ' + e.debut + ' au ' + e.fin + ').');
+      var chev = L.filter(function (r) { return r.exercice === e.annee && iso(r.du) <= au && iso(r.au) >= du; })[0];
+      if (chev) return err('La période chevauche une période déjà clôturée (du ' + chev.du + ' au ' + chev.au + ').');
+      if (!window.confirm('Clôturer la période du ' + fr(du) + ' au ' + fr(au) + ' ? La saisie sera bloquée sur cette période.')) return;
+      var n = new Date(); L.push({ exercice: e.annee, du: fr(du), au: fr(au), le: ('0' + n.getDate()).slice(-2) + '/' + ('0' + (n.getMonth() + 1)).slice(-2) + '/' + n.getFullYear(), par: 'superadmin' });
+      sel = L.length - 1; liste(); toast('Période clôturée.');
+    } else if (b.hasAttribute('data-cp-annuler')) {
+      var r = L[sel]; if (!window.confirm('Annuler la clôture de la période du ' + r.du + ' au ' + r.au + ' ? La saisie sera de nouveau possible sur cette période.')) return;
+      L.splice(sel, 1); sel = -1; liste(); toast('Clôture annulée.');
+    }
+  });
+  window.addEventListener('hashchange', remplir); window.addEventListener('load', remplir);
+  setTimeout(remplir, 400);
+})();
+</script>

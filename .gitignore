@@ -1,0 +1,42 @@
+# Dépôt PRIVÉ des sources SoftAccounting (maquette). Ne jamais publier ce dépôt : il contient des données non anonymisées.
+
+# Dépôt de publication (autre dépôt git, contient index.html construit)
+deploy/
+
+# Builds générés (reconstruits par node build.cjs)
+/SoftCompta_Administration_entite*.html
+/SoftCompta_Administration_entite.bak.html
+*.tmp
+
+# Sauvegardes locales
+*.avant-*
+*.bak
+*.bak.*
+/build.cjs.avant-*
+/sauvegarde_drf/
+/tmp_prod/
+
+# Historique des scripts de patch (traces de travail)
+/patch_*.cjs
+/fix_*.cjs
+/sources_softaccounting/
+/sources_softaccounting.zip
+
+# Documents clients / sources de données brutes
+/*.doc
+/*.docx
+/*.xlsx
+/*.csv
+/Correspondances_*
+/an_script.js.txt
+/import_plans/
+/integrer/
+/tickets/
+/tp-equipe/
+/diamant-shop.html
+/gu_fragment.html
+
+node_modules/
+
+*.v[0-9]
+.claude/

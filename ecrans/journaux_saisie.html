@@ -1,0 +1,225 @@
+<!--
+  Écran « Saisie des journaux » (Paramétrages › Gestion des plans › Saisie des plans › Journaux) — onglets Saisie / Liste.
+  Liste : Code, Libellé, Type, Nature, Compte associé, Numérotation, Dernier numéro, Exclu demande, Statut.
+  Saisie : Code journal*, Libellé*, Type* (Opérations diverses, Trésorerie, Hybride), Nature* selon le type (Opérations diverses : Achat, Vente,
+  Opérations diverses ; Trésorerie : Banque, Caisse ; Hybride : Avance), Signataire 1 / 2, Banque et Compte associé (journaux de trésorerie et
+  hybrides), Statut, Exclure de la demande, Numérotation automatique.
+  Numérotation automatique (par journal) : préfixe*, longueur du numéro*, séparateur, suffixe, dernier numéro. Impact : le numéro de pièce proposé par la
+  saisie d'écritures est préfixe + séparateur + compteur (longueur) + suffixe ; le compteur avance à chaque pièce enregistrée.
+  Données : Plans_consolides.xlsx (feuille Journaux, Projet PARN) — %%DONNEES%% = { journaux, signataires } (import_plans/gen.cjs).
+  Les journaux actifs alimentent la liste de la saisie d'écritures. Ne pas nommer de fonction « $$ » (build.cjs).
+-->
+<style>
+.jn-form{display:grid;grid-template-columns:1fr 1fr;gap:12px 20px;max-width:780px}
+.jn-form .bp-champ.pleine{grid-column:1/-1}
+.jn-er{display:none;font-size:12px;color:#B63132}.jn-er.show{display:block}
+.jn-chk{display:flex;gap:28px;margin-top:14px;flex-wrap:wrap}.jn-chk label{display:flex;align-items:center;gap:8px;font-size:13px;cursor:pointer}.jn-chk input{width:16px;height:16px;accent-color:#2E427B}
+.jn-badge{display:inline-flex;align-items:center;padding:2px 10px;border:1px solid #D6D9E0;border-radius:6px;font-size:12px;font-weight:600}
+.jn-badge.a{background:#ECFDF5;border-color:#A7F3D0;color:#047857}.jn-badge.i{background:#F5F7F9;color:#5B606D}
+.bp-in.err,.bp-sel.err{border-color:#B63132}
+.jn-num{margin-top:12px;max-width:780px;padding:14px 16px;border:1px solid #E1E5EE;border-radius:12px;background:#F8F9FB}
+.jn-num .jn-form{max-width:none}.jn-num .ex{margin:12px 0 0;font-size:12px;color:#5B606D}.jn-num .ex b{font-family:ui-monospace,Consolas,monospace;color:#2E427B}
+</style>
+
+<div class="bp-root" data-jn>
+  <h1 style="position:absolute;width:1px;height:1px;overflow:hidden;clip-path:inset(50%);margin:0">Journaux</h1>
+
+  <div class="no-print" data-jn-actions>
+    <button type="button" data-jn-ajouter>Ajouter</button>
+    <button type="button" data-jn-modifier>Modifier</button>
+    <button type="button" data-jn-supprimer>Supprimer</button>
+    <button type="button" data-jn-enregistrer>Enregistrer</button>
+    <button type="button" data-jn-annuler>Annuler</button>
+    <button type="button" data-jn-imprimer>Imprimer</button>
+    <button type="button" data-jn-exporter>Exporter</button>
+  </div>
+
+  <div class="bp-tabs" role="tablist">
+    <button type="button" role="tab" class="on" data-jn-tab="saisie">Saisie</button>
+    <button type="button" role="tab" data-jn-tab="liste">Liste <span class="bp-n" data-jn-compte></span></button>
+  </div>
+
+  <div class="bp-grid">
+    <section class="bp-pan" aria-label="Liste des journaux" data-jn-pan="liste" hidden>
+      <h2>Journaux <small>Double-clic ou « Modifier » pour ouvrir la ligne en saisie</small></h2>
+      <div style="overflow:auto;max-height:560px">
+        <table class="bp-tb" style="min-width:1000px"><thead>
+          <tr><th>Code</th><th>Libellé</th><th>Type</th><th>Nature</th><th>Compte associé</th><th class="c">Numérotation</th><th class="c">Dernier numéro</th><th class="c">Exclu demande</th><th class="c">Statut</th></tr>
+          <tr class="flt">
+            <th><input class="bp-in" data-fc="0" aria-label="Filtrer Code"></th>
+            <th><input class="bp-in" data-fc="1" aria-label="Filtrer Libellé"></th>
+            <th><select class="bp-sel" data-fc="2" aria-label="Filtrer Type"><option value=""></option><option>Opérations diverses</option><option>Trésorerie</option><option>Hybride</option></select></th>
+            <th><select class="bp-sel" data-fc="3" aria-label="Filtrer Nature"><option value=""></option><option>Achat</option><option>Vente</option><option>Opérations diverses</option><option>Banque</option><option>Caisse</option><option>Avance</option></select></th>
+            <th><input class="bp-in" data-fc="4" aria-label="Filtrer Compte associé"></th>
+            <th><select class="bp-sel" data-fc="5" aria-label="Filtrer Numérotation"><option value=""></option><option value="auto">Automatique</option><option value="manuelle">Manuelle</option></select></th>
+            <th><input class="bp-in" data-fc="6" aria-label="Filtrer Dernier numéro"></th>
+            <th><select class="bp-sel" data-fc="7" aria-label="Filtrer Exclu demande"><option value=""></option><option value="oui">Oui</option><option value="non">Non</option></select></th>
+            <th><select class="bp-sel" data-fc="8" aria-label="Filtrer Statut"><option value=""></option><option value="actif">Actif</option><option value="inactif">Inactif</option></select></th>
+          </tr>
+          </thead><tbody data-jn-lignes></tbody></table>
+      </div>
+      <div class="bp-vide" data-jn-vide hidden>Aucun journal : utilisez « Ajouter ».</div>
+    </section>
+
+    <section class="bp-pan" aria-label="Saisie d'un journal" data-jn-pan="saisie">
+      <form class="bp-form" data-jn-form onsubmit="return false" novalidate>
+        <div class="jn-form">
+          <label class="bp-champ"><span>Code journal <b>*</b></span><input class="bp-in" data-f="code" maxlength="12" placeholder="Ex : ACH" autocomplete="off"><span class="jn-er" data-er="code"></span></label>
+          <label class="bp-champ"><span>Libellé <b>*</b></span><input class="bp-in" data-f="libelle" maxlength="80" placeholder="Ex : Achats locaux" autocomplete="off"><span class="jn-er" data-er="libelle"></span></label>
+          <label class="bp-champ"><span>Type <b>*</b></span><select class="bp-sel" data-f="type"><option>Opérations diverses</option><option>Trésorerie</option><option>Hybride</option></select></label>
+          <label class="bp-champ"><span>Nature <b>*</b></span><select class="bp-sel" data-f="nature"></select></label>
+          <label class="bp-champ"><span>Signataire 1</span><select class="bp-sel" data-f="sign1"></select></label>
+          <label class="bp-champ"><span>Signataire 2</span><select class="bp-sel" data-f="sign2"></select><span class="jn-er" data-er="sign2"></span></label>
+          <label class="bp-champ pleine"><span>Banque</span><select class="bp-sel" data-f="banque"></select><span class="jn-er" data-er="banque"></span></label>
+          <label class="bp-champ pleine"><span>Compte associé</span><select class="bp-sel" data-f="compte"></select><span class="jn-er" data-er="compte"></span></label>
+          <label class="bp-champ"><span>Statut</span><select class="bp-sel" data-f="actif"><option value="1">Actif</option><option value="0">Inactif</option></select></label>
+        </div>
+        <div class="jn-chk"><label><input type="checkbox" data-f="exclu">Exclure de la demande</label><label><input type="checkbox" data-f="auto">Numérotation automatique</label></div>
+        <div class="jn-num" data-jn-num hidden>
+          <div class="jn-form">
+            <label class="bp-champ"><span>Préfixe <b>*</b></span><input class="bp-in" data-f="prefixe" maxlength="10" placeholder="Ex : JV" autocomplete="off"><span class="jn-er" data-er="prefixe"></span></label>
+            <label class="bp-champ"><span>Longueur du numéro <b>*</b></span><input class="bp-in" data-f="longueur" type="number" min="1" max="10" step="1" placeholder="4"><span class="jn-er" data-er="longueur"></span></label>
+            <label class="bp-champ"><span>Séparateur de numéro</span><input class="bp-in" data-f="sep" maxlength="3" placeholder="Ex : /" autocomplete="off"></label>
+            <label class="bp-champ"><span>Suffixe</span><input class="bp-in" data-f="suffixe" maxlength="5" placeholder="Ex : M" autocomplete="off"></label>
+            <label class="bp-champ"><span>Dernier numéro</span><input class="bp-in" data-f="dernier" type="number" min="0" step="1" placeholder="0"><span class="jn-er" data-er="dernier"></span></label>
+          </div>
+          <p class="ex">Prochain numéro de pièce : <b data-jn-apercu>—</b></p>
+        </div>
+      </form>
+    </section>
+  </div>
+  <div class="bp-toast" role="status" hidden data-jn-toast></div>
+</div>
+
+<script>
+(function () {
+  var root = document.querySelector('[data-jn]'); if (!root) return;
+  function q(s) { return root.querySelector(s); } function qa(s) { return [].slice.call(root.querySelectorAll(s)); }
+  var D = %%DONNEES%%;
+  // correspondance type -> natures
+  var NATURES = { 'Opérations diverses': ['Achat', 'Vente', 'Opérations diverses'], 'Trésorerie': ['Banque', 'Caisse'], 'Hybride': ['Avance'] };
+  var BANQUES = [['BCM', 'Banque Centrale de Madagascar'], ['BOA', 'Bank of Africa Madagascar'], ['BNI', 'BNI Madagascar'], ['BMOI', 'BMOI'], ['BFV', 'BFV – Société Générale'], ['MCB', 'MCB Madagascar']];
+  var rows = D.journaux.map(function (j) { j.prefixe = j.prefixe || j.code; j.longueur = +j.longueur || 4; j.sep = j.sep || ''; j.suffixe = j.suffixe || ''; j.dernier = +j.dernier || 0; return j; }), sel = -1, mode = 'consultation';
+  window.JOURNAUX_PLAN = rows;
+  function esc(s) { return String(s == null ? '' : s).replace(/[&<>"]/g, function (c) { return { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c]; }); }
+  function toast(m) { var t = q('[data-jn-toast]'); t.textContent = m; t.hidden = false; clearTimeout(toast.t); toast.t = setTimeout(function () { t.hidden = true; }, 2600); }
+  function err(k, m) { var e = q('[data-er="' + k + '"]'); if (e) { e.textContent = m || ''; e.classList.toggle('show', !!m); } var f = q('[data-f=' + k + ']'); if (f) f.classList.toggle('err', !!m); }
+  function tresorerie(t) { return t === 'Trésorerie' || t === 'Hybride'; }
+  // numéro de pièce d'un journal : préfixe + séparateur + compteur sur « longueur » chiffres + suffixe (utilisé par la saisie d'écritures)
+  function numero(j, n) { return (j.prefixe || '') + (j.sep || '') + String(n).padStart(+j.longueur || 4, '0') + (j.suffixe || ''); }
+  window.JOURNAUX_NUMERO = numero;
+  function apercu() {
+    var j = { prefixe: q('[data-f=prefixe]').value.trim(), longueur: +q('[data-f=longueur]').value || 4, sep: q('[data-f=sep]').value, suffixe: q('[data-f=suffixe]').value.trim() };
+    q('[data-jn-apercu]').textContent = j.prefixe ? numero(j, (+q('[data-f=dernier]').value || 0) + 1) : '—';
+  }
+
+  // listes de choix
+  function optSignataires(courant) { var l = D.signataires.slice(); if (courant && l.indexOf(courant) < 0) l.push(courant); return '<option value="">— Sélectionner un signataire —</option>' + l.map(function (s) { return '<option>' + esc(s) + '</option>'; }).join(''); }
+  function optBanques(courant) { return '<option value="">— Sélectionner une banque —</option>' + BANQUES.map(function (b) { return '<option value="' + b[0] + '">' + b[0] + ' — ' + esc(b[1]) + '</option>'; }).join(''); }
+  function optComptes(courant) {
+    var pc = window.PLAN_COMPTABLE || [], ok = pc.filter(function (r) { return !pc.some(function (x) { return x.parent === r.code; }); }); // comptes de détail
+    var h = '<option value="">— Sélectionner un compte —</option>' + ok.map(function (r) { return '<option value="' + esc(r.code) + '">' + esc(r.code) + ' — ' + esc(r.libelle) + '</option>'; }).join('');
+    if (courant && !ok.some(function (r) { return r.code === courant; })) h += '<option value="' + esc(courant) + '">' + esc(courant) + ' — (compte hors plan)</option>';
+    return h;
+  }
+  function remplirNatures(type, courante) { q('[data-f=nature]').innerHTML = NATURES[type].map(function (n) { return '<option>' + n + '</option>'; }).join(''); if (courante && NATURES[type].indexOf(courante) >= 0) q('[data-f=nature]').value = courante; }
+
+  function filtrer() {
+    var F = []; qa('[data-fc]').forEach(function (e) { F[+e.dataset.fc] = e.value.trim().toLowerCase(); });
+    qa('[data-jn-lignes] tr').forEach(function (tr) {
+      tr.hidden = F.some(function (v, k) { if (!v) return false; var td = tr.children[k], t = (td.dataset.v || td.textContent).toLowerCase(); return [2, 3, 5, 7, 8].indexOf(k) >= 0 ? t !== v : t.indexOf(v) < 0; });
+    });
+  }
+  qa('[data-fc]').forEach(function (e) { e.addEventListener('input', filtrer); e.addEventListener('change', filtrer); });
+  function liste() {
+    q('[data-jn-compte]').textContent = rows.length ? rows.length + (rows.length > 1 ? ' journaux' : ' journal') : '';
+    q('[data-jn-vide]').hidden = rows.length > 0;
+    q('[data-jn-lignes]').innerHTML = rows.map(function (r, i) {
+      return '<tr data-i="' + i + '"' + (i === sel ? ' class="sel"' : '') + '><td>' + esc(r.code) + '</td><td>' + esc(r.libelle) + '</td><td data-v="' + esc(r.type) + '">' + esc(r.type) + '</td><td data-v="' + esc(r.nature) + '">' + esc(r.nature) + '</td><td>' + esc(r.compte) + '</td>' +
+        '<td class="c" data-v="' + (r.auto ? 'auto' : 'manuelle') + '">' + (r.auto ? 'Automatique' : 'Manuelle') + '</td><td class="c">' + (r.auto && r.dernier ? esc(numero(r, r.dernier)) : '—') + '</td><td class="c" data-v="' + (r.exclu ? 'oui' : 'non') + '">' + (r.exclu ? 'Oui' : 'Non') + '</td>' +
+        '<td class="c" data-v="' + (r.actif ? 'actif' : 'inactif') + '"><span class="jn-badge ' + (r.actif ? 'a' : 'i') + '">' + (r.actif ? 'Actif' : 'Inactif') + '</span></td></tr>';
+    }).join(''); filtrer();
+  }
+  function form(r) {
+    r = r || { code: '', libelle: '', type: 'Opérations diverses', nature: 'Opérations diverses', sign1: '', sign2: '', banque: '', compte: '', actif: true, exclu: false, auto: true };
+    q('[data-f=code]').value = r.code; q('[data-f=libelle]').value = r.libelle; q('[data-f=type]').value = r.type; remplirNatures(r.type, r.nature);
+    q('[data-f=sign1]').innerHTML = optSignataires(r.sign1); q('[data-f=sign1]').value = r.sign1;
+    q('[data-f=sign2]').innerHTML = optSignataires(r.sign2); q('[data-f=sign2]').value = r.sign2;
+    q('[data-f=banque]').innerHTML = optBanques(r.banque); q('[data-f=banque]').value = r.banque;
+    q('[data-f=compte]').innerHTML = optComptes(r.compte); q('[data-f=compte]').value = r.compte;
+    q('[data-f=actif]').value = r.actif ? '1' : '0'; q('[data-f=exclu]').checked = !!r.exclu; q('[data-f=auto]').checked = !!r.auto;
+    q('[data-f=prefixe]').value = r.prefixe != null ? r.prefixe : r.code; q('[data-f=longueur]').value = r.longueur || 4; q('[data-f=sep]').value = r.sep || ''; q('[data-f=suffixe]').value = r.suffixe || ''; q('[data-f=dernier]').value = r.dernier || 0;
+    ['code', 'libelle', 'sign2', 'banque', 'compte', 'prefixe', 'longueur', 'dernier'].forEach(function (k) { err(k); }); apercu();
+  }
+  // banque et compte associé : journaux de trésorerie et hybrides seulement
+  function etat() {
+    var ed = mode !== 'consultation', t = q('[data-f=type]').value;
+    qa('[data-jn-form] input,[data-jn-form] select').forEach(function (e) { e.disabled = !ed; });
+    q('[data-f=code]').disabled = mode !== 'creation';
+    var tr = ed && tresorerie(t); q('[data-f=banque]').disabled = !(tr && q('[data-f=nature]').value === 'Banque'); q('[data-f=compte]').disabled = !tr;
+    if (!tr) { q('[data-f=banque]').value = ''; q('[data-f=compte]').value = ''; } else if (q('[data-f=nature]').value !== 'Banque') q('[data-f=banque]').value = '';
+    q('[data-jn-num]').hidden = !q('[data-f=auto]').checked; apercu();
+    var a = q('[data-jn-actions]');
+    a.querySelector('[data-jn-ajouter]').disabled = ed; a.querySelector('[data-jn-modifier]').disabled = ed || sel < 0; a.querySelector('[data-jn-supprimer]').disabled = ed || sel < 0;
+    a.querySelector('[data-jn-enregistrer]').disabled = !ed; a.querySelector('[data-jn-annuler]').disabled = !ed; a.querySelector('[data-jn-imprimer]').disabled = !rows.length; a.querySelector('[data-jn-exporter]').disabled = !rows.length;
+  }
+  q('[data-f=type]').addEventListener('change', function () { remplirNatures(q('[data-f=type]').value); etat(); });
+  q('[data-f=nature]').addEventListener('change', etat);
+  q('[data-f=auto]').addEventListener('change', function () { if (mode === 'creation' && q('[data-f=auto]').checked && !q('[data-f=prefixe]').value) q('[data-f=prefixe]').value = q('[data-f=code]').value.trim().toUpperCase(); etat(); });
+  q('[data-f=code]').addEventListener('input', function () { if (mode === 'creation' && (!q('[data-f=prefixe]').value || q('[data-f=prefixe]').dataset.suivi === '1')) { q('[data-f=prefixe]').value = q('[data-f=code]').value.trim().toUpperCase(); q('[data-f=prefixe]').dataset.suivi = '1'; apercu(); } });
+  q('[data-f=prefixe]').addEventListener('input', function () { this.dataset.suivi = ''; apercu(); });
+  ['longueur', 'sep', 'suffixe', 'dernier'].forEach(function (k) { q('[data-f=' + k + ']').addEventListener('input', apercu); });
+  window.addEventListener('journaux-changed', function () { liste(); if (sel >= 0 && mode === 'consultation') form(rows[sel]), etat(); });
+  function onglet(n) { qa('[data-jn-pan]').forEach(function (p) { p.hidden = p.dataset.jnPan !== n; }); qa('[data-jn-tab]').forEach(function (b) { var on = b.dataset.jnTab === n; b.classList.toggle('on', on); b.setAttribute('aria-selected', on); }); }
+  function choisir(i) { if (mode !== 'consultation') return; sel = i; liste(); form(rows[i]); etat(); }
+  qa('[data-jn-tab]').forEach(function (b) { b.addEventListener('click', function () { onglet(b.dataset.jnTab); }); });
+  var tb = q('[data-jn-lignes]');
+  tb.addEventListener('click', function (e) { var tr = e.target.closest('tr[data-i]'); if (tr) choisir(+tr.dataset.i); });
+  tb.addEventListener('dblclick', function (e) { var tr = e.target.closest('tr[data-i]'); if (tr) { choisir(+tr.dataset.i); onglet('saisie'); } });
+
+  // la saisie d'écritures propose les journaux actifs (même tableau, mis à jour sur place)
+  function synchroniser() {
+    var R = window.ECRITURES_REF; if (!R || !R.journaux) return;
+    var act = rows.filter(function (j) { return j.actif; }).sort(function (a, b) { return (b.site === '01') - (a.site === '01') || (a.code < b.code ? -1 : 1); });
+    R.journaux.length = 0; act.forEach(function (j) { R.journaux.push({ code: j.code, label: j.libelle }); });
+    window.dispatchEvent(new Event('journaux-changed'));
+  }
+  function enregistrer() {
+    var r = { code: q('[data-f=code]').value.trim().toUpperCase(), libelle: q('[data-f=libelle]').value.trim(), type: q('[data-f=type]').value, nature: q('[data-f=nature]').value,
+      sign1: q('[data-f=sign1]').value, sign2: q('[data-f=sign2]').value, banque: q('[data-f=banque]').value, compte: q('[data-f=compte]').value,
+      actif: q('[data-f=actif]').value === '1', exclu: q('[data-f=exclu]').checked, auto: q('[data-f=auto]').checked, site: '',
+      prefixe: q('[data-f=prefixe]').value.trim().toUpperCase(), longueur: +q('[data-f=longueur]').value, sep: q('[data-f=sep]').value, suffixe: q('[data-f=suffixe]').value.trim(), dernier: q('[data-f=dernier]').value === '' ? 0 : +q('[data-f=dernier]').value }, ok = true, courant = mode === 'edition' ? sel : -1;
+    ['code', 'libelle', 'sign2', 'banque', 'compte', 'prefixe', 'longueur', 'dernier'].forEach(function (k) { err(k); });
+    if (!r.code) { err('code', 'Le code du journal est obligatoire.'); ok = false; } else if (rows.some(function (x, i) { return x.code === r.code && i !== courant; })) { err('code', 'Ce code existe déjà.'); ok = false; }
+    if (!r.libelle) { err('libelle', 'Le libellé est obligatoire.'); ok = false; }
+    if (r.sign1 && r.sign1 === r.sign2) { err('sign2', 'Le signataire 2 doit différer du signataire 1.'); ok = false; }
+    if (tresorerie(r.type) && !r.compte) { err('compte', 'Le compte associé est obligatoire pour un journal de trésorerie ou hybride.'); ok = false; }
+    if (r.nature === 'Banque' && !r.banque) { err('banque', 'La banque est obligatoire pour un journal de banque.'); ok = false; }
+    if (r.auto) {
+      if (!r.prefixe) { err('prefixe', 'Le préfixe est obligatoire.'); ok = false; }
+      if (!(r.longueur >= 1 && r.longueur <= 10 && r.longueur === Math.floor(r.longueur))) { err('longueur', 'La longueur doit être un entier de 1 à 10.'); ok = false; }
+      else if (!(r.dernier >= 0 && r.dernier === Math.floor(r.dernier) && String(r.dernier).length <= r.longueur)) { err('dernier', 'Le dernier numéro doit être un entier tenant sur ' + r.longueur + ' chiffre(s).'); ok = false; }
+    } else { r.prefixe = r.prefixe || r.code; r.longueur = r.longueur || 4; r.dernier = rows[courant] ? rows[courant].dernier : 0; }
+    if (!ok) return;
+    if (courant >= 0) r.site = rows[courant].site; else r.site = r.code.slice(0, 2);
+    if (mode === 'creation') { rows.push(r); sel = rows.length - 1; } else rows[sel] = r;
+    mode = 'consultation'; liste(); form(rows[sel]); etat(); onglet('liste'); synchroniser(); toast(courant >= 0 ? 'Journal modifié.' : 'Journal enregistré.');
+  }
+  root.addEventListener('click', function (e) {
+    var b = e.target.closest('button'); if (!b || b.disabled) return;
+    if (b.hasAttribute('data-jn-ajouter')) { onglet('saisie'); mode = 'creation'; sel = -1; liste(); form(null); etat(); q('[data-f=code]').focus(); return; }
+    if (b.hasAttribute('data-jn-modifier')) { onglet('saisie'); mode = 'edition'; etat(); q('[data-f=libelle]').focus(); return; }
+    if (b.hasAttribute('data-jn-annuler')) { mode = 'consultation'; liste(); form(sel >= 0 ? rows[sel] : null); etat(); return; }
+    if (b.hasAttribute('data-jn-enregistrer')) { enregistrer(); return; }
+    if (b.hasAttribute('data-jn-supprimer')) {
+      var r = rows[sel]; if (!r) return;
+      if (!window.confirm('Supprimer le journal « ' + r.code + ' — ' + r.libelle + ' » ?')) return;
+      rows.splice(sel, 1); sel = -1; liste(); form(null); etat(); synchroniser(); toast('Journal supprimé.'); return;
+    }
+    if (b.hasAttribute('data-jn-imprimer')) { window.print(); return; }
+    if (b.hasAttribute('data-jn-exporter')) { toast('Export des journaux (maquette)'); return; }
+  });
+  window.addEventListener('load', function () { if (mode === 'consultation') form(sel >= 0 ? rows[sel] : null); etat(); });
+  liste(); form(null); etat(); onglet('liste');
+})();
+</script>

@@ -1,0 +1,216 @@
+<!--
+  Écran « Rapprochement bancaire › Pointage » (Comptabilité générale).
+  En-tête : compte bancaire (configurations de « Rapprochement bancaire › Configuration », window.RAPPROCH_CONFIG), relevé n°, date du relevé, solde relevé, solde comptable.
+  Deux listes : « Relevé bancaire » (lignes rapprochées « R » ou en attente « ? ») et « Écritures comptables » non pointées avec leur proposition de rapprochement.
+  Importer un relevé (simulé), Proposer automatiquement (même montant), Valider le rapprochement (somme des lignes cochées égale de part et d'autre).
+  Écart à justifier = lignes du relevé en attente sans écriture de même montant (ex. agios) ; « Créer l'écriture d'agios » l'ajoute aux écritures.
+  Données de démonstration en mémoire (compte 512100). Préfixe pt- / data-pt. Ne pas nommer de fonction « $$ » (build.cjs).
+-->
+<style>
+[data-pt]{display:grid;gap:16px}
+[data-pt] .pt-card{background:#fff;border:1px solid #E3E7EE;border-radius:10px;box-shadow:0 1px 3px rgba(11,19,50,.06)}
+[data-pt] .pt-top{display:grid;grid-template-columns:2fr 1.2fr 1.2fr 1.2fr 1.2fr;gap:16px;padding:16px}
+[data-pt] .pt-ch{display:flex;flex-direction:column;gap:4px;min-width:0}
+[data-pt] .pt-ch>span{font-size:12px;color:#474C58}
+[data-pt] .pt-in{height:36px;border:1px solid #D5DBE5;border-radius:6px;padding:0 10px;font-size:13px;color:#0B1332;background:#fff;min-width:0;width:100%;box-sizing:border-box}
+[data-pt] .pt-in:focus{outline:2px solid #2E427B33;border-color:#2E427B}
+[data-pt] .pt-mt{display:flex}[data-pt] .pt-mt .pt-in{border-radius:6px 0 0 6px;text-align:right}
+[data-pt] .pt-mt b{display:flex;align-items:center;padding:0 10px;border:1px solid #D5DBE5;border-left:0;border-radius:0 6px 6px 0;background:#F5F7F9;color:#7B8190;font-weight:400;font-size:12px}
+[data-pt] .pt-mt .pt-in[readonly]{background:#F5F7F9;color:#474C58}
+[data-pt] .pt-cols{display:grid;grid-template-columns:1fr 1fr;gap:16px;align-items:start}
+[data-pt] .pt-hd{display:flex;justify-content:space-between;align-items:baseline;padding:14px 18px;border-bottom:1px solid #E3E7EE}
+[data-pt] .pt-hd h2{margin:0;font-size:15px;font-weight:600;color:#0B1332}
+[data-pt] .pt-hd small{font-size:12px;color:#7B8190}
+[data-pt] .pt-sc{overflow:auto;max-height:520px}
+[data-pt] table{width:100%;border-collapse:collapse;font-size:12px}
+[data-pt] th{text-align:left;font-size:11px;font-weight:600;letter-spacing:.04em;text-transform:uppercase;color:#7B8190;padding:10px 8px;border-bottom:1px solid #E3E7EE;white-space:nowrap}
+[data-pt] td{padding:10px 8px;border-bottom:1px solid #EEF1F5;color:#0B1332;vertical-align:middle}
+[data-pt] tbody tr:last-child td{border-bottom:0}
+[data-pt] th:first-child,[data-pt] td:first-child{width:36px;padding-left:18px}
+[data-pt] .r{text-align:right;white-space:nowrap;font-variant-numeric:tabular-nums}
+[data-pt] .pos{color:#1E7B4B}[data-pt] .neg{color:#B63132}
+[data-pt] .pt-piece{white-space:nowrap;font-family:ui-monospace,Menlo,Consolas,monospace;font-size:11px}
+[data-pt] .pt-st{display:inline-flex;align-items:center;justify-content:center;width:24px;height:24px;border-radius:50%;font-size:11px;font-weight:600}
+[data-pt] .pt-st.ok{background:#E3F3EA;color:#1E7B4B}[data-pt] .pt-st.ko{background:#FDF1D8;color:#B7791F}
+[data-pt] .pt-pr{display:inline-block;padding:3px 10px;border-radius:12px;background:#E8ECF6;color:#2E427B;font-size:11px;white-space:nowrap}
+[data-pt] input[type=checkbox]{width:16px;height:16px;accent-color:#2E427B}
+[data-pt] .pt-ft{display:flex;justify-content:space-between;align-items:center;gap:12px;flex-wrap:wrap;padding:10px 18px;background:#F5F7F9;border-radius:0 0 10px 10px;font-size:12px;color:#474C58}
+[data-pt] .pt-ft b{color:#B63132;font-weight:600}
+[data-pt] .pt-vide{padding:24px;text-align:center;font-size:12px;color:#7B8190}
+[data-pt] .pt-act button:not(.pt-p){background:#fff;border:1px solid #D5DBE5;border-radius:6px;color:#0B1332}[data-pt] .pt-ft button{background:#fff;border:1px solid #D5DBE5;border-radius:6px;color:#0B1332}
+[data-pt] .pt-act{display:flex;justify-content:flex-end;gap:10px;flex-wrap:wrap}
+[data-pt] .pt-act button.pt-p{background:#2E427B;color:#fff;border-color:#2E427B}
+[data-pt] .pt-act button.pt-p:hover{background:#243566}
+[data-pt] .pt-msg{font-size:12px;color:#2E427B;min-height:16px}
+[data-pt] .pt-msg.er{color:#B63132}
+@media (max-width:1100px){[data-pt] .pt-cols{grid-template-columns:1fr}[data-pt] .pt-top{grid-template-columns:1fr 1fr}}
+@media (max-width:560px){[data-pt] .pt-top{grid-template-columns:1fr}}
+</style>
+
+<div class="bp-root" data-pt>
+  <h1 style="position:absolute;width:1px;height:1px;overflow:hidden;clip-path:inset(50%);margin:0">Rapprochement bancaire — Pointage</h1>
+
+  <div class="pt-card pt-top">
+    <label class="pt-ch"><span>Compte bancaire</span><select class="pt-in" data-pt-compte data-no-combo></select></label>
+    <label class="pt-ch"><span>Relevé n°</span><input class="pt-in" data-pt-releve autocomplete="off"></label>
+    <label class="pt-ch"><span>Date du relevé</span><input class="pt-in" data-pt-date type="date"></label>
+    <label class="pt-ch"><span>Solde relevé</span><span class="pt-mt"><input class="pt-in" data-pt-solder inputmode="numeric" autocomplete="off"><b>Ar</b></span></label>
+    <label class="pt-ch"><span>Solde comptable</span><span class="pt-mt"><input class="pt-in" data-pt-soldec readonly><b>Ar</b></span></label>
+  </div>
+
+  <div class="pt-act no-print">
+    <span class="pt-msg" data-pt-msg role="status" style="margin-right:auto;align-self:center"></span>
+    <button type="button" data-pt-retour>Liste des relevés</button>
+    <button type="button" data-pt-proposer>Proposer automatiquement</button>
+    <button type="button" class="pt-p" data-pt-valider>Valider le rapprochement</button>
+  </div>
+
+  <div class="pt-cols">
+    <section class="pt-card" aria-label="Relevé bancaire">
+      <div class="pt-hd"><h2>Relevé bancaire</h2><small data-pt-cpt></small></div>
+      <div class="pt-sc"><table><thead><tr><th><input type="checkbox" data-pt-tout="rel" aria-label="Tout cocher"></th><th>Date</th><th>Libellé banque</th><th class="r">Montant</th><th></th></tr></thead><tbody data-pt-rel></tbody></table></div>
+      <div class="pt-vide" data-pt-vrel hidden>Aucune ligne de relevé pour ce compte.</div>
+    </section>
+    <section class="pt-card" aria-label="Écritures comptables">
+      <div class="pt-hd"><h2>Écritures comptables <span data-pt-cpte></span></h2><small>Non pointées</small></div>
+      <div class="pt-sc"><table><thead><tr><th><input type="checkbox" data-pt-tout="ecr" aria-label="Tout cocher"></th><th>Date</th><th>Pièce</th><th>Libellé</th><th class="r">Montant</th><th>Proposition</th></tr></thead><tbody data-pt-ecr></tbody></table></div>
+      <div class="pt-vide" data-pt-vecr hidden>Toutes les écritures sont pointées.</div>
+      <div class="pt-ft"><span data-pt-ecart></span><button type="button" data-pt-agios hidden>+ Créer l'écriture d'agios</button></div>
+    </section>
+  </div>
+</div>
+
+<script>
+(function () {
+  var root = document.querySelector('[data-pt]'); if (!root) return;
+  function q(s) { return root.querySelector(s); } function qa(s) { return [].slice.call(root.querySelectorAll(s)); }
+  function esc(s) { return String(s == null ? '' : s).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/"/g, '&quot;'); }
+  // Données de démonstration du compte 512100 (relevé, écritures non pointées, soldes) ; les autres comptes configurés démarrent vides
+  var DEMO = {
+    '512100': {
+      releve: '2026-10 / 0471', date: '2026-10-24', solder: 31240000, soldec: 29143000,
+      rel: [
+        { d: '2026-10-22', l: 'VIR ORANGE MADAGASCAR REF F2026-0398', m: 5400000, r: true },
+        { d: '2026-10-21', l: 'CHQ 4471', m: -1000000, r: true },
+        { d: '2026-10-20', l: 'PRLV JIRAMA OCT', m: -1240000, r: true },
+        { d: '2026-10-19', l: 'VIR TELMA MADAGASCAR', m: 2250000, r: false },
+        { d: '2026-10-18', l: 'FRAIS TENUE DE COMPTE', m: -45000, r: false },
+        { d: '2026-10-17', l: 'VIR SALAIRES LOT 10/2026', m: -6850000, r: true },
+        { d: '2026-10-15', l: 'AGIOS T3', m: -312000, r: false }
+      ],
+      ecr: [
+        { d: '2026-10-19', p: 'BNI-2026-0309', l: 'Virement Telma – F2026-0380', m: 2250000, prop: 'Montant + réf.' },
+        { d: '2026-10-18', p: 'BOA-2026-0097', l: 'Frais bancaires octobre', m: -45000, prop: 'Montant' },
+        { d: '2026-10-24', p: 'BNI-2026-0313', l: 'Chèque n°4472 – SOMACOU', m: -2400000, prop: '' },
+        { d: '2026-10-25', p: 'BNI-2026-0314', l: 'Virement Groupe STAR', m: 1500000, prop: '' }
+      ]
+    }
+  };
+  var etat = {}, cle = '', cocheR = {}, cocheE = {};
+  function cfg() { return window.RAPPROCH_CONFIG || []; }
+  function nbr(n) { return (n < 0 ? '-' : '') + Math.abs(n).toLocaleString('fr-FR', { maximumFractionDigits: 0 }).replace(/[  ]/g, ' '); }
+  function date(d) { return d.split('-').reverse().join('/'); }
+  function lire(v) { var n = parseInt(String(v).replace(/[^\d-]/g, ''), 10); return isNaN(n) ? 0 : n; }
+  function msg(t, er) { var m = q('[data-pt-msg]'); m.textContent = t || ''; m.classList.toggle('er', !!er); }
+  function cur() {
+    if (!cle) return null;
+    if (!etat[cle]) { var d = DEMO[cle]; etat[cle] = d ? JSON.parse(JSON.stringify(d)) : { releve: '', date: '', solder: 0, soldec: 0, rel: [], ecr: [] }; }
+    return etat[cle];
+  }
+  function selecteur() {
+    var s = q('[data-pt-compte]'), v = s.value || cle;
+    s.innerHTML = cfg().length ? cfg().map(function (c) { return '<option value="' + esc(c.compte) + '">' + esc(c.compte) + ' – ' + esc(c.banqueLib || c.banque) + '</option>'; }).join('') : '<option value="">Aucun compte configuré</option>';
+    if (v && s.querySelector('option[value="' + v + '"]')) s.value = v;
+    cle = s.value;
+  }
+  function ecart(e) {
+    var s = 0; e.rel.forEach(function (r) { if (!r.r && !e.ecr.some(function (x) { return x.m === r.m; })) s += r.m; });
+    return s;
+  }
+  function rendre() {
+    var e = cur(), cl = cle;
+    q('[data-pt-cpte]').textContent = cl;
+    var vide = !e;
+    ['[data-pt-releve]', '[data-pt-date]', '[data-pt-solder]'].forEach(function (s) { q(s).disabled = vide; });
+    if (vide) { e = { releve: '', date: '', solder: 0, soldec: 0, rel: [], ecr: [] }; }
+    q('[data-pt-releve]').value = e.releve; q('[data-pt-date]').value = e.date;
+    q('[data-pt-solder]').value = e.solder ? nbr(e.solder) : ''; q('[data-pt-soldec]').value = e.soldec ? nbr(e.soldec) : '';
+    var nr = e.rel.filter(function (r) { return r.r; }).length;
+    q('[data-pt-cpt]').textContent = nr + ' rapprochées · ' + (e.rel.length - nr) + ' en attente';
+    q('[data-pt-rel]').innerHTML = e.rel.map(function (r, i) {
+      return '<tr><td><input type="checkbox" data-pt-r="' + i + '"' + (r.r ? ' checked disabled' : cocheR[i] ? ' checked' : '') + ' aria-label="Ligne ' + (i + 1) + '"></td><td>' + date(r.d) + '</td><td>' + esc(r.l) + '</td><td class="r ' + (r.m < 0 ? 'neg' : 'pos') + '">' + nbr(r.m) + '</td><td><span class="pt-st ' + (r.r ? 'ok' : 'ko') + '" title="' + (r.r ? 'Rapprochée' : 'En attente') + '">' + (r.r ? 'R' : '?') + '</span></td></tr>';
+    }).join('');
+    q('[data-pt-vrel]').hidden = e.rel.length > 0;
+    q('[data-pt-ecr]').innerHTML = e.ecr.map(function (x, i) {
+      return '<tr><td><input type="checkbox" data-pt-e="' + i + '"' + (cocheE[i] ? ' checked' : '') + ' aria-label="Écriture ' + (i + 1) + '"></td><td>' + date(x.d) + '</td><td class="pt-piece">' + esc(x.p) + '</td><td>' + esc(x.l) + '</td><td class="r ' + (x.m < 0 ? 'neg' : 'pos') + '">' + nbr(x.m) + '</td><td>' + (x.prop ? '<span class="pt-pr">' + esc(x.prop) + '</span>' : '') + '</td></tr>';
+    }).join('');
+    q('[data-pt-vecr]').hidden = e.ecr.length > 0;
+    var ec = ecart(e);
+    q('[data-pt-ecart]').innerHTML = ec ? 'Écart à justifier : <b>' + nbr(Math.abs(ec)) + ' Ar</b> (agios T3 non comptabilisés)' : 'Aucun écart à justifier';
+    q('[data-pt-agios]').hidden = !ec;
+    qa('[data-pt-tout]').forEach(function (c) { c.checked = false; });
+  }
+  function lues() {
+    var e = cur(); cocheR = {}; cocheE = {};
+    qa('[data-pt-r]').forEach(function (c) { if (c.checked && !c.disabled) cocheR[c.getAttribute('data-pt-r')] = 1; });
+    qa('[data-pt-e]').forEach(function (c) { if (c.checked) cocheE[c.getAttribute('data-pt-e')] = 1; });
+    return e;
+  }
+  // écritures comptables non pointées d'un relevé (simulées) — partagé avec l'écran Situation
+  function ecrDe(rel) {
+    if (rel.compte === '512100' && rel.numero === '2026-10 / 0471') return JSON.parse(JSON.stringify(DEMO['512100'].ecr));
+    var ecr = []; rel.lignes.forEach(function (l, i) { if (!l.r && i % 3 !== 2) ecr.push({ d: l.d, p: 'REL-' + ('000' + (i + 1)).slice(-4), l: 'Écriture ' + String(l.l).slice(0, 28), m: l.m, prop: 'Montant' }); });
+    var der = rel.lignes.length ? rel.lignes[rel.lignes.length - 1].d : rel.date; ecr.push({ d: der, p: 'OD-' + rel.numero.replace(/\D/g, '').slice(-4), l: 'Écriture non présente au relevé', m: -150000, prop: '' });
+    return ecr;
+  }
+  // Ouverture d'un relevé créé dans « Relevés » : ses lignes (partagées, l'état rapproché y est conservé) et des écritures non pointées simulées
+  window.POINTAGE_API = { ecrDe: ecrDe, etat: function (c) { return etat[c]; }, charger: function (rel) {
+    selecteur(); var s = q('[data-pt-compte]');
+    if (!s.querySelector('option[value="' + rel.compte + '"]')) s.insertAdjacentHTML('beforeend', '<option value="' + esc(rel.compte) + '">' + esc(rel.compte) + '</option>');
+    s.value = rel.compte; cle = rel.compte;
+    var demo = rel.compte === '512100' && rel.numero === '2026-10 / 0471' ? DEMO['512100'] : null, ecr = ecrDe(rel);
+    var e = { releve: rel.numero, date: rel.date, solder: rel.soldeFin, soldec: 0, rel: rel.lignes, ecr: ecr };
+    e.soldec = demo ? demo.soldec : rel.soldeFin - ecart(e);
+    etat[cle] = e; cocheR = {}; cocheE = {}; msg(); rendre();
+  } };
+  function init() { selecteur(); cocheR = {}; cocheE = {}; rendre(); }
+  q('[data-pt-compte]').addEventListener('change', function () { cle = this.value; cocheR = {}; cocheE = {}; msg(); rendre(); });
+  q('[data-pt-releve]').addEventListener('input', function () { var e = cur(); if (e) e.releve = this.value; });
+  q('[data-pt-date]').addEventListener('input', function () { var e = cur(); if (e) e.date = this.value; });
+  q('[data-pt-solder]').addEventListener('change', function () { var e = cur(); if (e) { e.solder = lire(this.value); this.value = e.solder ? nbr(e.solder) : ''; } });
+  root.addEventListener('change', function (ev) {
+    var t = ev.target, g = t.getAttribute && t.getAttribute('data-pt-tout');
+    if (g) qa(g === 'rel' ? '[data-pt-r]' : '[data-pt-e]').forEach(function (c) { if (!c.disabled) c.checked = t.checked; });
+    if (g || (t.getAttribute && (t.getAttribute('data-pt-r') !== null || t.getAttribute('data-pt-e') !== null))) lues();
+  });
+  q('[data-pt-retour]').addEventListener('click', function () { location.hash = '#releves'; });
+  q('[data-pt-proposer]').addEventListener('click', function () {
+    var e = cur(); if (!e) return; cocheR = {}; cocheE = {}; var n = 0, pris = {};
+    e.ecr.forEach(function (x, j) {
+      var i = -1; e.rel.forEach(function (r, k) { if (i < 0 && !r.r && !pris[k] && r.m === x.m) i = k; });
+      if (i >= 0) { pris[i] = 1; cocheR[i] = 1; cocheE[j] = 1; if (!x.prop) x.prop = 'Montant'; n++; }
+    });
+    rendre(); msg(n ? n + ' rapprochement(s) proposé(s) : vérifiez puis validez.' : 'Aucune correspondance de montant trouvée.', !n);
+  });
+  q('[data-pt-valider]').addEventListener('click', function () {
+    var e = lues(); if (!e) return;
+    var ir = Object.keys(cocheR), ie = Object.keys(cocheE);
+    if (!ir.length || !ie.length) { msg('Cochez au moins une ligne du relevé et une écriture à rapprocher.', true); return; }
+    var sr = 0, se = 0; ir.forEach(function (i) { sr += e.rel[i].m; }); ie.forEach(function (i) { se += e.ecr[i].m; });
+    if (sr !== se) { msg('Rapprochement impossible : relevé ' + nbr(sr) + ' Ar ≠ écritures ' + nbr(se) + ' Ar.', true); return; }
+    ir.forEach(function (i) { e.rel[i].r = true; });
+    e.ecr = e.ecr.filter(function (x, j) { return !cocheE[j]; });
+    cocheR = {}; cocheE = {}; rendre(); msg('Rapprochement validé : ' + ir.length + ' ligne(s) du relevé, ' + ie.length + ' écriture(s) pointée(s).');
+  });
+  q('[data-pt-agios]').addEventListener('click', function () {
+    var e = cur(); if (!e) return; var ec = ecart(e); if (!ec) return;
+    var l = e.rel.filter(function (r) { return !r.r && !e.ecr.some(function (x) { return x.m === r.m; }); })[0];
+    e.ecr.push({ d: l.d, p: cle.slice(0, 3) === '512' ? 'BNI-2026-0315' : 'PIECE-0001', l: 'Agios T3', m: l.m, prop: 'Montant' });
+    cocheR = {}; cocheE = {}; rendre(); msg("Écriture d'agios créée : elle peut être rapprochée.");
+  });
+  window.addEventListener('rapprochement-changed', init);
+  window.addEventListener('hashchange', init);
+  window.addEventListener('load', init);
+  init();
+})();
+</script>

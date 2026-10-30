@@ -1,0 +1,78 @@
+<app-grand-livre-general data-etf class="bx-page">
+  <section class="bx-crit">
+    <div class="etf-head">
+      <div class="etf-titre">
+        <span class="etf-icone"><i class="ti ti-book-2"></i></span>
+        <div>
+          <h1 class="page-title">Grand livre général</h1>
+          <p class="page-subtitle">Consulter le détail chronologique des écritures comptables sur les comptes généraux, avec renvoi au bordereau d'origine.</p>
+        </div>
+      </div>
+      <div class="etf-actions">
+        <button type="button" class="toolbar-btn bx-reset"><i class="ti ti-rotate"></i>Réinitialiser</button>
+        <button type="button" class="toolbar-btn toolbar-btn-primary bx-consulter"><i class="ti ti-search"></i>Consulter</button>
+      </div>
+    </div>
+    <div class="etf-carte">
+      <div class="etf-bloc">
+        <span class="etf-bloc-titre"><i class="ti ti-calendar-event"></i>Période et périmètre</span>
+        <div class="etf-ligne">
+          <div><label class="filter-label">Site</label><div class="bx-multi" data-multi="sites" data-tous="Tous les sites"></div></div>
+          <div><label class="filter-label" for="glg-exercice">Exercice comptable</label>
+            <select id="glg-exercice" class="filter-input"><option>2028</option><option>2027</option><option selected>2026</option><option>2025</option><option>2024</option><option>2023</option></select></div>
+          <div><label class="filter-label" for="glg-date-debut">Date début</label><input id="glg-date-debut" type="date" class="filter-input"></div>
+          <div><label class="filter-label" for="glg-date-fin">Date fin</label><input id="glg-date-fin" type="date" class="filter-input"></div>
+        </div>
+      </div>
+      <div class="etf-bloc">
+        <span class="etf-bloc-titre"><i class="ti ti-list-numbers"></i>Comptes et journaux</span>
+        <div class="etf-ligne">
+          <div><label class="filter-label">Journal</label><div class="bx-multi" data-multi="journaux" data-tous="Tous les journaux"></div></div>
+          <div><label class="filter-label" for="glg-du">Du compte</label><select id="glg-du" class="filter-input"></select></div>
+          <div><label class="filter-label" for="glg-au">Au compte</label><select id="glg-au" class="filter-input"></select></div>
+          <div><label class="filter-label">Plan de regroupement</label><div class="bx-multi" data-multi="regr" data-tous="Tous les éléments"></div></div>
+        </div>
+      </div>
+      <div class="etf-bloc">
+        <span class="etf-bloc-titre"><i class="ti ti-adjustments-horizontal"></i>Présentation</span>
+        <div class="etf-presentation">
+          <div><span class="filter-label">Plans affichés</span>
+            <div class="etf-pastilles glg-plans">
+              <label><input type="checkbox" value="tous">Tous</label>
+              <label><input type="checkbox" value="14">ACTIVITE</label>
+              <label><input type="checkbox" value="15">POSTE BUDGETAIRE</label>
+              <label><input type="checkbox" value="16">FINANCEMENT</label>
+              <label><input type="checkbox" value="17">GEOGRAPHIQUE</label>
+            </div></div>
+          <div><span class="filter-label">Monnaie d'édition</span>
+            <div class="etf-pastilles">
+              <label><input type="radio" name="glg-monnaie" value="MGA" checked>MGA — Ariary</label>
+              <label><input type="radio" name="glg-monnaie" value="USD">USD — Dollar Américain</label>
+            </div></div>
+          <div><span class="filter-label">Totaux</span>
+            <div class="etf-pastilles"><label><input type="checkbox" id="glg-mois">Total par mois</label></div></div>
+        </div>
+      </div>
+      <p class="filters-erreur bx-erreur" style="display:none"></p>
+    </div>
+  </section>
+
+  <section class="bx-res" style="display:none">
+    <div class="bx-toolbar">
+      <button type="button" class="toolbar-btn bx-retour"><i class="ti ti-arrow-left"></i>Retour</button>
+      <div class="etf-actions">
+        <button type="button" class="toolbar-btn bx-pdf"><i class="ti ti-printer"></i>Imprimer PDF</button>
+        <button type="button" class="toolbar-btn bx-csv"><i class="ti ti-file-spreadsheet"></i>Exporter (CSV)</button>
+      </div>
+    </div>
+    <div class="bx-bar"><h2 class="bx-titre"></h2><input type="search" class="filter-input bx-search" placeholder="Recherche..."></div>
+    <div class="bx-wrap">
+      <table class="bx-table glg-table">
+        <thead><tr><th>Date comptable</th><th>Date pièce</th><th>Référence</th><th>Ligne budgétaire</th><th>N° contrat</th><th>JL</th><th>N° pièce</th><th>Site</th><th>Compte</th><th>Contre partie</th><th>Libellé</th><th class="n">Débit</th><th class="n">Crédit</th><th>ACTIVITE</th><th>POSTE BUDGETAIRE</th><th>FINANCEMENT</th><th>GEOGRAPHIQUE</th><th>Plan 5</th><th>Plan 6</th><th>Plan 7</th><th>Plan 8</th><th>Plan 9</th><th>Plan 10</th><th>Plan de regroupement</th></tr></thead>
+        <tbody></tbody>
+      </table>
+    </div>
+    <footer class="glg-pied"><strong class="glg-totaux"></strong>
+      <p class="bx-hint">Montants exprimés dans la monnaie d'édition choisie. Tableau défilable horizontalement — les colonnes Plan 1 à Plan 10 sont disponibles. Clic sur une ligne d'écriture pour l'afficher en lecture seule.</p></footer>
+  </section>
+</app-grand-livre-general>

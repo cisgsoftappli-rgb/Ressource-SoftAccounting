@@ -1,0 +1,720 @@
+<!--
+  Écran « Concepteur SOE » (ouvert par « Ouvrir le designer » depuis Modèle d'état — Déclaration fiscale).
+  Reprise de la capture, onglet « Designer » : barre d'outils, feuille A4 à trois zones (en-tête, détail, pied de page), panneau Propriétés.
+  Comportement simplifié pour la maquette : outils d'ajout d'éléments par clic dans une zone, sélection, duplication, suppression, zoom.
+  Les onglets « Sources & mise en page », « JSON » et « Aperçu live » n'étaient pas capturés : contenus indicatifs.
+-->
+<style>
+.df{display:flex;flex-direction:column;gap:12px;color:#1e293b;font-size:14px}
+.df-top{display:flex;flex-wrap:wrap;align-items:center;justify-content:space-between;gap:12px;padding:12px 16px;border:1px solid #e2e8f0;border-radius:12px;background:#fff}
+.df-left{display:flex;align-items:center;gap:12px;min-width:0}
+.df-back{border:1px solid #cbd5e1;border-radius:6px;background:#fff;padding:6px 12px;font:inherit;font-size:12px;font-weight:600;color:#334155;cursor:pointer}
+.df-back:hover{background:#f1f5f9}
+.df-title{margin:0;font-size:18px;font-weight:700;color:#0f172a;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.df-badge{display:inline-flex;border-radius:999px;background:#f1f5f9;color:#475569;padding:2px 8px;font-size:12px;font-weight:600}
+.df-sub{margin:2px 0 0;font-size:12px;color:#64748b}
+.df-ico{display:inline-flex;align-items:center;justify-content:center;width:28px;height:28px;border:1px solid #cbd5e1;border-radius:8px;background:#fff;color:#334155;cursor:pointer;flex-shrink:0}
+.df-ico:hover{background:#f1f5f9}
+.df-tools{display:flex;flex:1 1 auto;min-width:0;flex-wrap:wrap;align-items:center;gap:8px}
+.df-grp{display:flex;align-items:center;gap:6px}
+.df-sep{width:1px;align-self:stretch;min-height:24px;background:#e2e8f0}
+.df-spacer{flex:1 1 auto}
+.df-btn{display:inline-flex;align-items:center;gap:5px;border:1px solid #cbd5e1;border-radius:8px;background:#fff;color:#334155;padding:6px 12px;font:inherit;font-size:12px;font-weight:600;cursor:pointer}
+.df-btn:hover:not(:disabled){background:#f8fafc}
+.df-btn.on{border-color:#0f766e;background:#ecfdf5;color:#115e59}
+.df-btn.danger{border-color:#fecaca;color:#b91c1c}
+.df-btn:disabled{opacity:.6;cursor:not-allowed}
+.df-save{border:0;border-radius:8px;background:#0f766e;color:#fff;padding:8px 16px;font:inherit;font-size:12px;font-weight:600;cursor:pointer}
+.df-save:hover{background:#115e59}
+.df-zoom{font-size:12px;font-weight:600;color:#475569;min-width:34px;text-align:center}
+.df-layout{display:grid;grid-template-columns:minmax(0,1fr) 280px;gap:12px;align-items:start}
+.df-ws{border:1px solid #e2e8f0;border-radius:12px;background:#f8fafc;min-width:0;overflow:hidden}
+.df-scroll{overflow:auto;padding:16px;height:640px}
+.df-sizer{margin:0 auto;position:relative}
+.df-page{position:absolute;top:0;left:0;transform-origin:top left;width:794px;min-height:1123px;background:#fff;border:1px solid #cbd5e1;box-shadow:0 10px 30px #0f172a14}
+.df-guide{position:absolute;inset:40px 24px 30px;border:1px dashed #94a3b8;pointer-events:none;z-index:5}
+.df-zone{position:relative;border-bottom:1px dashed #e2e8f0;cursor:default}
+.df-zone.tool{cursor:crosshair}
+.df-zlabel{position:absolute;top:2px;right:8px;z-index:0;font-size:10px;font-weight:700;letter-spacing:.04em;text-transform:uppercase;color:#94a3b8;pointer-events:none}
+.df-el{position:absolute;border:1px solid transparent;cursor:pointer;overflow:hidden;font-size:12px}
+.df-el.sel{border-color:#db2777;box-shadow:0 0 0 2px #db277726}
+.df-el.t-texte{padding:2px 4px;white-space:pre-wrap;cursor:move}.df-el{cursor:move}
+.df-el.t-image{display:flex;align-items:center;justify-content:center;border:1px dashed #cbd5e1;color:#94a3b8;font-weight:600;font-size:11px}
+.df-el.t-image.sel{border:1px solid #db2777}
+.df-el.t-ligne{height:2px!important;background:#94a3b8}
+.df-el table{width:100%;border-collapse:collapse;font-size:11px}
+.df-el th,.df-el td{border:1px solid #e2e8f0;padding:3px 5px}
+.df-sepbar{position:relative;height:8px;margin:-4px 0;z-index:6}
+.df-panel{border:1px solid #e2e8f0;border-radius:12px;background:#fff;overflow:hidden}
+.df-ph{padding:16px 16px 12px;border-bottom:1px solid #e2e8f0}
+.df-ph h2{margin:0;font-size:15px;font-weight:700;color:#0f172a}
+.df-ph p{margin:8px 0 0;font-size:12px;color:#64748b}
+.df-ptabs{display:flex;gap:6px;margin-top:10px}
+.df-pb{padding:12px 16px 16px;font-size:13px;color:#64748b}
+.df-lab{display:block;margin:10px 0 4px;font-size:12px;font-weight:600;color:#64748b}
+.df-in{width:100%;border:1px solid #cbd5e1;border-radius:8px;padding:6px 10px;font:inherit;font-size:13px}
+.df-in:disabled{background:#f1f5f9;color:#64748b}
+.df-card{border:1px solid #e2e8f0;border-radius:12px;background:#fff;padding:20px}
+.df-card h2{margin:0 0 8px;font-size:15px;font-weight:700}
+.df-pre{margin:0;max-height:560px;overflow:auto;border:1px solid #cbd5e1;border-radius:8px;background:#0f172a;color:#e2e8f0;padding:12px;font-size:12px;line-height:1.5}
+.df-el.t-saut{height:16px!important;border-top:2px dashed #db2777;color:#db2777;font-size:10px;font-weight:700;padding-top:1px;background:#fdf2f8}
+.df-el.t-texte.b{font-weight:700}.df-el.t-texte.r{text-align:right}
+.df-el table.cols{font-size:inherit;table-layout:fixed}.df-el table.cols th{background:#e2e8f0;border-color:#94a3b8;text-align:left;vertical-align:bottom;font-weight:700}.df-el table.cols td{color:#0f766e;border-color:#cbd5e1}
+.df-prop{display:flex;justify-content:space-between;gap:8px;padding:6px 0;border-bottom:1px solid #f1f5f9;font-size:12px}.df-prop span:first-child{color:#64748b}.df-prop span:last-child{font-weight:600;color:#0f172a;text-align:right}
+.ds{display:grid;grid-template-columns:minmax(0,1.3fr) minmax(0,1fr);gap:14px;align-items:start}
+.ds-col{display:flex;flex-direction:column;gap:14px;min-width:0}.ds-full{grid-column:1 / -1}
+.ds-card{border:1px solid #e2e8f0;border-radius:12px;background:#fff;padding:14px 16px}
+.ds-card h2{margin:0;font-size:15px;font-weight:700;color:#0f172a}.ds-card h3{margin:0;font-size:13.5px;font-weight:700;color:#334155}
+.ds-hint{margin:4px 0 0;font-size:11px;line-height:1.35;color:#64748b}
+.ds-g3{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:10px;margin-top:6px}.ds-g2{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:10px;margin-top:6px}
+.ds-in{width:100%;border:1px solid #cbd5e1;border-radius:8px;padding:6px 9px;font:inherit;font-size:12.5px;background:#fff}.ds-in:disabled{background:#f1f5f9;color:#64748b}
+.ds-lab{display:block;margin:6px 0 3px;font-size:11.5px;font-weight:600;color:#64748b}
+.ds-btn{border:0;border-radius:8px;background:#0f766e;color:#fff;padding:7px 14px;font:inherit;font-size:12px;font-weight:600;cursor:pointer;margin-top:10px}
+.ds-scroll{margin-top:12px;overflow-x:auto;border:1px solid #e2e8f0;border-radius:8px}
+.ds-tb{width:100%;min-width:640px;border-collapse:collapse;font-size:12px}.ds-tb th{background:#fdf6e3;color:#44403c;font-size:10px;letter-spacing:.05em;text-transform:uppercase;text-align:left;padding:8px 10px;border-bottom:2px solid #e7e5e4;white-space:nowrap}
+.ds-tb td{padding:7px 10px;border-bottom:1px solid #f0eeeb}.ds-tb tr:last-child td{border-bottom:0}
+.ds-badge{display:inline-flex;border-radius:999px;padding:1px 9px;font-size:10.5px;font-weight:600}.ds-badge.d{background:#eff6ff;color:#1d4ed8;border:1px solid #bfdbfe}.ds-badge.t{background:#f5f5f4;color:#78716c;border:1px solid #e7e5e4}
+.ds-ico{width:24px;height:24px;border:1px solid #fecaca;border-radius:6px;background:#fef2f2;color:#dc2626;cursor:pointer}
+.ds-sec{margin-top:10px;border:1px solid #e2e8f0;border-radius:8px;padding:10px;background:#f8fafc}
+.ds-row{display:flex;align-items:center;gap:8px;padding:5px 0;border-top:1px solid #eef2f7}.ds-row:first-of-type{border-top:0}
+.ds-sw{width:13px;height:13px;border-radius:3px;flex:0 0 auto}.ds-nm{flex:1 1 auto;min-width:0;line-height:1.2}.ds-nm b{font-size:12px;display:block;color:#0f172a}.ds-nm small{font-size:11px;color:#64748b}
+.ds-h{width:58px;text-align:right;font-weight:700;font-size:12px}.ds-pc{width:34px;text-align:right;font-size:11px;color:#64748b}
+.ds-fc{display:flex;justify-content:space-between;gap:8px;padding:7px 10px;border:1px solid #e2e8f0;border-radius:8px;background:#f8fafc;margin:6px 0;font-size:12px}.ds-fc small{display:block;color:#64748b;font-size:11px}
+.df-handle{position:absolute;width:12px;height:12px;background:#db2777;border:2px solid #fff;border-radius:3px;cursor:nwse-resize;z-index:9;display:none}
+.df-g2{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:0 8px}.df-chk{display:flex;align-items:center;gap:6px;margin-top:8px;font-size:12px;color:#334155}
+.df-col{display:grid;grid-template-columns:1fr 44px 22px;gap:4px;margin-bottom:6px}.df-col input{min-width:0;border:1px solid #cbd5e1;border-radius:6px;padding:3px 5px;font-size:11px}.df-col button{border:1px solid #fecaca;border-radius:6px;background:#fef2f2;color:#dc2626;cursor:pointer}
+.df-note{margin:10px 0 0;font-size:11.5px;line-height:1.4;color:#64748b}.df-sel{border:1px solid #cbd5e1;border-radius:8px;background:#fff;padding:5px 8px;font:inherit;font-size:12px;font-weight:600;color:#334155}
+.pv-wrap{display:flex;flex-direction:column;gap:16px;align-items:flex-start;overflow-x:auto}.pv-page{background:#fff;border:1px solid #cbd5e1;box-shadow:0 6px 20px #0f172a14;color:#0f172a;font-size:12px;flex:0 0 auto}
+.pv-sec{position:relative}.pv-t{border-collapse:collapse;table-layout:fixed}.pv-t th{background:#e2e8f0;border:1px solid #94a3b8;padding:3px 4px;text-align:left;vertical-align:bottom}.pv-t td{border:1px solid #cbd5e1;padding:3px 4px;vertical-align:top}
+@media(max-width:1100px){.ds{grid-template-columns:1fr}.ds-g3{grid-template-columns:repeat(2,minmax(0,1fr))}}
+@media(max-width:1100px){.df-layout{grid-template-columns:1fr}}
+</style>
+<app-modele-etat-designer>
+<div class="df" data-df-root>
+  <header class="df-top">
+    <div class="df-left">
+      <button type="button" class="df-back" data-df-back>Retour</button>
+      <div style="min-width:0">
+        <h1 class="df-title" data-df-title>FISCAL_ANNEXES — Annexes</h1>
+        <span class="df-badge" data-df-badge title="Modèle officiel de la déclaration fiscale : numéro et nom de fichier verrouillés.">Annexe fiscale verrouillée</span>
+        <p class="df-sub" style="white-space:normal">Designer de reporting bailleur</p>
+      </div>
+      <button type="button" class="df-ico" title="Paramètres du modèle d'état" data-df-info><i class="ti ti-pencil"></i></button>
+      <button type="button" class="df-ico" title="Dupliquer le modèle" data-df-dupm><i class="ti ti-copy"></i></button>
+    </div>
+    <div class="df-tools">
+      <div class="df-grp" data-df-toolbar>
+        <button type="button" class="df-btn on" data-df-tool="select"><i class="ti ti-arrows-move"></i> Sélection</button>
+        <button type="button" class="df-btn" data-df-tool="texte"><b>T</b> Texte</button>
+        <button type="button" class="df-btn" data-df-tool="image"><i class="ti ti-photo"></i> Image</button>
+        <button type="button" class="df-btn" data-df-tool="tableau"><i class="ti ti-table"></i> Tableau</button>
+        <button type="button" class="df-btn" data-df-tool="ligne"><i class="ti ti-minus"></i> Ligne</button>
+        <button type="button" class="df-btn" data-df-tool="saut"><i class="ti ti-separator"></i> Saut de page</button>
+      </div>
+      <div class="df-sep"></div>
+      <div class="df-grp"><select class="df-sel" data-df-addsec title="Ajouter une section"><option value="">+ Section…</option><option value="PageHeader1">En-tête de page</option><option value="GroupHeader1">En-tête de groupe</option><option value="GroupFooter1">Pied de groupe</option><option value="ReportFooter1">Pied du rapport</option><option value="ReportHeader1">En-tête du rapport</option><option value="PageFooter1">Pied de page</option></select></div>
+      <div class="df-sep"></div>
+      <div class="df-grp"><button type="button" class="df-btn" data-df-zoom="-1">-</button><span class="df-zoom" data-df-zv>75%</span><button type="button" class="df-btn" data-df-zoom="1">+</button></div>
+      <div class="df-sep"></div>
+      <div class="df-grp">
+        <button type="button" class="df-btn" data-df-dup title="Dupliquer l'élément sélectionné" disabled><i class="ti ti-copy"></i></button>
+        <button type="button" class="df-btn danger" data-df-del title="Supprimer l'élément sélectionné" disabled><i class="ti ti-trash"></i></button>
+      </div>
+      <div class="df-spacer"></div>
+      <button type="button" class="df-btn on" data-df-mode="designer">Designer</button>
+      <button type="button" class="df-btn" data-df-mode="sources">Sources &amp; mise en page</button>
+      <button type="button" class="df-btn" data-df-mode="json">JSON</button>
+      <button type="button" class="df-btn" data-df-mode="apercu">Aperçu live</button>
+      <button type="button" class="df-save" data-df-save>💾 Sauvegarder</button>
+    </div>
+  </header>
+
+  <div class="df-layout">
+    <main class="df-ws">
+      <div data-df-view="designer" class="df-scroll"><div class="df-sizer" data-df-sizer>
+        <div class="df-page" data-df-page>
+          <div class="df-guide"></div>
+          <section class="df-zone" data-df-zone="ReportHeader1" style="min-height:110px"><div class="df-zlabel">ReportHeader1 — En-tête du rapport</div></section>
+          <div class="df-sepbar"></div>
+          <section class="df-zone" data-df-zone="Detail1" style="min-height:969px"><div class="df-zlabel">Detail1 — Détail (tableau)</div></section>
+          <div class="df-sepbar"></div>
+          <section class="df-zone" data-df-zone="PageFooter1" style="min-height:44px"><div class="df-zlabel">PageFooter1 — Pied de page</div></section>
+        </div>
+      </div></div>
+      <div data-df-view="sources" data-df-src style="display:none;padding:16px"></div>
+      <div data-df-view="json" style="display:none;padding:16px"><pre class="df-pre" data-df-json></pre></div>
+      <div data-df-view="apercu" style="display:none;padding:16px"><div class="df-card"><h2>Aperçu live</h2><p style="margin:0;color:#64748b">L'aperçu avec les données réelles n'est pas inclus dans la maquette.</p></div></div>
+    </main>
+
+    <aside class="df-panel">
+      <div class="df-ph">
+        <h2>Propriétés</h2>
+        <p data-df-ptitle>Document — Feuille</p>
+        <div class="df-ptabs"><button type="button" class="df-btn" data-df-ptab>Mise en page</button></div>
+      </div>
+      <div class="df-pb" data-df-pbody>Cliquez sur la feuille puis ouvrez l'onglet Mise en page pour configurer le document.</div>
+    </aside>
+  </div>
+</div>
+<script>
+(function () {
+  var root = document.currentScript.parentElement.querySelector('[data-df-root]');
+  var q = function (s) { return root.querySelector(s); }, qa = function (s) { return Array.prototype.slice.call(root.querySelectorAll(s)); };
+  var ZOOMS = [.5, .6, .75, .9, 1], zi = 2, tool = 'select', sel = null, selZone = null, elems = [], preset = null, model = { code: 'FISCAL_ANNEXES', nom: 'Annexes', def: true };
+  var PAPERS = { A4: [794, 1123], Lettre: [816, 1056], A5: [559, 794] }, paper = 'A4', orient = 'portrait', PW = 794, PH = 1123, mT = 40, mB = 30, mL = 24, mR = 24;
+  var page = q('[data-df-page]'), sizer = q('[data-df-sizer]'), guide = q('.df-guide');
+  var handle = document.createElement('div'); handle.className = 'df-handle'; page.appendChild(handle);
+  var SEC = { ReportHeader1: 'En-tête du rapport', PageHeader1: 'En-tête de page', GroupHeader1: 'En-tête de groupe', Detail1: 'Détail', GroupFooter1: 'Pied de groupe', ReportFooter1: 'Pied du rapport', PageFooter1: 'Pied de page' };
+  var ORDER = Object.keys(SEC), DEFH = { ReportHeader1: 90, PageHeader1: 50, GroupHeader1: 90, Detail1: 200, GroupFooter1: 50, ReportFooter1: 70, PageFooter1: 40 };
+  var SECCOL = { TopMargin1: '#cbd5e1', ReportHeader1: '#0f766e', PageHeader1: '#4f46e5', GroupHeader1: '#0891b2', Detail1: '#ea580c', GroupFooter1: '#7c3aed', ReportFooter1: '#be185d', PageFooter1: '#b45309', BottomMargin1: '#94a3b8' };
+  var FIELDS = ['[N° article]', '[Bénéficiaire]', '[Description]', '[Montant marché]', '[Devise]', '[Montant net]', '[Montant financé]', '[Montant USD]', '[% éligibilité]', '[Date règlement]', '[Réf. relevé]', '[Taux]', '[N° marché / BC]', '[Réf. facture]',
+    '[Code financement]', '[Convention]', '[Catégorie]', '[Libellé catégorie]', '[Monnaie de suivi]', '[Σ Montant USD]', '[N° demande]', '[Début période]', '[Fin période]', '[Page]', '[NbPages]', '[Société]', '[Programme]', '[Pays]', '[Responsable financier]', '[Date d’édition]', '[Heure]', '[Utilisateur]'];
+  function esc(s) { var d = document.createElement('div'); d.textContent = s; return d.innerHTML; }
+  function zone(id) { return q('[data-df-zone="' + id + '"]'); }
+  function num(v, d) { var n = parseFloat(v); return isNaN(n) ? d : n; }
+
+  /* ---------- feuille, zoom, repères ---------- */
+  function setPaper(p, o) { paper = p; orient = o; var d = PAPERS[p] || PAPERS.A4; PW = o === 'landscape' ? d[1] : d[0]; PH = o === 'landscape' ? d[0] : d[1]; fitDetail(); }
+  function applyZoom() {
+    var z = ZOOMS[zi]; page.style.transform = 'scale(' + z + ')'; page.style.boxSizing = 'border-box';
+    page.style.width = PW + 'px'; page.style.minHeight = PH + 'px'; page.style.padding = mT + 'px ' + mR + 'px ' + mB + 'px ' + mL + 'px';
+    guide.style.inset = mT + 'px ' + mR + 'px ' + mB + 'px ' + mL + 'px';
+    sizer.style.width = Math.round(PW * z) + 'px'; sizer.style.height = Math.round(page.offsetHeight * z) + 'px';
+    q('[data-df-zv]').textContent = Math.round(z * 100) + '%'; placeHandle();
+  }
+  function head() { q('[data-df-title]').textContent = model.code + ' — ' + model.nom; q('[data-df-badge]').style.display = model.def ? '' : 'none'; var sb = q('.df-sub'); if (sb && window.__mfSummary) sb.textContent = window.__mfSummary(); }
+  function placeHandle() {
+    if (!sel || !sel.isConnected || sel.dataset.type === 'ligne' && false) { handle.style.display = 'none'; return; }
+    var z = ZOOMS[zi], pr = page.getBoundingClientRect(), er = sel.getBoundingClientRect();
+    if (!pr.width) { handle.style.display = 'none'; return; }
+    handle.style.display = 'block'; handle.style.left = ((er.right - pr.left) / z - 9) + 'px'; handle.style.top = ((er.bottom - pr.top) / z - 9) + 'px';
+  }
+
+  /* ---------- sections ---------- */
+  function reseps() {
+    qa('.df-sepbar').forEach(function (x) { x.remove(); });
+    qa('.df-zone').forEach(function (z, i) { if (i) { var sb = document.createElement('div'); sb.className = 'df-sepbar'; page.insertBefore(sb, z); } });
+  }
+  function addSection(o) {
+    if (zone(o.id)) return zone(o.id);
+    var sec = document.createElement('section'); sec.className = 'df-zone'; sec.dataset.dfZone = o.id; sec.style.minHeight = (o.h || DEFH[o.id] || 60) + 'px';
+    sec.dataset.rep = o.rep ? '1' : (o.id === 'GroupHeader1' || o.id === 'PageHeader1' ? '1' : '0'); sec.dataset.sb = o.sb ? '1' : '0'; sec.dataset.sa = o.sa ? '1' : '0';
+    sec.dataset.grp = o.grp || (o.id === 'GroupHeader1' ? 'Financement › Catégorie' : ''); sec.dataset.tri = o.tri || '';
+    sec.innerHTML = '<div class="df-zlabel">' + esc(o.id + ' — ' + (SEC[o.id] || '')) + '</div>';
+    if (tool !== 'select') sec.classList.add('tool');
+    var idx = ORDER.indexOf(o.id), next = qa('.df-zone').filter(function (x) { return ORDER.indexOf(x.dataset.dfZone) > idx; })[0];
+    page.insertBefore(sec, next || handle); reseps(); fitDetail(); return sec;
+  }
+  function removeSection(id) {
+    var z = zone(id); if (!z || id === 'Detail1') return;
+    elems = elems.filter(function (e) { return e.parentElement !== z; }); z.remove(); reseps(); select(null); selZone = null; fitDetail(); renderSources();
+  }
+  function setZones(list) {
+    qa('.df-zone').forEach(function (x) { x.remove(); }); elems.forEach(function (e) { e.remove(); }); elems = []; select(null);
+    list.forEach(addSection); reseps(); fitDetail();
+  }
+  function fitDetail() {
+    var det = zone('Detail1'); if (det) {
+      var fixed = 0; qa('.df-zone').forEach(function (z) { if (z !== det) fixed += parseInt(z.style.minHeight) || 0; });
+      det.style.minHeight = Math.max(80, PH - mT - mB - fixed) + 'px';
+    }
+    applyZoom();
+  }
+
+  /* ---------- éléments ---------- */
+  function defCols() { return srcCols.length ? srcCols.map(function (c) { return { h: c.n, f: '[' + c.n + ']', w: 10 }; }) : [{ h: 'Colonne 1', f: '[Champ 1]', w: 10 }, { h: 'Colonne 2', f: '[Champ 2]', w: 10 }, { h: 'Colonne 3', f: '[Champ 3]', w: 10 }]; }
+  function styleEl(el) {
+    var d = el.dataset, s = el.style;
+    s.fontSize = d.fs ? d.fs + 'px' : ''; s.fontWeight = d.b === '1' ? '700' : ''; s.fontStyle = d.i === '1' ? 'italic' : ''; s.textAlign = d.al || ''; s.color = d.col || '';
+  }
+  function draw(el) {
+    var t = el.dataset.type, c = el.dataset.content || '';
+    if (t === 'texte') el.innerHTML = esc(c);
+    else if (t === 'image') el.innerHTML = esc(c || 'Image');
+    else if (t === 'saut') el.innerHTML = esc(c || 'Saut de page');
+    else if (t === 'tableau') {
+      var cols = JSON.parse(el.dataset.cols || '[]'), tw = cols.reduce(function (a, k) { return a + k.w; }, 0) || 1, part = el.dataset.part || '';
+      el.innerHTML = '<table class="cols"><colgroup>' + cols.map(function (k) { return '<col style="width:' + (k.w * 100 / tw) + '%">'; }).join('') + '</colgroup>' +
+        (part !== 'row' ? '<thead><tr>' + cols.map(function (k) { return '<th>' + esc(k.h) + '</th>'; }).join('') + '</tr></thead>' : '') +
+        (part !== 'head' ? '<tbody><tr>' + cols.map(function (k) { return '<td>' + esc(k.f) + '</td>'; }).join('') + '</tr></tbody>' : '') + '</table>';
+    }
+    styleEl(el);
+  }
+  function add(type, z, x, y, content, w, h) {
+    var el = document.createElement('div'); el.className = 'df-el t-' + type; el.dataset.type = type; el.dataset.zone = z.dataset.dfZone;
+    el.dataset.content = content != null ? content : (type === 'texte' ? 'Texte' : type === 'image' ? 'Image' : type === 'saut' ? 'Saut de page' : '');
+    if (type === 'tableau') { el.dataset.cols = JSON.stringify(defCols()); el.dataset.fs = '9'; el.dataset.part = ''; }
+    el.style.left = Math.max(0, Math.round(x)) + 'px'; el.style.top = Math.max(0, Math.round(y)) + 'px';
+    el.style.width = (w || (type === 'tableau' ? 420 : type === 'ligne' ? 300 : type === 'image' ? 120 : type === 'saut' ? 300 : 160)) + 'px';
+    if (h) el.style.height = h + 'px'; else if (type === 'image') el.style.height = '60px';
+    z.appendChild(el); draw(el); elems.push(el); return el;
+  }
+  function put(zid, type, x, y, w, h, content, extra) {
+    var el = add(type, zone(zid), x, y, content, w, h);
+    if (extra) Object.keys(extra).forEach(function (k) { if (k === 'cls') { if (/\bb\b/.test(extra[k])) el.dataset.b = '1'; if (/\br\b/.test(extra[k])) el.dataset.al = 'right'; } else el.dataset[k] = extra[k]; });
+    draw(el); return el;
+  }
+
+  /* ---------- sélection & propriétés ---------- */
+  function select(el) {
+    sel = el; selZone = null; qa('.df-el').forEach(function (e) { e.classList.toggle('sel', e === el); });
+    q('[data-df-dup]').disabled = q('[data-df-del]').disabled = !el;
+    var t = q('[data-df-ptitle]'), b = q('[data-df-pbody]');
+    if (!el) { t.textContent = 'Document — Feuille'; b.innerHTML = '<p style="margin:0">Cliquez sur un élément pour le modifier, sur une section pour régler ses propriétés, ou sur « Mise en page » pour configurer le document.</p>'; placeHandle(); return; }
+    t.textContent = 'Élément — ' + el.dataset.type + ' (' + el.dataset.zone + ')';
+    var ty = el.dataset.type, hasC = ty === 'texte' || ty === 'image' || ty === 'saut', h = '';
+    h += '<label class="df-lab" style="margin-top:0">Contenu</label><textarea class="df-in" rows="3" data-p="content"' + (hasC ? '' : ' disabled') + '>' + esc(el.dataset.content || '') + '</textarea>';
+    if (ty === 'texte') h += '<label class="df-lab">Insérer un champ</label><select class="df-in" data-p-field><option value="">— Choisir —</option>' + FIELDS.map(function (f) { return '<option>' + esc(f) + '</option>'; }).join('') + '</select>';
+    h += '<div class="df-g2"><div><label class="df-lab">X</label><input class="df-in" type="number" data-p="x"></div><div><label class="df-lab">Y</label><input class="df-in" type="number" data-p="y"></div>' +
+      '<div><label class="df-lab">Largeur</label><input class="df-in" type="number" data-p="w"></div><div><label class="df-lab">Hauteur</label><input class="df-in" type="number" data-p="h"></div></div>';
+    if (ty === 'texte' || ty === 'tableau') {
+      h += '<div class="df-g2"><div><label class="df-lab">Taille</label><input class="df-in" type="number" data-p="fs" value="' + (el.dataset.fs || (ty === 'tableau' ? 9 : 12)) + '"></div>' +
+        '<div><label class="df-lab">Couleur</label><input class="df-in" type="color" data-p="col" value="' + (el.dataset.col || '#0f172a') + '" style="padding:2px;height:30px"></div></div>';
+    }
+    if (ty === 'texte') {
+      h += '<div class="df-g2"><label class="df-chk"><input type="checkbox" data-p="b"' + (el.dataset.b === '1' ? ' checked' : '') + '> Gras</label><label class="df-chk"><input type="checkbox" data-p="i"' + (el.dataset.i === '1' ? ' checked' : '') + '> Italique</label></div>' +
+        '<label class="df-lab">Alignement</label><select class="df-in" data-p="al"><option value="">Gauche</option><option value="center"' + (el.dataset.al === 'center' ? ' selected' : '') + '>Centre</option><option value="right"' + (el.dataset.al === 'right' ? ' selected' : '') + '>Droite</option></select>';
+    }
+    if (ty === 'tableau') h += tablePanel(el);
+    b.innerHTML = h; syncPanel(); placeHandle();
+  }
+  function tablePanel(el) {
+    var cols = JSON.parse(el.dataset.cols || '[]'), part = el.dataset.part || '';
+    return '<label class="df-lab">Contenu du tableau</label><select class="df-in" data-p="part"><option value="">En-tête + lignes</option><option value="head"' + (part === 'head' ? ' selected' : '') + '>En-tête seul (répété)</option><option value="row"' + (part === 'row' ? ' selected' : '') + '>Lignes seules (détail)</option></select>' +
+      '<label class="df-lab">Colonnes (' + cols.length + ')</label>' + cols.map(function (c, i) {
+        return '<div class="df-col"><input data-ci="' + i + '" data-ck="h" value="' + esc(c.h) + '" title="Titre"><input type="number" data-ci="' + i + '" data-ck="w" value="' + c.w + '" title="Largeur relative"><button type="button" data-c-del="' + i + '" title="Supprimer">✕</button><input data-ci="' + i + '" data-ck="f" value="' + esc(c.f) + '" title="Champ" style="grid-column:1 / -1;color:#0f766e"></div>';
+      }).join('') + '<button type="button" class="df-btn" data-c-add style="margin-top:6px">+ Colonne</button> <button type="button" class="df-btn" data-c-src style="margin-top:6px" title="Reprendre les colonnes de l’onglet Sources">Depuis les sources</button>';
+  }
+  function syncPanel() {
+    if (!sel) return; var b = q('[data-df-pbody]');
+    [['x', parseInt(sel.style.left)], ['y', parseInt(sel.style.top)], ['w', parseInt(sel.style.width)], ['h', parseInt(sel.style.height) || sel.offsetHeight]].forEach(function (p) { var i = b.querySelector('[data-p="' + p[0] + '"]'); if (i && document.activeElement !== i) i.value = p[1] || ''; });
+  }
+  function showZone(z) {
+    selZone = z; var id = z.dataset.dfZone, b = q('[data-df-pbody]'), h = '';
+    q('[data-df-ptitle]').textContent = 'Section — ' + id;
+    h += '<label class="df-lab" style="margin-top:0">Hauteur (px)</label><input class="df-in" type="number" data-z="h" value="' + (parseInt(z.style.minHeight) || 0) + '"' + (id === 'Detail1' ? ' disabled title="Prend la hauteur restante"' : '') + '>';
+    if (id === 'GroupHeader1') h += '<label class="df-lab">Regrouper par</label><select class="df-in" data-z="grp">' + ['Financement › Catégorie', 'Financement', 'Catégorie', 'Aucun'].map(function (o) { return '<option' + (z.dataset.grp === o ? ' selected' : '') + '>' + o + '</option>'; }).join('') + '</select>';
+    if (id === 'GroupHeader1' || id === 'PageHeader1') h += '<label class="df-chk" style="margin-top:8px"><input type="checkbox" data-z="rep"' + (z.dataset.rep === '1' ? ' checked' : '') + '> Répéter à chaque page</label>';
+    if (id === 'GroupHeader1') h += '<label class="df-chk"><input type="checkbox" data-z="sb"' + (z.dataset.sb === '1' ? ' checked' : '') + '> Saut de page avant chaque groupe</label>';
+    if (id === 'GroupFooter1') h += '<label class="df-chk" style="margin-top:8px"><input type="checkbox" data-z="sa"' + (z.dataset.sa === '1' ? ' checked' : '') + '> Saut de page après chaque groupe</label>';
+    if (id === 'Detail1') h += '<label class="df-lab">Trier par</label><input class="df-in" data-z="tri" value="' + esc(z.dataset.tri) + '" placeholder="Ex : N° article">';
+    var note = { ReportHeader1: 'Affiché sur la première page.', PageHeader1: 'Affiché en haut de chaque page.', ReportFooter1: 'Affiché sur la dernière page.', PageFooter1: 'Affiché en bas de chaque page.', Detail1: 'Une ligne par mouvement. Prend la hauteur restante de la page.', GroupFooter1: 'Totaux de fin de groupe.', GroupHeader1: 'Début de chaque groupe (financement / catégorie).' }[id];
+    h += '<p class="df-note">' + note + '</p>';
+    if (id !== 'Detail1') h += '<button type="button" class="df-btn danger" data-z-del style="margin-top:8px">Supprimer la section</button>';
+    b.innerHTML = h;
+  }
+  q('[data-df-pbody]').addEventListener('input', onPanel); q('[data-df-pbody]').addEventListener('change', onPanel);
+  function onPanel(e) {
+    var t = e.target, el = sel;
+    if (t.dataset.z && selZone) {
+      var k = t.dataset.z, v = t.type === 'checkbox' ? (t.checked ? '1' : '0') : t.value;
+      if (k === 'sa' || k === 'sb') window.__soe4F = { sautCat: (qa('[data-df-zone="GroupFooter1"]')[0] || selZone).dataset.sa === '1' || (qa('[data-df-zone="GroupHeader1"]')[0] || selZone).dataset.sb === '1' };
+      if (k === 'h') { selZone.style.minHeight = Math.max(10, num(v, 40)) + 'px'; fitDetail(); renderSources(); } else selZone.dataset[k] = v;
+      if (k === 'sa' || k === 'sb') window.__soe4F = { sautCat: (qa('[data-df-zone="GroupFooter1"]')[0] || {dataset:{}}).dataset.sa === '1' || (qa('[data-df-zone="GroupHeader1"]')[0] || {dataset:{}}).dataset.sb === '1' };
+      return;
+    }
+    if (!el) return;
+    if (t.matches('[data-p-field]')) { if (t.value) { el.dataset.content = (el.dataset.content || '') + t.value; q('[data-p="content"]').value = el.dataset.content; draw(el); } t.value = ''; return; }
+    if (t.dataset.ci != null) {
+      var cols = JSON.parse(el.dataset.cols), c = cols[+t.dataset.ci]; c[t.dataset.ck] = t.dataset.ck === 'w' ? Math.max(1, num(t.value, 1)) : t.value;
+      el.dataset.cols = JSON.stringify(cols); draw(el); placeHandle(); return;
+    }
+    var p = t.dataset.p; if (!p) return;
+    if (p === 'content') el.dataset.content = t.value;
+    else if (p === 'x') el.style.left = Math.max(0, num(t.value, 0)) + 'px';
+    else if (p === 'y') el.style.top = Math.max(0, num(t.value, 0)) + 'px';
+    else if (p === 'w') el.style.width = Math.max(10, num(t.value, 100)) + 'px';
+    else if (p === 'h') el.style.height = Math.max(4, num(t.value, 20)) + 'px';
+    else if (p === 'b' || p === 'i') el.dataset[p] = t.checked ? '1' : '0';
+    else el.dataset[p] = t.value;
+    draw(el); placeHandle();
+  }
+  q('[data-df-pbody]').addEventListener('click', function (e) {
+    var t = e.target;
+    if (t.closest('[data-z-del]') && selZone) { removeSection(selZone.dataset.dfZone); return; }
+    if (!sel || sel.dataset.type !== 'tableau') return;
+    var cols = JSON.parse(sel.dataset.cols);
+    if (t.closest('[data-c-del]')) cols.splice(+t.closest('[data-c-del]').dataset.cDel, 1);
+    else if (t.closest('[data-c-add]')) cols.push({ h: 'Colonne ' + (cols.length + 1), f: '[Champ ' + (cols.length + 1) + ']', w: 10 });
+    else if (t.closest('[data-c-src]')) { if (!srcCols.length) return; cols = defCols(); }
+    else return;
+    sel.dataset.cols = JSON.stringify(cols); draw(sel); select(sel);
+  });
+
+  /* ---------- souris : déplacer / redimensionner ---------- */
+  var drag = null;
+  page.addEventListener('mousedown', function (e) {
+    if (tool !== 'select') return;
+    if (e.target === handle && sel) { drag = { m: 'r', sx: e.clientX, sy: e.clientY, w: parseInt(sel.style.width) || sel.offsetWidth, h: parseInt(sel.style.height) || sel.offsetHeight }; e.preventDefault(); return; }
+    var el = e.target.closest('.df-el'); if (!el) return;
+    if (el !== sel) select(el);
+    drag = { m: 'm', sx: e.clientX, sy: e.clientY, x: parseInt(el.style.left), y: parseInt(el.style.top) }; e.preventDefault();
+  });
+  document.addEventListener('mousemove', function (e) {
+    if (!drag || !sel) return; var z = ZOOMS[zi], dx = (e.clientX - drag.sx) / z, dy = (e.clientY - drag.sy) / z;
+    if (drag.m === 'm') { sel.style.left = Math.max(0, Math.round(drag.x + dx)) + 'px'; sel.style.top = Math.max(0, Math.round(drag.y + dy)) + 'px'; }
+    else { sel.style.width = Math.max(12, Math.round(drag.w + dx)) + 'px'; if (sel.dataset.type !== 'ligne') sel.style.height = Math.max(6, Math.round(drag.h + dy)) + 'px'; }
+    placeHandle(); syncPanel();
+  });
+  document.addEventListener('mouseup', function () { drag = null; });
+  q('[data-df-toolbar]').addEventListener('click', function (e) {
+    var b = e.target.closest('[data-df-tool]'); if (!b) return; tool = b.dataset.dfTool;
+    qa('[data-df-tool]').forEach(function (x) { x.classList.toggle('on', x === b); });
+    qa('[data-df-zone]').forEach(function (z) { z.classList.toggle('tool', tool !== 'select'); });
+  });
+  page.addEventListener('click', function (e) {
+    if (e.target === handle) return;
+    var el = e.target.closest('.df-el'); if (el) { select(el); return; }
+    var z = e.target.closest('[data-df-zone]');
+    if (z && tool !== 'select') {
+      var r = z.getBoundingClientRect(), zm = ZOOMS[zi];
+      var n = add(tool, z, (e.clientX - r.left) / zm, (e.clientY - r.top) / zm); select(n); q('[data-df-tool="select"]').click();
+    } else { select(null); if (z) showZone(z); }
+  });
+  q('[data-df-addsec]').addEventListener('change', function (e) {
+    var id = e.target.value; e.target.value = ''; if (!id) return;
+    if (zone(id)) { showZone(zone(id)); return; }
+    var z = addSection({ id: id }); renderSources(); select(null); showZone(z);
+  });
+  q('[data-df-dup]').addEventListener('click', function () {
+    if (!sel) return; var c = add(sel.dataset.type, sel.parentElement, parseInt(sel.style.left) + 16, parseInt(sel.style.top) + 16, sel.dataset.content, parseInt(sel.style.width), parseInt(sel.style.height) || 0);
+    ['cols', 'part', 'fs', 'b', 'i', 'al', 'col'].forEach(function (k) { if (sel.dataset[k] != null) c.dataset[k] = sel.dataset[k]; }); draw(c); select(c);
+  });
+  q('[data-df-del]').addEventListener('click', function () { if (!sel) return; elems = elems.filter(function (x) { return x !== sel; }); sel.remove(); select(null); });
+  qa('[data-df-zoom]').forEach(function (b) { b.addEventListener('click', function () { zi = Math.min(ZOOMS.length - 1, Math.max(0, zi + parseInt(b.dataset.dfZoom))); applyZoom(); }); });
+  q('[data-df-ptab]').addEventListener('click', function () {
+    select(null); q('[data-df-ptitle]').textContent = 'Document — Mise en page';
+    q('[data-df-pbody]').innerHTML = '<div class="df-prop"><span>Format</span><span>' + paper + ' ' + (orient === 'landscape' ? 'paysage' : 'portrait') + '</span></div><div class="df-prop"><span>Taille</span><span>' + PW + ' × ' + PH + ' px</span></div>' +
+      '<div class="df-prop"><span>Marges (h / b / g / d)</span><span>' + mT + ' / ' + mB + ' / ' + mL + ' / ' + mR + '</span></div><div class="df-prop"><span>Sections</span><span>' + qa('[data-df-zone]').length + '</span></div>' +
+      '<p class="df-note">Modifiez le format, l’orientation, les marges et les hauteurs de sections dans l’onglet « Sources &amp; mise en page ».</p>';
+  });
+
+  /* ---------- onglet Sources & mise en page ---------- */
+  var srcCols = [], TABLES = { DECAISSEMENTS: 'Décaissements', ENGAGEMENTS: 'Engagements', JUSTIFICATIONS: 'Justifications de dépense', ECRITURES: 'Écritures comptables', CONTRATS: 'Contrats et marchés', BUDGET: 'Budget', IMMOBILISATIONS: 'Immobilisations', 'Demande de remboursement': 'Demandes de remboursement', RAPPROCHEMENT: 'Rapprochement bancaire' };
+  var COLCHOICES = ['Date comptable', 'N° pièce', 'Libellé', 'Montant', 'Devise', 'Bénéficiaire', 'Statut'];
+  function opts(list, s) { return list.map(function (o) { return '<option value="' + esc(o[0]) + '"' + (o[0] === s ? ' selected' : '') + '>' + esc(o[1]) + '</option>'; }).join(''); }
+  function zoneFields(zid) {
+    var z = zone(zid); if (!z) return '<p class="ds-hint">Section absente : elle sera créée à l’ajout d’un champ.</p>';
+    var els = Array.prototype.slice.call(z.querySelectorAll('.df-el')).filter(function (e) { return e.dataset.type === 'texte' || e.dataset.type === 'image'; });
+    return els.length ? els.map(function (e) { return '<div class="ds-fc"><div><b>' + esc((e.dataset.content || e.dataset.type).slice(0, 60)) + '</b><small>' + (e.dataset.type === 'image' ? 'Image' : 'Texte') + '</small></div></div>'; }).join('') : '<p class="ds-hint">Aucun champ pour cette zone.</p>';
+  }
+  function fieldForm(zid) {
+    return '<div class="ds-g2" style="grid-template-columns:repeat(3,minmax(0,1fr))"><div><label class="ds-lab">Type de champ</label><select class="ds-in"><option>Texte</option><option>Image</option></select></div><div><label class="ds-lab">Nom du champ</label><input class="ds-in" placeholder="Ex : Titre"></div><div><label class="ds-lab">Contenu</label><input class="ds-in" placeholder="Texte affiché"></div></div><button type="button" class="ds-btn" data-ds-addfield="' + zid + '">+ Ajouter le champ</button>';
+  }
+  function renderSources() {
+    var box = q('[data-df-src]'); if (!box) return;
+    var zs = qa('[data-df-zone]'), rows = [{ id: 'TopMargin1', d: 'Marge supérieure', h: mT, m: 't' }];
+    zs.forEach(function (z) { var id = z.dataset.dfZone; rows.push({ id: id, d: SEC[id] || id, h: parseInt(z.style.minHeight) || 0, fix: id === 'Detail1' }); });
+    rows.push({ id: 'BottomMargin1', d: 'Marge inférieure', h: mB, m: 'b' });
+    var secs = rows.map(function (r) {
+      return '<div class="ds-row"><span class="ds-sw" style="background:' + SECCOL[r.id] + '"></span><div class="ds-nm"><b>' + r.id + '</b><small>' + r.d + '</small></div>' +
+        (r.fix ? '<span class="ds-h">' + r.h + '</span>' : '<input class="ds-in ds-h" type="number" value="' + r.h + '" ' + (r.m ? 'data-ds-m="' + r.m + '"' : 'data-ds-h="' + r.id + '"') + '>') + '<span class="ds-pc">' + Math.round(r.h * 100 / PH) + '%</span></div>';
+    }).join('');
+    var colsHtml = srcCols.length ? '<div class="ds-scroll"><table class="ds-tb"><thead><tr><th style="width:44px;text-align:center">Ordre</th><th>Table</th><th>Source</th><th>Nom</th><th>Type</th><th style="text-align:right">Actions</th></tr></thead><tbody>' +
+      srcCols.map(function (c, k) { return '<tr><td style="text-align:center">' + (k + 1) + '</td><td style="font-family:monospace;font-size:11px;color:#78716c;text-transform:uppercase">' + esc(c.t) + '</td><td>' + esc(c.s) + '</td><td><b>' + esc(c.n) + '</b></td><td><span class="ds-badge ' + (c.d ? 'd' : 't') + '">' + (c.d ? 'Données' : 'Texte') + '</span></td><td style="text-align:right"><button type="button" class="ds-ico" data-ds-del="' + k + '" title="Supprimer"><i class="ti ti-trash"></i></button></td></tr>'; }).join('') +
+      '</tbody></table></div>' : '<p class="ds-hint" style="margin-top:10px">Ajoutez un élément Tableau dans le canevas (zone Corps) pour configurer ses colonnes.</p>';
+    box.innerHTML = '<div class="ds">' +
+      '<section class="ds-card ds-full"><h2>Sources de données</h2><p class="ds-hint">Combinez librement des colonnes issues de plusieurs sources. Les colonnes ajoutées ici peuvent être reprises dans un tableau (bouton « Depuis les sources »).</p>' +
+      '<div class="ds-g3"><div><label class="ds-lab">Table</label><select class="ds-in" data-ds-table><option value="">— Choisir —</option>' + Object.keys(TABLES).map(function (k) { return '<option value="' + k + '">' + esc(TABLES[k]) + '</option>'; }).join('') + '</select></div>' +
+      '<div><label class="ds-lab">Colonne</label><select class="ds-in" data-ds-col disabled><option value="">— Choisir —</option></select></div>' +
+      '<div><label class="ds-lab">Nom du colonne (personnalisé)</label><input class="ds-in" data-ds-nom placeholder="Nom affiché dans le tableau"></div>' +
+      '<div><label class="ds-lab">Type</label><select class="ds-in" data-ds-type><option value="texte">Texte</option><option value="donnees">Données / Montant</option></select></div></div>' +
+      '<button type="button" class="ds-btn" data-ds-add>+ Ajouter</button>' + colsHtml + '</section>' +
+      '<div class="ds-col"><section class="ds-card"><h2>Mise en page du document</h2><p class="ds-hint">Format, orientation, marges et hauteurs des zones du canevas.</p>' +
+      '<div class="ds-g2"><div><label class="ds-lab">Taille du papier</label><select class="ds-in" data-ds-paper>' + Object.keys(PAPERS).map(function (k) { return '<option' + (k === paper ? ' selected' : '') + '>' + k + '</option>'; }).join('') + '</select></div>' +
+      '<div><label class="ds-lab">Orientation</label><select class="ds-in" data-ds-orient><option value="portrait"' + (orient === 'portrait' ? ' selected' : '') + '>Portrait</option><option value="landscape"' + (orient === 'landscape' ? ' selected' : '') + '>Paysage</option></select></div>' +
+      '<div><label class="ds-lab">Marge gauche (px)</label><input class="ds-in" type="number" data-ds-m="l" value="' + mL + '"></div><div><label class="ds-lab">Marge droite (px)</label><input class="ds-in" type="number" data-ds-m="r" value="' + mR + '"></div></div>' +
+      '<div class="ds-sec"><div style="display:flex;justify-content:space-between"><span class="ds-lab" style="margin:0">Sections</span><span class="ds-hint" style="margin:0">page ' + PW + ' x ' + PH + ' px</span></div>' + secs + '</div>' +
+      '<p class="ds-hint">Detail1 prend la hauteur restante. Ajoutez ou supprimez des sections depuis la barre d’outils (« + Section ») ou le panneau de propriétés de la section.</p></section>' +
+      '<section class="ds-card"><h3>Filigrane</h3><label style="display:flex;gap:8px;align-items:center;margin-top:8px;font-size:13px"><input type="checkbox"> Activer un filigrane sur le document</label>' +
+      '<div class="ds-g2" style="grid-template-columns:minmax(0,1fr) 110px"><div><label class="ds-lab">Texte du filigrane</label><input class="ds-in" placeholder="Ex. BROUILLON"></div><div><label class="ds-lab">Opacité (%)</label><input class="ds-in" type="number" min="0" max="100"></div></div><p class="ds-hint">Visible en aperçu sur l’onglet Designer.</p></section></div>' +
+      '<div class="ds-col"><section class="ds-card"><h3>Regroupement et niveau de détail</h3><div class="ds-g2"><div><label class="ds-lab">Axe de rupture</label><select class="ds-in">' + opts([['', '— Aucun —'], ['1', 'PC — PLAN COMPTABLE'], ['3', 'PLAN1 — ACTIVITE'], ['4', 'PLAN2 — POSTE BUDGETAIRE'], ['5', 'PLAN3 — FINANCEMENT'], ['6', 'PLAN4 — GEOGRAPHIQUE']], zone('GroupHeader1') ? '5' : '') + '</select></div>' +
+      '<div><label class="ds-lab">Niveau d’analyse</label><select class="ds-in"' + (zone('GroupHeader1') ? '' : ' disabled') + '><option>— Aucun —</option>' + (zone('GroupHeader1') ? '<option selected>Catégorie</option>' : '') + '</select></div></div>' +
+      '<p class="ds-hint">Le regroupement se règle aussi dans la section « GroupHeader1 ».</p>' +
+      '<label class="ds-lab">Niveau de détail</label><select class="ds-in"><option>— Aucun —</option>' + srcCols.map(function (c) { return '<option>' + esc(c.n) + '</option>'; }).join('') + '</select></section>' +
+      '<section class="ds-card"><h3>En-tête</h3><p class="ds-hint">Champs affichés dans la zone d’en-tête du rapport.</p>' + zoneFields('ReportHeader1') + fieldForm('ReportHeader1') + '</section>' +
+      '<section class="ds-card"><h3>Pied de page</h3><p class="ds-hint">Champs affichés dans la zone de pied de page.</p>' + zoneFields('PageFooter1') + fieldForm('PageFooter1') + '</section></div></div>';
+  }
+  var src = q('[data-df-src]');
+  src.addEventListener('change', function (e) {
+    var t = e.target;
+    if (t.matches('[data-ds-table]')) { var c = q('[data-ds-col]'); c.disabled = !t.value; c.innerHTML = '<option value="">— Choisir —</option>' + (t.value ? COLCHOICES.map(function (x) { return '<option>' + x + '</option>'; }).join('') : ''); }
+    else if (t.matches('[data-ds-paper]') || t.matches('[data-ds-orient]')) { setPaper(q('[data-ds-paper]').value, q('[data-ds-orient]').value); renderSources(); }
+    else if (t.dataset.dsM) { var v = Math.max(0, num(t.value, 0)); if (t.dataset.dsM === 't') mT = v; else if (t.dataset.dsM === 'b') mB = v; else if (t.dataset.dsM === 'l') mL = v; else mR = v; fitDetail(); renderSources(); }
+    else if (t.dataset.dsH) { zone(t.dataset.dsH).style.minHeight = Math.max(10, num(t.value, 40)) + 'px'; fitDetail(); renderSources(); }
+  });
+  src.addEventListener('click', function (e) {
+    var d = e.target.closest('[data-ds-del]'); if (d) { srcCols.splice(+d.dataset.dsDel, 1); renderSources(); return; }
+    if (e.target.closest('[data-ds-add]')) {
+      var t = q('[data-ds-table]').value, c = q('[data-ds-col]').value; if (!t || !c) return;
+      srcCols.push({ t: t, s: c, n: q('[data-ds-nom]').value || c, d: q('[data-ds-type]').value === 'donnees' }); renderSources(); return;
+    }
+    var af = e.target.closest('[data-ds-addfield]');
+    if (af) {
+      var card = af.closest('section'), ins = card.querySelectorAll('.ds-in'), zid = af.dataset.dsAddfield, z = zone(zid) || addSection({ id: zid });
+      var content = ins[2].value || ins[1].value; if (!content) return;
+      var y = 4; Array.prototype.forEach.call(z.querySelectorAll('.df-el'), function (x) { y = Math.max(y, (parseInt(x.style.top) || 0) + (parseInt(x.style.height) || 20) + 4); });
+      add(ins[0].value === 'Image' ? 'image' : 'texte', z, 0, y, content); renderSources();
+    }
+  });
+
+  /* ---------- modèle préparamétré « Formulaire 4F » (variante Taux 3) ---------- */
+  var COLS_4F = [{ h: 'Art. N°', f: '[N° article]', w: 4 }, { h: 'Bénéficiaires', f: '[Bénéficiaire]', w: 10 }, { h: 'Description sommaire', f: '[Description]', w: 15 },
+    { h: 'Monnaie et montant Total du Marché', f: '[Montant marché] [Devise]', w: 9 }, { h: 'Montant Total net', f: '[Montant net]', w: 8 }, { h: 'Montant Total des Factures dont le Financement est autorisé', f: '[Montant financé]', w: 10 },
+    { h: 'Montant (USD)', f: '[Montant USD]', w: 7 }, { h: '% Eligibilité', f: '[% éligibilité]', w: 5 }, { h: 'Date de Règlement', f: '[Date règlement]', w: 7 },
+    { h: 'Ref. relevé', f: '[Réf. relevé]', w: 7 }, { h: 'Taux', f: '[Taux]', w: 6 }, { h: 'Numéro du Marché ou BC (ou autre réf.)', f: '[N° marché / BC]', w: 10 }, { h: 'Référence Facture', f: '[Réf. facture]', w: 9 }];
+  function apply4F() {
+    preset = '4F'; window.__soe4F = { sautCat: true }; mT = 40; mB = 30; mL = 24; mR = 24; setPaper('A4', 'landscape');
+    setZones([{ id: 'ReportHeader1', h: 76 }, { id: 'GroupHeader1', h: 92, rep: 1, grp: 'Financement › Catégorie' }, { id: 'Detail1', tri: 'N° article' }, { id: 'GroupFooter1', h: 52, sa: 1 }, { id: 'ReportFooter1', h: 70 }, { id: 'PageFooter1', h: 38 }]);
+    put('ReportHeader1', 'texte', 0, 8, 800, 18, 'SOFTWELL - Version partenaire [Société] - [Programme] - [Pays]');
+    put('ReportHeader1', 'texte', 930, 8, 145, 18, 'Page [Page]/[NbPages]', { cls: 'r' });
+    put('ReportHeader1', 'texte', 0, 34, 1000, 22, 'Demande de retrait de fonds n° [N° demande] du [Début période] au [Fin période] - Formulaire 4F (4F)', { cls: 'b' });
+    put('ReportHeader1', 'ligne', 0, 64, 1075, 2, '');
+    put('GroupHeader1', 'texte', 0, 6, 900, 18, 'FINANCEMENT [Code financement] [Convention] - Cat. [Catégorie] : [Libellé catégorie]', { cls: 'b' });
+    put('GroupHeader1', 'texte', 0, 26, 300, 18, 'Monnaie : [Monnaie de suivi]');
+    put('GroupHeader1', 'tableau', 0, 48, 1075, 40, '', { cols: JSON.stringify(COLS_4F), part: 'head', fs: '9' });
+    put('Detail1', 'tableau', 0, 30, 1075, 36, '', { cols: JSON.stringify(COLS_4F), part: 'row', fs: '9' });
+    put('GroupFooter1', 'texte', 0, 6, 300, 18, 'Total cat. [Catégorie]', { cls: 'b' });
+    put('GroupFooter1', 'texte', 560, 6, 180, 18, '[Σ Montant USD]', { cls: 'b r' });
+    put('GroupFooter1', 'saut', 0, 32, 1075, 16, 'Saut de page après chaque catégorie');
+    put('ReportFooter1', 'texte', 0, 10, 300, 18, 'Responsable Financier');
+    put('ReportFooter1', 'texte', 0, 34, 400, 18, '[Responsable financier]', { cls: 'b' });
+    put('PageFooter1', 'texte', 0, 8, 520, 18, 'Edité le [Date d’édition] à [Heure] (UTC+3)');
+    put('PageFooter1', 'texte', 700, 8, 375, 18, '[Utilisateur] - SOFTWELL - Madagascar', { cls: 'r' });
+    srcCols = COLS_4F.map(function (c, k) { return { t: 'Demande de remboursement', s: c.f.replace(/[\[\]]/g, ''), n: c.h, d: k >= 3 && k <= 7 }; });
+    renderSources();
+  }
+  /* ---------- modèle officiel DGI « Annexe IRSA » (fichier DGI_Annexe_IRSA.xls, feuille IRSA, 13 colonnes) ---------- */
+  var COLS_IRSA = [{ h: 'Nom et prénom du travailleur', f: '[Nom et prénom]', w: 14 }, { h: 'Fonction', f: '[Fonction]', w: 10 }, { h: 'N° CIN ou carte de résident', f: '[N° CIN]', w: 8 }, { h: 'N° d’identification CNaPS', f: '[N° CNaPS]', w: 8 },
+    { h: 'Rémunération brute en numéraire (B)', f: '[Rémunération brute]', w: 8 }, { h: 'Valeur des avantages en nature imposables (C)', f: '[Avantages en nature]', w: 7 }, { h: 'Retenue pension ou retraite (D)', f: '[Retenue pension]', w: 7 },
+    { h: 'Cotisation ouvrière organisation sanitaire (E)', f: '[Cotisation sanitaire]', w: 7 }, { h: 'Revenus nets imposables (F = B + C - D - E)', f: '[Revenu net imposable]', w: 8 }, { h: 'Impôt brut correspondant (G)', f: '[Impôt brut]', w: 7 },
+    { h: 'Nombre de personnes à charge', f: '[Personnes à charge]', w: 5 }, { h: 'Réduction pour personnes à charge (H)', f: '[Réduction charge]', w: 7 }, { h: 'Impôt net retenu (I = G - H)', f: '[Impôt net]', w: 8 }];
+  window.__sampleIRSA = [['RAKOTO Jean Marc', 'Comptable', '101 234 567 890', '12345678', 1200000, 50000, 48000, 12000, 1190000, 39000, 2, 4000, 35000],
+    ['RANDRIA Voahangy', 'Assistante RH', '201 345 678 901', '23456789', 850000, 0, 34000, 8500, 807500, 21000, 1, 2000, 19000],
+    ['RASOA Hanitra', 'Chef de projet', '102 456 789 012', '34567890', 2500000, 150000, 100000, 25000, 2525000, 190000, 3, 6000, 184000]];
+  function applyIRSA() {
+    preset = 'IRSA'; GLOB['[NIF]'] = '4000123456'; window.__soe4F = { sautCat: false }; mT = 40; mB = 30; mL = 24; mR = 24; setPaper('A4', 'landscape');
+    setZones([{ id: 'ReportHeader1', h: 96 }, { id: 'Detail1' }, { id: 'ReportFooter1', h: 60 }, { id: 'PageFooter1', h: 38 }]);
+    put('ReportHeader1', 'texte', 0, 8, 800, 18, 'DIRECTION GÉNÉRALE DES IMPÔTS — Annexe à la déclaration de l’IRSA', { cls: 'b' });
+    put('ReportHeader1', 'texte', 0, 32, 800, 18, 'Employeur : [Société] — NIF : [NIF] — Période : [Début période] au [Fin période]');
+    put('ReportHeader1', 'texte', 930, 8, 145, 18, 'Page [Page]/[NbPages]', { cls: 'r' });
+    put('ReportHeader1', 'ligne', 0, 58, 1075, 2, '');
+    put('ReportHeader1', 'tableau', 0, 62, 1075, 40, '', { cols: JSON.stringify(COLS_IRSA), part: 'head', fs: '8' });
+    put('Detail1', 'tableau', 0, 4, 1075, 30, '', { cols: JSON.stringify(COLS_IRSA), part: 'row', fs: '8' });
+    put('ReportFooter1', 'texte', 0, 10, 400, 18, 'Total : [Σ Impôt net]', { cls: 'b' });
+    put('PageFooter1', 'texte', 0, 8, 520, 18, 'Edité le [Date d’édition] à [Heure] (UTC+3)');
+    put('PageFooter1', 'texte', 700, 8, 375, 18, '[Utilisateur] - SOFTWELL - Madagascar', { cls: 'r' });
+    srcCols = COLS_IRSA.map(function (c) { return { t: 'IRSA', s: c.f.replace(/[[]]/g, ''), n: c.h, d: false }; });
+    renderSources();
+  }
+  /* ---------- modèle officiel DGI « Annexe TVA » (fichier DGI_Annexe_TVA.xls, feuille 1003022011, 17 colonnes) ---------- */
+  var COLS_TVA = [['Fournisseur (F) ou Client (C)','Type tiers',6],['Local (L) ou Étranger (E)','Origine',6],['NIF (10 chiffres)','NIF',9],['Raison sociale','Raison sociale',13],['STAT','STAT',8],['Adresse','Adresse',10],['Montant HT (Ar)','Montant HT',8],['TVA (Ar)','TVA',7],['Facture','Facture',7],['Date facture (jj/mm/aaaa)','Date facture',7],['Bien (B), Service (S) ou Immobilisation (I)','Nature',6],['Libellé opération','Libellé opération',10],['Date paiement (jj/mm/aaaa)','Date paiement',7],['Mois de l’opération','Mois',4],['Année','Année',4],['Observations','Observations',6],['N° DAU','N° DAU',5]].map(function (c) { return { h: c[0], f: '[' + c[1] + ']', w: c[2] }; });
+  window.__sampleTVA = [['F','L','4000123456','SOCIÉTÉ JIRAMA','10102 11 2001 0 00123','Antananarivo 101',1200000,240000,'FA-2026-0451','05/06/2026','S','Fourniture électricité','12/06/2026',6,2026,'','' ],
+    ['F','E','5000987654','OFFICE SUPPLY LTD','—','Port-Louis, Maurice',3500000,700000,'INV-8821','10/06/2026','B','Achat matériel informatique','20/06/2026',6,2026,'Importation','DAU-0612'],
+    ['C','L','4000555123','ENTREPRISE RAKOTO','47111 11 2010 0 01877','Toamasina 501',5000000,1000000,'FV-2026-0102','15/06/2026','S','Prestation de conseil','28/06/2026',6,2026,'','']];
+  function applyTVA() {
+    preset = 'TVA'; GLOB['[NIF déclarant]'] = '4000123456'; window.__soe4F = { sautCat: false }; mT = 40; mB = 30; mL = 24; mR = 24; setPaper('A4', 'landscape');
+    setZones([{ id: 'ReportHeader1', h: 110 }, { id: 'Detail1' }, { id: 'ReportFooter1', h: 60 }, { id: 'PageFooter1', h: 38 }]);
+    put('ReportHeader1', 'texte', 0, 8, 800, 18, 'DIRECTION GÉNÉRALE DES IMPÔTS — Annexe à la déclaration de TVA', { cls: 'b' });
+    put('ReportHeader1', 'texte', 0, 32, 800, 18, 'Déclarant : [Société] — NIF : [NIF déclarant] — Période : [Début période] au [Fin période]');
+    put('ReportHeader1', 'texte', 930, 8, 145, 18, 'Page [Page]/[NbPages]', { cls: 'r' });
+    put('ReportHeader1', 'ligne', 0, 58, 1075, 2, '');
+    put('ReportHeader1', 'tableau', 0, 62, 1075, 44, '', { cols: JSON.stringify(COLS_TVA), part: 'head', fs: '8' });
+    put('Detail1', 'tableau', 0, 4, 1075, 30, '', { cols: JSON.stringify(COLS_TVA), part: 'row', fs: '8' });
+    put('ReportFooter1', 'texte', 0, 10, 500, 18, 'Total HT : [Σ Montant HT] — Total TVA : [Σ TVA]', { cls: 'b' });
+    put('PageFooter1', 'texte', 0, 8, 520, 18, 'Edité le [Date d’édition] à [Heure] (UTC+3)');
+    put('PageFooter1', 'texte', 700, 8, 375, 18, '[Utilisateur] - SOFTWELL - Madagascar', { cls: 'r' });
+    srcCols = COLS_TVA.map(function (c) { return { t: 'TVA', s: c.f.replace(/[[]]/g, ''), n: c.h, d: false }; });
+    renderSources();
+  }
+  function applyDefault() {
+    preset = null; mT = 40; mB = 30; mL = 24; mR = 24; setPaper('A4', 'portrait');
+    setZones([{ id: 'ReportHeader1', h: 110 }, { id: 'Detail1' }, { id: 'PageFooter1', h: 44 }]); srcCols = []; renderSources();
+  }
+
+  /* ---------- aperçu live : rendu du modèle conçu avec des données d'exemple ---------- */
+  function nf(v, d) { var p = Math.abs(v).toFixed(d == null ? 2 : d).split('.'); p[0] = p[0].replace(/\B(?=(\d{3})+(?!\d))/g, ' '); return (v < 0 ? '-' : '') + p.join(','); }
+  var GLOB = { '[N° demande]': '0038', '[Début période]': '01/06/2026', '[Fin période]': '30/06/2026', '[Code financement]': '01', '[Convention]': 'E083-MG', '[Monnaie de suivi]': 'USD', '[Société]': 'SOFTWELL', '[Programme]': 'FOOD SYSTEM RESILIENCE PROGRAM', '[Pays]': 'MADAGASCAR', '[Responsable financier]': 'RAVELOSON Ndretsa Mamy Tantely', '[Date d’édition]': '13/10/2026', '[Heure]': '13:50', '[Utilisateur]': 'MICHAEL' };
+  function subst(t, d) { return String(t).replace(/\[[^\]]+\]/g, function (m) { return d.hasOwnProperty(m) ? d[m] : m; }); }
+  function rowDict(r, i) {
+    if (r.tva) { var o2 = {}; COLS_TVA.forEach(function (c, j) { var v = r.tva[j]; o2[c.f] = (j === 6 || j === 7) ? nf(v, 0) : v; }); return o2; }
+    if (r.irsa) { var a = r.irsa, k = ['[Nom et prénom]', '[Fonction]', '[N° CIN]', '[N° CNaPS]', '[Rémunération brute]', '[Avantages en nature]', '[Retenue pension]', '[Cotisation sanitaire]', '[Revenu net imposable]', '[Impôt brut]', '[Personnes à charge]', '[Réduction charge]', '[Impôt net]'], o = {}; k.forEach(function (n, j) { o[n] = typeof a[j] === 'number' && j !== 10 ? nf(a[j], 0) : a[j]; }); return o; }
+    var cur = (/ ([A-Z]{3})$/.exec(r.marche) || [])[1] || '';
+    return { '[N° article]': i + 1, '[Bénéficiaire]': r.ben, '[Description]': r.desc, '[Montant marché]': String(r.marche).replace(/ [A-Z]{3}$/, ''), '[Devise]': cur, '[Montant net]': nf(r.net) + ' MGA', '[Montant financé]': nf(r.fin) + ' MGA', '[Montant USD]': nf(r.usd), '[% éligibilité]': nf(r.pct), '[Date règlement]': r.date, '[Réf. relevé]': r.rel, '[Taux]': nf(r.taux, 4), '[N° marché / BC]': r.ref, '[Réf. facture]': r.fac };
+  }
+  function elCss(e) {
+    var s = 'position:absolute;left:' + (parseInt(e.style.left) || 0) + 'px;top:' + (parseInt(e.style.top) || 0) + 'px;width:' + (parseInt(e.style.width) || 100) + 'px;';
+    if (parseInt(e.style.height)) s += 'height:' + parseInt(e.style.height) + 'px;';
+    var d = e.dataset; s += 'font-size:' + (d.fs || (d.type === 'tableau' ? 9 : 12)) + 'px;' + (d.b === '1' ? 'font-weight:700;' : '') + (d.i === '1' ? 'font-style:italic;' : '') + (d.al ? 'text-align:' + d.al + ';' : '') + (d.col ? 'color:' + d.col + ';' : '');
+    return s;
+  }
+  function tableHtml(e, dicts, abs) {
+    var cols = JSON.parse(e.dataset.cols || '[]'), tw = cols.reduce(function (a, k) { return a + k.w; }, 0) || 1, part = e.dataset.part || '';
+    return '<table class="pv-t" style="' + (abs ? elCss(e) : 'width:' + (parseInt(e.style.width) || 400) + 'px;font-size:' + (e.dataset.fs || 9) + 'px') + '"><colgroup>' + cols.map(function (k) { return '<col style="width:' + (k.w * 100 / tw) + '%">'; }).join('') + '</colgroup>' +
+      (part !== 'row' ? '<thead><tr>' + cols.map(function (k) { return '<th>' + esc(k.h) + '</th>'; }).join('') + '</tr></thead>' : '') +
+      (part !== 'head' ? '<tbody>' + dicts.map(function (d) { return '<tr>' + cols.map(function (k) { return '<td>' + esc(subst(k.f, d)) + '</td>'; }).join('') + '</tr>'; }).join('') + '</tbody>' : '') + '</table>';
+  }
+  function secHtml(z, d) {
+    var els = elems.filter(function (e) { return e.isConnected && e.parentElement === z; }), bottom = 0;
+    els.forEach(function (e) { bottom = Math.max(bottom, (parseInt(e.style.top) || 0) + (parseInt(e.style.height) || (e.dataset.type === 'tableau' ? 40 : 20))); });
+    if (!els.length) return '';
+    return '<div class="pv-sec" style="height:' + (bottom + 6) + 'px">' + els.map(function (e) {
+      var ty = e.dataset.type, c = e.dataset.content || '';
+      if (ty === 'texte') return '<div style="' + elCss(e) + 'white-space:pre-wrap">' + esc(subst(c, d)) + '</div>';
+      if (ty === 'ligne') return '<div style="' + elCss(e) + 'height:1px;background:#64748b"></div>';
+      if (ty === 'image') return '<div style="' + elCss(e) + 'border:1px dashed #cbd5e1;color:#94a3b8;display:flex;align-items:center;justify-content:center">' + esc(c || 'Image') + '</div>';
+      if (ty === 'tableau') return tableHtml(e, [d], true);
+      return '';
+    }).join('') + '</div>';
+  }
+  function detailHtml(z, rows) {
+    var tabs = elems.filter(function (e) { return e.isConnected && e.parentElement === z && e.dataset.type === 'tableau'; });
+    var dicts = rows.map(function (r, i) { return rowDict(r, i); });
+    if (tabs.length) return tabs.map(function (e) { return '<div style="padding-left:' + (parseInt(e.style.left) || 0) + 'px">' + tableHtml(e, dicts, false) + '</div>'; }).join('');
+    return dicts.map(function (d) { return secHtml(z, d); }).join('');
+  }
+  function renderPreview() {
+    var box = q('[data-df-view="apercu"]');
+    var rows = preset === 'TVA' ? window.__sampleTVA.map(function (a) { return { tva: a, usd: a[6], tvaAmt: a[7] }; }) : preset === 'IRSA' ? window.__sampleIRSA.map(function (a) { return { irsa: a, usd: a[12] }; }) : (window.__sample4F && window.__sample4F.length) ? window.__sample4F : [{ cat: '01', ben: 'Bénéficiaire exemple', desc: 'Description exemple', marche: '0,00 MGA', net: 100000, fin: 100000, usd: 22.36, pct: 100, date: '01/06/2026', rel: 'REL01', taux: 4472, ref: '', fac: '' }];
+    var Z = {}; qa('[data-df-zone]').forEach(function (z) { Z[z.dataset.dfZone] = z; });
+    if (!Z.Detail1) { box.innerHTML = '<div class="df-card"><h2>Aperçu live</h2><p style="margin:0;color:#64748b">Aucune section Détail.</p></div>'; return; }
+    var grouped = !!(Z.GroupHeader1 || Z.GroupFooter1), groups = [];
+    if (grouped) rows.forEach(function (r) { var g = groups.filter(function (x) { return x.cat === r.cat; })[0]; if (!g) { g = { cat: r.cat, rows: [] }; groups.push(g); } g.rows.push(r); }); else groups = [{ cat: '', rows: rows }];
+    var pages = (Z.GroupFooter1 && Z.GroupFooter1.dataset.sa === '1') || (Z.GroupHeader1 && Z.GroupHeader1.dataset.sb === '1') ? groups.map(function (g) { return [g]; }) : [groups];
+    var N = pages.length;
+    box.innerHTML = '<div class="pv-wrap">' + pages.map(function (gs, pi) {
+      var base = Object.assign({}, GLOB, { '[Page]': pi + 1, '[NbPages]': N }), h = '';
+      if (pi === 0 && Z.ReportHeader1) h += secHtml(Z.ReportHeader1, base);
+      if (Z.PageHeader1) h += secHtml(Z.PageHeader1, base);
+      gs.forEach(function (g) {
+        var tot = g.rows.reduce(function (a, r) { return a + r.usd; }, 0), gd = Object.assign({}, base, { '[Catégorie]': g.cat, '[Libellé catégorie]': g.cat ? '(' + parseInt(g.cat, 10) + ') Biens, travaux, services non-consultants, part' : '', '[Σ Montant USD]': nf(tot) }); if (preset === 'IRSA') { base['[Σ Impôt net]'] = nf(tot, 0) + ' Ar'; } if (preset === 'TVA') { base['[Σ Montant HT]'] = nf(tot, 0) + ' Ar'; base['[Σ TVA]'] = nf(g.rows.reduce(function (a, x) { return a + x.tvaAmt; }, 0), 0) + ' Ar'; }
+        if (Z.GroupHeader1) h += secHtml(Z.GroupHeader1, gd);
+        h += detailHtml(Z.Detail1, g.rows);
+        if (Z.GroupFooter1) h += secHtml(Z.GroupFooter1, gd);
+      });
+      if (pi === N - 1 && Z.ReportFooter1) h += secHtml(Z.ReportFooter1, base);
+      if (Z.PageFooter1) h += '<div style="margin-top:14px">' + secHtml(Z.PageFooter1, base) + '</div>';
+      return '<div class="pv-page" style="width:' + (PW - mL - mR) + 'px;padding:' + mT + 'px ' + mR + 'px ' + mB + 'px ' + mL + 'px;box-sizing:content-box">' + h + '</div>';
+    }).join('') + '</div>';
+  }
+
+  /* ---------- JSON, modes, divers ---------- */
+  function json() {
+    return JSON.stringify({ numero: model.code, nom: model.nom, format: paper, orientation: orient, marges: { haut: mT, bas: mB, gauche: mL, droite: mR },
+      sections: qa('[data-df-zone]').map(function (z) { return { id: z.dataset.dfZone, hauteur: parseInt(z.style.minHeight), repeter: z.dataset.rep === '1', sautAvant: z.dataset.sb === '1', sautApres: z.dataset.sa === '1', regrouper: z.dataset.grp || undefined }; }),
+      elements: elems.filter(function (x) { return x.isConnected; }).map(function (x) {
+        var d = x.dataset, o = { type: d.type, zone: d.zone, x: parseInt(x.style.left), y: parseInt(x.style.top), largeur: parseInt(x.style.width) };
+        if (d.cols) { o.colonnes = JSON.parse(d.cols).map(function (k) { return { titre: k.h, champ: k.f, poids: k.w }; }); o.partie = d.part || 'complet'; } else o.contenu = d.content;
+        if (d.fs) o.taille = +d.fs; if (d.b === '1') o.gras = true; if (d.i === '1') o.italique = true; if (d.al) o.alignement = d.al; if (d.col) o.couleur = d.col; return o;
+      }) }, null, 2);
+  }
+  qa('[data-df-mode]').forEach(function (b) {
+    b.addEventListener('click', function () {
+      qa('[data-df-mode]').forEach(function (x) { x.classList.toggle('on', x === b); });
+      qa('[data-df-view]').forEach(function (v) { v.style.display = v.dataset.dfView === b.dataset.dfMode ? '' : 'none'; });
+      if (b.dataset.dfMode === 'json') q('[data-df-json]').textContent = json();
+      if (b.dataset.dfMode === 'designer') applyZoom();
+      if (b.dataset.dfMode === 'sources') renderSources();
+      if (b.dataset.dfMode === 'apercu') renderPreview();
+    });
+  });
+  q('[data-df-save]').addEventListener('click', function () { var b = q('[data-df-save]'); b.textContent = '✔ Sauvegardé'; setTimeout(function () { b.textContent = '💾 Sauvegarder'; }, 1800); });
+  q('[data-df-info]').addEventListener('click', function () { window.__mfParams(function (m) { model = m; head(); }); });
+  q('[data-df-back]').addEventListener('click', function () { history.back(); });
+  q('[data-df-dupm]').addEventListener('click', function () {
+    var src = model;
+    window.__dupModele({ source: { code: src.code, nom: src.nom }, onOk: function (c, n, fl) {
+      var nm = {}; Object.keys(src).forEach(function (k) { nm[k] = src[k]; }); nm.code = c; nm.nom = n; nm.def = false; nm.file = fl;
+      window.__mfDesigner = nm; model = nm; head();
+      window.dispatchEvent(new CustomEvent('mf-model-dup', { detail: { from: window.__designerFrom, src: src.code, srcNom: src.nom, code: c, nom: n, file: nm.file, type: nm.type } }));
+      var b = q('[data-df-dupm]'); b.title = 'Modèle dupliqué : ' + c; setTimeout(function () { b.title = 'Dupliquer le modèle'; }, 2500);
+    } });
+  });
+  function load() {
+    var m = window.__mfDesigner; if (!m) return;
+    var want = /4F/.test(m.nom) ? '4F' : /IRSA/.test(m.code + m.nom) ? 'IRSA' : /TVA/.test(m.code + m.nom) ? 'TVA' : null;
+    if (m.code !== model.code || m.nom !== model.nom || want !== preset) { if (want === '4F') apply4F(); else if (want === 'IRSA') applyIRSA(); else if (want === 'TVA') applyTVA(); else applyDefault(); }
+    model = m; head();
+  }
+  window.addEventListener('hashchange', function () { if (location.hash === '#designer') { load(); applyZoom(); } });
+  applyDefault(); head();
+})();
+</script>
+<script>
+/* Paramètres du modèle d'état (partagés par les concepteurs) : window.__mfParams(onChange) ouvre la fenêtre, window.__mfSummary() donne le résumé */
+(function () {
+  var TYPES = ['Annexe', 'Déclaration', 'SOE', 'Récapitulatif'], SRC = ['Demande de remboursement', 'Comptabilité générale', 'Budget', 'Contrat'];
+  function esc(s) { var d = document.createElement('div'); d.textContent = s == null ? '' : s; return d.innerHTML; }
+  function norm() {
+    var m = window.__mfDesigner || (window.__mfDesigner = {}), c = String(m.code || '');
+    if (!m.type) m.type = /DECLARATION|TMP/i.test(c) ? 'Déclaration' : /EJCD/i.test(c) ? 'Récapitulatif' : /ANNEXE/i.test(c) ? 'Annexe' : 'SOE';
+    if (!m.file) m.file = String(m.nom || c || 'modele').replace(/[^A-Za-z0-9]+/g, '_').replace(/^_|_$/g, '').toLowerCase();
+    if (!m.src) m.src = m.type === 'SOE' ? 'Demande de remboursement' : 'Comptabilité générale';
+    if (m.bai == null) m.bai = ''; if (m.proc == null) m.proc = ''; if (m.fmt == null) m.fmt = 'A4';
+    return m;
+  }
+  window.__mfSummary = function () { var m = norm(); return 'N° ' + (m.code || '—') + ' · ' + m.type + ' · ' + m.file + '.repx · Source : ' + m.src + (m.proc ? ' · Procédure : ' + m.proc : '') + (m.bai ? ' · Bailleur : ' + m.bai : ''); };
+  window.__mfParams = function (onChange) {
+    var m = norm(), lock = !!m.def, old = document.getElementById('mfp-ov'); if (old) old.remove();
+    var procs = (window.__pfProcs || []).map(function (p) { return p.proc; }).filter(function (v, i, a) { return a.indexOf(v) === i; });
+    var ov = document.createElement('div'); ov.id = 'mfp-ov'; ov.style.cssText = 'position:fixed;inset:0;z-index:3000;background:#0f172a99;display:flex;align-items:center;justify-content:center;padding:16px';
+    var fs = 'width:100%;border:1px solid #cbd5e1;border-radius:8px;padding:8px 10px;font:inherit;font-size:13px;background:#fff', lb = 'display:block;font-size:12px;font-weight:700;color:#475569;margin-bottom:5px';
+    function sel(id, opts, v, dis) { return '<select id="' + id + '" style="' + fs + '"' + (dis ? ' disabled' : '') + '><option value=""></option>' + opts.map(function (o) { return '<option' + (o === v ? ' selected' : '') + '>' + esc(o) + '</option>'; }).join('') + '</select>'; }
+    ov.innerHTML = '<div style="background:#fff;border-radius:14px;width:100%;max-width:560px;box-shadow:0 25px 50px -12px #0f172a40;font-family:inherit"><div style="padding:18px 22px;border-bottom:1px solid #e2e8f0"><h2 style="margin:0;font-size:16px">Paramètres du modèle d\'état</h2><p style="margin:4px 0 0;font-size:12.5px;color:#64748b">' + (lock ? 'Modèle officiel par défaut : numéro, type et nom de fichier verrouillés, seul l\'intitulé est modifiable.' : 'Informations générales du modèle, enregistrées avec le concepteur.') + '</p></div>' +
+      '<div style="padding:18px 22px;display:grid;grid-template-columns:1fr 1fr;gap:14px">' +
+      '<label><span style="' + lb + '">Numéro du modèle</span><input id="mfp-code" style="' + fs + '" value="' + esc(m.code) + '"' + (lock ? ' disabled' : '') + '></label>' +
+      '<label><span style="' + lb + '">Nom du modèle *</span><input id="mfp-nom" style="' + fs + '" value="' + esc(m.nom) + '"></label>' +
+      '<label><span style="' + lb + '">Type d\'état</span>' + sel('mfp-type', TYPES, m.type, lock) + '</label>' +
+      '<label><span style="' + lb + '">Fichier RepX</span><input id="mfp-file" style="' + fs + '" value="' + esc(m.file) + '"' + (lock ? ' disabled' : '') + '></label>' +
+      '<label><span style="' + lb + '">Source de données</span>' + sel('mfp-src', SRC, m.src) + '</label>' +
+      '<label><span style="' + lb + '">Format de page</span>' + sel('mfp-fmt', ['A4', 'A3', 'Lettre'], m.fmt) + '</label>' +
+      '<label><span style="' + lb + '">Procédure financière</span>' + sel('mfp-proc', procs, m.proc) + '</label>' +
+      '<label><span style="' + lb + '">Bailleur</span><input id="mfp-bai" style="' + fs + '" value="' + esc(m.bai) + '" placeholder="Ex : Banque mondiale (IDA)"></label>' +
+      '<div style="grid-column:1/3;font-size:12px;color:#64748b">Statut : ' + (lock ? '<b style="color:#b45309">Par défaut (officiel)</b>' : 'Modèle personnalisé') + '</div></div>' +
+      '<div id="mfp-err" style="display:none;padding:0 22px;color:#b91c1c;font-size:12px">Le nom du modèle est obligatoire.</div>' +
+      '<div style="display:flex;justify-content:flex-end;gap:10px;padding:14px 22px;background:#f8fafc;border-top:1px solid #f1f5f9;border-radius:0 0 14px 14px"><button type="button" id="mfp-c" style="border:1px solid #cbd5e1;background:#fff;border-radius:8px;padding:8px 16px;font:inherit;font-size:13px;cursor:pointer">Annuler</button><button type="button" id="mfp-s" style="border:0;background:#0f766e;color:#fff;border-radius:8px;padding:8px 16px;font:inherit;font-size:13px;font-weight:600;cursor:pointer">Enregistrer</button></div></div>';
+    document.body.appendChild(ov);
+    var g = function (id) { return ov.querySelector('#' + id); };
+    g('mfp-c').onclick = function () { ov.remove(); };
+    g('mfp-s').onclick = function () {
+      var nom = g('mfp-nom').value.trim(); if (!nom) { g('mfp-err').style.display = 'block'; return; }
+      var oldCode = m.code, oldNom = m.nom;
+      if (!lock) { m.code = g('mfp-code').value.trim() || m.code; m.type = g('mfp-type').value || m.type; m.file = g('mfp-file').value.trim() || m.file; }
+      m.nom = nom; m.src = g('mfp-src').value; m.fmt = g('mfp-fmt').value; m.proc = g('mfp-proc').value; m.bai = g('mfp-bai').value.trim();
+      Array.prototype.forEach.call(document.querySelectorAll('[data-screen="modfisc"] [data-mf-item]'), function (it) { if (it.querySelector('.mf-meta').textContent.indexOf(oldCode) >= 0 && it.querySelector('[data-mf-title]').textContent === oldNom) it.querySelector('[data-mf-title]').textContent = nom; });
+      ov.remove(); if (onChange) onChange(m);
+    };
+  };
+})();
+/* Duplication de modèle (partagée par les listes et les concepteurs) : window.__dupModele({ source:{code,nom}, exists:function(code), onOk:function(code,nom) }) */
+(function () {
+  function esc(s) { var d = document.createElement('div'); d.textContent = s == null ? '' : s; return d.innerHTML; }
+  window.__dupModele = function (o) {
+    var old = document.getElementById('dup-ov'); if (old) old.remove();
+    var s = o.source || {}, ov = document.createElement('div'); ov.id = 'dup-ov'; ov.style.cssText = 'position:fixed;inset:0;z-index:3200;background:#0f172a99;display:flex;align-items:center;justify-content:center;padding:16px';
+    var fs = 'width:100%;border:1px solid #cbd5e1;border-radius:8px;padding:9px 11px;font:inherit;font-size:13px;background:#fff;box-sizing:border-box', lb = 'display:block;font-size:12px;font-weight:700;color:#475569;margin-bottom:5px';
+    ov.innerHTML = '<div role="dialog" aria-modal="true" aria-label="Dupliquer le modèle" style="background:#fff;border-radius:14px;width:100%;max-width:480px;box-shadow:0 25px 50px -12px #0f172a40;font-family:inherit">' +
+      '<div style="padding:18px 22px;border-bottom:1px solid #e2e8f0"><h2 style="margin:0;font-size:16px;color:#0c4a6e">Dupliquer le modèle</h2><p style="margin:4px 0 0;font-size:12px;color:#64748b">Copie de « ' + esc((s.code ? s.code + ' — ' : '') + (s.nom || '')) + ' » : la conception est reprise telle quelle.</p></div>' +
+      '<div style="padding:18px 22px;display:grid;gap:14px">' +
+      '<label><span style="' + lb + '">Code (numéro) du nouveau modèle *</span><input id="dup-code" style="' + fs + '" maxlength="30" autocomplete="off"></label>' +
+      '<label><span style="' + lb + '">Nom du nouveau modèle *</span><input id="dup-nom" style="' + fs + '" autocomplete="off"></label>' +
+      '<label><span style="' + lb + '">Nom du fichier RepX créé après enregistrement *</span><input id="dup-file" style="' + fs + '" autocomplete="off" placeholder="Ex. modele_copie_01"><span style="display:block;font-size:11px;color:#64748b;margin-top:4px">L’extension .repx sera ajoutée automatiquement.</span></label>' +
+      '<div id="dup-err" style="display:none;color:#dc2626;font-size:12px"></div></div>' +
+      '<div style="display:flex;justify-content:flex-end;gap:10px;padding:14px 22px;background:#f8fafc;border-top:1px solid #f1f5f9;border-radius:0 0 14px 14px"><button type="button" id="dup-c" style="border:1px solid #cbd5e1;background:#fff;border-radius:8px;padding:8px 16px;font:inherit;font-size:13px;font-weight:600;cursor:pointer">Annuler</button><button type="button" id="dup-ok" style="border:0;background:#0c4a6e;color:#fff;border-radius:8px;padding:8px 16px;font:inherit;font-size:13px;font-weight:600;cursor:pointer">Dupliquer</button></div></div>';
+    document.body.appendChild(ov);
+    var $ = function (id) { return document.getElementById(id); }, close = function () { ov.remove(); };
+    function ok() {
+      var c = $('dup-code').value.trim(), n = $('dup-nom').value.trim(), fl = $('dup-file').value.trim().replace(/.repx$/i, '').replace(/[^A-Za-z0-9_.-]+/g, '_'), er = $('dup-err');
+      if (!c || !n || !fl) { er.textContent = 'Le code, le nom et le nom du fichier RepX sont obligatoires.'; er.style.display = 'block'; return; }
+      if (o.exists && o.exists(c)) { er.textContent = 'Ce code existe déjà : saisissez un autre code.'; er.style.display = 'block'; return; }
+      close(); o.onOk(c, n, fl);
+    }
+    $('dup-c').addEventListener('click', close); $('dup-ok').addEventListener('click', ok);
+    ov.addEventListener('keydown', function (e) { if (e.key === 'Enter') ok(); else if (e.key === 'Escape') close(); });
+    var touched = false; $('dup-file').addEventListener('input', function () { touched = true; });
+    $('dup-code').addEventListener('input', function () { if (!touched) $('dup-file').value = $('dup-code').value.trim().replace(/[^A-Za-z0-9_-]+/g, '_').toLowerCase(); });
+    $('dup-code').focus();
+  };
+})();
+</script>
+</app-modele-etat-designer>

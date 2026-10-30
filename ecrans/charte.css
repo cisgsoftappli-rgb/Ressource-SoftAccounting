@@ -1,0 +1,368 @@
+/* Charte graphique des applications Softwell v1.0 — couche de thème appliquée à la maquette (chargée en dernier).
+   Marine #2E427B (principal console), or #E1C340 (accents sur marine), neutres teintés marine, Outfit (titres) + Inter (texte). */
+:root{
+  --navy-50:#F4F7FE;--navy-100:#E3EBFE;--navy-200:#CAD9FB;--navy-300:#A9BDEE;--navy-400:#819AD6;--navy-500:#5F77B9;--navy-600:#455D9C;--navy-700:#2E427B;--navy-800:#243569;--navy-900:#18244F;--navy-950:#0B1332;
+  --gold-300:#E1C340;--gold-400:#E1C340;--gold-600:#706000;
+  --neutral-50:#F5F7F9;--neutral-100:#E9EBF0;--neutral-200:#D6D9E0;--neutral-600:#5B606D;--neutral-800:#353944;
+  --font-heading:Outfit,Inter,system-ui,-apple-system,'Segoe UI',Roboto,sans-serif;
+  --font-sans:Inter,system-ui,-apple-system,'Segoe UI',Roboto,sans-serif;
+  --font-primary:var(--font-sans);--font-secondary:var(--font-sans);
+  --color-brand:#2E427B;--color-brand-50:#F4F7FE;--color-brand-100:#E3EBFE;--color-brand-200:#CAD9FB;--color-brand-300:#A9BDEE;--color-brand-400:#819AD6;--color-brand-500:#5F77B9;--color-brand-600:#455D9C;--color-brand-700:#2E427B;--color-brand-800:#243569;--color-brand-900:#18244F;--color-brand-950:#0B1332;
+  --color-info:#2E427B;--color-text:#353944;--color-text-secondary:#5B606D;
+  --app-bg-solid:#F5F7F9;--app-text:#0B1332;--app-text-strong:#0B1332;--app-accent:#2E427B;--app-accent-strong:#243569;
+  --sidebar-bg:#18244F;--sidebar-border:rgba(255,255,255,.10);--sidebar-active-bg:rgba(255,255,255,.08);--sidebar-active-color:#E1C340;--sidebar-text-child:rgba(255,255,255,.75);
+  --sidebar-width:256px;
+  --sp-primary:#2E427B;--sp-primary-hover:#243569;--sp-focus-ring:#2E427B;--sp-control-focus:#2E427B;--ss-control-focus:#2E427B;--ss-primary:#2E427B;--ss-primary-hover:#243569;
+}
+html,body{font-family:var(--font-sans);background:#F5F7F9;color:#353944}
+h1,h2,h3,.ed-h,.ml-title{font-family:var(--font-heading);font-weight:600;color:#0B1332}
+h1{letter-spacing:-.01em}
+button,input,select,textarea{font-family:var(--font-sans)}
+a{text-decoration-color:currentColor}
+
+/* Menu latéral : une seule teinte (navy-900), entrée active signalée par le filet or et l'icône or */
+.sidebar-shell,aside.sidebar-shell{background:#18244F!important;width:256px!important}
+.sidebar-shell .sidebar-active,.sidebar-shell a.sidebar-active,.sidebar-shell .sidebar-item.sidebar-active{background:rgba(255,255,255,.08)!important;color:#fff!important;box-shadow:inset 3px 0 0 #E1C340!important;border-radius:0}
+.sidebar-shell .sidebar-active:after{display:none!important}
+.sidebar-shell .sidebar-active i,.sidebar-shell .sidebar-active soft-icon,.sidebar-shell .sidebar-active svg{color:#E1C340}
+.sidebar-shell .sidebar-child-item{color:rgba(255,255,255,.75)}
+.sidebar-shell .sidebar-child-item:hover,.sidebar-shell .sidebar-item:hover{background:rgba(255,255,255,.06)}
+.sidebar-shell .sidebar-app-desc,.sidebar-shell .sidebar-app-editor{color:rgba(255,255,255,.6)}
+
+/* Barre supérieure : 64 px, blanche, filet bas neutral-200 */
+.soft-topbar-shell{background:#fff!important;border-bottom:1px solid #D6D9E0!important;box-shadow:none!important;backdrop-filter:none!important}
+.topbar-icon-button,.topbar-profile-button{box-shadow:none!important;border-color:#D6D9E0!important;background:#fff!important}
+.topbar-icon-button:hover,.topbar-profile-button:hover{border-color:#2E427B!important;color:#2E427B!important;transform:none!important}
+.cs-gear{background:#2E427B!important;box-shadow:none!important}.cs-dot{background:#E1C340!important}
+.topbar-active-project-icon{background:#E3EBFE!important;color:#2E427B!important}
+.soft-breadcrumb{background:#fff;border-bottom:1px solid #E9EBF0}
+.soft-breadcrumb-current{color:#0B1332!important;font-weight:600}
+.soft-breadcrumb-link{color:#5B606D}
+.app-layout-main,.app-layout-root{background:#F5F7F9!important}
+.app-layout-footer{background:#fff!important;backdrop-filter:none!important;border-top:1px solid #E9EBF0!important}
+
+/* Cartes et tableaux : plats, bordures teintées, ombres courtes marine */
+.ed-card,.gs-card,.ig-card,.ga-card,.ed-md,.rc-card{box-shadow:0 1px 2px rgba(11,19,50,.05)!important}
+.ed-table th,.ml-tb th,.ga-t th{font-size:12px;font-weight:600;letter-spacing:.05em;text-transform:uppercase;color:#5B606D}
+.ed-table th,.ml-tb th{background:#F5F7F9}
+
+/* Boutons : principal marine, arrondi 8 px ; interrupteurs et onglets en marine */
+.ed-btn,.rc-btn,.md-btn,.gs-btn,.ig-bt,.ga-btn,.ml-seg button,.pf-btn,.so-btn{border-radius:8px;font-weight:700}
+.ed-btn:not(.sec):not(.ed-dg),.rc-btn:not(.rc-sec),.gs-btn:not(.sec),.ig-ok,.ga-btn.ok,.pf-btn:not(.sec){background:#2E427B;border-color:#2E427B;color:#fff}
+.ed-btn:not(.sec):not(.ed-dg):hover,.rc-btn:not(.rc-sec):hover,.ig-ok:hover,.ga-btn.ok:hover{background:#243569;border-color:#243569}
+.ml-seg button[aria-pressed="true"]{background:#2E427B;color:#fff}
+.ga-sw[aria-checked="true"],.ml-sw[aria-checked="true"]{background:#2E427B}
+.ga-tab.on{color:#2E427B;border-bottom-color:#2E427B}
+.ga-g.on{background:#F4F7FE;border-left-color:#2E427B}.ga-g.on .n{color:#18244F}.ga-g.on .b{color:#2E427B;border-color:#CAD9FB}
+.ga-nm i.ic{color:#2E427B}.ga-q input:focus,.ig-in:focus{border-color:#2E427B;box-shadow:0 0 0 3px rgba(46,66,123,.10)}
+input[type=checkbox],input[type=radio]{accent-color:#2E427B}
+
+/* Focus clavier toujours visible (§10) et animations réduites */
+:focus-visible{outline:3px solid #2E427B;outline-offset:2px}
+.sidebar-shell :focus-visible{outline-color:#E1C340}
+@media (prefers-reduced-motion:reduce){*{transition-duration:.01ms!important;animation-duration:.01ms!important}}
+
+/* ===== Écrans conçus pour la maquette (ed- gs- pf- rc- md- so- ml- hd- tr- dd- dg- df- ig- ga- el-) ===== */
+/* Badges de statut : rayon 6 px, casse de phrase, 12 px semi-gras (§8.3) ; les puces à rayon complet restent réservées aux filtres */
+.ed-pill,.gs-pill,.pf-pill,.md-pill,.so-pill,.ml-pl,.ml-badge,.hd-st,.tr-tg,.df-badge,.dg-bd{border-radius:6px!important;text-transform:none!important;font-size:12px;font-weight:600;letter-spacing:0}
+/* Titres de page et de modale : Outfit 600, marine nuit (§5.2) */
+[data-screen] h1{font-family:var(--font-heading);font-size:24px;font-weight:600;color:#0B1332;letter-spacing:-.01em;line-height:1.2}
+[data-screen] h2{font-family:var(--font-heading);font-weight:600;color:#0B1332}
+[data-screen] h3{font-family:var(--font-heading);font-weight:600;color:#18244F}
+/* Champs : contour #878D9A (3,3:1), rayon 8 px, 44 px de haut hors tableaux et concepteurs (§8.2) */
+[data-screen]:not([data-screen="designer"]):not([data-screen="designer2"]):not([data-screen="listingdes"]) :is(input:not([type=checkbox]):not([type=radio]):not([type=file]):not([type=range]):not([type=color]),select):not(td *):not(th *){border-color:#878D9A;border-radius:8px;min-height:44px;font-size:14px}
+[data-screen] :is(input,select,textarea)::placeholder{color:#5B606D}
+[data-screen] :is(input,select,textarea):focus{border-color:#2E427B!important;outline:3px solid #2E427B;outline-offset:2px;box-shadow:0 0 0 4px rgba(46,66,123,.10)!important}
+[data-screen] label{color:#353944}
+/* Libellés de section (eyebrow) : majuscules 12 px, +0,08 em */
+[data-screen] :is(.ed-lab,.gs-lab,.pf-lab,.rc-label,.ml-lab,.hd-lab,.tr-lab,.ig-t){letter-spacing:.06em}
+/* Cartes, modales et notifications : plates, bordures teintées, ombres marine (§6.4, §6.5, §8.6, §8.7) */
+:is(.ed-card,.gs-card,.pf-card,.rc-card,.md-card,.so-card,.ml-card,.hd-card,.tr-card,.df-card,.dd-card){border:1px solid #E9EBF0;border-radius:12px;box-shadow:0 1px 2px rgba(11,19,50,.05)}
+:is(.ed-md,.gs-dialog,.rc-dialog,.ml-dlg,.so-md,.hd-md,.tr-md,.el-dlg){border-radius:16px;border:1px solid #E9EBF0;box-shadow:0 24px 48px rgba(11,19,50,.28)}
+:is(.ed-ov,.el-mod,#mfp-ov,#dup-ov){background:rgba(11,19,50,.5)!important;backdrop-filter:none!important}
+:is(.ed-toast,.md-toast,.ga-toast){border-radius:16px;background:#fff!important;color:#0B1332!important;border:1px solid #E9EBF0;box-shadow:0 20px 44px rgba(11,19,50,.26);font-weight:600;font-size:14px}
+/* Aucun flou ni verre dépoli */
+[data-screen] *{backdrop-filter:none!important;-webkit-backdrop-filter:none!important}
+/* Montants et chiffres : tabulaires, alignés à droite (§5.3) */
+[data-screen] :is(.ed-r,.n,td.a){font-variant-numeric:tabular-nums}
+/* Tableaux : cellules 14 px, lignes séparées par un filet, survol navy-50 */
+[data-screen] table tbody tr:hover td{background:#F4F7FE}
+
+/* ===== Corrections d'écarts (audit charte) ===== */
+/* Barre supérieure 64 px (§13.2) */
+.soft-topbar-shell{height:64px!important;box-sizing:border-box;padding-top:2px!important;padding-bottom:2px!important}
+/* Pas de police à chasse fixe (§5.5) : chiffres tabulaires */
+:root,body,[data-screen]{--ssh-mono:var(--font-sans);--font-mono:var(--font-sans)}
+code,kbd,samp,pre,.mono{font-family:var(--font-sans)!important;font-variant-numeric:tabular-nums}
+/* Titre de page (§7.5) ajouté aux écrans qui n'en avaient pas */
+.ch-h1{margin:0 0 16px;font-family:var(--font-heading);font-size:24px;font-weight:600;line-height:1.2;color:#0B1332;letter-spacing:-.01em}
+[data-screen] [role="heading"][aria-level="1"]{font-family:var(--font-heading);font-size:24px;font-weight:600;color:#0B1332}
+[data-screen="balana"] h1{font-size:24px}
+/* Boutons : 44 px de haut (§6.2), hors tableaux et concepteurs */
+[data-screen]:not([data-screen="designer"]):not([data-screen="designer2"]):not([data-screen="listingdes"]) :is(.btn,.clear-btn,.ed-btn,.ee-btn,.el-bp,.el-bs,.entry-action,.ga-btn,.gs-btn,.hd-btn,.ig-bt,.mf-btn,.mf-a,.ml-b,.ml-new,.rc-btn,.rg-btn,.so-btn,.toolbar-btn,.tp-b,.tr-nx,.tt-b,.tt-new,.ga-tab,.gs-tab,button.inline-flex.items-center,button.min-h-10):not(td *):not(th *){min-height:44px;box-sizing:border-box}
+/* Badges : rayon 6 px, jamais en pilule (§6.4) */
+[data-screen="balana"] :is([class*="pill"],[class*="badge"],[class*="chip"]){border-radius:6px!important}
+/* Aucun bouton vert (§8.1) : le principal de la console est marine */
+button.bg-emerald-600,button.bg-green-600,button.bg-emerald-500{background:#2E427B!important;color:#fff!important}
+button.bg-emerald-600:hover:not(:disabled),button.bg-green-600:hover:not(:disabled){background:#243569!important}
+
+/* ===== §6 Dimensions et espacements ===== */
+/* Entrées du menu latéral : 44 px (§6.2) */
+.sidebar-shell :is(a,button):not(.h-7){min-height:44px;box-sizing:border-box}
+/* Notifications : 384 px au plus, au-dessus des modales (§6.3, §6.7) */
+:is(.ed-toast,.md-toast,.ga-toast){max-width:384px;z-index:70}
+/* Modales (§6.7) */
+:is(.ed-ov,.el-mod,.gs-modal,.ml-modal,.mf-modal,.rc-modal,.rg-ov,.hd-ov,.so-ov,.tt-ov,.tr-ov,.tp-ov){z-index:50}
+/* Courbe standard des transitions (§6.8) */
+*{transition-timing-function:cubic-bezier(.2,0,0,1)}
+
+/* ===== §7 Position des éléments / §13.5 Filtres et recherche ===== */
+/* Lien d'évitement : premier élément au clavier, en haut à gauche (§7.4, §10) */
+.ch-skip{position:fixed;left:16px;top:-80px;z-index:70;padding:12px 16px;border-radius:8px;background:#fff;color:#2E427B;font-weight:700;text-decoration:underline;box-shadow:0 6px 16px -6px rgba(11,19,50,.14)}
+.ch-skip:focus{top:16px;outline:3px solid #2E427B;outline-offset:2px}
+html{scroll-padding-top:80px}
+/* Notifications : en haut à droite, à 16 px du bord (§7.4) */
+:is(.ed-toast,.md-toast,.ga-toast){top:16px!important;right:16px!important;bottom:auto!important;left:auto!important;transform:none!important}
+/* Action principale de page : en haut à droite, alignée sur le titre (§7.1 n° 5, §7.4) */
+:is(.ml-head,.mf-head,.rc-head,.so-top,.tt-hd){position:relative;padding-right:min(220px,34%)}
+.ml-head>.ml-new,.mf-head>.mf-btn,.rc-head>.rc-btn,.so-top>.so-btn,.tt-hd>.tt-new{position:absolute;top:0;right:0;margin:0}
+/* Pied des critères d'édition : tout à droite (§7.4) */
+.etm-foot{justify-content:flex-end}
+.etm-droite{margin-left:0}
+.ml-head>.ml-new,.mf-head>.mf-btn,.rc-head>.rc-btn,.so-top>.so-btn{top:20px;right:20px}
+.tt-hd>.tt-new{top:26px;right:24px}
+
+/* Balance analytique › Niveaux d'analyse : cases superposées, une par ligne, pleine largeur */
+app-balance-analytique .niveaux-box{display:flex!important;flex-direction:column;flex-wrap:nowrap;align-items:stretch;gap:8px}
+app-balance-analytique .niveaux-box .niveau-row{display:flex;align-items:center;gap:12px;width:100%;min-height:44px;box-sizing:border-box;padding:0 12px;border:1px solid #D6D9E0;border-radius:8px!important;background:#fff;color:#353944;font-size:14px;cursor:pointer}
+app-balance-analytique .niveaux-box .niveau-row:has(input:checked){background:#F4F7FE;border-color:#2E427B}
+app-balance-analytique .niveaux-box .niveau-row .badge-filtre{margin-left:auto}
+
+/* ===== Menu latéral repliable : 256 px <-> 72 px (§6.3, §13.2) ===== */
+.sidebar-shell{transition:width .2s cubic-bezier(.2,0,0,1)}
+.app-layout-root .flex-col.flex-1.min-w-0.transition-all{transition:margin-left .2s cubic-bezier(.2,0,0,1)}
+.sb-reduit .sidebar-shell{width:72px!important}
+.sb-reduit .app-layout-root .flex-col.flex-1.min-w-0.transition-all{margin-left:72px!important}
+.sb-reduit .sidebar-shell>nav{display:none}
+.sb-reduit .sidebar-shell>div:first-child{justify-content:center;padding-left:0;padding-right:0}
+.sb-reduit .sidebar-shell>div:first-child>*:not(:first-child){display:none}
+.sb-reduit .sidebar-shell>div:last-child button{font-size:0;justify-content:center;gap:0}
+.sb-reduit .sidebar-shell>div:last-child button svg{width:20px;height:20px;flex:none}
+.sb-reduit .sidebar-shell>div:last-child button[data-repli] svg{transform:rotate(180deg)}
+
+/* ===== Paramètres : titres, libellés, panneaux ===== */
+.ch-eyebrow{margin:0 0 4px;font-size:12px;font-weight:600;letter-spacing:.08em;text-transform:uppercase;color:#706000}
+.ch-eyebrow+.ch-h1{margin-top:0}
+/* Libellés de champ : casse de phrase, 14 px semi-gras (§5.2, §12.3) */
+[data-screen="entite"] .ig-l{text-transform:none;letter-spacing:0;font-size:14px;font-weight:600;color:#353944}
+/* Pas de carte dans une carte (§2) */
+.ga-card .ga-side,.ga-card .ga-main{border:0;border-radius:0;box-shadow:none}
+.ga-card .ga-side{border-right:1px solid #E9EBF0}
+
+/* ===== Espaces réduits pour gagner de la place : marge de la zone de contenu 24 -> 6 px, carte 20/32 -> 12/20 px ===== */
+.app-layout-main{padding:6px!important}
+.app-layout-main .softcompta-content-scroll>div.flex.min-w-0.flex-col{padding:12px 20px!important}
+.ba-host .ba-bar{padding-left:12px!important;padding-right:12px!important}
+
+/* Saisie d'écritures : bandeau de titre supprimé (ses actions sont dans la barre d'actions), marges latérales réduites */
+.entry-page-header{height:0!important;min-height:0!important;margin:0!important;padding:0!important;border:0!important;overflow:hidden!important;opacity:0!important;pointer-events:none!important;box-shadow:none!important}
+app-jour-entry-form>div{padding-left:0!important;padding-right:0!important;padding-top:6px!important;padding-bottom:12px!important}
+.app-layout-main .softcompta-content-scroll>div.flex.min-w-0.flex-col:has(app-jour-entry-form){padding:6px!important}
+
+/* Compte de tiers : titre, cartes de synthèse et filtres supprimés (recherche et actions dans la barre d'actions) */
+.tiers-page .page-header>div:first-child,.tiers-page .summary-grid{display:none!important}
+.tiers-page .filters>label:not(.search-field),.tiers-page .filters .clear-btn{display:none!important}
+.tiers-page .page-header{padding:0!important;margin:0!important;min-height:0!important;border:0!important;height:0;overflow:hidden}
+.tiers-page .filters{height:0!important;min-height:0!important;margin:0!important;padding:0!important;border:0!important;overflow:hidden!important}
+.tiers-page .workspace-card{margin-top:0!important}
+
+/* Saisie d'écritures : bande vide supprimée, fonds blancs (blocs et fenêtres modales) */
+app-jour-entry-form form>fieldset:not(:has(input,select,textarea,button,table)){display:none!important}
+app-jour-entry-form .entry-bordereau,app-jour-entry-form form>fieldset{background:#fff!important;background-image:none!important}
+soft-modal [role="dialog"],soft-modal [class*="modal"],soft-document-consultation-modal [role="dialog"],.etm-dialog,.pa-modal{background-color:#fff!important;background-image:none!important}
+app-jour-entry-form form>div.entry-bordereau{background:#fff!important;background-color:#fff!important;background-image:none!important}
+app-jour-entry-form form>div.entry-bordereau.entry-bordereau.entry-bordereau{background:#fff!important}
+
+/* Saisie d'écritures : tous les champs de saisie à la même taille (36 px, 12 px de police) */
+app-jour-entry-form form input:not([type=hidden]):not([type=checkbox]):not([type=radio]).w-full,
+app-jour-entry-form form .custom-select-wrapper>button,
+app-jour-entry-form form button.w-full.justify-between{height:36px!important;min-height:36px!important;box-sizing:border-box!important;font-size:12px!important;padding-top:0!important;padding-bottom:0!important}
+app-jour-entry-form form textarea.w-full{font-size:12px!important}
+app-jour-entry-form form button.w-full.w-full.w-full{font-size:12px!important}
+
+/* Taille unique des champs et boutons de toute la maquette : 36 px de haut, 12 px de police */
+[data-screen] input:not([type=hidden]):not([type=checkbox]):not([type=radio]):not([type=range]):not([type=file]):not([type=color]),
+[data-screen] select,
+.etm-dialog input:not([type=hidden]):not([type=checkbox]):not([type=radio]),.etm-dialog select,
+.pa-modal input:not([type=hidden]):not([type=checkbox]):not([type=radio]):not([type=file]),.pa-modal select,
+soft-modal input:not([type=hidden]):not([type=checkbox]):not([type=radio]),soft-modal select,
+.ba-bar input,.ba-btn{height:36px!important;min-height:36px!important;box-sizing:border-box!important;font-size:12px!important}
+[data-screen] button:not([class*="icon"]):not(.ba-orig),.etm-dialog button,.pa-modal button,soft-modal button{min-height:36px!important;font-size:12px!important}
+[data-screen] textarea,.etm-dialog textarea,.pa-modal textarea,soft-modal textarea{font-size:12px!important}
+.ba-btn.ba-btn.ba-btn{padding-top:0;padding-bottom:0}
+/* Compléments : boutons-icônes carrés 36 px, listes déroulantes des fenêtres de critères, onglets */
+[data-screen] button[class*="icon"],.pa-ib,.etm-x{width:36px!important;height:36px!important;min-width:36px!important;min-height:36px!important;font-size:12px!important}
+.etm-dialog button.w-full,.etm-dialog .etf-carte button.w-full.w-full{height:36px!important;min-height:36px!important;font-size:12px!important}
+.ga-tab.ga-tab,[data-screen="entite"] button.inline-flex.px-4{min-height:36px!important;height:36px!important}
+.etm-dialog .etf-carte button{height:36px!important;min-height:36px!important;font-size:12px!important}
+
+/* Tableaux : même police partout (13 px) — Pays, listes de paramétrage (bilan, TFT) et résultat de l'édition du bilan */
+.bp-tb td,.be-tb td,.pa-table td{font-size:13px}
+.be-tb td.r{font-variant-numeric:tabular-nums}
+
+/* Impression : toujours en A4 (portrait par défaut), sans la structure de l'application */
+@page{size:A4 portrait;margin:12mm}
+@media print{
+  html,body{background:#fff!important;height:auto!important;overflow:visible!important}
+  .sidebar-shell,.soft-topbar,.soft-breadcrumb,.ba-host,.ch-skip,.no-print,.bp-toast,.be-ov,.bp-ov,.etm-fond{display:none!important}
+  .app-layout-main,.softcompta-content-scroll,.softcompta-content-scroll>div{margin:0!important;padding:0!important;height:auto!important;max-height:none!important;overflow:visible!important;box-shadow:none!important;border:0!important}
+  .bp-tb,.be-tb{min-width:0!important;width:100%!important;font-size:11px}
+  tr,td,th{break-inside:avoid}
+}
+
+/* États financiers : impression en A4 portrait, tableau ajusté à la largeur de la page */
+@media print{
+  @page{size:A4 portrait;margin:12mm}
+  .be-cal{display:none!important}
+  .be-vide{display:none!important}
+  .be-res,.be-pan{overflow:visible!important;border:0!important;box-shadow:none!important;border-radius:0!important}
+  .be-res>h2{display:none!important}
+  .be-tb,.be-tb.ter,.be-tb.tft{min-width:0!important;width:100%!important;table-layout:auto;font-size:10px}
+  .be-tb td,.be-tb th{padding:3px 6px!important;font-size:10px!important}
+  .be-tb.ter td:first-child{min-width:0!important}
+  .be-tb thead{display:table-header-group}
+  .be-tb th{-webkit-print-color-adjust:exact;print-color-adjust:exact}
+  .be-tb tr.total td,.be-tb tr.s td,.be-tb tr.g td{-webkit-print-color-adjust:exact;print-color-adjust:exact}
+  .be-titre{padding:6px 0!important}
+  .be-titre h3{font-size:14px!important}
+}
+
+/* Gestion des accès › Permissions : la règle générale « 36 px mini » écrasait les groupes (texte superposé) et les interrupteurs (ronds) */
+[data-screen] button.ga-g.ga-g.ga-g.ga-g.ga-g{flex:none!important;min-height:0!important;height:auto!important;font-size:inherit!important}
+[data-screen] .ga-g .n{font-size:13px}
+[data-screen] button.ga-sw.ga-sw.ga-sw.ga-sw.ga-sw{width:36px!important;height:20px!important;min-height:0!important;min-width:0!important;padding:0!important;border-radius:999px!important}
+[data-screen] .ga-sw[aria-checked="true"]{background:#2E427B}
+.ga-g.on{background:#E3EBFE;border-left-color:#2E427B}
+.ga-g.on .n{color:#243569}
+[data-screen] .ga-g .n{overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+[data-screen] .ga-g .b{max-width:55%;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+[data-screen] .ga-g .d{display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden}
+/* Permissions : tableau resserré pour que toutes les colonnes tiennent à l'écran */
+.ga-t{font-size:13px}
+.ga-t th:first-child,.ga-t td:first-child{min-width:210px!important}
+.ga-t th{padding:11px 3px!important;letter-spacing:.02em!important}
+.ga-t td{padding:9px 3px!important}
+.ga-t td:first-child,.ga-t th:first-child{padding-left:12px!important}
+.ga-t th:not(:first-child),.ga-t td:not(:first-child){min-width:0!important;width:1%}
+.ga-t td:first-child{max-width:300px;overflow:hidden;text-overflow:ellipsis}
+.ga-t th{white-space:normal!important;line-height:1.15}
+.ga-t td:first-child{max-width:260px}
+.ga-t th:first-child{width:260px}
+
+/* Interrupteurs « Modules » (liste) : la règle des boutons 36 px ne doit pas les déformer */
+[data-screen] button.ml-sw.ml-sw.ml-sw.ml-sw.ml-sw{width:38px!important;height:22px!important;min-height:0!important;min-width:0!important;padding:0!important;border-radius:999px!important}
+[data-screen] button.dp-switch.dp-switch.dp-switch.dp-switch.dp-switch{width:44px!important;height:24px!important;min-height:0!important;min-width:0!important;padding:0!important;border-radius:999px!important}
+[data-screen] button.tp-tg.tp-tg.tp-tg.tp-tg.tp-tg{width:40px!important;height:24px!important;min-height:0!important;min-width:0!important;padding:0!important;border-radius:99px!important}
+
+/* Saisie d'écritures : champs réduits d'un cinquième (36 px -> 29 px) */
+[data-screen="ecritures"][data-screen="ecritures"][data-screen="ecritures"] input:not([type="checkbox"]):not([type="radio"]):not([type="file"]):not([type="hidden"]):not([type="range"]),
+[data-screen="ecritures"][data-screen="ecritures"][data-screen="ecritures"] select,
+[data-screen="ecritures"][data-screen="ecritures"][data-screen="ecritures"] .cb-box,
+[data-screen="ecritures"][data-screen="ecritures"][data-screen="ecritures"] .custom-select-wrapper > button,
+[data-screen="ecritures"][data-screen="ecritures"][data-screen="ecritures"] button.w-full.justify-between{height:29px!important;min-height:29px!important;box-sizing:border-box!important;padding-top:0!important;padding-bottom:0!important}
+[data-screen="ecritures"][data-screen="ecritures"][data-screen="ecritures"] textarea{min-height:50px!important}
+
+/* Saisie d'écritures : le champ Pièce n'est jamais grisé (le numéro proposé n'est qu'une aide) */
+[data-screen="ecritures"][data-screen="ecritures"] input[formcontrolname="piece"]{background:#fff!important;opacity:1!important;color:#0B1332!important;cursor:text!important;transition:none!important}
+
+/* Saisie d'écritures : en-tête compact en trois blocs sur une ligne */
+[data-screen="ecritures"] .hd-ligne{display:grid;grid-template-columns:minmax(0,1.25fr) minmax(0,1fr) minmax(0,1fr);gap:10px;align-items:stretch}
+@media(max-width:1300px){[data-screen="ecritures"] .hd-ligne{grid-template-columns:1fr 1fr}[data-screen="ecritures"] .hd-ligne .hd-groupe:first-child{grid-column:1/-1}}
+@media(max-width:800px){[data-screen="ecritures"] .hd-ligne{grid-template-columns:1fr}}
+[data-screen="ecritures"] .hd-groupe{display:flex;flex-direction:column;gap:4px;padding:6px 10px 8px;border:1px solid #D6D9E0;border-radius:8px;background:#F8F9FB}
+[data-screen="ecritures"] .hd-titre{font-size:11px;font-weight:700;letter-spacing:.06em;text-transform:uppercase;color:#2E427B}
+[data-screen="ecritures"] .hd-champs{display:grid!important;grid-template-columns:repeat(3,minmax(0,1fr))!important;gap:8px!important;margin:0!important}
+[data-screen="ecritures"] .hd-primaire{grid-template-columns:repeat(auto-fit,minmax(90px,1fr))!important}
+[data-screen="ecritures"] .hd-groupe label{margin-bottom:2px}
+
+/* Saisie d'écritures : en-tête sans intitulés de blocs, fonds toujours blancs */
+[data-screen="ecritures"] .hd-titre{display:none!important}
+[data-screen="ecritures"] .hd-groupe{background:#fff!important}
+[data-screen="ecritures"] .hd-groupe label{white-space:nowrap}
+[data-screen="ecritures"][data-screen="ecritures"][data-screen="ecritures"] .entry-bordereau input,
+[data-screen="ecritures"][data-screen="ecritures"][data-screen="ecritures"] .entry-bordereau input:disabled,
+[data-screen="ecritures"][data-screen="ecritures"][data-screen="ecritures"] .entry-bordereau input:read-only{background:#fff!important;opacity:1!important;color:#0B1332!important}
+[data-screen="ecritures"] .entry-bordereau{padding-top:8px!important}
+
+/* Saisie d'écritures : en-tête fusionné en un seul bloc (mêmes champs, même ordre : exercice, site, journal, dates, références) */
+[data-screen="ecritures"] .hd-ligne{display:grid!important;grid-template-columns:repeat(auto-fit,minmax(136px,1fr))!important;gap:8px 10px!important}
+[data-screen="ecritures"] .hd-groupe,[data-screen="ecritures"] .hd-champs,[data-screen="ecritures"] .hd-primaire{display:contents!important}
+[data-screen="ecritures"] .hd-ligne label{white-space:nowrap;overflow:hidden;text-overflow:ellipsis;display:block;letter-spacing:.04em}
+[data-screen="ecritures"] .hd-ligne .header-field-dp{order:0!important}
+[data-screen="ecritures"] .hd-ligne .header-field-exercice{order:1!important}
+[data-screen="ecritures"] .hd-ligne .header-field-site{order:2!important}
+[data-screen="ecritures"] .hd-ligne .header-field-journal{order:3!important}
+[data-screen="ecritures"] .hd-ligne .hd-groupe:not(:first-child) .hd-champs > div{order:10!important}
+
+/* Saisie d'écritures : en-tête toujours sur une seule ligne (colonnes égales, libellés réduits) ; retour à la ligne seulement sur écran étroit */
+[data-screen="ecritures"] .hd-ligne{grid-template-columns:none!important;grid-auto-flow:column!important;grid-auto-columns:minmax(0,1fr)!important;gap:6px 8px!important}
+[data-screen="ecritures"] .hd-ligne label{font-size:10px!important;letter-spacing:.02em!important}
+[data-screen="ecritures"] .hd-ligne input,[data-screen="ecritures"] .hd-ligne .custom-select-wrapper > button{padding-left:8px!important;padding-right:6px!important;min-width:0!important}
+@media(max-width:1000px){[data-screen="ecritures"] .hd-ligne{grid-auto-flow:row!important;grid-template-columns:repeat(auto-fit,minmax(136px,1fr))!important;grid-auto-columns:auto!important}}
+[data-screen="ecritures"] .hd-ligne .custom-select-wrapper > button{white-space:nowrap!important;overflow:hidden!important}
+[data-screen="ecritures"] .hd-ligne .custom-select-wrapper > button span{white-space:nowrap!important;overflow:hidden;text-overflow:ellipsis;min-width:0}
+
+/* (axes analytiques : bloc .entry-axes-ligne) */
+/* ===== Saisie d'écritures : champs de la ligne — PC, Tiers et axes analytiques sur la première ligne ; libellé, puis montants et sens dessous ===== */
+@media (min-width:1100px){
+  [data-screen="ecritures"] .entry-general-fields.entry-general-fields.entry-general-fields{grid-template-columns:repeat(24,minmax(0,1fr))!important;gap:10px 12px!important}
+  [data-screen="ecritures"] .entry-general-fields.entry-general-fields>.entry-compact-contract{grid-column:1 / span 3!important;grid-row:1!important;order:0!important}
+  [data-screen="ecritures"] .entry-general-fields.entry-general-fields>.entry-field-compte-general{grid-column:4 / span 3!important;grid-row:1!important;order:0!important}
+  [data-screen="ecritures"] .entry-general-fields.entry-general-fields>.entry-field-compte-tiers{grid-column:7 / span 4!important;grid-row:1!important;order:0!important}
+  [data-screen="ecritures"] .entry-general-fields.entry-general-fields>.entry-field-echeance{grid-column:11 / span 3!important;grid-row:1!important;order:0!important}
+  [data-screen="ecritures"] .entry-general-fields.entry-general-fields>.entry-axes-ligne{grid-column:14 / -1!important;grid-row:1!important;order:0!important;display:flex;flex-wrap:wrap;gap:10px 12px;align-items:flex-start}
+  [data-screen="ecritures"] .entry-general-fields.entry-general-fields>.entry-field-libelle{grid-column:1 / -1!important;grid-row:2!important;order:0!important}
+  [data-screen="ecritures"] .entry-general-fields.entry-general-fields>.entry-field-devise-locale{grid-column:1 / span 4!important;grid-row:3!important;order:0!important}
+  [data-screen="ecritures"] .entry-general-fields.entry-general-fields>.entry-field-devise-1{grid-column:5 / span 4!important;grid-row:3!important;order:0!important}
+  [data-screen="ecritures"] .entry-general-fields.entry-general-fields>.entry-compact-sens{grid-column:9 / span 5!important;grid-row:3!important;order:0!important}
+  [data-screen="ecritures"] .entry-axes-ligne>.entry-field-axe{flex:0 0 130px;min-width:0}
+  [data-screen="ecritures"] .entry-axes-ligne>.plan-off{display:none!important}
+}
+/* Libellé : même hauteur que les autres champs */
+[data-screen="ecritures"] .entry-field-libelle textarea{height:29px!important;min-height:29px!important;resize:none;padding-top:4px;padding-bottom:4px;line-height:19px;overflow:hidden}
+/* Bouton « Analytique » supprimé de la ligne (axes saisis en ligne) */
+[data-screen="ecritures"] .entry-general-fields .entry-compact-analytic-slot{display:none!important}
+[data-screen="ecritures"] .entry-field-axe select{height:29px;padding:0 8px;font-size:13px;color:#353944;border-color:#D6D9E0;border-radius:8px}
+[data-screen="ecritures"] .entry-field-axe select:disabled{background:#F4F7FE;opacity:.7}
+
+/* ===== Saisie d'écritures : contrôle d'équilibre du bordereau (zone de droite, colonnes 10 à 12) ===== */
+[data-screen="ecritures"] .entry-equilibre{border:1px solid #D6D9E0;border-radius:8px;background:#fff;overflow:hidden;align-self:start}
+[data-screen="ecritures"] .entry-equilibre-titre{padding:8px 10px;font-size:11px;font-weight:700;letter-spacing:.06em;text-transform:uppercase;color:#5B606D;background:#F4F7FE;border-bottom:1px solid #D6D9E0}
+[data-screen="ecritures"] .entry-equilibre table{width:100%;border-collapse:collapse;font-size:12px}
+[data-screen="ecritures"] .entry-equilibre th{padding:7px 8px;text-align:right;font-size:11px;font-weight:700;color:#5B606D;border-bottom:1px solid #E9EBF0}
+[data-screen="ecritures"] .entry-equilibre th:first-child,[data-screen="ecritures"] .entry-equilibre td:first-child{text-align:left;font-weight:600;color:#2E427B}
+[data-screen="ecritures"] .entry-equilibre td{padding:9px 8px;text-align:right;white-space:nowrap;font-variant-numeric:tabular-nums;color:#353944;border-bottom:1px solid #F0F2F6}
+[data-screen="ecritures"] .entry-equilibre tr:last-child td{border-bottom:0}
+[data-screen="ecritures"] .entry-equilibre td.eq-ok{color:#166534;font-weight:700}
+[data-screen="ecritures"] .entry-equilibre td.eq-ko{color:#B63132;font-weight:700}
+
+[data-screen="ecritures"] .entry-lines-panel table{width:100%!important;min-width:100%}
+
+/* ===== Saisie d'écritures : liste des lignes — fond blanc (ni gris, ni rouge, ni jaune) ===== */
+[data-screen="ecritures"] .entry-lines-panel .entry-crud-toolbar,[data-screen="ecritures"] .entry-lines-panel .entry-crud-toolbar.entry-crud-toolbar{background:#fff!important}
+[data-screen="ecritures"] .entry-lines-panel thead,[data-screen="ecritures"] .entry-lines-panel thead tr,[data-screen="ecritures"] .entry-lines-panel thead th{background:#fff!important;border-bottom:1px solid #D6D9E0!important}
+[data-screen="ecritures"] .entry-lines-panel tfoot,[data-screen="ecritures"] .entry-lines-panel tfoot tr,[data-screen="ecritures"] .entry-lines-panel tfoot td{background:#fff!important;color:#0B1332!important;border-top:1px solid #D6D9E0!important}
+[data-screen="ecritures"] .entry-lines-panel tbody tr,[data-screen="ecritures"] .entry-lines-panel tbody td{background:#fff!important}
+
+/* ===== Gestion des accès > Utilisateurs : colonnes réparties selon le contenu, bascule de statut compacte ===== */
+[data-screen="acces"] .ga-t.ga-tu th:first-child,[data-screen="acces"] .ga-t.ga-tu td:first-child,[data-screen="acces"] .ga-t.ga-tu th,[data-screen="acces"] .ga-t.ga-tu td{min-width:0!important;width:auto;white-space:nowrap}
+[data-screen="acces"] .gu-sw button,[data-screen="acces"] .gu-sw button[data-gu-tg]{width:36px!important;height:20px!important;min-width:36px!important;min-height:20px!important;max-width:36px!important;max-height:20px!important;padding:0!important;display:inline-block!important}
+
+/* ===== Règle générale du plan de regroupement : non activé => interfaces dépendantes masquées ===== */
+.sans-regroupement [data-regr]{display:none!important}
+/* Travaux périodiques : chaque interrupteur de « Clôture comptable » commande son entrée de menu (À nouveaux provisoires et Clôture annuelle restent toujours disponibles) */
+.sans-mensuelle a[data-nav="clotmens"],.sans-periodique a[data-nav="clotper"]{display:none!important}
+
+/* ===== Barre d'actions : boutons d'une sous-section en icônes seules, groupés à gauche des boutons principaux ===== */
+.ba-ig{display:flex;align-items:center;gap:6px;padding-right:12px;margin-right:4px;border-right:1px solid #D6D9E0}.ba-ig[hidden]{display:none}
+.ba-btn.ba-ico{width:36px;min-width:36px;padding:0!important;justify-content:center}.ba-btn.ba-ico i{margin:0}

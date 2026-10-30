@@ -1,0 +1,311 @@
+<!--
+  Écran « Paramétrages › Administration › Journal de traces ».
+  Filtres (période, module, utilisateur, action, type) + « Historique des manipulations » ; double-clic (ou Entrée) sur une ligne = détail
+  (champ / ancienne valeur / nouvelle valeur). Un DICTIONNAIRE traduit les termes techniques des logs (champs, entités, actions, types)
+  en libellés lisibles et formate les valeurs (montants, dates, oui/non, valeurs codées). Le dictionnaire est modifiable (bouton « Dictionnaire »)
+  et exposé en window.DICTIONNAIRE_LOGS. Journal de démonstration généré en mémoire (aucune donnée réelle).
+-->
+<style>
+.jt{color:#0B1332}
+.jt-card{background:#fff;border:1px solid #E9EBF0;border-radius:12px;margin:0 0 14px;overflow:hidden}
+.jt-fl{display:grid;grid-template-columns:repeat(6,minmax(0,1fr));gap:12px 16px;padding:16px 18px}
+.jt-f label{display:block;margin:0 0 4px;font-size:11px;font-weight:700;letter-spacing:.06em;text-transform:uppercase;color:#5B606D}
+.jt-f input,.jt-f select{width:100%;box-sizing:border-box;height:36px;border:1px solid #878D9A;border-radius:8px;padding:0 10px;font:inherit;font-size:13px;background:#fff;color:#0B1332}
+.jt-h{display:flex;align-items:baseline;gap:10px;padding:14px 18px 10px}.jt-h b{font-size:15px}.jt-h span{font-size:13px;color:#5B606D}.jt-res{margin-left:auto;display:inline-flex;align-items:center;gap:6px;font-size:12px;color:#474C58;cursor:pointer}.jt-claire{padding:12px 20px;background:#EEF1FA;color:#18244F;font-size:13px;border-bottom:1px solid #E9EBF0}.jt-claire b{display:block;font-size:11px;letter-spacing:.06em;text-transform:uppercase;color:#2E427B;margin-bottom:2px}
+.jt-h em{margin-left:12px;font-style:normal;font-size:12px;color:#5B606D}
+.jt-t{width:100%;border-collapse:collapse;font-size:13px;table-layout:fixed}
+.jt-t th{background:#F5F7F9;border-top:1px solid #E9EBF0;border-bottom:1px solid #E9EBF0;padding:11px 14px;text-align:left;font-size:11px;font-weight:700;letter-spacing:.06em;text-transform:uppercase;color:#5B606D;white-space:nowrap}
+.jt-t td{padding:11px 14px;border-bottom:1px solid #EEF0F4;background:#fff;vertical-align:top;overflow-wrap:anywhere}
+.jt-t tbody tr{cursor:pointer}.jt-t tbody tr:hover td,.jt-t tbody tr:focus td{background:#F5F7F9;outline:0}
+.jt-t tbody tr:focus-visible td{box-shadow:inset 0 2px 0 #2E427B,inset 0 -2px 0 #2E427B}
+.jt-pill{display:inline-block;border-radius:6px;padding:2px 10px;font-size:12px;font-weight:600;white-space:nowrap}
+.jt-pill.c{background:#E7F6EF;color:#0F7A4F}.jt-pill.m{background:#E3EBFE;color:#243569}.jt-pill.s{background:#FDECEC;color:#B63132}.jt-pill.a{background:#EEF0F4;color:#474C58}.jt-pill.x{background:#FFF4E0;color:#8A5A00}
+.jt-sub{display:block;margin-top:2px;font-size:12px;color:#5B606D}.jt-mono{font-family:ui-monospace,Consolas,monospace}
+.jt-vide{padding:34px;text-align:center;color:#747A88;font-size:13px}
+.jt-plus{display:block;margin:12px auto 16px;height:34px;padding:0 16px;border:1px solid #D6D9E0;border-radius:8px;background:#fff;color:#0B1332;font:inherit;font-size:12px;font-weight:600;cursor:pointer}
+.jt-hint{margin:0 0 10px;font-size:12px;color:#5B606D}
+.jt-ov{position:fixed;inset:0;z-index:2500;background:#0b133266;display:flex;align-items:center;justify-content:center;padding:18px}.jt-ov[hidden]{display:none}
+.jt-md{width:1040px;max-width:100%;max-height:92vh;display:flex;flex-direction:column;background:#fff;border-radius:14px;box-shadow:0 20px 60px #0b133255;overflow:hidden}
+.jt-mh{display:flex;align-items:center;gap:12px;padding:14px 20px;border-bottom:1px solid #E9EBF0}.jt-mh h2{margin:0;font-size:16px}.jt-mh .sp{flex:1}
+.jt-x{width:34px!important;height:34px!important;min-width:34px!important;min-height:34px!important;border:1px solid #D6D9E0;border-radius:8px;background:#fff;cursor:pointer;font-size:16px;line-height:1;padding:0!important}
+.jt-meta{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:10px 18px;padding:14px 20px;background:#F5F7F9;font-size:13px}.jt-meta small{display:block;font-size:11px;font-weight:700;letter-spacing:.06em;text-transform:uppercase;color:#5B606D}
+.jt-mb{overflow:auto;flex:1}
+.jt-d{width:100%;border-collapse:collapse;font-size:13px;table-layout:fixed}
+.jt-d th{position:sticky;top:0;background:#fff;text-align:left;padding:10px 20px;font-size:11px;font-weight:700;letter-spacing:.06em;text-transform:uppercase;color:#5B606D;border-bottom:1px solid #E9EBF0}
+.jt-d td{padding:9px 20px;border-bottom:1px solid #F1F3F6;vertical-align:top;overflow-wrap:anywhere}
+.jt-d td.o{background:#FDF1F1;color:#7A1F20}.jt-d td.n{background:#EAFBF1;color:#0B5B36}
+.jt-d td.o::before{content:"− ";color:#B63132}.jt-d td.n::before{content:"+ ";color:#0F7A4F}.jt-d td.o:empty::before,.jt-d td.n:empty::before{content:""}
+.jt-d td.o.vd::before,.jt-d td.n.vd::before{content:""}
+.jt-tech{display:block;font-size:11px;color:#747A88;font-family:ui-monospace,Consolas,monospace}.jt-def{display:block;font-size:12px;color:#5B606D;margin-top:2px}
+.jt-mf{display:flex;align-items:center;gap:14px;padding:12px 20px;border-top:1px solid #E9EBF0;font-size:12px;color:#474C58}
+.jt-b{height:34px;padding:0 12px;border:1px solid #D6D9E0;border-radius:8px;background:#fff;color:#0B1332;font:inherit;font-size:12px;font-weight:600;cursor:pointer}.jt-b.ok{background:#2E427B;border-color:#2E427B;color:#fff}
+.jt-tabs{display:flex;gap:4px;padding:0 20px;border-bottom:1px solid #E9EBF0}.jt-tabs button{border:0;border-bottom:2px solid transparent;background:none;padding:10px 12px;font:inherit;font-size:13px;font-weight:600;color:#5B606D;cursor:pointer}.jt-tabs button.on{border-bottom-color:#2E427B;color:#2E427B}
+.jt-dq{display:flex;gap:10px;padding:12px 20px}.jt-dq input[type=text]{flex:1;height:34px;border:1px solid #878D9A;border-radius:8px;padding:0 10px;font:inherit;font-size:13px}
+.jt-di{width:100%;box-sizing:border-box;height:32px;border:1px solid #D6D9E0;border-radius:6px;padding:0 8px;font:inherit;font-size:13px;background:#fff}
+.jt-act{position:absolute;left:-9999px;width:1px;height:1px;overflow:hidden}
+.jt-toast{position:fixed;left:50%;bottom:28px;transform:translateX(-50%);background:#0B1332;color:#fff;padding:10px 18px;border-radius:10px;font-size:13px;z-index:3000}
+@media (max-width:1100px){.jt-fl{grid-template-columns:repeat(3,minmax(0,1fr))}}
+@media (max-width:640px){.jt-fl{grid-template-columns:repeat(2,minmax(0,1fr))}.jt-meta{grid-template-columns:repeat(2,minmax(0,1fr))}}
+</style>
+<div class="jt" data-jt>
+  <section class="jt-card"><div class="jt-fl">
+    <div class="jt-f"><label for="jt-du">Du</label><input type="date" id="jt-du" data-jt-f="du"></div>
+    <div class="jt-f"><label for="jt-au">Au</label><input type="date" id="jt-au" data-jt-f="au"></div>
+    <div class="jt-f"><label for="jt-mod">Module</label><select id="jt-mod" data-jt-f="module"></select></div>
+    <div class="jt-f"><label for="jt-usr">Par utilisateur</label><select id="jt-usr" data-jt-f="user"></select></div>
+    <div class="jt-f"><label for="jt-act">Action</label><select id="jt-act" data-jt-f="action"></select></div>
+    <div class="jt-f"><label for="jt-typ">Type</label><select id="jt-typ" data-jt-f="type"></select></div>
+  </div></section>
+  <section class="jt-card">
+    <div class="jt-h"><b>Historique des manipulations</b><span data-jt-n></span><label class="jt-res"><input type="checkbox" data-jt-res checked> Résumé en clair</label><em>Double-clic sur une ligne pour voir les détails</em></div>
+    <table class="jt-t"><colgroup><col style="width:14%"><col style="width:13%"><col style="width:17%"><col style="width:30%"><col style="width:13%"><col style="width:13%"></colgroup>
+      <thead><tr><th>Date/heure</th><th>Utilisateur</th><th>Module</th><th>Entité / référence</th><th>Action</th><th>Type</th></tr></thead><tbody data-jt-rows></tbody></table>
+    <button type="button" class="jt-plus" data-jt-plus hidden>Afficher plus</button>
+  </section>
+  <div class="jt-act"><button type="button" data-jt-reset>Réinitialiser</button><button type="button" data-jt-dico><i class="ti ti-book-2"></i> Dictionnaire</button><button type="button" data-jt-x="pdf"><i class="ti ti-file-type-pdf"></i> PDF</button><button type="button" data-jt-x="pdfd"><i class="ti ti-file-type-pdf"></i> PDF avec détails</button><button type="button" data-jt-x="xlsx"><i class="ti ti-file-spreadsheet"></i> Excel (XLSX)</button><button type="button" data-jt-x="xlsxd"><i class="ti ti-file-spreadsheet"></i> Excel (XLSX) avec détails</button></div>
+  <div class="jt-ov" data-jt-ov hidden><div class="jt-md" role="dialog" aria-modal="true" data-jt-md></div></div>
+</div>
+<script>
+(function () {
+  var root = document.currentScript.parentElement.querySelector('[data-jt]');
+  var q = function (s) { return root.querySelector(s); }, qa = function (s) { return [].slice.call(root.querySelectorAll(s)); };
+  function esc(s) { return String(s == null ? '' : s).replace(/[&<>"]/g, function (c) { return { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c]; }); }
+  function copie(o) { return JSON.parse(JSON.stringify(o)); }
+
+  // ---------- Dictionnaire (terme technique -> libellé lisible, format, description) ----------
+  var DICO0 = {
+    champs: {
+      BaseImposable: { l: 'Base imposable', f: 'montant', d: 'Montant hors taxe sur lequel la taxe est calculée.' },
+      CompteCode: { l: 'Compte comptable', f: 'code', d: 'Numéro du compte du plan comptable imputé.' },
+      Contrat: { l: 'N° de contrat', f: 'texte', d: 'Référence du contrat auquel la pièce se rattache.' },
+      DateComptable: { l: 'Date comptable', f: 'date', d: 'Date retenue pour la comptabilisation de la pièce.' },
+      DatePaiement: { l: 'Date de paiement', f: 'date', d: 'Date de règlement prévue ou effective.' },
+      DeclarationFiscaleId: { l: 'Identifiant de la déclaration fiscale', f: 'id', d: 'Identifiant interne, utile au support technique.' },
+      EcritureComptableId: { l: 'Identifiant de l’écriture', f: 'id', d: 'Identifiant interne de l’écriture comptable.' },
+      Fournisseur: { l: 'Fournisseur', f: 'texte', d: 'Tiers fournisseur concerné par la pièce.' },
+      JournalCode: { l: 'Journal', f: 'code', d: 'Code du journal de saisie.' },
+      Libelle: { l: 'Libellé', f: 'texte', d: 'Intitulé affiché dans les listes et les états.' },
+      Montant: { l: 'Montant', f: 'montant', d: 'Montant de la ligne dans la monnaie de la pièce.' },
+      Sens: { l: 'Sens', f: 'enum', d: 'Débit ou crédit.', v: { D: 'Débit', C: 'Crédit' } },
+      Devise: { l: 'Devise', f: 'code', d: 'Monnaie de la pièce (MGA, USD, EUR…).' },
+      TauxTva: { l: 'Taux de TVA', f: 'pourcent', d: 'Taux appliqué sur la base imposable.' },
+      Code: { l: 'Code', f: 'code', d: 'Code unique de l’élément.' },
+      Nom: { l: 'Nom', f: 'texte', d: 'Nom ou raison sociale.' },
+      NomComplet: { l: 'Nom complet', f: 'texte', d: 'Nom et prénom de l’utilisateur.' },
+      Identifiant: { l: 'Nom d’utilisateur', f: 'texte', d: 'Identifiant de connexion.' },
+      Email: { l: 'Adresse e-mail', f: 'texte', d: 'Adresse de contact et de réinitialisation du mot de passe.' },
+      GroupeCode: { l: 'Groupe d’utilisateurs', f: 'code', d: 'Groupe qui détermine les droits d’accès.' },
+      CompteCollectif: { l: 'Compte collectif', f: 'code', d: 'Compte de regroupement du tiers.' },
+      Actif: { l: 'Actif', f: 'bool', d: 'Indique si l’élément est utilisable.' },
+      Type: { l: 'Type', f: 'texte', d: 'Catégorie de l’élément.' },
+      Site: { l: 'Site', f: 'code', d: 'Site de rattachement.' },
+      AdresseIp: { l: 'Adresse IP', f: 'texte', d: 'Adresse réseau depuis laquelle l’action est faite.' },
+      Navigateur: { l: 'Navigateur', f: 'texte', d: 'Navigateur utilisé pour se connecter.' },
+      MotifEchec: { l: 'Motif de l’échec', f: 'enum', d: 'Raison du refus de connexion.', v: { BadPassword: 'Mot de passe erroné', UnknownUser: 'Utilisateur inconnu', Locked: 'Compte verrouillé' } },
+      Etat: { l: 'État consulté', f: 'texte', d: 'Nom de l’état ouvert.' },
+      Periode: { l: 'Période', f: 'texte', d: 'Période couverte par l’état.' },
+      FormatExport: { l: 'Format d’export', f: 'enum', d: 'Format du fichier produit.', v: { PDF: 'PDF', XLSX: 'Excel (XLSX)', CSV: 'CSV', Screen: 'Affichage à l’écran' } }
+    },
+    entites: {
+      EcritureComptable: { l: 'Écriture comptable', a: 'l’' }, DeclarationFiscale: { l: 'Déclaration fiscale', a: 'la ' }, Tiers: { l: 'Tiers', a: 'le ' }, Journal: { l: 'Journal', a: 'le ' },
+      Utilisateur: { l: 'Utilisateur', a: 'l’' }, Pays: { l: 'Pays', a: 'le ' }, Session: { l: 'Session de connexion', a: 'la ' }, EtatSensible: { l: 'État sensible', a: 'l’' }
+    },
+    actions: { Create: { l: 'Création', c: 'c' }, Update: { l: 'Modification', c: 'm' }, Delete: { l: 'Suppression', c: 's' }, Login: { l: 'Connexion', c: 'a' }, LoginFailed: { l: 'Échec d’authentification', c: 'x' }, View: { l: 'Consultation', c: 'a' }, Export: { l: 'Export', c: 'a' } },
+    types: { Saisie: { l: 'Saisie' }, Parametrage: { l: 'Paramétrage' }, Securite: { l: 'Sécurité' }, Etat: { l: 'État' } }
+  };
+  var dico = copie(DICO0);
+  window.DICTIONNAIRE_LOGS = dico;
+  function lib(g, k) { var e = dico[g][k]; return e && e.l ? e.l : k; }
+  function fmtN(n) { var p = Number(n).toFixed(2).split('.'); return p[0].replace(/\B(?=(\d{3})+(?!\d))/g, ' ') + ',' + p[1]; }
+  function fmtDate(v) { var m = /^(\d{4})-(\d{2})-(\d{2})(?:T(\d{2}):(\d{2}))?/.exec(v); if (!m) return v; return m[3] + '/' + m[2] + '/' + m[1] + (m[4] && (m[4] !== '00' || m[5] !== '00') ? ' ' + m[4] + ':' + m[5] : ''); }
+  // Termes absents du dictionnaire : libellé généré à partir du nom technique (CamelCase -> « Date modification fiche »)
+  function humaniser(k) { var t = String(k).replace(/([a-zà-ÿ0-9])([A-Z])/g, '$1 $2').replace(/_/g, ' ').toLowerCase(); return t.charAt(0).toUpperCase() + t.slice(1); }
+  function libC(k) { var e = dico.champs[k]; return e && e.l ? e.l : humaniser(k); }
+  function devine(v) { v = String(v); if (/^\d{4}-\d{2}-\d{2}(T|$)/.test(v)) return 'date'; if (/^(true|false)$/i.test(v)) return 'bool'; if (/^-?\d+\.\d{2}$/.test(v)) return 'montant'; return 'texte'; }
+  function valeur(champ, v, technique) {
+    if (v == null || v === '') return '';
+    if (technique) return String(v);
+    var e = dico.champs[champ] || { f: devine(v) };
+    switch (e.f) {
+      case 'montant': return isNaN(+v) ? String(v) : fmtN(v);
+      case 'date': return fmtDate(String(v));
+      case 'bool': return v === true || /^true$/i.test(String(v)) || v === 1 ? 'Oui' : 'Non';
+      case 'pourcent': return String(v).replace('.', ',') + ' %';
+      case 'enum': return (e.v && e.v[v]) || String(v);
+      default: return String(v);
+    }
+  }
+
+  // ---------- Journal de démonstration ----------
+  var seed = 20261029; function rnd() { seed = (seed * 1664525 + 1013904223) % 4294967296; return seed / 4294967296; }
+  function pick(a) { return a[Math.floor(rnd() * a.length)]; }
+  var USERS = (window.GA_USERS && window.GA_USERS.length ? window.GA_USERS.map(function (u) { return u.id; }) : ['superadmin', 'ANDRY', 'ANDY', 'ANGELA', 'ANTHONY', 'HERY']);
+  var FOURN = ['COGELEC DE MADAGASCAR', 'JIRAMA', 'TELMA', 'SOCOLAIT', 'ENTREPRISE RAKOTO', 'AIR MADAGASCAR'];
+  var JNL = ['ACHMGA', 'ACHUSD', 'BNIMGA', 'CAISSE', 'OD'];
+  function pad(n) { return (n < 10 ? '0' : '') + n; }
+  var LOGS = [], DEB = new Date(2026, 9, 28, 17, 40);
+  function nouveau(i) {
+    var t = rnd(), d = new Date(DEB.getTime() - i * 5.3 * 3600 * 1000 - Math.floor(rnd() * 3000000)), ts = d.getFullYear() + '-' + pad(d.getMonth() + 1) + '-' + pad(d.getDate()) + 'T' + pad(d.getHours()) + ':' + pad(d.getMinutes()) + ':' + pad(d.getSeconds());
+    var u = pick(USERS), L = { id: i + 1, dt: ts, user: u };
+    if (t < 0.12) { L.module = 'Paramétrages'; L.entite = 'Session'; L.ref = u; L.type = 'Securite'; L.action = rnd() < 0.5 ? 'Login' : 'LoginFailed';
+      L.champs = [['AdresseIp', '', '41.204.' + Math.floor(rnd() * 255) + '.' + Math.floor(rnd() * 255)], ['Navigateur', '', pick(['Chrome 130', 'Edge 130', 'Firefox 131'])]];
+      if (L.action === 'LoginFailed') L.champs.push(['MotifEchec', '', pick(['BadPassword', 'UnknownUser', 'Locked'])]); }
+    else if (t < 0.22) { L.module = pick(['États comptables', 'États financiers']); L.entite = 'EtatSensible'; L.ref = pick(['Balance générale', 'Grand livre général', 'Bilan', 'Compte de résultat']); L.type = 'Etat'; L.action = rnd() < 0.5 ? 'View' : 'Export';
+      L.champs = [['Etat', '', L.ref], ['Periode', '', '01/01/2026 - 30/09/2026'], ['FormatExport', '', L.action === 'View' ? 'Screen' : pick(['PDF', 'XLSX', 'CSV'])]]; }
+    else if (t < 0.55) { L.module = 'Comptabilité générale'; L.entite = 'EcritureComptable'; L.type = 'Saisie'; var id = 14000 + Math.floor(rnd() * 1200), f = pick(FOURN), m = Math.round(rnd() * 90000000) / 100 + 10000;
+      L.ref = String(id) + ' — ' + f; L.action = pick(['Create', 'Create', 'Update', 'Update', 'Delete']);
+      var base = [['JournalCode', pick(JNL)], ['DateComptable', '2026-' + pad(1 + Math.floor(rnd() * 9)) + '-' + pad(1 + Math.floor(rnd() * 27)) + 'T00:00:00'], ['CompteCode', pick(['401100', '445000', '512100', '607100'])], ['Fournisseur', f], ['Libelle', 'Facture ' + f.split(' ')[0] + ' ' + pad(1 + Math.floor(rnd() * 12)) + '/2026'], ['Montant', m.toFixed(2)], ['Sens', pick(['D', 'C'])], ['Devise', 'MGA']];
+      if (L.action === 'Create') L.champs = base.map(function (b) { return [b[0], '', b[1]]; });
+      else if (L.action === 'Delete') L.champs = base.map(function (b) { return [b[0], b[1], '']; });
+      else L.champs = [['Montant', (m * 0.9).toFixed(2), m.toFixed(2)], ['Libelle', base[4][1] + ' (provisoire)', base[4][1]], ['CompteCode', '401000', base[2][1]]]; }
+    else if (t < 0.65) { L.module = 'États comptables'; L.entite = 'DeclarationFiscale'; L.type = 'Saisie'; var did = '27845ea0-df68-4c62-9e76-3c42beb90a28'; L.ref = 'DF-' + (2000 + i) + ' — COGELEC DE MADAGASCAR'; L.action = rnd() < 0.7 ? 'Create' : 'Update';
+      var bi = (117204622.23 + i * 311).toFixed(2); var b2 = [['BaseImposable', bi], ['CompteCode', '445000'], ['Contrat', 'CT 030/2025/DECIM/CABLES/COGELEC'], ['DateComptable', '2025-12-22T00:00:00'], ['DatePaiement', '2026-09-02T00:00:00'], ['DeclarationFiscaleId', did], ['EcritureComptableId', String(14869 + i)], ['Fournisseur', 'COGELEC DE MADAGASCAR'], ['JournalCode', 'ACHMGA'], ['TauxTva', '20']];
+      L.champs = L.action === 'Create' ? b2.map(function (b) { return [b[0], '', b[1]]; }) : [['BaseImposable', (bi * 0.95).toFixed(2), bi], ['DatePaiement', '2026-08-15T00:00:00', '2026-09-02T00:00:00']]; }
+    else if (t < 0.77) { L.module = 'Comptabilité générale'; L.entite = 'Tiers'; L.type = 'Parametrage'; var tc = 'F' + (100 + Math.floor(rnd() * 800)); L.ref = tc + ' — ' + pick(FOURN); L.action = pick(['Create', 'Update', 'Update']);
+      L.champs = L.action === 'Create' ? [['Code', '', tc], ['Nom', '', L.ref.split(' — ')[1]], ['CompteCollectif', '', '401100'], ['Actif', '', 'true']] : [['CompteCollectif', '401000', '401100'], ['Actif', 'false', 'true']]; }
+    else if (t < 0.87) { L.module = 'Paramétrages'; L.entite = 'Journal'; L.type = 'Parametrage'; var jc = pick(JNL); L.ref = jc; L.action = pick(['Create', 'Update']);
+      L.champs = L.action === 'Create' ? [['Code', '', jc], ['Libelle', '', 'Journal ' + jc], ['Type', '', 'Opérations diverses'], ['Site', '', '01'], ['Actif', '', 'true']] : [['Libelle', 'Journal ' + jc + ' (ancien)', 'Journal ' + jc], ['Actif', 'true', 'false']]; }
+    else if (t < 0.95) { L.module = 'Paramétrages'; L.entite = 'Utilisateur'; L.type = 'Securite'; var ui = pick(USERS); L.ref = ui; L.action = pick(['Create', 'Update', 'Update', 'Delete']);
+      var ub = [['Identifiant', ui], ['NomComplet', ui + ' (démo)'], ['Email', ui.toLowerCase() + '@gmail.com'], ['GroupeCode', pick(['ADMINOK', 'COMPTA2', 'CONSULTATION'])], ['Actif', 'true']];
+      L.champs = L.action === 'Create' ? ub.map(function (b) { return [b[0], '', b[1]]; }) : L.action === 'Delete' ? ub.map(function (b) { return [b[0], b[1], '']; }) : [['GroupeCode', 'CONSULTATION', ub[3][1]]]; }
+    else { L.module = 'Paramétrages'; L.entite = 'Pays'; L.type = 'Parametrage'; L.ref = pick(['Madagascar', 'France', 'Belgique']); L.action = 'Update'; L.champs = [['Libelle', L.ref + ' (ancien libellé)', L.ref], ['Actif', 'false', 'true'], ['DateModificationFiche', '2026-03-12T00:00:00', ts]]; }
+    return L;
+  }
+  for (var i = 0; i < 160; i++) LOGS.push(nouveau(i));
+
+  // ---------- Résumé en clair : phrase générée automatiquement à partir du dictionnaire ----------
+  function art(e) { var d = dico.entites[e]; return ((d && d.a) || 'le ') + lib('entites', e).toLowerCase(); }
+  function enClair(l) {
+    var u = l.user, r = l.ref.replace(' — ', ' – '), p = l.champs;
+    function un(c, i) { return libC(c[0]) + ' : ' + valeur(c[0], c[i]); }
+    function cl(k) { return p.filter(function (c) { return c[0] === k; })[0]; }
+    switch (l.action) {
+      case 'Login': return u + ' s’est connecté(e) à l’application.';
+      case 'LoginFailed': var mo = cl('MotifEchec'); return 'Connexion refusée pour ' + u + (mo ? ' (' + valeur('MotifEchec', mo[2]).toLowerCase() + ')' : '') + '.';
+      case 'View': return u + ' a consulté l’état « ' + l.ref + ' ».';
+      case 'Export': var fm = cl('FormatExport'); return u + ' a exporté l’état « ' + l.ref + ' »' + (fm ? ' au format ' + valeur('FormatExport', fm[2]) : '') + '.';
+      case 'Create': return u + ' a créé ' + art(l.entite) + ' ' + r + (p.length ? ' (' + p.slice(0, 3).map(function (c) { return un(c, 2); }).join(' ; ') + (p.length > 3 ? ' …' : '') + ')' : '') + '.';
+      case 'Delete': return u + ' a supprimé ' + art(l.entite) + ' ' + r + (p.length ? ' (' + p.slice(0, 2).map(function (c) { return un(c, 1); }).join(' ; ') + (p.length > 2 ? ' …' : '') + ')' : '') + '.';
+      case 'Update': return u + ' a modifié ' + art(l.entite) + ' ' + r + ' : ' + p.slice(0, 3).map(function (c) { return libC(c[0]).toLowerCase() + ' de « ' + valeur(c[0], c[1]) + ' » à « ' + valeur(c[0], c[2]) + ' »'; }).join(' ; ') + (p.length > 3 ? ' …' : '') + '.';
+    }
+    return u + ' : ' + lib('actions', l.action) + ' ' + r + '.';
+  }
+
+  // ---------- Filtres et tableau ----------
+  var F = { du: '', au: '', module: '', user: '', action: '', type: '' }, affiche = 40, ouvert = null, technique = false, resume = true;
+  function remplir() {
+    function opt(sel, vide, items) { var s = q(sel), v = s.value; s.innerHTML = '<option value="">' + vide + '</option>' + items.map(function (x) { return '<option value="' + esc(x[0]) + '">' + esc(x[1]) + '</option>'; }).join(''); s.value = v; }
+    var mods = {}, users = {}, acts = {}, typs = {}; LOGS.forEach(function (l) { mods[l.module] = 1; users[l.user] = 1; acts[l.action] = 1; typs[l.type] = 1; });
+    opt('[data-jt-f="module"]', 'Tous', Object.keys(mods).sort().map(function (k) { return [k, k]; }));
+    opt('[data-jt-f="user"]', 'Tous', Object.keys(users).sort().map(function (k) { return [k, k]; }));
+    opt('[data-jt-f="action"]', 'Toutes', Object.keys(acts).map(function (k) { return [k, lib('actions', k)]; }));
+    opt('[data-jt-f="type"]', 'Tous', Object.keys(typs).map(function (k) { return [k, lib('types', k)]; }));
+  }
+  function filtrer() {
+    return LOGS.filter(function (l) {
+      var j = l.dt.slice(0, 10);
+      return (!F.du || j >= F.du) && (!F.au || j <= F.au) && (!F.module || l.module === F.module) && (!F.user || l.user === F.user) && (!F.action || l.action === F.action) && (!F.type || l.type === F.type);
+    });
+  }
+  function dessiner() {
+    var L = filtrer();
+    q('[data-jt-n]').textContent = L.length + ' résultat(s)';
+    q('[data-jt-rows]').innerHTML = L.slice(0, affiche).map(function (l) {
+      var a = dico.actions[l.action] || { l: l.action, c: 'a' }, ref = l.ref.indexOf(' — ') > 0 ? l.ref.split(' — ') : [l.ref, ''];
+      return '<tr tabindex="0" data-jt-r="' + l.id + '" title="Double-clic pour voir les détails"><td class="jt-mono">' + esc(fmtDate(l.dt.slice(0, 16)).replace(' ', ' ')) + '</td><td>' + esc(l.user) + '</td><td>' + esc(l.module) + '</td>' +
+        '<td>' + esc(lib('entites', l.entite)) + ' <b>' + esc(ref[0]) + '</b>' + (ref[1] ? '<span class="jt-sub">' + esc(ref[1]) + '</span>' : '') + (resume ? '<span class="jt-sub" style="color:#2E427B">' + esc(enClair(l)) + '</span>' : '') + '</td><td><span class="jt-pill ' + (a.c || 'a') + '">' + esc(a.l) + '</span></td><td>' + esc(lib('types', l.type)) + '</td></tr>';
+    }).join('') || '<tr><td colspan="6" class="jt-vide">Aucune manipulation ne correspond aux filtres.</td></tr>';
+    q('[data-jt-plus]').hidden = L.length <= affiche;
+  }
+
+  // ---------- Détail ----------
+  function detail(id) {
+    var l = LOGS.filter(function (x) { return x.id === +id; })[0]; if (!l) return; ouvert = l;
+    var a = dico.actions[l.action] || { l: l.action, c: 'a' };
+    var lignes = l.champs.map(function (c) {
+      var e = dico.champs[c[0]], nom = technique ? c[0] : (e ? e.l : humaniser(c[0]));
+      var o = valeur(c[0], c[1], technique), n = valeur(c[0], c[2], technique);
+      return '<tr><td>' + esc(nom) + (technique ? '' : '<span class="jt-tech">' + esc(c[0]) + '</span>') + (!technique && e && e.d ? '<span class="jt-def">' + esc(e.d) + '</span>' : '') + (!e && !technique ? '<span class="jt-def" style="color:#8A5A00">Libellé généré automatiquement — à valider dans le dictionnaire</span>' : '') + '</td>' +
+        '<td class="o' + (o === '' ? ' vd' : '') + '">' + esc(o) + '</td><td class="n' + (n === '' ? ' vd' : '') + '">' + esc(n) + '</td></tr>';
+    }).join('');
+    q('[data-jt-md]').innerHTML = '<div class="jt-mh"><h2>Détail de la manipulation</h2><span class="jt-pill ' + (a.c || 'a') + '">' + esc(a.l) + '</span><span class="sp"></span><button type="button" class="jt-x" data-jt-fermer aria-label="Fermer">✕</button></div>' +
+      '<div class="jt-claire"><b>En clair</b>' + esc(enClair(l)) + '</div>' +
+      '<div class="jt-meta"><div><small>Date / heure</small>' + esc(fmtDate(l.dt.slice(0, 16))) + '</div><div><small>Utilisateur</small>' + esc(l.user) + '</div><div><small>Module</small>' + esc(l.module) + '</div>' +
+      '<div><small>Entité</small>' + esc(technique ? l.entite : lib('entites', l.entite)) + '</div><div><small>Référence</small>' + esc(l.ref) + '</div><div><small>Type</small>' + esc(technique ? l.type : lib('types', l.type)) + '</div></div>' +
+      '<div class="jt-mb"><table class="jt-d"><colgroup><col style="width:34%"><col style="width:33%"><col style="width:33%"></colgroup><thead><tr><th>Champ</th><th>Ancienne valeur</th><th>Nouvelle valeur</th></tr></thead><tbody>' + lignes + '</tbody></table></div>' +
+      '<div class="jt-mf"><label style="display:inline-flex;align-items:center;gap:8px;cursor:pointer"><input type="checkbox" data-jt-tech' + (technique ? ' checked' : '') + '> Afficher les noms techniques</label><span style="flex:1"></span><button type="button" class="jt-b" data-jt-dico>Dictionnaire</button><button type="button" class="jt-b ok" data-jt-fermer>Fermer</button></div>';
+    q('[data-jt-ov]').hidden = false; var x = q('[data-jt-fermer]'); if (x) x.focus();
+  }
+  function fermer() { q('[data-jt-ov]').hidden = true; ouvert = null; }
+
+  // ---------- Dictionnaire (consultable et modifiable) ----------
+  var onglet = 'champs', dq = '', brouillon = null, ajoutOn = false;
+  function usage() { var u = {}, ex = {}; LOGS.forEach(function (l) { l.champs.forEach(function (c) { (u[c[0]] = u[c[0]] || {})[l.entite] = 1; if (!ex[c[0]]) { var v = c[2] !== '' ? c[2] : c[1]; if (v !== '') ex[c[0]] = v; } }); }); return { u: u, ex: ex }; }
+  var FORMATS = [['texte', 'Texte'], ['code', 'Code'], ['montant', 'Montant'], ['date', 'Date'], ['bool', 'Oui / Non'], ['pourcent', 'Pourcentage'], ['enum', 'Valeur codée'], ['id', 'Identifiant technique']];
+  var NOMS = { champs: 'Champs', entites: 'Entités', actions: 'Actions', types: 'Types' };
+  function manquants(b) { var us = usage(); return Object.keys(us.u).filter(function (k) { return !b.champs[k]; }); }
+  function dicoModal() {
+    if (!brouillon) brouillon = copie(dico);
+    var g = onglet, us = usage(), mq = manquants(brouillon), cles = Object.keys(brouillon[g]).filter(function (k) { return !dq || (k + ' ' + (brouillon[g][k].l || '')).toLowerCase().indexOf(dq) >= 0; });
+    var h = '<div class="jt-mh"><h2>Dictionnaire des logs</h2><span class="sp"></span><button type="button" class="jt-x" data-jt-fermer aria-label="Fermer">✕</button></div>' +
+      '<div class="jt-tabs">' + Object.keys(NOMS).map(function (k) { return '<button type="button" data-jt-on="' + k + '" class="' + (k === g ? 'on' : '') + '">' + NOMS[k] + ' (' + Object.keys(brouillon[k]).length + ')</button>'; }).join('') + '</div>' +
+      '<p class="jt-claire" style="margin:0"><b>Dictionnaire de données</b>Il traduit automatiquement les noms techniques des logs en libellés, formate les valeurs et rédige le résumé en clair. ' + (mq.length ? '<span style="color:#8A5A00">' + mq.length + ' terme(s) rencontré(s) dans les logs ne sont pas documentés : ' + mq.map(esc).join(', ') + '.</span> <button type="button" class="jt-b" data-jt-auto>Compléter automatiquement</button>' : 'Tous les termes rencontrés dans les logs sont documentés.') + '</p>' +
+      '<div class="jt-dq"><input type="text" placeholder="Rechercher un terme technique ou un libellé…" value="' + esc(dq) + '" data-jt-dq aria-label="Rechercher dans le dictionnaire">' + (ajoutOn ? '<input type="text" placeholder="Terme technique (ex. MontantTva)" data-jt-new aria-label="Nouveau terme technique" style="max-width:240px;height:34px;border:1px solid #878D9A;border-radius:8px;padding:0 10px;font:inherit;font-size:13px"><button type="button" class="jt-b ok" data-jt-addok>Ajouter</button>' : '<button type="button" class="jt-b" data-jt-add>Ajouter un terme</button>') + '</div>' +
+      '<div class="jt-mb"><table class="jt-d"><colgroup>' + (g === 'champs' ? '<col style="width:17%"><col style="width:18%"><col style="width:13%"><col style="width:22%"><col style="width:15%"><col style="width:15%">' : '<col style="width:24%"><col style="width:26%"><col style="width:50%">') + '</colgroup><thead><tr><th>Terme technique</th><th>Libellé affiché</th>' + (g === 'champs' ? '<th>Type de donnée</th><th>Description</th><th>Utilisé dans</th><th>Exemple</th>' : '<th></th>') + '</tr></thead><tbody>' +
+      cles.map(function (k) {
+        var e = brouillon[g][k];
+        return '<tr><td class="jt-mono">' + esc(k) + '</td><td><input class="jt-di" value="' + esc(e.l) + '" data-jt-e="' + esc(k) + '|l" aria-label="Libellé de ' + esc(k) + '"></td>' +
+          (g === 'champs' ? '<td><select class="jt-di" data-jt-e="' + esc(k) + '|f">' + FORMATS.map(function (f) { return '<option value="' + f[0] + '"' + (e.f === f[0] ? ' selected' : '') + '>' + f[1] + '</option>'; }).join('') + '</select></td><td><input class="jt-di" value="' + esc(e.d || '') + '" data-jt-e="' + esc(k) + '|d" aria-label="Description de ' + esc(k) + '"></td><td style="font-size:12px;color:#474C58">' + esc(Object.keys(us.u[k] || {}).map(function (x) { return lib('entites', x); }).join(', ') || '—') + '</td><td class="jt-mono" style="font-size:12px;color:#474C58">' + esc(us.ex[k] != null ? valeur(k, us.ex[k], false) : '—') + '</td>' : '<td></td>') + '</tr>';
+      }).join('') + (cles.length ? '' : '<tr><td colspan="4" class="jt-vide">Aucun terme.</td></tr>') + '</tbody></table></div>' +
+      '<div class="jt-mf"><span>Les libellés servent à l’affichage des détails ; les noms techniques restent consultables.</span><span style="flex:1"></span><button type="button" class="jt-b" data-jt-dreset>Rétablir le dictionnaire d’origine</button><button type="button" class="jt-b" data-jt-fermer>Annuler</button><button type="button" class="jt-b ok" data-jt-dsave>Enregistrer</button></div>';
+    q('[data-jt-md]').innerHTML = h; q('[data-jt-ov]').hidden = false;
+  }
+  function toast(t) { var d = document.createElement('div'); d.className = 'jt-toast'; d.textContent = t; document.body.appendChild(d); setTimeout(function () { d.remove(); }, 2400); }
+
+  root.addEventListener('change', function (e) {
+    var t = e.target, k;
+    if (t.hasAttribute('data-jt-res')) { resume = t.checked; dessiner(); return; }
+    if ((k = t.dataset.jtF)) { F[k] = t.value; affiche = 40; dessiner(); }
+    else if (t.hasAttribute('data-jt-tech')) { technique = t.checked; detail(ouvert.id); }
+    else if (t.dataset.jtE) { var p = t.dataset.jtE.split('|'); brouillon[onglet][p[0]][p[1]] = t.value; }
+  });
+  root.addEventListener('input', function (e) {
+    var t = e.target; if (t.hasAttribute('data-jt-dq')) { dq = t.value.trim().toLowerCase(); dicoModal(); var n = q('[data-jt-dq]'); n.focus(); n.setSelectionRange(n.value.length, n.value.length); }
+    else if (t.dataset.jtE) { var p = t.dataset.jtE.split('|'); brouillon[onglet][p[0]][p[1]] = t.value; }
+  });
+  root.addEventListener('click', function (e) {
+    var t = e.target, b;
+    if (t.closest('[data-jt-plus]')) { affiche += 40; dessiner(); }
+    else if (t.closest('[data-jt-reset]')) { F = { du: '', au: '', module: '', user: '', action: '', type: '' }; qa('[data-jt-f]').forEach(function (x) { x.value = ''; }); affiche = 40; dessiner(); }
+    else if (t.closest('[data-jt-dico]')) { brouillon = copie(dico); dq = ''; ajoutOn = false; dicoModal(); }
+    else if (t.closest('[data-jt-fermer]') || t === q('[data-jt-ov]')) { fermer(); brouillon = null; }
+    else if ((b = t.closest('[data-jt-on]'))) { onglet = b.dataset.jtOn; dq = ''; dicoModal(); }
+    else if (t.closest('[data-jt-add]')) { ajoutOn = true; dicoModal(); var nn = q('[data-jt-new]'); if (nn) nn.focus(); }
+    else if (t.closest('[data-jt-addok]')) { var n2 = q('[data-jt-new]'), k = n2 ? n2.value.trim() : ''; if (!k) { if (n2) n2.focus(); return; } if (brouillon[onglet][k]) { toast('Ce terme existe déjà.'); return; } brouillon[onglet][k] = onglet === 'champs' ? { l: k, f: 'texte', d: '' } : { l: k }; ajoutOn = false; dq = ''; dicoModal(); }
+    else if (t.closest('[data-jt-auto]')) { manquants(brouillon).forEach(function (k) { var ex = usage().ex[k]; brouillon.champs[k] = { l: humaniser(k), f: devine(ex == null ? '' : ex), d: 'Libellé généré automatiquement à partir du nom technique ; à valider.' }; }); dicoModal(); toast('Termes ajoutés au dictionnaire (à enregistrer).'); }
+    else if (t.closest('[data-jt-dreset]')) { brouillon = copie(DICO0); dicoModal(); toast('Dictionnaire d’origine rétabli (à enregistrer).'); }
+    else if (t.closest('[data-jt-dsave]')) { Object.keys(dico).forEach(function (g) { dico[g] = brouillon[g]; }); window.DICTIONNAIRE_LOGS = dico; brouillon = null; fermer(); remplir(); dessiner(); toast('Dictionnaire enregistré.'); }
+    else if ((b = t.closest('[data-jt-r]')) && e.detail === 2) detail(b.dataset.jtR);
+  });
+  root.addEventListener('keydown', function (e) {
+    if (e.key === 'Escape' && !q('[data-jt-ov]').hidden) { fermer(); brouillon = null; }
+    else if (e.key === 'Enter' && e.target.matches && e.target.matches('tr[data-jt-r]')) detail(e.target.dataset.jtR);
+  });
+  // ---------- Exports PDF / XLSX, sans ou avec détails (tout le résultat filtré, libellés du dictionnaire) ----------
+  function exporter(mode, details) {
+    var X = window.EXPORT_TABLEAU; if (!X) { toast('Module d’export indisponible.'); return; }
+    var L = filtrer(); if (!L.length) { toast('Rien à exporter.'); return; }
+    var dt = function (l) { return fmtDate(l.dt.slice(0, 16)); }, base = function (l) { return [dt(l), l.user, l.module, lib('entites', l.entite), l.ref, lib('actions', l.action), lib('types', l.type)]; };
+    var tete = ['Date/heure', 'Utilisateur', 'Module', 'Entité', 'Référence', 'Action', 'Type'], rows;
+    if (!details) { tete.push('Résumé'); rows = L.map(function (l) { return base(l).concat([enClair(l)]); }); }
+    else { tete = tete.concat(['Champ', 'Ancienne valeur', 'Nouvelle valeur']); rows = []; L.forEach(function (l) { if (!l.champs.length) rows.push(base(l).concat(['', '', ''])); l.champs.forEach(function (c) { rows.push(base(l).concat([libC(c[0]), valeur(c[0], c[1]), valeur(c[0], c[2])])); }); }); }
+    var filtres = [F.du && 'du ' + fmtDate(F.du), F.au && 'au ' + fmtDate(F.au), F.module, F.user, F.action && lib('actions', F.action), F.type && lib('types', F.type)].filter(Boolean);
+    var sous = L.length + ' manipulation(s)' + (details ? ' · ' + rows.length + ' ligne(s) de détail' : '') + (filtres.length ? ' · ' + filtres.join(' · ') : '');
+    var nom = 'journal_traces' + (details ? '_details' : '');
+    if (mode === 'pdf') X.pdf(nom + '.pdf', 'Journal de traces' + (details ? ' (avec détails)' : ''), sous, tete, rows); else X.xlsx(nom + '.xlsx', 'Journal de traces', tete, rows);
+    toast('Export ' + (mode === 'pdf' ? 'PDF' : 'Excel (XLSX)') + (details ? ' avec détails' : '') + ' généré : ' + rows.length + ' ligne(s).');
+  }
+  root.addEventListener('click', function (e) { var b = e.target.closest('[data-jt-x]'); if (b) { var k = b.dataset.jtX; exporter(k.indexOf('pdf') === 0 ? 'pdf' : 'xlsx', /d$/.test(k)); } });
+  remplir(); dessiner();
+})();
+</script>

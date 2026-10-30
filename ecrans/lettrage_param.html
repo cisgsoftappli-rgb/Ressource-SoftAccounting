@@ -1,0 +1,107 @@
+<!--
+  Écran « Paramètre du lettrage » (Comptabilité générale › Lettrage › Paramètre) — format des lettres (AA, AB, AC… ou numérique 0001…),
+  écart toléré du lettrage approché et compte d'écart de règlement, critères du lettrage automatique (montant ; référence + montant ;
+  référence + montant + date ± 5 j). Boutons Annuler / Enregistrer relayés par la barre d'actions de page (CFG « lettparam »).
+  Données en mémoire : window.LETTRAGE_CFG = { format, ecart, compteEcart, critere, memePiece, equilibre } (événement « lettrage-changed »), copie dans localStorage.
+  S'appuie sur les styles bp-*. Ne pas nommer de fonction « $$ » (build.cjs).
+-->
+<style>
+.lp-g{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:16px 20px;max-width:980px}
+@media (max-width:760px){.lp-g{grid-template-columns:1fr}}
+.lp-sec{margin:0 0 10px;font-size:12px;font-weight:700;letter-spacing:.04em;text-transform:uppercase;color:#2E427B}.lp-sec+.lp-g,.lp-g+.lp-sec{margin-top:0}.lp-g{margin-bottom:22px}.lp-g .lp-sec{margin-bottom:10px}
+.lp-sfx{display:flex;align-items:stretch;border:1px solid #878D9A;border-radius:8px;background:#fff;overflow:hidden}
+.lp-sfx:focus-within{outline:3px solid #2E427B;outline-offset:2px}
+.lp-sfx input{flex:1;min-width:0;height:34px;border:0;padding:0 12px;font:inherit;font-size:12px;color:#353944;background:transparent;outline:0;text-align:left}
+.lp-sfx span{display:flex;align-items:center;padding:0 14px;border-left:1px solid #E9EBF0;background:#F5F7F9;color:#5B606D;font-size:12px}
+.lp-cks{display:flex;flex-direction:column;gap:10px;margin-top:14px}
+.lp-ck{display:inline-flex;align-items:center;gap:10px;font-size:14px;color:#353944;cursor:pointer}
+.lp-ck input{width:20px;height:20px;margin:0;accent-color:#2E427B;cursor:pointer;flex:none}
+.lp-ck input:focus-visible{outline:3px solid #2E427B;outline-offset:2px}
+.lp-help{display:block;margin-top:2px;font-size:12px;color:#5B606D}
+</style>
+
+<div class="bp-root" data-lp>
+  <h1 style="position:absolute;width:1px;height:1px;overflow:hidden;clip-path:inset(50%);margin:0">Paramètre du lettrage</h1>
+
+  <div class="no-print" data-lp-actions>
+    <button type="button" data-lp-annuler>Annuler</button>
+    <button type="button" data-lp-enregistrer>Enregistrer</button>
+  </div>
+
+  <div class="bp-grid"><section class="bp-pan" aria-label="Paramètre du lettrage">
+    <form class="bp-form" data-lp-form onsubmit="return false" novalidate>
+      <div class="lp-g">
+        <div><div class="lp-sec">Lettres de lettrage</div>
+          <label class="bp-champ"><span>Format des lettres</span>
+            <select class="bp-sel" data-f="format"><option value="alpha">AA, AB, AC…</option><option value="num">Numérique 0001…</option></select>
+            <small class="lp-help" data-lp-exemple></small></label></div>
+        <div><div class="lp-sec">Lettrage automatique</div>
+          <label class="bp-champ"><span>Critères du lettrage automatique</span>
+            <select class="bp-sel" data-f="critere" data-no-combo><option value="montant">Montant</option><option value="ref_montant">Référence + montant</option><option value="ref_montant_date">Référence + montant + date ± 5 j</option></select>
+            <small class="lp-help" data-lp-critere></small></label>
+          <div class="lp-cks">
+            <label class="lp-ck"><input type="checkbox" data-f="memePiece"><span>Même numéro de pièce</span></label>
+            <label class="lp-ck"><input type="checkbox" data-f="equilibre"><span>Montants débit/crédit équilibrés (± tolérance)</span></label>
+          </div></div>
+      </div>
+      <div class="lp-sec">Lettrage approché</div>
+      <div class="lp-g">
+        <label class="bp-champ"><span>Écart toléré (lettrage approché)</span>
+          <div class="lp-sfx"><input type="number" min="0" step="1" data-f="ecart" inputmode="numeric"><span>Ar</span></div>
+          <small class="lp-help">Écart maximal accepté entre le débit et le crédit pour lettrer.</small></label>
+        <label class="bp-champ"><span>Compte d'écart de règlement</span>
+          <select class="bp-sel" data-f="compteEcart"></select>
+          <small class="lp-help">Reçoit l'écart passé en pertes ou profits au lettrage.</small></label>
+      </div>
+    </form>
+  </section></div>
+  <div class="bp-toast" role="status" hidden data-lp-toast></div>
+</div>
+
+<script>
+(function () {
+  var root = document.querySelector('[data-lp]'); if (!root) return;
+  function q(s) { return root.querySelector(s); }
+  function esc(s) { return String(s).replace(/[&<>"]/g, function (c) { return { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c]; }); }
+  var DEFAUT = { format: 'alpha', ecart: 500, compteEcart: '658000', critere: 'ref_montant', memePiece: false, equilibre: false }, CLE = 'softcompta.lettrage';
+  var cfg = Object.assign({}, DEFAUT);
+  try { var sv = JSON.parse(localStorage.getItem(CLE) || 'null'); if (sv && typeof sv === 'object') cfg = Object.assign(cfg, sv); } catch (e) {}
+  var AIDE = {
+    montant: 'Rapproche les écritures de même montant, au débit et au crédit, sur un même compte tiers.',
+    ref_montant: 'Exige la même référence et le même montant.',
+    ref_montant_date: 'Exige la même référence et le même montant, avec une date de pièce à ± 5 jours.'
+  };
+  // Comptes proposés pour l'écart : 658000 d'abord, puis les comptes de charges et produits divers du plan comptable chargé
+  function comptes() {
+    var L = [['658000', 'Charges diverses']];
+    ((window.PLANS_REF && window.PLANS_REF.comptes) || []).forEach(function (c) { if (/^(65|75|67|77)\d{3,}/.test(c[0]) && !L.some(function (x) { return x[0] === c[0]; })) L.push([c[0], c[1]]); });
+    return L;
+  }
+  function remplir(sel, val) {
+    var L = comptes(); if (!L.some(function (c) { return c[0] === val; })) L.push([val, 'Compte paramétré']);
+    sel.innerHTML = L.map(function (c) { return '<option value="' + esc(c[0]) + '">' + esc(c[0] + ' — ' + c[1]) + '</option>'; }).join('');
+    sel.value = val;
+  }
+  function exemple() { q('[data-lp-exemple]').textContent = 'Exemple : ' + (q('[data-f=format]').value === 'num' ? '0001, 0002, 0003…' : 'AA, AB, AC… AZ, BA…'); }
+  function aideCritere() { q('[data-lp-critere]').textContent = AIDE[q('[data-f=critere]').value] || ''; }
+  function afficher() {
+    q('[data-f=format]').value = cfg.format; q('[data-f=ecart]').value = cfg.ecart; remplir(q('[data-f=compteEcart]'), cfg.compteEcart); q('[data-f=critere]').value = cfg.critere; q('[data-f=memePiece]').checked = !!cfg.memePiece; q('[data-f=equilibre]').checked = !!cfg.equilibre; exemple(); aideCritere();
+    var cb = root.querySelector('[data-f=compteEcart]'); if (cb && cb.__combo && cb.__combo.maj) cb.__combo.maj();
+  }
+  function publier() { window.LETTRAGE_CFG = JSON.parse(JSON.stringify(cfg)); window.dispatchEvent(new Event('lettrage-changed')); }
+  function toast(m) { var t = q('[data-lp-toast]'); t.textContent = m; t.hidden = false; clearTimeout(toast.t); toast.t = setTimeout(function () { t.hidden = true; }, 2500); }
+  q('[data-f=format]').addEventListener('change', exemple);
+  q('[data-f=critere]').addEventListener('change', aideCritere);
+  root.addEventListener('click', function (e) {
+    var b = e.target.closest('button'); if (!b || b.disabled) return;
+    if (b.hasAttribute('data-lp-annuler')) { afficher(); toast('Modifications annulées.'); return; }
+    if (b.hasAttribute('data-lp-enregistrer')) {
+      var ec = q('[data-f=ecart]').value.trim();
+      if (ec === '' || isNaN(Number(ec)) || Number(ec) < 0) { toast('L’écart toléré doit être un nombre positif ou nul.'); q('[data-f=ecart]').focus(); return; }
+      cfg = { format: q('[data-f=format]').value, ecart: Number(ec), compteEcart: q('[data-f=compteEcart]').value, critere: q('[data-f=critere]').value, memePiece: q('[data-f=memePiece]').checked, equilibre: q('[data-f=equilibre]').checked };
+      publier(); try { localStorage.setItem(CLE, JSON.stringify(cfg)); } catch (x) {} toast('Paramètre du lettrage enregistré.');
+    }
+  });
+  afficher(); publier();
+})();
+</script>

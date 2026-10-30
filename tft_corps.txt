@@ -1,0 +1,186 @@
+<style>
+.bp-box{border:1px solid #D6D9E0;border-radius:8px;margin:0;padding:8px 12px 12px;min-width:0}
+.bp-box legend{padding:0 6px;font-size:12px;font-weight:700;color:#2E427B}
+.bp-box .bp-radios,.bp-box .bp-chk{padding-top:4px}
+.tp-2{display:grid;grid-template-columns:minmax(0,3fr) minmax(0,2fr);gap:16px;align-items:start}
+.tp-2>div{display:grid;gap:12px;min-width:0}
+@media (max-width:900px){.tp-2{grid-template-columns:1fr}}
+.tp-r2{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:12px}
+@media (max-width:700px){.tp-r2{grid-template-columns:1fr}}
+</style>
+
+<div class="bp-root" data-tp>
+  <h1 style="position:absolute;width:1px;height:1px;overflow:hidden;clip-path:inset(50%);margin:0">Paramétrage du tableau de flux de trésorerie</h1>
+
+  <div class="bp-modele">
+    <label class="bp-champ" style="flex:1;max-width:420px"><span>Modèle du TFT</span>
+      <select class="bp-sel" data-tp-modele><option value="">— Sélectionner un modèle —</option></select></label>
+  </div>
+
+  <div class="no-print" data-tp-actions>
+    <button type="button" data-tp-ajouter>Ajouter</button>
+    <button type="button" data-tp-nouveau>Nouveau modèle</button>
+    <button type="button" data-tp-dupliquer disabled>Dupliquer</button>
+    <button type="button" data-tp-supprimer-modele disabled>Supprimer</button>
+    <button type="button" data-tp-modifier>Modifier</button>
+    <button type="button" data-tp-enregistrer>Enregistrer</button>
+    <button type="button" data-tp-annuler>Annuler</button>
+    <button type="button" data-tp-imprimer>Imprimer</button>
+    <button type="button" data-tp-exporter>Exporter</button>
+  </div>
+
+  <div class="bp-tabs" role="tablist">
+    <button type="button" role="tab" class="on" data-tp-tab="saisie">Saisie</button>
+    <button type="button" role="tab" data-tp-tab="liste">Liste <span class="bp-n" data-tp-compte></span></button>
+  </div>
+  <div class="bp-grid">
+    <section class="bp-pan" aria-label="Lignes du TFT" data-tp-pan="liste" hidden>
+      <h2>Lignes du TFT <small>Double-clic ou « Modifier » pour ouvrir la ligne en saisie</small></h2>
+      <div style="overflow:auto;max-height:560px">
+        <table class="bp-tb" style="min-width:900px"><thead>
+          <tr><th>Ligne</th><th>Libellé</th><th>Nature</th><th>Type</th><th>Type de mouvement</th><th>Tri</th><th>Rupture</th></tr>
+          <tr class="flt">
+            <th><input class="bp-in" data-fc="0" aria-label="Filtrer Ligne"></th><th><input class="bp-in" data-fc="1" aria-label="Filtrer Libellé"></th><th><input class="bp-in" data-fc="2" aria-label="Filtrer Nature"></th>
+            <th><input class="bp-in" data-fc="3" aria-label="Filtrer Type"></th><th><input class="bp-in" data-fc="4" aria-label="Filtrer Type de mouvement"></th><th><input class="bp-in" data-fc="5" aria-label="Filtrer Tri"></th>
+            <th><select class="bp-sel" data-fc="6" aria-label="Filtrer Rupture"><option value=""></option><option value="oui">Oui</option><option value="non">Non</option></select></th>
+          </tr></thead><tbody data-tp-lignes></tbody></table>
+      </div>
+      <div class="bp-vide" data-tp-vide>Sélectionnez ou créez un modèle pour afficher ses lignes.</div>
+    </section>
+
+    <section class="bp-pan" aria-label="Saisie" data-tp-pan="saisie">
+      <h2>Saisie <small data-tp-mode>Consultation</small></h2>
+      <form class="bp-form" data-tp-form onsubmit="return false">
+        <div class="tp-2">
+          <div>
+            <label class="bp-champ"><span>Ligne du TFT <b>*</b></span><input class="bp-in" data-f="code" maxlength="12"></label>
+            <label class="bp-champ"><span>Libellé <b>*</b></span><input class="bp-in" data-f="libelle"></label>
+          </div>
+          <div>
+            <label class="bp-champ"><span>Tri</span><input class="bp-in" data-f="tri" inputmode="numeric"></label>
+          </div>
+        </div>
+        <div class="tp-2">
+          <fieldset class="bp-box"><legend>Nature</legend>
+            <div class="bp-radios">
+              <label><input type="radio" name="tp-nature" value="grille">Grille</label><label><input type="radio" name="tp-nature" value="regroupement">Regroupement</label>
+              <label><input type="radio" name="tp-nature" value="formule">Formule</label><label><input type="radio" name="tp-nature" value="titre">Titre</label>
+            </div></fieldset>
+          <fieldset class="bp-box"><legend>Style</legend>
+            <div class="bp-chk"><label><input type="checkbox" data-c="gras">Gras</label><label><input type="checkbox" data-c="italique">Italique</label><label><input type="checkbox" data-c="vide">Ligne vide</label></div></fieldset>
+        </div>
+        <div class="tp-r2">
+          <label class="bp-champ"><span>Type</span><select class="bp-sel" data-f="type"><option value=""></option><option>Flux d'exploitation</option><option>Flux d'investissement</option><option>Flux de financement</option></select></label>
+          <label class="bp-champ"><span>Type de mouvement</span><select class="bp-sel" data-f="mouvement"><option value=""></option><option>Débit</option><option>Crédit</option><option>Solde</option><option>Variation</option></select></label>
+        </div>
+        <div class="bp-chk"><label><input type="checkbox" data-c="rupture">Ajout d'une ligne de rupture contenant le montant total du regroupement</label></div>
+      </form>
+    </section>
+  </div>
+
+  <div class="bp-ov" hidden data-tp-ov>
+    <div class="bp-dlg" role="dialog" aria-modal="true" aria-labelledby="tp-dt">
+      <h3 id="tp-dt">Nouveau modèle</h3>
+      <label class="bp-champ"><span>Code <b>*</b></span><input class="bp-in" data-n="code" maxlength="12"></label>
+      <label class="bp-champ"><span>Libellé <b>*</b></span><input class="bp-in" data-n="libelle"></label>
+      <p class="bp-note" data-n-err style="color:#B63132" hidden></p>
+      <div class="ft"><button type="button" class="bp-b" data-n-annuler>Annuler</button><button type="button" class="bp-b pri" data-n-ok>Créer</button></div>
+    </div>
+  </div>
+  <div class="bp-toast" role="status" hidden data-tp-toast></div>
+</div>
+
+<script>
+(function () {
+  var root = document.querySelector('[data-tp]'); if (!root) return;
+  function q(s) { return root.querySelector(s); } function qa(s) { return [].slice.call(root.querySelectorAll(s)); }
+  var NAT = { grille: 'Grille', regroupement: 'Regroupement', formule: 'Formule', titre: 'Titre' };
+  function L(code, tri, libelle, nature, type, mouvement, rupture) { return { code: code, tri: tri, libelle: libelle, nature: nature, type: type || '', mouvement: mouvement || '', rupture: !!rupture, gras: nature === 'titre' || nature === 'regroupement', italique: false, vide: false }; }
+  var modeles = [{ id: '1', libelle: 'Modèle N° 1', lignes: [
+    L('F1', 10, "Flux de trésorerie liés à l'activité", 'titre'),
+    L('F11', 20, 'Encaissements reçus des clients', 'grille', "Flux d'exploitation", 'Débit'),
+    L('F12', 30, 'Décaissements aux fournisseurs', 'grille', "Flux d'exploitation", 'Crédit'),
+    L('FA', 40, "Total des flux liés à l'activité", 'regroupement', "Flux d'exploitation", 'Solde', true),
+    L('F2', 50, "Flux de trésorerie liés à l'investissement", 'titre'),
+    L('F21', 60, "Acquisitions d'immobilisations", 'grille', "Flux d'investissement", 'Crédit'),
+    L('FT', 70, 'Variation de la trésorerie nette', 'formule', '', 'Variation')
+  ] }, { id: '2', libelle: 'Modèle N° 2', lignes: [] }];
+  var cur = null, sel = -1, mode = 'consultation';
+  var sM = q('[data-tp-modele]'), tb = q('[data-tp-lignes]');
+  function toast(m) { var t = q('[data-tp-toast]'); t.textContent = m; t.hidden = false; clearTimeout(toast.t); toast.t = setTimeout(function () { t.hidden = true; }, 2200); }
+  function esc(s) { return String(s == null ? '' : s).replace(/[&<>"]/g, function (c) { return { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c]; }); }
+  function refModeles(g) { sM.innerHTML = '<option value="">— Sélectionner un modèle —</option>' + modeles.map(function (m) { return '<option value="' + m.id + '">' + m.id + ' - ' + m.libelle + '</option>'; }).join(''); sM.value = g || ''; }
+  function modele() { return modeles.filter(function (m) { return m.id === sM.value; })[0] || null; }
+  function filtrer() {
+    var F = qa('[data-fc]').map(function (e) { return e.value.trim().toLowerCase(); });
+    qa('[data-tp-lignes] tr').forEach(function (tr) { tr.hidden = F.some(function (v, k) { if (!v) return false; var td = tr.children[k]; var t = (td.dataset.v || td.textContent).toLowerCase(); return k === 6 ? t !== v : t.indexOf(v) < 0; }); });
+  }
+  qa('[data-fc]').forEach(function (e) { e.addEventListener('input', filtrer); e.addEventListener('change', filtrer); });
+  function renderLignes() {
+    var m = modele(); cur = m;
+    q('[data-tp-dupliquer]').disabled = !m; q('[data-tp-supprimer-modele]').disabled = !m;
+    q('[data-tp-vide]').hidden = !!m && m.lignes.length > 0;
+    q('[data-tp-vide]').textContent = !m ? 'Sélectionnez ou créez un modèle pour afficher ses lignes.' : "Ce modèle n'a pas encore de ligne : utilisez « Ajouter ».";
+    q('[data-tp-compte]').textContent = m ? m.lignes.length + ' ligne' + (m.lignes.length > 1 ? 's' : '') : '';
+    tb.innerHTML = m ? m.lignes.map(function (l, i) { return { l: l, i: i }; }).sort(function (a, b) { return (+a.l.tri || 0) - (+b.l.tri || 0); }).map(function (o) {
+      var l = o.l;
+      return '<tr data-i="' + o.i + '" class="t-' + l.nature + (o.i === sel ? ' sel' : '') + '"><td>' + esc(l.code) + '</td><td>' + esc(l.libelle) + '</td><td>' + NAT[l.nature] + '</td><td>' + esc(l.type) + '</td><td>' + esc(l.mouvement) + '</td><td class="c">' + esc(l.tri) + '</td>' +
+        '<td class="c" data-v="' + (l.rupture ? 'oui' : 'non') + '"><input type="checkbox" tabindex="-1" aria-label="Rupture"' + (l.rupture ? ' checked' : '') + '></td></tr>';
+    }).join('') : '';
+    filtrer();
+  }
+  function remplirForm(l) {
+    var vide = !l; l = l || L('', '', '', '', '', '');
+    qa('[data-f]').forEach(function (e) { e.value = l[e.dataset.f] == null ? '' : l[e.dataset.f]; });
+    qa('[name=tp-nature]').forEach(function (r) { r.checked = !vide && r.value === l.nature; });
+    qa('[data-c]').forEach(function (c) { c.checked = !!l[c.dataset.c]; });
+  }
+  function appliquerMode() {
+    var ed = mode !== 'consultation';
+    qa('[data-tp-form] input,[data-tp-form] select').forEach(function (e) { e.disabled = !ed; });
+    q('[data-tp-mode]').textContent = mode === 'creation' ? 'Création' : mode === 'edition' ? 'Modification' : 'Consultation';
+    var m = modele(), a = q('[data-tp-actions]');
+    a.querySelector('[data-tp-ajouter]').disabled = !m || ed; a.querySelector('[data-tp-modifier]').disabled = !m || ed || sel < 0;
+    a.querySelector('[data-tp-enregistrer]').disabled = !ed; a.querySelector('[data-tp-annuler]').disabled = !ed;
+    a.querySelector('[data-tp-imprimer]').disabled = !m; a.querySelector('[data-tp-exporter]').disabled = !m;
+  }
+  function onglet(n) { qa('[data-tp-pan]').forEach(function (p) { p.hidden = p.dataset.tpPan !== n; }); qa('[data-tp-tab]').forEach(function (t) { var on = t.dataset.tpTab === n; t.classList.toggle('on', on); t.setAttribute('aria-selected', on); }); }
+  function choisir(i) { if (mode !== 'consultation') return; sel = i; renderLignes(); remplirForm(cur.lignes[i]); appliquerMode(); }
+  qa('[data-tp-tab]').forEach(function (t) { t.addEventListener('click', function () { onglet(t.dataset.tpTab); }); });
+  tb.addEventListener('click', function (e) { var tr = e.target.closest('tr[data-i]'); if (tr) choisir(+tr.dataset.i); });
+  tb.addEventListener('dblclick', function (e) { var tr = e.target.closest('tr[data-i]'); if (tr) { choisir(+tr.dataset.i); onglet('saisie'); } });
+  sM.addEventListener('change', function () { sel = -1; mode = 'consultation'; renderLignes(); remplirForm(null); appliquerMode(); });
+
+  function enregistrer() {
+    var l = {}; qa('[data-f]').forEach(function (e) { l[e.dataset.f] = e.value.trim(); }); qa('[data-c]').forEach(function (c) { l[c.dataset.c] = c.checked; });
+    var n = qa('[name=tp-nature]:checked')[0]; l.nature = n && n.value; l.tri = parseInt(l.tri, 10) || '';
+    var err = !l.code ? 'La ligne du TFT est obligatoire.' : !l.libelle ? 'Le libellé est obligatoire.' : !l.nature ? 'Choisissez la nature de la ligne.' : '';
+    if (!err && cur.lignes.some(function (x, i) { return x.code === l.code && i !== sel; })) err = 'Cette ligne existe déjà dans le modèle.';
+    if (err) { toast(err); return; }
+    if (mode === 'creation') { cur.lignes.push(l); sel = cur.lignes.length - 1; } else cur.lignes[sel] = l;
+    mode = 'consultation'; renderLignes(); remplirForm(cur.lignes[sel]); appliquerMode(); onglet('liste'); toast('Ligne enregistrée');
+  }
+  root.addEventListener('click', function (e) {
+    var b = e.target.closest('button'); if (!b || b.disabled) return;
+    if (b.hasAttribute('data-tp-ajouter')) { onglet('saisie'); mode = 'creation'; sel = -1; renderLignes(); remplirForm(null); q('[data-f=tri]').value = (cur.lignes.length + 1) * 10; appliquerMode(); q('[data-f=code]').focus(); return; }
+    if (b.hasAttribute('data-tp-modifier')) { onglet('saisie'); mode = 'edition'; appliquerMode(); q('[data-f=code]').focus(); return; }
+    if (b.hasAttribute('data-tp-annuler')) { mode = 'consultation'; renderLignes(); remplirForm(sel >= 0 ? cur.lignes[sel] : null); appliquerMode(); return; }
+    if (b.hasAttribute('data-tp-enregistrer')) { enregistrer(); return; }
+    if (b.hasAttribute('data-tp-imprimer')) { window.print(); return; }
+    if (b.hasAttribute('data-tp-exporter')) { toast('Export du modèle ' + cur.id + ' (maquette)'); return; }
+    if (b.hasAttribute('data-tp-nouveau')) { q('[data-tp-ov]').hidden = false; q('[data-n-err]').hidden = true; qa('[data-n]').forEach(function (i) { i.value = ''; }); q('[data-n=code]').focus(); return; }
+    if (b.hasAttribute('data-tp-dupliquer')) { var m0 = modele(), n = 2; while (modeles.some(function (x) { return x.id === m0.id + '-' + n; })) n++; var cp = JSON.parse(JSON.stringify(m0)); cp.id = m0.id + '-' + n; cp.libelle = m0.libelle + ' (copie)'; modeles.push(cp); refModeles(cp.id); sM.dispatchEvent(new Event('change')); toast('Modèle dupliqué'); return; }
+    if (b.hasAttribute('data-tp-supprimer-modele')) { var m1 = modele(); if (!window.confirm('Supprimer le modèle « ' + m1.id + ' » ?')) return; modeles = modeles.filter(function (x) { return x !== m1; }); refModeles(''); sM.dispatchEvent(new Event('change')); toast('Modèle supprimé'); return; }
+    if (b.hasAttribute('data-n-annuler')) { q('[data-tp-ov]').hidden = true; return; }
+    if (b.hasAttribute('data-n-ok')) {
+      var c = q('[data-n=code]').value.trim().toUpperCase(), lb = q('[data-n=libelle]').value.trim(), er = q('[data-n-err]');
+      if (!c || !lb) { er.textContent = 'Le code et le libellé sont obligatoires.'; er.hidden = false; return; }
+      if (modeles.some(function (x) { return x.id === c; })) { er.textContent = 'Ce code existe déjà.'; er.hidden = false; return; }
+      modeles.push({ id: c, libelle: lb, lignes: [] }); refModeles(c); sM.dispatchEvent(new Event('change')); q('[data-tp-ov]').hidden = true; toast('Modèle créé'); return;
+    }
+  });
+  root.addEventListener('keydown', function (e) { if (e.key === 'Escape' && !q('[data-tp-ov]').hidden) q('[data-tp-ov]').hidden = true; });
+  refModeles(''); renderLignes(); remplirForm(null); appliquerMode();
+  sM.value = '1'; sM.dispatchEvent(new Event('change')); onglet('liste');
+})();
+</script>

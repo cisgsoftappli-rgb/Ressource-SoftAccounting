@@ -1,0 +1,97 @@
+<!--
+  Écran « Appendice 4 - Etat de rapprochement du compte désigné » (édition de l'EJCD).
+  Reprise de la capture : critères d'édition (exercice, centre de saisie, compte désigné, lignes 4 à 11) ; le bouton « Éditer l'état »
+  produit le document (modèle de l'EJCD) à partir du paramétrage EJCD (window.__ejcdValue) et des saisies. Publie window.__ejcdCtx.
+-->
+<style>
+.ee{color:#2c2c2a;font-size:12px}
+.ee-h{margin:0 0 6px;font-size:16px;font-weight:400;color:#2a8fc0}.ee-hr{border:0;border-top:1px solid #2a8fc0;margin:0 0 18px}
+.ee-r{display:grid;grid-template-columns:200px minmax(0,1fr);gap:0 20px;align-items:center;margin-bottom:12px}
+.ee-r>label{font-size:12px}
+.ee-in{width:100%;border:1px solid #c9ced6;border-radius:3px;background:#fff;padding:6px 8px;font:inherit;font-size:12px;color:#2c2c2a}
+.ee-in:focus{outline:none;border-color:#3e97ff}.ee-w{max-width:220px}
+.ee-chip{display:inline-flex;align-items:center;gap:6px;background:#e5e8ec;border-radius:3px;padding:3px 8px;font-size:12px;margin:2px}.ee-chip b{cursor:pointer;color:#8a94a0}
+.ee-box{border:1px solid #c9ced6;border-radius:3px;background:#fff;padding:3px 4px;min-height:32px}
+.ee-rad{display:flex;gap:140px;color:#6b7280}.ee-rad label{display:inline-flex;align-items:center;gap:8px}
+.ee-two{display:flex;gap:20px;align-items:flex-start}.ee-two .ee-num{width:190px;text-align:right}
+.ee-ck{width:18px;height:18px}
+.ee-bar{display:flex;gap:10px;margin-top:20px;align-items:center}
+.ee-btn{border:0;border-radius:4px;background:#3e97ff;color:#fff;padding:8px 18px;font:inherit;font-size:13px;font-weight:700;cursor:pointer}.ee-btn:hover{background:#0c447c}.ee-btn.sec{background:#fff;color:#4b5675;border:1px solid #c9ced6}
+.ee-ov{position:fixed;inset:0;z-index:2000;background:#0f172a99;display:flex;align-items:flex-start;justify-content:center;padding:20px;overflow:auto}
+.ee-pop{background:#e9e4d7;border-radius:12px;padding:18px;max-width:100%}
+.ee-pophd{display:flex;justify-content:space-between;align-items:center;margin-bottom:12px;color:#26312d;font-weight:700}
+.ee-sheet{background:#fff;width:794px;max-width:100%;box-shadow:0 10px 30px #0000002e;padding:34px 40px 28px;color:#111;font-size:12px;font-family:Arial,sans-serif}
+.ee-sheet h3{margin:0;font-size:16px;color:#1d4e89;border-bottom:2px solid #1d4e89;padding-bottom:4px;display:flex;justify-content:space-between;align-items:baseline}
+.ee-sheet h3 small{font-size:12px;color:#111}
+.ee-meta{display:flex;justify-content:space-between;font-size:10px;color:#444;margin:6px 0 10px}
+.ee-ctx{margin:8px 0 12px;line-height:1.7}.ee-ctx b{display:inline-block;min-width:180px}
+.ee-sec{background:#dbe9f6;font-weight:700;padding:4px 8px;margin-top:14px;border:1px solid #9db7d3}
+.ee-tb{width:100%;border-collapse:collapse}.ee-tb td{border:1px solid #cbd5e1;padding:5px 8px;vertical-align:top}.ee-tb td.n{width:36px;text-align:center;font-weight:700}.ee-tb td.a{width:170px;text-align:right;white-space:nowrap}
+.ee-tb tr.tot td{font-weight:700;background:#f1f5f9}
+.ee-sub{width:100%;border-collapse:collapse;margin-top:6px;font-size:11px}.ee-sub th,.ee-sub td{border:1px solid #cbd5e1;padding:3px 6px;text-align:left}.ee-sub th{background:#eef2f6}
+@media print{body.ee-printing>*:not(.ee-ov){display:none!important}body.ee-printing .ee-ov{position:static!important;background:#fff;padding:0;overflow:visible}body.ee-printing .ee-pophd{display:none}body.ee-printing .ee-pop{background:#fff;padding:0}body.ee-printing .ee-sheet{box-shadow:none;width:auto}}
+.ee-ft{margin-top:22px;display:flex;justify-content:space-between;font-size:10px;color:#444}
+</style>
+<app-ejcd-edition>
+<div class="ee" data-ee-root>
+  <h2 class="ee-h">Appendice 4 - Etat de rapprochement du compte désigné</h2><hr class="ee-hr">
+  <div class="ee-r"><label>Exercice Comptable</label><select class="ee-in ee-w" data-ee="exo"><option>2026</option><option>2025</option><option>2024</option></select></div>
+  <div class="ee-r"><label>Centre de saisie</label><div class="ee-box" data-ee-chips><span class="ee-chip">01 - UGP <b data-ee-rm>×</b></span></div></div>
+  <div class="ee-r"><label>Sources de financements</label><input class="ee-in" data-ee="src" placeholder="Sélection..."></div>
+  <div class="ee-r"><label>Monnaie</label><select class="ee-in" data-ee="mon"><option value=""></option><option selected>MGA</option><option>USD</option><option>EUR</option></select></div>
+  <div class="ee-r"><label>Date</label><input class="ee-in ee-w" type="date" data-ee="date" value="2026-10-13"></div>
+  <div class="ee-r"><label>Compte désigné</label><select class="ee-in" data-ee="cpt"><option value=""></option><option selected>511000</option><option>512000</option></select></div>
+  <div class="ee-r"><label>Nom de la banque</label><input class="ee-in" data-ee="bank" value="BMOI"></div>
+  <div class="ee-r"><label>Ligne 4</label><div class="ee-rad"><label><input type="radio" name="ee-l4" value="gl" checked> Solde du grand livre</label><label><input type="radio" name="ee-l4" value="rb"> Solde du relevé bancaire</label></div></div>
+  <div class="ee-r"><label>Ligne 5</label><label style="display:flex;align-items:center;gap:60px"><input type="checkbox" class="ee-ck" data-ee="l5"> Solde tenant compte de la source de Financement</label></div>
+  <div class="ee-r" style="align-items:start"><label>Ligne 6</label><div class="ee-two"><input class="ee-in ee-num" data-ee="l6" value="1867710594.29"><textarea class="ee-in" rows="4" data-ee="l6t" style="flex:1">Demande de retrait numéro 38</textarea></div></div>
+  <div class="ee-r" style="align-items:start"><label>Ligne 7</label><div class="ee-two"><input class="ee-in ee-num" data-ee="l7" value="4137758"><textarea class="ee-in" rows="4" data-ee="l7t" style="flex:1"></textarea></div></div>
+  <div class="ee-r"><label>Ligne 8 (liste définie à partir de)</label><div class="ee-rad"><label><input type="radio" name="ee-l8" value="sc" checked> Schéma comptable</label><label><input type="radio" name="ee-l8" value="drf"> Demandes validées</label></div></div>
+  <div class="ee-r"><label>Ligne 9 / 11a</label><div style="display:flex;align-items:center;gap:30px;flex-wrap:wrap"><label style="display:flex;align-items:center;gap:60px"><input type="checkbox" class="ee-ck" data-ee="l9"> Intérêts sur tous les comptes</label><input class="ee-in ee-w" type="date" data-ee="d1"> <span>au</span> <input class="ee-in ee-w" type="date" data-ee="d2"></div></div>
+  <div class="ee-r" style="align-items:start"><label>Remarques (ligne 11)</label><textarea class="ee-in" rows="4" data-ee="rem"></textarea></div>
+  <div class="ee-bar"><button type="button" class="ee-btn" data-ee-go>Éditer l'état</button><button type="button" class="ee-btn sec" data-ee-reset>Réinitialiser</button></div>
+</div>
+<script>
+(function () {
+  var root = document.currentScript.parentElement.querySelector('[data-ee-root]');
+  var q = function (s) { return root.querySelector(s); }, v = function (k) { return q('[data-ee="' + k + '"]').value; };
+  function esc(s) { var d = document.createElement('div'); d.textContent = s == null ? '' : s; return d.innerHTML; }
+  function nf(x) { var p = Math.abs(x).toFixed(2).split('.'); p[0] = p[0].replace(/\B(?=(\d{3})+(?!\d))/g, ' '); return (x < 0 ? '-' : '') + p.join(','); }
+  function fdate(s) { if (!s) return ''; var p = s.split('-'); return p[2] + '/' + p[1] + '/' + p[0]; }
+  var EV = {};
+  function val(l) { return EV['l' + l] || 0; }
+  function ctx() {
+    window.__ejcdCtx = Object.assign(window.__ejcdCtx || {}, { l6: parseFloat(v('l6')) || 0, l7: parseFloat(v('l7')) || 0, l6t: v('l6t'), l7t: v('l7t'), rem: v('rem') });
+    EV = window.__ejcdEval ? window.__ejcdEval() : {};
+    var l1 = val('1'), l2 = val('2'), l4 = val('4'), l5a = val('5a'), l5c = val('5c'), l6 = parseFloat(v('l6')) || 0, l7 = parseFloat(v('l7')) || 0, l8 = val('8'), l9 = val('9');
+    var l3 = l1 - l2, tot = l4 + l5a + l5c, l10 = tot + l6 + l7 + l8 - l9, l11 = l3 - l10;
+    var c = { Convention: 'E083-MG', Exercice: v('exo'), 'Fin exercice': '31/12/' + v('exo'), Date: fdate(v('date')), Monnaie: v('mon') || 'MGA', 'Compte désigné': v('cpt') || '—', Banque: v('bank'),
+      l1: l1, l2: l2, l3: l3, l4: l4, l5a: l5a, l5c: l5c, tot: tot, l6: l6, l6t: v('l6t'), l7: l7, l7t: v('l7t'), l8: l8, l9: l9, l10: l10, l11: l11, rem: v('rem'), l4src: q('[name="ee-l4"]:checked').value, l8src: q('[name="ee-l8"]:checked').value };
+    window.__ejcdCtx = c; window.dispatchEvent(new Event('ejcd-change')); return c;
+  }
+  function doc(c) {
+    var row = function (n, lab, a, extra, cls) { return '<tr class="' + (cls || '') + '"><td class="n">' + n + '</td><td>' + lab + (extra || '') + '</td><td class="a">' + (a == null ? '' : nf(a)) + '</td></tr>'; };
+    return '<div class="ee-sheet"><h3>Appendice 4 - Etat de rapprochement du compte désigné <small>' + esc(c.Monnaie) + '</small></h3>' +
+      '<div class="ee-meta"><span>SOFTWELL - Version partenaire SOFTWELL - FOOD SYSTEM RESILIENCE PROGRAM - MADAGASCAR</span><span>Page 1/1</span></div>' +
+      '<div class="ee-ctx"><div><b>Financement du IDA n° :</b> ' + esc(c.Convention) + '</div><div><b>Pour l\'exercice clos le :</b> ' + esc(c['Fin exercice']) + '</div><div><b>Numéro du compte bancaire :</b> ' + esc(c['Compte désigné']) + '</div></div>' +
+      '<div class="ee-sec">SECTION 1</div><table class="ee-tb">' + row(1, 'Montant total avancé par IDA', c.l1) + row(2, 'moins montant total recouvré par IDA', c.l2) + row(3, '= Encours de l\'avance du IDA', c.l3, '', 'tot') + '</table>' +
+      '<div class="ee-sec">SECTION 2</div><table class="ee-tb">' +
+      row(4, 'Solde du compte désigné selon le relevé bancaire', c.l4) + row(5, 'Plus Solde des comptes d\'exploitation' + (q('[data-ee="l5"]').checked ? ' <i>(tenant compte de la source de financement)</i>' : ''), c.l5a) + row('', 'Plus argent en caisse', c.l5c) +
+      row('', '= Solde bancaire total au ' + esc(c.Date), c.tot, '', 'tot') + row(6, 'Plus montant demandé dans la présente demande de retrait', c.l6, c.l6t ? '<div style="color:#555">' + esc(c.l6t) + '</div>' : '') + row(7, 'Plus montant retiré mais pas encore demandé', c.l7, c.l7t ? '<div style="color:#555">' + esc(c.l7t) + '</div>' : '') +
+      row(8, 'Plus montants demandés dans les demandes précédentes et non encore crédités à la date du relevé bancaire, ou demandés après cette date' + '<table class="ee-sub"><tr><th>Numéro de la demande</th><th>Date</th><th>Monnaie</th><th>Montant</th></tr>' + (c.l8src === 'drf' ? '<tr><td>37</td><td>30/09/2026</td><td>' + esc(c.Monnaie) + '</td><td style="text-align:right">' + nf(c.l8) + '</td></tr>' : '') + '</table>', c.l8) +
+      row(9, 'moins intérêts perçus', c.l9) + row(10, '= Montant total de l\'avance justifiée', c.l10, '', 'tot') + row(11, 'Explication de la différence entre l\'encours de l\'avance (ligne 3) et l\'avance justifiée (ligne 10)', c.l11, c.rem ? '<div style="color:#555">' + esc(c.rem) + '</div>' : '', 'tot') + '</table>' +
+      '<div class="ee-ft"><span>Date : ' + esc(c.Date) + '</span><span>Edité le ' + esc(c.Date) + ' — SOFTWELL - Madagascar</span></div></div>';
+  }
+  window.__renderEJCD = function () { return doc(ctx()); };
+  q('[data-ee-chips]').addEventListener('click', function (e) { var b = e.target.closest('[data-ee-rm]'); if (b) b.parentElement.remove(); });
+  q('[data-ee-go]').addEventListener('click', function () {
+    var ov = document.createElement('div'); ov.className = 'ee-ov';
+    ov.innerHTML = '<div class="ee-pop"><div class="ee-pophd"><span>Aperçu de l\'état — EJCD</span><span><button type="button" class="ee-btn sec" data-p>Imprimer</button> <button type="button" class="ee-btn" data-x>Fermer</button></span></div>' + doc(ctx()) + '</div>';
+    ov.addEventListener('click', function (e) { if (e.target === ov || e.target.closest('[data-x]')) ov.remove(); else if (e.target.closest('[data-p]')) { document.body.classList.add('ee-printing'); window.print(); document.body.classList.remove('ee-printing'); } });
+    document.body.appendChild(ov);
+  });
+  q('[data-ee-reset]').addEventListener('click', function () { q('[data-ee="l6"]').value = '0'; q('[data-ee="l7"]').value = '0'; q('[data-ee="l6t"]').value = q('[data-ee="l7t"]').value = q('[data-ee="rem"]').value = ''; ctx(); });
+  root.addEventListener('input', ctx); root.addEventListener('change', ctx); ctx();
+})();
+</script>
+</app-ejcd-edition>

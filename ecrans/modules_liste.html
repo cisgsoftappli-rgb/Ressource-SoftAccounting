@@ -1,0 +1,88 @@
+<style>
+.ml-bar{display:flex;align-items:center;justify-content:space-between;gap:12px;flex-wrap:wrap;margin:0 0 16px}
+.ml-cnt{font-size:12.5px;color:#888780}.ml-cnt b{color:#2c2c2a}
+.ml-seg{display:inline-flex;border:1px solid #d3d1c7;border-radius:8px;overflow:hidden;background:#fff}
+.ml-seg button{display:inline-flex;align-items:center;gap:6px;height:34px;padding:0 14px;border:0;background:#fff;color:#5f5e5a;font-size:12.5px;font-weight:600;cursor:pointer}
+.ml-seg button+button{border-left:1px solid #d3d1c7}
+.ml-seg button[aria-pressed="true"]{background:#00875a;color:#fff}
+.ml-tb{width:100%;border-collapse:separate;border-spacing:0;background:#fff;border:1px solid #edf1f5;border-radius:12px;overflow:hidden;font-size:13px}
+.ml-tb th{text-align:left;padding:10px 14px;background:#f6f8fb;color:#888780;font-size:11.5px;font-weight:700;letter-spacing:.05em;text-transform:uppercase;border-bottom:1px solid #edf1f5;white-space:nowrap}
+.ml-tb td{padding:10px 14px;border-bottom:1px solid #edf1f5;color:#2c2c2a;vertical-align:middle}
+.ml-tb tr:last-child td{border-bottom:0}
+.ml-tb tbody tr:hover td{background:#fafaf9}
+.ml-tb tr.ml-grp td{background:#fafaf9;font-size:11.5px;font-weight:700;letter-spacing:.08em;text-transform:uppercase;color:#b4b2a9;padding:7px 14px}
+.ml-nm{display:flex;align-items:center;gap:10px;font-weight:600;white-space:nowrap}
+.ml-ic{width:30px;height:30px;border-radius:8px;background:#e6f1fb;color:#185fa5;display:inline-flex;align-items:center;justify-content:center;font-size:16px;flex:none}
+.ml-ds{color:#888780;font-size:12.5px;line-height:1.4}
+.ml-pl{display:inline-flex;align-items:center;gap:6px;font-size:11.5px;font-weight:600;padding:2px 10px;border-radius:999px}
+.ml-pl i{width:6px;height:6px;border-radius:50%;background:currentColor}
+.ml-pl.on{background:#e7f6ef;color:#0f7a4f}.ml-pl.off{background:#f1efe8;color:#888780}
+.ml-sw{position:relative;width:38px;height:22px;border:0;border-radius:999px;background:#d3d1c7;cursor:pointer;padding:0;transition:background .15s}
+.ml-sw:after{content:"";position:absolute;top:3px;left:3px;width:16px;height:16px;border-radius:50%;background:#fff;transition:left .15s}
+.ml-sw[aria-checked="true"]{background:#00875a}.ml-sw[aria-checked="true"]:after{left:19px}
+.ml-c{text-align:center}
+@media (max-width:760px){.ml-ds{display:none}}
+</style>
+<script>
+(function () {
+  var root = document.currentScript.parentElement;
+  var heads = [].slice.call(root.querySelectorAll('span')).filter(function (s) { return /^Modules (standalone|états)$/.test(s.textContent.trim()); });
+  if (!heads.length) return;
+  var secs = heads.map(function (h) {
+    var head = h.parentElement, grid = head.nextElementSibling;
+    return { type: h.textContent.trim().replace('Modules ', ''), head: head, grid: grid, cards: [].slice.call(grid.children).filter(function (c) { return c.querySelector('h3'); }) };
+  });
+  var first = secs[0].head;
+  var tplOn = null, tplOff = null;
+  function stat(c) { return [].slice.call(c.querySelectorAll('span')).filter(function (s) { return /^(Actif|Inactif)$/.test(s.textContent.trim()); })[0]; }
+  function btn(c) { return c.querySelector('button'); }
+  var mods = [];
+  secs.forEach(function (s) { s.cards.forEach(function (c) {
+    var on = /^Actif$/.test(stat(c).textContent.trim());
+    if (on && !tplOn) tplOn = { st: stat(c).outerHTML, bt: btn(c).outerHTML };
+    if (!on && !tplOff) tplOff = { st: stat(c).outerHTML, bt: btn(c).outerHTML };
+    mods.push({ card: c, type: s.type, on: on, name: c.querySelector('h3').textContent.trim(), desc: (c.querySelector('p') || {}).textContent || '', icon: (c.querySelector('i[class*="ti-"]') || {}).className || 'ti ti-puzzle' });
+  }); });
+  var bar = document.createElement('div'); bar.className = 'ml-bar';
+  bar.innerHTML = '<span class="ml-cnt" data-ml-cnt></span><div class="ml-seg" role="group" aria-label="Mode d’affichage"><button type="button" data-ml-v="cards" aria-pressed="true"><i class="ti ti-layout-grid"></i> Cartes</button><button type="button" data-ml-v="list" aria-pressed="false"><i class="ti ti-list"></i> Liste</button></div>';
+  first.parentNode.insertBefore(bar, first);
+  var vis = [].slice.call(first.parentNode.children).filter(function (e) { return /^Visibilité des menus/.test(e.textContent.trim()); })[0];
+  var list = document.createElement('div'); list.style.display = 'none';
+  list.innerHTML = '<table class="ml-tb"><thead><tr><th>Module</th><th>Description</th><th>Statut</th><th>Sidebar</th><th class="ml-c">Activation</th></tr></thead><tbody data-ml-rows></tbody></table>';
+  secs[secs.length - 1].grid.parentNode.appendChild(list);
+  var rows = list.querySelector('[data-ml-rows]');
+  function esc(s) { return String(s).replace(/[&<>"]/g, function (c) { return { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c]; }); }
+  function paintCard(m) {
+    var c = m.card, t = m.on ? tplOn : tplOff;
+    if (!t) return;
+    stat(c).outerHTML = t.st; btn(c).outerHTML = t.bt;
+    btn(c).addEventListener('click', function () { toggle(m); });
+  }
+  function draw() {
+    var h = '', n = 0;
+    secs.forEach(function (s) {
+      h += '<tr class="ml-grp"><td colspan="5">Modules ' + esc(s.type) + ' · ' + s.cards.length + '</td></tr>';
+      mods.filter(function (m) { return m.type === s.type; }).forEach(function (m) {
+        if (m.on) n++;
+        var i = mods.indexOf(m);
+        h += '<tr><td><div class="ml-nm"><span class="ml-ic"><i class="' + esc(m.icon) + '"></i></span>' + esc(m.name) + '</div></td><td class="ml-ds">' + esc(m.desc) + '</td>' +
+          '<td><span class="ml-pl ' + (m.on ? 'on' : 'off') + '"><i></i>' + (m.on ? 'Actif' : 'Inactif') + '</span></td>' +
+          '<td class="ml-ds">' + (m.on ? 'Visible' : 'Masqué') + '</td><td class="ml-c"><button type="button" class="ml-sw" role="switch" aria-checked="' + m.on + '" aria-label="' + (m.on ? 'Désactiver ' : 'Activer ') + esc(m.name) + '" data-ml-i="' + i + '"></button></td></tr>';
+      });
+    });
+    rows.innerHTML = h;
+    bar.querySelector('[data-ml-cnt]').innerHTML = '<b>' + n + '</b> module(s) actif(s) sur ' + mods.length;
+  }
+  function toggle(m) { m.on = !m.on; paintCard(m); draw(); }
+  rows.addEventListener('click', function (e) { var b = e.target.closest('[data-ml-i]'); if (b) toggle(mods[+b.dataset.mlI]); });
+  mods.forEach(function (m) { btn(m.card).addEventListener('click', function () { toggle(m); }); });
+  function view(v) {
+    bar.querySelectorAll('[data-ml-v]').forEach(function (b) { b.setAttribute('aria-pressed', b.dataset.mlV === v); });
+    secs.forEach(function (s) { s.head.style.display = s.grid.style.display = v === 'list' ? 'none' : ''; });
+    list.style.display = v === 'list' ? '' : 'none';
+    if (vis) vis.style.display = v === 'list' ? 'none' : '';
+  }
+  bar.addEventListener('click', function (e) { var b = e.target.closest('[data-ml-v]'); if (b) view(b.dataset.mlV); });
+  draw();
+})();
+</script>

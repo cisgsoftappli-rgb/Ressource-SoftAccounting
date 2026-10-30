@@ -1,0 +1,306 @@
+<!--
+  Écran « Traitement d'une déclaration » (États comptables › Déclaration fiscale › Traitement) — capture Angular
+  softcompta-traitement-declaration-fiscale : parcours en 4 étapes (Sélection des mouvements › Mouvements › Déclaration › Confirmation).
+  Capture : étape 1 + fenêtre « Critères de sélection des mouvements » (type d'impôt, exercice, n° de sélection, période, mode de déclaration,
+  type de journal, code journal, conditions du type de taxe). Étapes 2 à 4 : contenu conçu pour la maquette (non capturé, à confirmer).
+  Les types de taxe viennent de l'écran « Type de taxe » (window.__taxTypes). Données en mémoire.
+-->
+<style>
+.tr-main{background:#f5f4f0;padding:22px;min-height:100%;color:#232320}
+.tr-sec{max-width:1700px;margin:0 auto;display:flex;flex-direction:column;gap:24px}
+.tr-k{margin:0;font-size:12px;color:#8a8a85}.tr-h{margin:4px 0 0;font-size:22px;font-weight:700}.tr-p{margin:4px 0 0;font-size:13px;color:#78776f;line-height:1.6}
+.tr-steps{display:flex;align-items:center;background:#fff;border:1px solid #ece9e1;border-radius:12px;box-shadow:0 1px 2px #0000000d;padding:20px 24px;list-style:none;margin:0}
+.tr-steps li{display:flex;align-items:center;flex:1}.tr-steps li:last-child{flex:0}
+.tr-st{display:flex;align-items:center;gap:10px;background:none;border:0;font:inherit;cursor:pointer;padding:0}.tr-st:disabled{cursor:not-allowed}
+.tr-st i{width:36px;height:36px;border-radius:50%;display:flex;align-items:center;justify-content:center;font:700 13px inherit;font-style:normal;background:#e7e4da;color:#8a8a85;flex-shrink:0}
+.tr-st span{font-size:13px;white-space:nowrap;color:#8a8a85}
+.tr-st.on i{background:#12332c;color:#fff}.tr-st.on span{font-weight:700;color:#232320}.tr-st.ok i{background:#16a34a;color:#fff}.tr-st.ok span{color:#232320}
+.tr-line{flex:1;height:1px;margin:0 16px;background:#ddd8cd}
+.tr-card{background:#fff;border:1px solid #ece9e1;border-radius:12px;box-shadow:0 1px 2px #0000000d;padding:24px}
+.tr-card h2{margin:0 0 4px;font-size:15px;font-weight:700;display:flex;align-items:center;gap:8px}.tr-card>p{margin:0 0 16px;font-size:13px;color:#78776f}
+.tr-crit{display:flex;align-items:center;gap:8px;border:1px solid #dbdfe9;background:#fff;border-radius:8px;padding:10px 16px;font:inherit;font-size:13px;cursor:pointer}.tr-crit:hover{background:#f9f8f5}.tr-crit b{color:#232320}.tr-crit span{color:#8a8a85}
+.tr-empty{padding:32px 0;text-align:center;font-size:13px;color:#8a8a85}
+.tr-ft{display:flex;align-items:center;justify-content:space-between;padding-top:12px;border-top:1px solid #ece9e1}
+.tr-cfm{max-width:520px}.tr-cfb{display:flex;gap:16px;padding:24px 28px}.tr-cfi{flex:0 0 40px;height:40px;border-radius:50%;background:#fff3d6;color:#b7791f;font-size:20px;font-weight:800;display:flex;align-items:center;justify-content:center}.tr-cfi.d{background:#fdecf1;color:#d1416c}.tr-cfb h2{margin:0 0 8px;font-size:16px;font-weight:700;color:#232320}.tr-cfw{background:#fff8eb;border:1px solid #f0d9a8;border-radius:8px;padding:10px 12px;font-size:13px;color:#8a5a12}.tr-cfw ul{margin:6px 0 0 18px;padding:0}.tr-cfb p{margin:10px 0 0;font-size:13px;color:#4b5675}.tr-mf button.d{background:#d1416c;border-color:#d1416c;color:#fff}.tr-bd{min-height:40px;padding:0 16px;border-radius:8px;border:1px solid #f0b4c5;background:#fff;color:#d1416c;font:inherit;font-size:12px;font-weight:600;cursor:pointer}.tr-bd:hover{background:#fdecf1}.tr-done{display:flex;flex-direction:column;align-items:center;text-align:center;padding:64px 0}.tr-dk{width:64px;height:64px;border-radius:50%;background:#dcf3e8;color:#12805c;font-size:28px;display:flex;align-items:center;justify-content:center;margin-bottom:16px}.tr-done h2{margin:0;font-size:16px;font-weight:700;color:#232320}.tr-done p{margin:4px 0 0;font-size:13px;color:#3f7cc9}.tr-done .tr-bk{margin-top:20px}.tr-warn{background:#fff8eb;border:1px solid #f0d9a8;border-radius:12px;padding:12px 16px;font-size:13px;color:#8a5a12}.tr-sm4{display:block;max-width:512px}.tr-sr{display:flex;justify-content:space-between;gap:16px;padding:8px 0;border-bottom:1px solid #f4f6fa;font-size:13px}.tr-sr.last{border-bottom:0}.tr-sr span:first-child{color:#78776f}.tr-nx{min-height:40px;padding:0 16px;border-radius:8px;border:0;font:inherit;font-size:12px;font-weight:600;color:#fff;background:#12332c;cursor:pointer}.tr-nx:disabled{opacity:.45;cursor:not-allowed}
+.tr-bk{min-height:40px;padding:0 16px;border-radius:8px;border:1px solid #dbdfe9;background:#fff;color:#4b5675;font:inherit;font-size:12px;font-weight:600;cursor:pointer}
+.tr-t{width:100%;border-collapse:collapse;font-size:13px}.tr-t th{background:#f5f4f0;text-align:left;padding:8px 10px;font-size:11px;text-transform:uppercase;letter-spacing:.03em;color:#6b6b66}.tr-t td{padding:8px 10px;border-top:1px solid #f1efe9}.tr-t td.n,.tr-t th.n{text-align:right;font-variant-numeric:tabular-nums}
+.tr-sum{display:grid;grid-template-columns:repeat(auto-fit,minmax(200px,1fr));gap:12px;margin-bottom:16px}.tr-sum div{background:#f9f8f5;border:1px solid #ece9e1;border-radius:8px;padding:12px 14px}.tr-sum small{display:block;font-size:11px;text-transform:uppercase;color:#8a8a85}.tr-sum b{font-size:18px}
+.tr-kpi{display:grid;grid-template-columns:repeat(auto-fit,minmax(220px,1fr));gap:16px}.tr-kpi div{background:#fff;border:1px solid #ece9e1;border-radius:12px;box-shadow:0 1px 2px #0000000d;padding:20px}.tr-kpi small{display:block;font-size:12px;color:#78776f}.tr-kpi b{display:block;margin-top:4px;font-size:16px}.tr-okb{background:#dcf3e8;border:1px solid #b7e4cf;border-radius:12px;padding:12px 16px;font-size:13px;color:#12805c}.tr-wide{min-width:1600px;font-size:12px}.tr-wide th{white-space:nowrap;font-size:10px}.tr-wide td{padding:8px 12px;white-space:nowrap}.tr-wide td.tl{max-width:240px;overflow:hidden;text-overflow:ellipsis}.tr-grp td{background:#f7f7f2;font-size:11px;font-weight:600;text-transform:uppercase;letter-spacing:.03em;color:#4b5675}.tr-grp td.n{color:#232320}.tr-mv{cursor:pointer}.tr-mv:hover td{background:#faf9f6}.tr-st.ok span{color:#12805c;font-weight:600}.tr-st.ok i{background:#12805c}.tr-line.g{background:#12805c}.tr-ok{border:1px solid #bbf7d0;background:#f0fdf4;color:#166534;border-radius:8px;padding:12px 16px;font-size:13px;margin-top:12px}
+.tr-ov{position:fixed;inset:0;z-index:2000;display:none;align-items:center;justify-content:center;background:#0f172a99;padding:16px}
+.tr-md{display:flex;flex-direction:column;width:100%;max-width:768px;max-height:90vh;background:#fff;border-radius:16px;box-shadow:0 25px 50px -12px #0f172a40}
+.tr-mh{padding:24px 32px;border-bottom:1px solid #f1f5f9}.tr-mh h2{margin:0;font-size:16px;font-weight:700}.tr-mh p{margin:4px 0 0;font-size:13px;color:#78776f}
+.tr-mb{flex:1;overflow:auto;padding:24px 32px;display:flex;flex-direction:column;gap:24px}
+.tr-g3{display:grid;grid-template-columns:repeat(3,1fr);gap:20px}.tr-g2{display:grid;grid-template-columns:1fr 1fr;gap:20px}@media(max-width:700px){.tr-g3,.tr-g2{grid-template-columns:1fr}}
+.tr-f{display:flex;flex-direction:column;gap:6px}.tr-f>span{font-size:13px;font-weight:600}.tr-f>span i,.tr-lb i{color:#d1416c;font-style:normal}.tr-f small{font-size:12px;color:#78776f}
+.tr-in{border:1px solid #dbdfe9;border-radius:8px;padding:8px 10px;font:inherit;font-size:13px;background:#fff;min-height:38px}.tr-in.bad{border-color:#d1416c}.tr-in:disabled{background:#f4f6fa}
+.tr-rd{display:flex;align-items:center;gap:16px;min-height:38px;flex-wrap:wrap}.tr-rd label{display:flex;align-items:center;gap:6px;font-size:13px;color:#4b5675;cursor:pointer;white-space:nowrap}
+.tr-lb{font-size:13px;font-weight:600}
+.tr-cd{border:1px solid #ece9e1;background:#f9f8f5;border-radius:8px;padding:12px 16px}.tr-cd p{margin:0;font-size:12px;font-weight:600;text-transform:uppercase;color:#8a8a85}.tr-cd ul{list-style:none;margin:8px 0 0;padding:0;display:flex;flex-wrap:wrap;gap:8px}
+.tr-cd li{display:inline-flex;align-items:center;gap:8px;border:1px solid #dbdfe9;background:#fff;border-radius:999px;padding:4px 12px;font-size:12px;color:#4b5675}.tr-cd li b{color:#232320}.tr-cd li em{font-style:normal;padding:2px 6px;border-radius:4px;background:#fdf3e7;color:#c9762c}
+.tr-er{color:#d1416c;font-size:12px;display:none}
+.tr-rd{display:flex;gap:20px;align-items:center;min-height:38px;font-size:13px}.tr-rd label{display:flex;align-items:center;gap:6px;cursor:pointer}.tr-rd input{accent-color:#0c4a6e;width:16px;height:16px;margin:0}.tr-ed{max-width:1240px}.tr-ed .tr-mb{display:grid;grid-template-columns:1fr 1fr;gap:16px;padding:16px 28px;overflow:visible}.tr-ed .tr-sc{padding:12px 16px 14px}.tr-ed .tr-g2{gap:12px 16px}.tr-ed .tr-eh{padding:16px 28px 12px}.tr-ed .tr-mf{padding:14px 28px}@media(max-width:900px){.tr-ed .tr-mb{grid-template-columns:1fr;overflow:auto}}.tr-eh{padding:20px 28px 16px;border-bottom:1px solid #f1f5f9;border-radius:16px 16px 0 0;background:linear-gradient(#f8fafc,#fff)}.tr-eh1{display:flex;justify-content:space-between;align-items:flex-start;gap:16px}.tr-eh h2{margin:0;font-size:17px;font-weight:700;color:#0c4a6e}.tr-eh p{margin:3px 0 0;font-size:12.5px;color:#78776f}
+.tr-ro{background:#f4f6fa;color:#4b5675}.tr-chips{display:flex;flex-wrap:wrap;gap:6px;margin-top:12px}.tr-chips span{background:#e8f1f7;color:#0c4a6e;border-radius:999px;padding:3px 10px;font-size:11.5px;font-weight:600}.tr-chips span b{font-weight:500;color:#4b5675;margin-right:4px}
+.tr-sw{display:flex;align-items:center;gap:8px;cursor:pointer;font-size:13px;font-weight:600;white-space:nowrap;position:relative}.tr-sw input{position:absolute;opacity:0}.tr-tg{width:38px;height:22px;border-radius:999px;background:#cbd5e1;position:relative;transition:.15s}.tr-tg:after{content:"";position:absolute;top:2px;left:2px;width:18px;height:18px;border-radius:50%;background:#fff;transition:.15s;box-shadow:0 1px 2px #0003}.tr-sw input:checked+.tr-tg{background:#0c4a6e}.tr-sw input:checked+.tr-tg:after{left:18px}.tr-sw input:focus-visible+.tr-tg{outline:2px solid #3e97ff;outline-offset:2px}
+.tr-sc{border:1px solid #e5e9f2;border-radius:12px;padding:14px 16px 16px}.tr-sc h3{margin:0 0 12px;font-size:12px;letter-spacing:.06em;text-transform:uppercase;color:#0c4a6e;display:flex;align-items:center;gap:8px;padding-bottom:8px;border-bottom:2px solid #0c4a6e}.tr-sc h3 i{font-style:normal;font-size:13px}
+.tr-sfx{position:relative}.tr-sfx .tr-in{width:100%;padding-right:48px}.tr-sfx em{position:absolute;right:10px;top:50%;transform:translateY(-50%);font-style:normal;font-size:11px;color:#78776f}.tr-num{text-align:right}.tr-hint{min-height:14px;color:#d1416c}.tr-rest{min-height:38px;display:flex;align-items:center;justify-content:flex-end;padding:0 10px;border-radius:8px;background:#f4f6fa;font-size:13px;font-weight:700;color:#0c4a6e}.tr-rest.neg{color:#d1416c;background:#fdecf1}.tr-in:focus{outline:2px solid #3e97ff55;border-color:#3e97ff}
+.tr-mf{display:flex;justify-content:flex-end;gap:8px;border-top:1px solid #f1f5f9;background:#f8fafc80;padding:20px 32px;border-radius:0 0 16px 16px}
+.tr-mf button{min-height:38px;padding:0 16px;border-radius:8px;border:1px solid #dbdfe9;background:#fff;color:#4b5675;font:inherit;font-size:12px;font-weight:600;cursor:pointer}.tr-mf button.p{background:#12332c;border-color:#12332c;color:#fff}
+</style>
+<softcompta-traitement-declaration-fiscale>
+<div data-tr-root style="width:100%">
+<main class="tr-main"><section class="tr-sec">
+  <header><p class="tr-k">Déclaration fiscale / Traitement</p><h1 class="tr-h">Traitement d'une déclaration</h1>
+    <p class="tr-p">Parcours en 4 étapes : sélection des mouvements, grille interactive, déclaration &amp; édition, puis confirmation et verrouillage.</p></header>
+  <ol class="tr-steps" data-tr-steps></ol>
+  <div data-tr-body></div>
+  <footer class="tr-ft"><div data-tr-prev></div><div data-tr-next></div></footer>
+</section></main>
+
+<div class="tr-ov" data-tr-ov>
+  <div class="tr-md" role="dialog" aria-modal="true" aria-label="Critères de sélection des mouvements">
+    <div class="tr-mh"><h2>Critères de sélection des mouvements</h2><p>Sélectionnez le périmètre des écritures à reprendre, puis affichez la liste ou validez la sélection.</p></div>
+    <div class="tr-mb">
+      <div class="tr-g3">
+        <label class="tr-f"><span>Type d'impôt / taxe <i>*</i></span><select class="tr-in" data-tr-f="type"></select></label>
+        <label class="tr-f"><span>Exercice comptable <i>*</i></span><select class="tr-in" data-tr-f="ex"><option value="">Sélectionner</option><option>2028</option><option>2027</option><option>2026</option><option>2025</option><option>2024</option><option>2023</option></select></label>
+        <label class="tr-f"><span>N° de sélection <i>*</i></span><input class="tr-in" data-tr-f="sel" maxlength="50" placeholder="Ex. 01"></label>
+      </div>
+      <div class="tr-f"><span>Période de sélection <i>*</i></span>
+        <div class="tr-g2"><label class="tr-f"><small>du</small><input type="date" class="tr-in" data-tr-f="du"></label><label class="tr-f"><small>au</small><input type="date" class="tr-in" data-tr-f="au"></label></div></div>
+      <div class="tr-g2">
+        <div class="tr-f"><span>Mode de déclaration</span><div class="tr-rd"><label><input type="radio" name="trmode" value="Par l'entité"> Par l'entité</label><label><input type="radio" name="trmode" value="Par l'attributaire"> Par l'attributaire</label></div></div>
+        <div class="tr-f"><span>Type de journal <i>*</i></span><div class="tr-rd"><label><input type="radio" name="trjnl" value="OD"> Journal OD</label><label><input type="radio" name="trjnl" value="Trésorerie"> Journal trésorerie</label><label><input type="radio" name="trjnl" value="Tous"> Les deux</label></div></div>
+      </div>
+      <label class="tr-f"><span>Code journal <i>*</i></span><select class="tr-in" data-tr-f="jnl"><option>Tous</option></select></label>
+      <div class="tr-cd" data-tr-cond></div>
+      <div class="tr-er" data-tr-err></div>
+    </div>
+    <div class="tr-mf"><button type="button" data-tr-cancel>Annuler</button><button type="button" data-tr-show>Afficher</button><button type="button" class="p" data-tr-valid>Valider</button></div>
+  </div>
+</div>
+  <div class="tr-ov" data-tr-ed><div class="tr-md tr-ed" role="dialog" aria-label="Édition du mouvement"><div class="tr-eh"><div class="tr-eh1"><div><h2>Édition du mouvement</h2><p data-tr-edt></p></div><label class="tr-sw" title="Inclure ce mouvement dans la déclaration"><input type="checkbox" data-tr-e="on"><span class="tr-tg"></span><b data-tr-swl>À déclarer</b></label></div></div><div class="tr-mb">
+    <section class="tr-sc"><h3><i>▦</i>Écriture</h3><div class="tr-g2"><label class="tr-f"><span>Date</span><input class="tr-in tr-ro" readonly tabindex="-1" data-tr-r="date"></label><label class="tr-f"><span>N° Pièce</span><input class="tr-in tr-ro" readonly tabindex="-1" data-tr-r="piece"></label><label class="tr-f"><span>Journal</span><input class="tr-in tr-ro" readonly tabindex="-1" data-tr-r="jnl"></label><label class="tr-f"><span>Compte</span><input class="tr-in tr-ro" readonly tabindex="-1" data-tr-r="compte"></label><label class="tr-f" style="grid-column:span 2"><span>Libellé</span><input class="tr-in tr-ro" readonly tabindex="-1" data-tr-r="lib"></label></div></section>
+    <section class="tr-sc"><h3><i>▤</i>Marché</h3><div class="tr-g2"><label class="tr-f"><span>Contrat</span><input class="tr-in" data-tr-e="contrat"></label><label class="tr-f"><span>Objet du marché</span><input class="tr-in" data-tr-e="objet"></label><label class="tr-f"><span>Montant marché</span><div class="tr-sfx"><input class="tr-in tr-num" type="number" min="0" step="1" data-tr-e="mm"><em>MGA</em></div></label><label class="tr-f"><span>Montant déclaration</span><div class="tr-sfx"><input class="tr-in tr-num" type="number" min="0" step="1" data-tr-e="dec"><em>MGA</em></div></label><div class="tr-f" role="radiogroup" aria-label="Mode de déclaration"><span>Mode de déclaration</span><input type="hidden" data-tr-e="modedec"><div class="tr-rd"><label><input type="radio" name="trmd" value="Par l'entité" checked> Par l'entité</label><label><input type="radio" name="trmd" value="Par l'attributaire"> Par l'attributaire</label></div></div></div></section>
+    <section class="tr-sc"><h3><i>👤</i>Tiers</h3><div class="tr-g2"><label class="tr-f"><span>Fournisseur</span><input class="tr-in" data-tr-e="fourn"></label><label class="tr-f"><span>N° Facture</span><input class="tr-in" data-tr-e="fact"></label><label class="tr-f"><span>NIF titulaire</span><input class="tr-in" data-tr-e="nif" inputmode="numeric" placeholder="Chiffres uniquement"><small class="tr-hint" data-tr-nifh></small></label><label class="tr-f"><span>Statut titulaire</span><select class="tr-in" data-tr-e="statut"><option value="">—</option><option>Personne physique</option><option>Personne morale</option><option>Non résident</option></select></label></div></section>
+    <section class="tr-sc"><h3><i>₪</i>Règlement</h3><div class="tr-g2"><label class="tr-f"><span>Montant payé</span><div class="tr-sfx"><input class="tr-in tr-num" type="number" min="0" step="1" data-tr-e="paye"><em>MGA</em></div></label><label class="tr-f"><span>Date paiement</span><input class="tr-in" type="date" data-tr-e="dpay"></label><label class="tr-f"><span>Mode règlement</span><select class="tr-in" data-tr-e="mode"><option value="">—</option><option>Virement</option><option>Chèque</option><option>Espèces</option><option>Mobile money</option></select></label><div class="tr-f"><span>Reste à payer</span><div class="tr-rest" data-tr-rest>—</div></div></div></section>
+  </div><div class="tr-mf"><button type="button" data-tr-ecancel>Annuler</button><button type="button" class="p" data-tr-esave>Enregistrer</button></div></div></div>
+  <div class="tr-ov" data-tr-cf><div class="tr-md tr-cfm" role="alertdialog" aria-label="Confirmation"><div class="tr-cfb"><div class="tr-cfi" data-tr-cfi>!</div><div><h2 data-tr-cft></h2><div class="tr-cfw" data-tr-cfw></div><p data-tr-cfp></p></div></div><div class="tr-mf"><button type="button" data-tr-cfno>Annuler</button><button type="button" class="p" data-tr-cfok>Valider</button></div></div></div>
+</div>
+<script>
+(function () {
+  var root = document.currentScript.parentElement.querySelector('[data-tr-root]');
+  var q = function (s) { return root.querySelector(s); }, qa = function (s) { return Array.prototype.slice.call(root.querySelectorAll(s)); };
+  var STEPS = ['Sélection des mouvements', 'Mouvements', 'Déclaration', 'Confirmation'];
+  var model = '', step = 0, crit = null, rows = [], done = false, locked = false, lotId = '';
+  function esc(s) { var d = document.createElement('div'); d.textContent = s == null ? '' : s; return d.innerHTML; }
+  function nf(v) { return Math.round(v).toString().replace(/\B(?=(\d{3})+(?!\d))/g, ' ') + ' MGA'; }
+  var JN = { 'OD': ['ACHMGA', 'ACHUSD', 'AUDIT', 'OD', 'RMBT'], 'Trésorerie': ['BQ1', 'BQ2', 'CAISSE'] };
+  function jlist(c) { var t = c.jt === 'Tous' ? JN.OD.concat(JN['Trésorerie']) : JN[c.jt] || []; return c.jnl && c.jnl !== 'Tous' ? [c.jnl] : t; }
+  function jlabel(c) { return (c.jt === 'OD' ? 'Journaux OD' : c.jt === 'Trésorerie' ? 'Journaux trésorerie' : 'Journaux OD + trésorerie') + ' : ' + jlist(c).join(', '); }
+  function fmtD(v) { return v ? new Date(v).toLocaleDateString('fr-FR') : ''; }
+  function syncJnl() { var j = root.querySelector('[name="trjnl"]:checked'), t = j ? j.value : 'Tous', l = t === 'Tous' ? JN.OD.concat(JN['Trésorerie']) : JN[t]; fld('jnl').innerHTML = '<option>Tous</option>' + l.map(function (x) { return '<option>' + x + '</option>'; }).join(''); }
+  function types() {
+    var t = (window.__taxTypes || []).filter(function (x) { return x.code; });
+    if (!t.some(function (x) { return x.code === 'TAXE'; })) t = t.concat([{ code: 'TAXE', lib: 'TAXE', cpt: [{ compte: '445000', lib: 'Impôt sur les Marchés Publics', sens: 'Crédit' }] }]);
+    return t;
+  }
+  function fld(k) { return q('[data-tr-f="' + k + '"]'); }
+  function fillTypes() { fld('type').innerHTML = '<option value="">Sélectionner</option>' + types().map(function (t) { return '<option value="' + esc(t.code) + '">' + esc(t.code) + '</option>'; }).join(''); }
+  function cond() {
+    var t = types().filter(function (x) { return x.code === fld('type').value; })[0], el = q('[data-tr-cond]');
+    if (!t) { el.style.display = 'none'; return; }
+    el.style.display = '';
+    el.innerHTML = '<p>Conditions du type de taxe — ' + esc(t.code) + '</p>' + (t.cpt.length ? '<ul>' + t.cpt.map(function (c) { return '<li><b>' + esc(c.compte) + '</b><em>' + esc(c.sens) + '</em>' + esc(c.lib) + '</li>'; }).join('') + '</ul>' : '<p style="margin-top:8px;font-weight:400;text-transform:none">Aucun compte rattaché à ce type de taxe (voir « Type de taxe »).</p>');
+  }
+  function read() {
+    var m = root.querySelector('[name="trmode"]:checked'), j = root.querySelector('[name="trjnl"]:checked');
+    return { type: fld('type').value, ex: fld('ex').value, sel: fld('sel').value.trim(), du: fld('du').value, au: fld('au').value, mode: m ? m.value : '', jt: j ? j.value : '', jnl: fld('jnl').value };
+  }
+  function check(c) {
+    var bad = { type: !c.type, ex: !c.ex, sel: !c.sel, du: !c.du, au: !c.au || (c.du && c.au < c.du), jnl: false };
+    Object.keys(bad).forEach(function (k) { fld(k).classList.toggle('bad', !!bad[k]); });
+    var e = q('[data-tr-err]'), msg = '';
+    if (bad.type || bad.ex || bad.sel || bad.du || bad.au) msg = 'Renseignez le type d’impôt, l’exercice, le n° de sélection et une période valide.'; else if (!c.jt) msg = 'Choisissez un type de journal.';
+    e.textContent = msg; e.style.display = msg ? 'block' : 'none'; return !msg;
+  }
+  var POOL = [['IMP Loyer bureau DECIM', 'ARO', 640000], ['FA F2501430954 IMP Abonnement téléphone et connexion internet YAS', 'TELMA', 526470], ['EXPRESS FA MP323210 IMP AMI Recrutement d\'un assistant de Projet', 'EXPRESS', 31680], ['MIDI FAC/2025/0102 IMP AMI Recrutement Responsable de Communication DECIM', 'MIDI', 198334],
+    ['IMP Location de voiture Descente RIA Tana ville', 'RAVELOHARISON', 103200], ['MADAUTO FA 02/VN/2025 IMP Acquisition de 06 véhicules pick up pour DECIM', 'MADAUTO', 35288960], ['IMP ROSE DE TANA Collations Diverses évaluation Offres DECIM', 'ROSE DE TANA', 246400], ['EA2S IMP Acquisition de 3 video projecteurs pour DECIM', 'EA2S', 1254000],
+    ['IMP Honoraires DG JIRAMA', 'RON', 10582448], ['IMP Honoraires Spécialiste en Passation de Marchés', 'HAINGO', 304348], ['IMP sur honoraires de Coordonnateur de Projet DECIM', 'JACQUIS', 969096], ['IMP Honoraires chauffeur DECIM', 'FALIHERY', 56075], ['IMP Insertion AAO Fourniture des cellules HTA', 'EXPRESS', 285120], ['IMP Honoraires Auditeur Interne DECIM', 'ROLLAND', 410238],
+    ['IMP Honoraires SGRS DECIM', 'TAHIRY', 347826], ['IMP HONORAIRES CTB DECIM', 'MIHANTA', 303261], ['IMP Achat de billets d\'avion TNR-DAR ES SALAAM TNR', 'BLUEBERRY', 1828960], ['MATERAUTO IMP Acquisition de 02 véhicules pour DECIM', 'MATERAUTO', 19264000]];
+  function gen(c) {
+    var d0 = new Date(c.du), d1 = new Date(c.au), span = Math.max(1, Math.round((d1 - d0) / 864e5)), out = [], jn = jlist(c), N = 200;
+    var t = types().filter(function (x) { return x.code === c.type; })[0], cp = t && t.cpt.length ? t.cpt : [{ compte: '445000' }];
+    for (var i = 0; i < N; i++) {
+      var p = POOL[i % POOL.length], d = new Date(d0.getTime() + Math.round(span * i / (N - 1)) * 864e5), a = cp[i % cp.length];
+      out.push({ on: true, date: d.toLocaleDateString('fr-FR'), jnl: jn[0] || 'OD', piece: '', lib: p[0] + (i >= POOL.length ? ' (' + (Math.floor(i / POOL.length) + 1) + ')' : ''), contrat: '—', fact: '—', nif: '—', statut: '—', fourn: p[1], objet: '—', mm: null, paye: null, mt: p[2], dpay: '—', mode: '—', compte: a.compte });
+    }
+    return out;
+  }
+    function models() {
+    var out = [], els = document.querySelectorAll('[data-screen="modfisc"] [data-mf-item]');
+    Array.prototype.forEach.call(els, function (el) {
+      var t = el.querySelector('[data-mf-title]'), sec = el.closest('[data-mf-sec]');
+      if (t) out.push({ nom: t.textContent.trim(), annexe: sec ? sec.dataset.mfSec === 'ANNEXE' : /annexe/i.test(t.textContent) });
+    });
+    if (!out.length) out = [{ nom: 'Annexes', annexe: true }, { nom: 'Déclaration', annexe: false }];
+    if (!out.some(function (m) { return m.nom === model; })) model = (out.filter(function (m) { return !m.annexe; })[0] || out[0]).nom;
+    return out;
+  }
+  function sel() { return rows.filter(function (r) { return r.on; }); }
+  function tmpHtml(b) {
+    var N = function (v) { return v ? nf2(v) : ''; }, tx = b * 0.08, tot = tx;
+    function nf2(v) { var p = Math.abs(v).toFixed(2).split('.'); p[0] = p[0].replace(/\B(?=(\d{3})+(?!\d))/g, ' '); return p.join(','); }
+    var L = [['A', 'A - Retenue et déclaration par le redevable légal'], [10, 'Montant payé sur Marché par le redevable légal au titulaire résident', '', ''], [20, 'Montant payé sur Marché par le redevable légal au titulaire non résident', '', ''], [30, 'Montant TMP 8%', '= (10+20)*8%', '', 1],
+      ['B', 'B - Déclaration sans paiement par le titulaire'], [40, 'Montant payé sur Marché par le redevable au titulaire résident', '', ''], [50, 'Montant payé sur Marché par un Comptable public ou assimilé', '', ''], [60, 'Montant TMP 8%', '= (40+50)*8%', '', 1],
+      ['C', 'C - Déclaration par le titulaire si totalité du marché lui a été payé directement'], [70, 'Montant payé sur Marché directement au titulaire résident', '', N(b)], [80, 'Montant payé sur Marché directement au titulaire non résident', '', ''], [90, 'Montant TMP 8%', '= (70+80)*8%', N(tx), 1], ['', '', '', ''],
+      [100, 'Montant payé sur Marché assujeti à la TMP', '= 10+20+40+50+70+80', N(b), 1], ['', '', '', ''], [200, 'Montant Total TMP 8% à payer', '= 30+90', N(tot), 1]];
+    var td = 'border:1px solid #c9c4f5;padding:4px 8px;';
+    var rows = L.map(function (l) {
+      if (l[0] === 'A' || l[0] === 'B' || l[0] === 'C') return '<tr><td colspan="4" style="' + td + 'font-style:italic;font-weight:700;font-size:10px">' + l[1] + '</td></tr>';
+      var bold = l[4] ? 'font-weight:700;' : '';
+      return '<tr><td style="' + td + 'text-align:center;color:' + (l[0] === 30 || l[0] === 60 || l[0] === 90 ? '#e11d48' : '#0c4a6e') + ';font-weight:700;height:19px">' + l[0] + '</td><td style="' + td + 'color:#0c4a6e;' + bold + '">' + l[1] + '</td><td style="' + td + 'font-size:9px;' + bold + '">' + l[2] + '</td><td style="' + td + 'text-align:right;' + bold + '">' + l[3] + '</td></tr>';
+    }).join('');
+    var t2 = function (a, c, d, e, f) { return '<tr><td style="' + td + f + '">' + a + '</td><td style="' + td + 'text-align:right;' + f + '">' + c + '</td><td style="' + td + 'text-align:right;' + f + '">' + d + '</td><td style="' + td + 'text-align:right;' + f + '">' + e + '</td></tr>'; };
+    return '<div style="font:10px Arial;color:#222;width:1000px"><div style="background:#eaeaea;padding:14px 12px 10px"><h2 style="text-align:center;font-size:16px;color:#0c3b63;margin:18px 0 22px">Formulaire de déclaration taxe sur marchés publics (TMP)</h2><p style="margin:6px 0"><b>NIF :</b> ' + (window.__nifDecl || '') + '</p><p style="margin:12px 0"><b>Raison sociale :</b> <span style="color:#0c4a6e">Version partenaire SOFTWELL</span></p><p style="margin:12px 0;display:flex;justify-content:space-between"><span style="color:#0c4a6e"><b>Période du</b> &nbsp; ' + fmtD(crit.du) + ' <b>au</b> ' + fmtD(crit.au) + '</span><span style="margin-right:240px;color:#0c4a6e"><b>Monnaie :</b> MGA</span></p></div><div style="text-align:right;padding:8px 12px;font-size:9px">Page 1/1</div>' +
+      '<table style="border-collapse:collapse;width:830px;margin:0 0 20px"><tr><th style="' + td + '">Ligne</th><th style="' + td + '">Libellé</th><th style="' + td + 'width:170px">Calcul</th><th style="' + td + 'width:170px">Montant</th></tr>' + rows + '</table>' +
+      '<table style="border-collapse:collapse;width:690px;margin:30px 0 0 390px"><tr><th style="' + td + '">Type</th><th style="' + td + '">Montant dû</th><th style="' + td + '">Montant Payé</th><th style="' + td + '">Reste à payer</th></tr>' + t2('Principal', nf2(tot), nf2(tot), '', 'color:#0c4a6e;') + t2('Pénalité si retard', '', '', '', 'color:#0c4a6e;') + t2('Intérêt 1% par mois de retard', '', '', '', 'color:#0c4a6e;') + t2('&nbsp;', '', '', '', '') + t2('Total dû pour la période', nf2(tot), nf2(tot), '', 'font-weight:700;color:#0c4a6e;') + '</table>' +
+      '<p style="margin:30px 0 0 390px;line-height:2;color:#0c4a6e">Date :<br>Nom et titre :<br>Signature :</p></div>';
+  }
+  function doPrint() {
+    if (/TMP/i.test(model)) { window.__printMask(tmpHtml(total()), { titre: 'Déclaration TMP', paysage: false }); return; }
+    
+    var tr = sel().map(function (r) { return '<tr><td>' + r.date + '</td><td>' + esc(r.jnl) + '</td><td>' + esc(r.lib) + '</td><td>' + esc(r.fourn) + '</td><td style="text-align:right">' + nf(r.mt) + '</td></tr>'; }).join('');
+    window.__printMask('<table><tr><th>Date</th><th>Journal</th><th>Libellé</th><th>Fournisseur</th><th>Montant</th></tr>' + tr + '</table>', { titre: model + ' — ' + crit.type + ' n° ' + crit.sel, sousTitre: 'Exercice ' + crit.ex + ' · ' + fmtD(crit.du) + ' au ' + fmtD(crit.au) + ' · Base imposable : ' + nf(total()) });
+  }
+  function doXls() {
+    var h = '<table><tr><th>Date</th><th>Journal</th><th>Libellé</th><th>Fournisseur</th><th>Montant déclaration</th></tr>' + sel().map(function (r) { return '<tr><td>' + r.date + '</td><td>' + esc(r.jnl) + '</td><td>' + esc(r.lib) + '</td><td>' + esc(r.fourn) + '</td><td>' + r.mt + '</td></tr>'; }).join('') + '</table>';
+    var a = document.createElement('a'); a.href = URL.createObjectURL(new Blob(['\ufeff<html><meta charset="utf-8"><body>' + h + '</bo' + 'dy></ht' + 'ml>'], { type: 'application/vnd.ms-excel' })); a.download = 'declaration_' + crit.type + '_' + crit.sel + '.xls'; document.body.appendChild(a); a.click(); a.remove();
+  }
+  function openModal() { fillTypes(); if (crit) { fld('type').value = crit.type; fld('ex').value = crit.ex; fld('sel').value = crit.sel; fld('du').value = crit.du; fld('au').value = crit.au; if (crit.mode) { var mm = root.querySelector('[name="trmode"][value="' + crit.mode.replace(/'/g, "\'") + '"]'); if (mm) mm.checked = true; } if (crit.jt) { var jj = root.querySelector('[name="trjnl"][value="' + crit.jt + '"]'); if (jj) jj.checked = true; } syncJnl(); fld('jnl').value = crit.jnl; } else syncJnl(); cond(); q('[data-tr-err]').style.display = 'none'; q('[data-tr-ov]').style.display = 'flex'; }
+  function closeModal() { q('[data-tr-ov]').style.display = 'none'; }
+  function total() { return rows.filter(function (r) { return r.on; }).reduce(function (a, r) { return a + r.mt; }, 0); }
+  function draw() {
+    q('[data-tr-steps]').innerHTML = STEPS.map(function (s, i) {
+      var cls = locked ? 'ok' : i === step ? 'on' : (i < step ? 'ok' : ''), dis = locked || (i > step && !(i <= 2 && rows.length));
+      return '<li><button type="button" class="tr-st ' + cls + '" data-tr-go="' + i + '"' + (dis ? ' disabled' : '') + '><i>' + (locked || i < step ? '✓' : i + 1) + '</i><span>' + s + '</span></button>' + (i < 3 ? '<span class="tr-line' + (locked || i < step ? ' g' : '') + '"></span>' : '') + '</li>';
+    }).join('');
+    var b = '';
+    if (step === 0) {
+      b = '<div class="tr-card"><h2>🔍 Étape 1 — Sélection des mouvements</h2><p>Validez les critères de sélection pour extraire la matière imposable. Le détail des lignes se traite à l\'étape « Mouvements ».</p>' +
+        '<button type="button" class="tr-crit" data-tr-crit>🔍 <b>Critères de sélection</b><span>— ' + (crit ? 'Exercice ' + esc(crit.ex) + ' · ' + esc(crit.type) + ' · N° ' + esc(crit.sel) + ' · ' + fmtD(crit.du) + ' au ' + fmtD(crit.au) + (crit.mode ? ' · ' + esc(crit.mode) : '') + ' · ' + esc(jlabel(crit)) : 'Aucune sélection effectuée') + '</span></button></div>' +
+        (crit ? '<div class="tr-kpi"><div><small>Type de taxe</small><b>' + esc(crit.type) + ' — ' + esc(crit.type) + '</b></div><div><small>N° de sélection / déclaration</small><b>' + esc(crit.sel) + '</b></div><div><small>Mouvements sélectionnés</small><b>' + rows.length + '</b></div><div><small>Montant total</small><b>' + nf(total()) + '</b></div></div><div class="tr-okb">Sélection validée. Passez à l\'étape « Mouvements » pour vérifier et enrichir les lignes.</div>' : '<p class="tr-empty">Aucune sélection effectuée. Cliquez sur « Critères de sélection » pour lancer une recherche.</p>');
+    } else if (step === 1) {
+      var HD = ['À déclarer', 'Date', 'N° Pièce', 'Journal', 'Libellé', 'Contrat', 'N° Facture', 'NIF titulaire', 'Statut titulaire', 'Fournisseur', 'Objet du marché', 'Montant marché', 'Montant payé', 'Montant déclaration', 'Date paiement', 'Mode règlement'], RT = [11, 12, 13], cn = function (v) { return v == null ? '—' : String(Math.round(v)).replace(/\B(?=(\d{3})+(?!\d))/g, ' '); };
+      var groups = {}; rows.forEach(function (r, i) { (groups[r.compte] = groups[r.compte] || []).push(i); });
+      var body = Object.keys(groups).map(function (k) {
+        var tot = groups[k].reduce(function (x, i) { return x + rows[i].mt; }, 0);
+        return '<tr class="tr-grp"><td colspan="15">Compte : ' + esc(k) + '</td><td class="n">' + cn(tot) + '</td></tr>' + groups[k].map(function (i) {
+          var r = rows[i], c = [null, r.date, r.piece, r.jnl, r.lib, r.contrat, r.fact, r.nif, r.statut, r.fourn, r.objet, cn(r.mm), cn(r.paye), cn(r.mt), r.dpay, r.mode];
+          return '<tr class="tr-mv" data-tr-row="' + i + '"><td data-tr-tg="' + i + '"><input type="checkbox" tabindex="-1" aria-label="À déclarer (double-clic pour basculer)" style="pointer-events:none"' + (r.on ? ' checked' : '') + '></td>' + c.slice(1).map(function (v, j) { return '<td class="' + (RT.indexOf(j + 1) >= 0 ? 'n' : '') + (j === 3 ? ' tl' : '') + '" title="' + esc(v) + '">' + esc(v) + '</td>'; }).join('') + '</tr>';
+        }).join('');
+      }).join('');
+      b = '<div class="tr-card"><h2>▦ Étape 2 — Mouvements</h2><p style="margin:0">Vérifiez et enrichissez les mouvements à déclarer. Double-clic sur « À déclarer » pour cocher/décocher ; double-clic sur une ligne pour éditer Marché, Tiers et Règlement.</p></div>' +
+        '<div class="tr-card" style="padding:0;overflow:hidden"><div style="overflow:auto;max-height:70vh"><table class="tr-t tr-wide"><thead><tr>' + HD.map(function (h, j) { return '<th class="' + (RT.indexOf(j) >= 0 ? 'n' : '') + '">' + h + '</th>'; }).join('') + '</tr></thead><tbody>' + body + '</tbody></table></div>' +
+        '<p style="margin:0;padding:12px 16px;font-size:12px;color:#8a8a85;border-top:1px solid #ece9e1">' + rows.length + ' mouvement(s) · ' + rows.filter(function (r) { return r.on; }).length + ' à déclarer · Groupement par compte (rupture par compte selon type de taxe) · un clic simple sur la coche est sans effet (double-clic requis).</p></div>';
+    } else if (step === 2) {
+      var MD = models(), isAnn = MD.some(function (m) { return m.nom === model && m.annexe; }), base = total(), f2 = function (v) { var p = Math.abs(v).toFixed(2).split('.'); p[0] = p[0].replace(/\B(?=(\d{3})+(?!\d))/g, ' '); return (v < 0 ? '-' : '') + p.join(',') + ' MGA'; };
+      b = '<div class="tr-card"><h2>📄 Étape 3 — Déclaration</h2><p style="margin:0">Synthèse calculée sur les mouvements cochés « À déclarer », puis édition des états. Passez à la confirmation pour verrouiller.</p></div>' +
+        '<div class="tr-kpi" style="grid-template-columns:repeat(3,1fr)"><div><small>▥ Base imposable</small><b style="font-size:18px">' + f2(base) + '</b></div><div><small>− Déductions</small><b style="font-size:18px">' + f2(0) + '</b></div><div><small>$ Taxe due / Crédit</small><b style="font-size:18px">' + f2(0) + '</b></div></div>' +
+        '<div class="tr-card"><h2 style="font-size:14px;margin-bottom:12px">🖨 Édition des états</h2><label class="tr-f" style="max-width:384px;margin-bottom:16px"><span>Modèle d\'édition</span><select class="tr-in" data-tr-model>' + MD.map(function (m) { return '<option' + (m.nom === model ? ' selected' : '') + '>' + esc(m.nom) + '</option>'; }).join('') + '</select></label>' +
+        '<div style="display:flex;flex-wrap:wrap;gap:8px"><button type="button" class="tr-bk" data-tr-print>🖨 Imprimer</button><button type="button" class="tr-bk" data-tr-xls>▤ Imprimer (XLSX)</button><button type="button" class="tr-bk" data-tr-annex' + (isAnn ? '' : ' disabled style="opacity:.5;cursor:not-allowed"') + '>▦ Éditer les annexes</button></div></div>';
+    } else {
+      var on4 = rows.filter(function (r) { return r.on; }), ds = new Date(), ymd = ds.getFullYear() + ('0' + (ds.getMonth() + 1)).slice(-2) + ('0' + ds.getDate()).slice(-2), lot = 'LOT-DF-' + (crit.type || 'TAXE') + '-' + ymd + '-001';
+      var f2c = function (v) { var p = Math.abs(v).toFixed(2).split('.'); p[0] = p[0].replace(/\B(?=(\d{3})+(?!\d))/g, ' '); return p.join(',') + ' MGA'; };
+      var li = function (l, v, bold, last) { return '<div class="tr-sr' + (last ? ' last' : '') + '"><span>' + l + '</span><span' + (bold ? ' style="font-weight:700"' : '') + '>' + v + '</span></div>'; };
+      b = '<div class="tr-card"><h2>◉ Étape 4 — Confirmation</h2><p style="margin:0">Vérifiez le récapitulatif puis validez. La confirmation acte la déclaration et inscrit les mouvements dans le registre d\'exclusion de ce type de taxe.</p></div>' +
+        '<div class="tr-warn"><strong>Verrouillage :</strong> après validation, les mouvements déclarés ne seront plus éligibles aux sélections ultérieures sur le même type de taxe. Les sélections sur un autre type de taxe restent indépendantes.</div>' +
+        '<div class="tr-card tr-sm4">' + li('Sélection appliquée', '— Exercice ' + esc(crit.ex) + ' · ' + esc(crit.type)) + li('Nombre de mouvements imposables', on4.length) + li('Montant total', f2c(total())) + li('Numéro de lot (généré automatiquement)', lot, true, true) + '</div>' +
+        '';
+      if (locked) b = '<div class="tr-done"><div class="tr-dk">✓</div><h2>Déclaration traitée avec succès</h2><p>Lot ' + esc(lotId) + ' finalisé — mouvements exclus des prochaines sélections sur cette taxe.</p><button type="button" class="tr-bk" data-tr-new>↻ Démarrer un nouveau traitement</button></div>';
+    }
+    q('[data-tr-body]').innerHTML = b;
+    q('[data-tr-prev]').innerHTML = step > 0 && !locked ? '<button type="button" class="tr-bk" data-tr-back>← Précédent</button>' : '';
+    q('[data-tr-next]').innerHTML = step === 3 ? (locked ? '' : '<div style="display:flex;gap:8px"><button type="button" class="tr-bd" data-tr-askcancel>✕ Annuler le traitement de la déclaration</button><button type="button" class="tr-nx" data-tr-asklock>✔ Valider le traitement de la déclaration</button></div>') : step < 3 ? '<button type="button" class="tr-nx" data-tr-fwd' + (!rows.length ? ' disabled' : '') + '>Suivant : ' + STEPS[step + 1] + ' →</button>' : '';
+  }
+  var cfMode = '';
+  function askCf(m) {
+    cfMode = m; var ic = q('[data-tr-cfi]'), ok = q('[data-tr-cfok]');
+    if (m === 'cancel') {
+      q('[data-tr-cft]').textContent = 'Annuler le traitement de la déclaration ?';
+      q('[data-tr-cfw]').innerHTML = '<strong>Attention : action irréversible.</strong> L\'annulation remet le traitement à zéro :<ul><li>suppression de la sélection et du lot en cours ;</li><li>suppression des enrichissements saisis sur les mouvements (marché, tiers, règlement) ;</li><li>retrait des mouvements du registre d\'exclusion de cette taxe ;</li><li>retour à l\'étape 1, sans critères.</li></ul>';
+      q('[data-tr-cfp]').textContent = 'Les mouvements redeviendront éligibles aux sélections ultérieures. Confirmez-vous l\'annulation ?';
+      ic.className = 'tr-cfi d'; ic.textContent = '✕'; ok.className = 'd'; ok.textContent = 'Valider l\'annulation';
+    } else {
+      q('[data-tr-cft]').textContent = 'Valider le traitement de la déclaration ?';
+      q('[data-tr-cfw]').innerHTML = '<strong>Attention :</strong> après validation, les mouvements déclarés sont verrouillés et inscrits dans le registre d\'exclusion de ce type de taxe. Ils ne seront plus éligibles aux sélections ultérieures.';
+      q('[data-tr-cfp]').textContent = 'Un numéro de lot est généré. Seule l\'annulation de la déclaration permet ensuite de revenir en arrière. Confirmez-vous la validation ?';
+      ic.className = 'tr-cfi'; ic.textContent = '!'; ok.className = 'p'; ok.textContent = 'Valider';
+    }
+    q('[data-tr-cf]').style.display = 'flex';
+  }
+  root.addEventListener('click', function (e) {
+    var t = e.target;
+    if (t.closest('[data-tr-crit]')) openModal();
+    else if (t.closest('[data-tr-cancel]')) closeModal();
+    else if (t.closest('[data-tr-show]')) { var c = read(); if (check(c)) { rows = gen(c); var er = q('[data-tr-err]'); er.style.color = '#166534'; er.textContent = rows.length + ' mouvement(s) correspondent aux critères.'; er.style.display = 'block'; } else q('[data-tr-err]').style.color = '#d1416c'; }
+    else if (t.closest('[data-tr-valid]')) { var c2 = read(); q('[data-tr-err]').style.color = '#d1416c'; if (check(c2)) { crit = c2; rows = gen(c2); closeModal(); draw(); } }
+    else if (t.closest('[data-tr-fwd]')) { step++; draw(); }
+    else if (t.closest('[data-tr-back]')) { step--; draw(); }
+    else if (t.closest('[data-tr-go]')) { var i = +t.closest('[data-tr-go]').dataset.trGo; if (i <= step || (rows.length && i <= 2)) { step = i; draw(); } }
+    else if (t.closest('[data-tr-asklock]')) askCf('lock');
+    else if (t.closest('[data-tr-askcancel]')) askCf('cancel');
+    else if (t.closest('[data-tr-cfno]')) q('[data-tr-cf]').style.display = 'none';
+    else if (t.closest('[data-tr-cfok]')) {
+      q('[data-tr-cf]').style.display = 'none';
+      if (cfMode === 'cancel') { model = ''; step = 0; crit = null; rows = []; locked = false; lotId = ''; draw(); }
+      else { var dl = new Date(); lotId = 'LOT-DF-' + (crit.type || 'TAXE') + '-' + dl.getFullYear() + ('0' + (dl.getMonth() + 1)).slice(-2) + ('0' + dl.getDate()).slice(-2) + '-001'; locked = true; draw(); }
+    }
+    else if (false) { var dl = new Date(); lotId = 'LOT-DF-' + (crit.type || 'TAXE') + '-' + dl.getFullYear() + ('0' + (dl.getMonth() + 1)).slice(-2) + ('0' + dl.getDate()).slice(-2) + '-001'; locked = true; draw(); }
+    else if (t.closest('[data-tr-new]')) { model = ''; step = 0; crit = null; rows = []; locked = false; lotId = ''; draw(); }
+    else if (t.closest('[data-tr-print]')) doPrint();
+    else if (t.closest('[data-tr-xls]')) doXls();
+    else if (t.closest('[data-tr-annex]') && !t.closest('[data-tr-annex]').disabled) { location.hash = 'modfisc'; }
+  });
+  var editI = -1, EF = ['contrat', 'fact', 'objet', 'mm', 'dec', 'modedec', 'nif', 'statut', 'fourn', 'paye', 'dpay', 'mode'];
+  function dIso(v) { var m = /^(\d\d)\/(\d\d)\/(\d{4})$/.exec(v || ''); return m ? m[3] + '-' + m[2] + '-' + m[1] : ''; }
+  function dFr(v) { var m = /^(\d{4})-(\d\d)-(\d\d)$/.exec(v || ''); return m ? m[3] + '/' + m[2] + '/' + m[1] : '—'; }
+  function ev(k) { return q('[data-tr-e="' + k + '"]'); }
+  function edSync() {
+    var on = ev('on').checked, mt = parseFloat(ev('dec').value) || 0, p = parseFloat(ev('paye').value);
+    q('[data-tr-swl]').textContent = on ? 'À déclarer' : 'Non déclaré';
+    var rest = q('[data-tr-rest]'); if (isNaN(p) || ev('paye').value === '') { rest.textContent = '—'; rest.className = 'tr-rest'; } else { var x = mt - p; rest.textContent = nf(x); rest.className = 'tr-rest' + (x < 0 ? ' neg' : ''); }
+    var n = ev('nif').value.trim(), h = q('[data-tr-nifh]'), bad = n !== '' && n !== '—' && !/^\d+$/.test(n); h.textContent = bad ? 'Le NIF ne doit contenir que des chiffres.' : ''; ev('nif').classList.toggle('bad', bad);
+  }
+  root.addEventListener('dblclick', function (e) {
+    var tg = e.target.closest('[data-tr-tg]');
+    if (tg) { var k = +tg.dataset.trTg; rows[k].on = !rows[k].on; draw(); return; }
+    var tr = e.target.closest('[data-tr-row]'); if (!tr) return;
+    editI = +tr.dataset.trRow; var r = rows[editI];
+    EF.forEach(function (f) { var el = ev(f), v = f === 'dec' ? (r.dec != null ? r.dec : r.mt) : r[f]; if (f === 'dpay') v = dIso(v); else if (f === 'statut' && v && v !== '—' && !Array.prototype.some.call(el.options, function (o) { return o.value === v; })) el.add(new Option(v, v)); el.value = v == null || v === '—' ? '' : v; });
+    ev('on').checked = !!r.on; var md = r.modedec && r.modedec !== '—' ? r.modedec : "Par l'entité"; ev('modedec').value = md; qa('[name="trmd"]').forEach(function (x) { x.checked = x.value === md; });
+    q('[data-tr-edt]').textContent = r.date + ' · ' + r.jnl;
+    ['date', 'piece', 'jnl', 'compte', 'lib'].forEach(function (k) { q('[data-tr-r="' + k + '"]').value = r[k] || '—'; });
+    edSync(); q('[data-tr-ed]').style.display = 'flex'; ev('contrat').focus();
+  });
+  root.addEventListener('click', function (e) {
+    if (e.target.closest('[data-tr-ecancel]')) q('[data-tr-ed]').style.display = 'none';
+    else if (e.target.closest('[data-tr-esave]')) {
+      var r = rows[editI]; if (q('[data-tr-nifh]').textContent) { ev('nif').focus(); return; }
+      EF.forEach(function (f) { var v = ev(f).value.trim(); r[f] = (f === 'mm' || f === 'paye' || f === 'dec') ? (v === '' ? null : +v) : f === 'dpay' ? dFr(v) : (v || '—'); }); r.on = ev('on').checked;
+      q('[data-tr-ed]').style.display = 'none'; draw();
+    }
+  });
+  root.addEventListener('input', function (e) { if (e.target.name === 'trmd') ev('modedec').value = e.target.value; if (editI >= 0 && e.target.closest('[data-tr-ed]')) edSync(); });
+  root.addEventListener('change', function (e) { if (editI >= 0 && e.target.closest('[data-tr-ed]')) edSync();
+    if (e.target.dataset.trChk != null) { rows[+e.target.dataset.trChk].on = e.target.checked; draw(); }
+    if (e.target === fld('type')) cond();
+    if (e.target.dataset.trModel != null) { model = e.target.value; draw(); }
+    if (e.target.name === 'trjnl') syncJnl();
+  });
+  /* critères de tri par défaut (valeurs de la capture) : sélection déjà validée à l'ouverture */
+  crit = { type: 'TAXE', ex: '2025', sel: '002', du: '2025-01-01', au: '2025-12-31', mode: "Par l'entité", jt: 'OD', jnl: 'Tous' };
+  rows = gen(crit);
+  draw();
+})();
+</script>
+</softcompta-traitement-declaration-fiscale>

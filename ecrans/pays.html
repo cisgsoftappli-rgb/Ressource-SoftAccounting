@@ -1,0 +1,169 @@
+<!--
+  Écran « Pays » (Paramètres généraux › Pays) — onglets Saisie / Liste : liste filtrable des pays, saisie (Code, Libellé, Statut « Actif »,
+  Drapeau avec insertion d'image et prévisualisation). Boutons dans la barre d'actions. Données en mémoire (réinitialisées au rechargement).
+  S'appuie sur les styles bp-* de l'écran « Paramétrage du bilan » (présents dans la page). Ne pas nommer de fonction « $$ » (build.cjs).
+-->
+<style>
+.pa-flag{display:flex;align-items:center;justify-content:center;width:48px;height:32px;border:1px solid #E9EBF0;border-radius:6px;background:#F5F7F9;overflow:hidden;color:#747A88;font-size:16px;margin:0 auto}
+.pa-flag img{width:100%;height:100%;object-fit:cover;display:block}
+.pa-badge{display:inline-flex;align-items:center;padding:2px 10px;border:1px solid;border-radius:6px;font-size:12px;font-weight:600}
+.pa-badge.on{background:#ECFDF5;border-color:#A7F3D0;color:#047857}.pa-badge.off{background:#F5F7F9;border-color:#D6D9E0;color:#5B606D}
+.pa-up{display:flex;align-items:center;gap:16px}
+.pa-prev{width:96px;height:64px;flex:none;display:flex;align-items:center;justify-content:center;border:1px dashed #878D9A;border-radius:12px;background:#F5F7F9;color:#747A88;font-size:24px;overflow:hidden}
+.pa-prev img{width:100%;height:100%;object-fit:cover;display:block}
+.pa-upa{display:flex;flex-direction:column;gap:6px;align-items:flex-start;min-width:0}
+.pa-fn{max-width:320px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;font-size:12px;color:#5B606D}
+.pa-link{border:0;background:none;padding:0;font:inherit;font-size:12px;font-weight:600;color:#2E427B;text-decoration:underline;cursor:pointer}
+.pa-help{font-size:12px;color:#5B606D}
+.pa-er{display:none;font-size:12px;color:#B63132}.pa-er.show{display:block}
+.bp-in.err{border-color:#B63132}
+</style>
+
+<div class="bp-root" data-pa>
+  <h1 style="position:absolute;width:1px;height:1px;overflow:hidden;clip-path:inset(50%);margin:0">Pays</h1>
+
+  <div class="no-print" data-pa-actions>
+    <button type="button" data-pa-ajouter>Ajouter</button>
+    <button type="button" data-pa-modifier>Modifier</button>
+    <button type="button" data-pa-supprimer>Supprimer</button>
+    <button type="button" data-pa-enregistrer>Enregistrer</button>
+    <button type="button" data-pa-annuler>Annuler</button>
+    <button type="button" data-pa-imprimer>Imprimer</button>
+    <button type="button" data-pa-exporter>Exporter</button>
+  </div>
+
+  <div class="bp-tabs" role="tablist">
+    <button type="button" role="tab" class="on" data-pa-tab="saisie">Saisie</button>
+    <button type="button" role="tab" data-pa-tab="liste">Liste <span class="bp-n" data-pa-compte></span></button>
+  </div>
+
+  <div class="bp-grid">
+    <section class="bp-pan" aria-label="Liste des pays" data-pa-pan="liste" hidden>
+      <h2>Pays <small>Double-clic ou « Modifier » pour ouvrir la ligne en saisie</small></h2>
+      <div style="overflow:auto;max-height:560px">
+        <table class="bp-tb" style="min-width:560px"><thead>
+          <tr><th>Drapeau</th><th>Code</th><th>Libellé</th><th>Statut</th></tr>
+          <tr class="flt"><th></th><th><input class="bp-in" data-fc="1" aria-label="Filtrer Code"></th><th><input class="bp-in" data-fc="2" aria-label="Filtrer Libellé"></th>
+            <th><select class="bp-sel" data-fc="3" aria-label="Filtrer Statut"><option value=""></option><option value="actif">Actif</option><option value="inactif">Inactif</option></select></th></tr>
+        </thead><tbody data-pa-lignes></tbody></table>
+      </div>
+      <div class="bp-vide" data-pa-vide hidden>Aucun pays : utilisez « Ajouter ».</div>
+    </section>
+
+    <section class="bp-pan" aria-label="Saisie d'un pays" data-pa-pan="saisie">
+      <form class="bp-form" data-pa-form onsubmit="return false" novalidate>
+        <div style="display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:12px">
+          <label class="bp-champ"><span>Code <b>*</b></span><input class="bp-in" data-f="code" maxlength="3" autocomplete="off" placeholder="MG"><span class="pa-help">2 ou 3 lettres, par exemple MG.</span><span class="pa-er" data-er="code"></span></label>
+          <label class="bp-champ"><span>Libellé <b>*</b></span><input class="bp-in" data-f="lib" maxlength="80" autocomplete="off" placeholder="Madagascar"><span class="pa-er" data-er="lib"></span></label>
+        </div>
+        <div class="bp-chk"><label><input type="checkbox" data-f="actif" checked>Actif</label></div>
+        <div class="bp-champ"><span>Drapeau</span>
+          <div class="pa-up">
+            <div class="pa-prev" data-pa-prev aria-live="polite"><i class="ti ti-flag"></i></div>
+            <div class="pa-upa">
+              <input type="file" accept="image/png,image/jpeg,image/svg+xml" hidden data-pa-file>
+              <button type="button" class="bp-b" data-pa-pick><i class="ti ti-upload"></i>Choisir une image</button>
+              <span class="pa-fn" data-pa-fn>Aucune image sélectionnée.</span>
+              <button type="button" class="pa-link" data-pa-rm style="display:none">Retirer l'image</button>
+            </div>
+          </div>
+          <span class="pa-help">Formats acceptés : PNG, JPG ou SVG, 200 Ko au plus.</span><span class="pa-er" data-er="flag"></span>
+        </div>
+      </form>
+    </section>
+  </div>
+  <div class="bp-toast" role="status" hidden data-pa-toast></div>
+</div>
+
+<script>
+(function () {
+  var root = document.querySelector('[data-pa]'); if (!root) return;
+  function q(s) { return root.querySelector(s); } function qa(s) { return [].slice.call(root.querySelectorAll(s)); }
+  function svg(b) { return 'data:image/svg+xml;utf8,' + encodeURIComponent('<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 30 20">' + b + '</svg>'); }
+  var data = [
+    { code: 'MG', lib: 'Madagascar', actif: true, flag: svg('<rect width="30" height="20" fill="#fff"/><rect x="10" width="20" height="10" fill="#FC3D32"/><rect x="10" y="10" width="20" height="10" fill="#007E3A"/>'), fn: 'madagascar.svg' },
+    { code: 'FR', lib: 'France', actif: true, flag: svg('<rect width="10" height="20" fill="#0055A4"/><rect x="10" width="10" height="20" fill="#fff"/><rect x="20" width="10" height="20" fill="#EF4135"/>'), fn: 'france.svg' },
+    { code: 'MU', lib: 'Maurice', actif: true, flag: svg('<rect width="30" height="5" fill="#EA2839"/><rect y="5" width="30" height="5" fill="#1A206D"/><rect y="10" width="30" height="5" fill="#FFD500"/><rect y="15" width="30" height="5" fill="#00A551"/>'), fn: 'maurice.svg' },
+    { code: 'KM', lib: 'Comores', actif: false, flag: '', fn: '' }
+  ];
+  var sel = -1, mode = 'consultation', flag = '', fname = '';
+  function esc(s) { return String(s == null ? '' : s).replace(/[&<>"]/g, function (c) { return { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c]; }); }
+  function toast(m) { var t = q('[data-pa-toast]'); t.textContent = m; t.hidden = false; clearTimeout(toast.t); toast.t = setTimeout(function () { t.hidden = true; }, 2500); }
+  function err(k, m) { var e = q('[data-er="' + k + '"]'); e.textContent = m || ''; e.classList.toggle('show', !!m); }
+  function filtrer() {
+    var F = []; qa('[data-fc]').forEach(function (e) { F[+e.dataset.fc] = e.value.trim().toLowerCase(); });
+    qa('[data-pa-lignes] tr').forEach(function (tr) { tr.hidden = F.some(function (v, k) { if (!v) return false; var td = tr.children[k]; var t = (td.dataset.v || td.textContent).toLowerCase(); return k === 3 ? t !== v : t.indexOf(v) < 0; }); });
+  }
+  qa('[data-fc]').forEach(function (e) { e.addEventListener('input', filtrer); e.addEventListener('change', filtrer); });
+  function liste() {
+    q('[data-pa-compte]').textContent = data.length ? data.length + (data.length > 1 ? ' pays' : ' pays') : '';
+    q('[data-pa-vide]').hidden = data.length > 0;
+    q('[data-pa-lignes]').innerHTML = data.map(function (p, i) {
+      return '<tr data-i="' + i + '"' + (i === sel ? ' class="sel"' : '') + '><td><span class="pa-flag">' + (p.flag ? '<img src="' + p.flag + '" alt="Drapeau : ' + esc(p.lib) + '">' : '<i class="ti ti-flag" aria-hidden="true"></i>') + '</span></td>' +
+        '<td>' + esc(p.code) + '</td><td>' + esc(p.lib) + '</td><td class="c" data-v="' + (p.actif ? 'actif' : 'inactif') + '"><span class="pa-badge ' + (p.actif ? 'on' : 'off') + '">' + (p.actif ? 'Actif' : 'Inactif') + '</span></td></tr>';
+    }).join(''); filtrer();
+  }
+  function setFlag(src, name) {
+    flag = src || ''; fname = name || '';
+    q('[data-pa-prev]').innerHTML = flag ? '<img src="' + flag + '" alt="Prévisualisation du drapeau">' : '<i class="ti ti-flag"></i>';
+    q('[data-pa-fn]').textContent = flag ? fname : 'Aucune image sélectionnée.';
+    q('[data-pa-rm]').style.display = flag && mode !== 'consultation' ? '' : 'none';
+  }
+  function form(p) {
+    p = p || { code: '', lib: '', actif: true, flag: '', fn: '' };
+    q('[data-f=code]').value = p.code; q('[data-f=lib]').value = p.lib; q('[data-f=actif]').checked = !!p.actif; setFlag(p.flag, p.fn);
+    err('code'); err('lib'); err('flag'); q('[data-f=code]').classList.remove('err'); q('[data-f=lib]').classList.remove('err');
+  }
+  function etat() {
+    var ed = mode !== 'consultation';
+    qa('[data-pa-form] input,[data-pa-form] [data-pa-pick]').forEach(function (e) { e.disabled = !ed; });
+    q('[data-f=code]').disabled = mode !== 'creation'; q('[data-pa-rm]').style.display = flag && ed ? '' : 'none';
+    var a = q('[data-pa-actions]');
+    a.querySelector('[data-pa-ajouter]').disabled = ed; a.querySelector('[data-pa-modifier]').disabled = ed || sel < 0; a.querySelector('[data-pa-supprimer]').disabled = ed || sel < 0;
+    a.querySelector('[data-pa-enregistrer]').disabled = !ed; a.querySelector('[data-pa-annuler]').disabled = !ed; a.querySelector('[data-pa-imprimer]').disabled = !data.length; a.querySelector('[data-pa-exporter]').disabled = !data.length;
+  }
+  function onglet(n) { qa('[data-pa-pan]').forEach(function (p) { p.hidden = p.dataset.paPan !== n; }); qa('[data-pa-tab]').forEach(function (t) { var on = t.dataset.paTab === n; t.classList.toggle('on', on); t.setAttribute('aria-selected', on); }); }
+  function choisir(i) { if (mode !== 'consultation') return; sel = i; liste(); form(data[i]); etat(); }
+  qa('[data-pa-tab]').forEach(function (t) { t.addEventListener('click', function () { onglet(t.dataset.paTab); }); });
+  var tb = q('[data-pa-lignes]');
+  tb.addEventListener('click', function (e) { var tr = e.target.closest('tr[data-i]'); if (tr) choisir(+tr.dataset.i); });
+  tb.addEventListener('dblclick', function (e) { var tr = e.target.closest('tr[data-i]'); if (tr) { choisir(+tr.dataset.i); onglet('saisie'); } });
+  q('[data-f=code]').addEventListener('input', function () { this.value = this.value.toUpperCase().replace(/[^A-Z]/g, ''); });
+  q('[data-pa-file]').addEventListener('change', function () {
+    var f = this.files && this.files[0]; if (!f) return; err('flag');
+    if (!/^image\/(png|jpeg|svg\+xml)$/.test(f.type)) { err('flag', 'Le format doit être PNG, JPG ou SVG.'); this.value = ''; return; }
+    if (f.size > 200 * 1024) { err('flag', "L'image ne doit pas dépasser 200 Ko."); this.value = ''; return; }
+    var r = new FileReader(); r.onload = function () { setFlag(r.result, f.name); etat(); }; r.readAsDataURL(f);
+  });
+  function enregistrer() {
+    var code = q('[data-f=code]').value.trim(), lib = q('[data-f=lib]').value.trim(), ok = true, ancien = mode === 'edition' ? data[sel].code : null;
+    err('code'); err('lib'); q('[data-f=code]').classList.remove('err'); q('[data-f=lib]').classList.remove('err');
+    if (code.length < 2) { err('code', code ? 'Le code doit comporter 2 ou 3 lettres.' : 'Le code est obligatoire.'); q('[data-f=code]').classList.add('err'); ok = false; }
+    else if (data.some(function (x) { return x.code === code && x.code !== ancien; })) { err('code', 'Ce code existe déjà.'); q('[data-f=code]').classList.add('err'); ok = false; }
+    if (!lib) { err('lib', 'Le libellé est obligatoire.'); q('[data-f=lib]').classList.add('err'); ok = false; }
+    if (!ok) return;
+    var rec = { code: code, lib: lib, actif: q('[data-f=actif]').checked, flag: flag, fn: fname };
+    if (mode === 'creation') { data.push(rec); sel = data.length - 1; } else data[sel] = rec;
+    mode = 'consultation'; liste(); form(data[sel]); etat(); onglet('liste'); publier(); toast(ancien ? 'Pays modifié.' : 'Pays enregistré.');
+  }
+  root.addEventListener('click', function (e) {
+    var b = e.target.closest('button'); if (!b || b.disabled) return;
+    if (b.hasAttribute('data-pa-ajouter')) { onglet('saisie'); mode = 'creation'; sel = -1; liste(); form(null); etat(); q('[data-f=code]').focus(); return; }
+    if (b.hasAttribute('data-pa-modifier')) { onglet('saisie'); mode = 'edition'; etat(); q('[data-f=lib]').focus(); return; }
+    if (b.hasAttribute('data-pa-annuler')) { mode = 'consultation'; liste(); form(sel >= 0 ? data[sel] : null); etat(); return; }
+    if (b.hasAttribute('data-pa-enregistrer')) { enregistrer(); return; }
+    if (b.hasAttribute('data-pa-supprimer')) {
+      var p = data[sel]; if (!p) return;
+      if (!window.confirm('Supprimer le pays « ' + p.lib + ' » ? Cette action est définitive.')) return;
+      data.splice(sel, 1); sel = -1; liste(); form(null); etat(); publier(); toast('Pays supprimé.'); return;
+    }
+    if (b.hasAttribute('data-pa-pick')) { q('[data-pa-file]').click(); return; }
+    if (b.hasAttribute('data-pa-rm')) { setFlag('', ''); q('[data-pa-file]').value = ''; err('flag'); etat(); return; }
+    if (b.hasAttribute('data-pa-imprimer')) { window.print(); return; }
+    if (b.hasAttribute('data-pa-exporter')) { toast('Export des pays (maquette)'); return; }
+  });
+  // liste des pays paramétrés, consommée par les autres écrans (Liste des banques, etc.)
+  function publier() { window.PAYS = data.map(function (p) { return { code: p.code, libelle: p.lib, actif: p.actif }; }); window.dispatchEvent(new Event('pays-changed')); }
+  liste(); form(null); etat(); onglet('liste'); publier();
+})();
+</script>

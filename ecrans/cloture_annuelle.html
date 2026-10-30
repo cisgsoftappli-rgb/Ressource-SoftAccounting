@@ -1,0 +1,59 @@
+<!--
+  Écran « Clôture annuelle » (Comptabilité générale › Travaux périodiques › Clôture annuelle) — liste des exercices (dates de début et de fin, en cours, date de clôture, utilisateur ayant clôturé).
+  « Clôturer l'exercice » (barre d'actions de page, CFG « clotannuelle ») clôture l'exercice sélectionné sur place (checklist de clôture si l'option est activée dans Administration de l'entité,
+  via window.EXERCICES_API de exercices.html) et alimente la date de clôture. Un exercice ne peut être clôturé que si les exercices précédents le sont.
+  Ne pas nommer de fonction « $$ » (build.cjs).
+-->
+<style>
+.ca-t{margin:0 0 8px;font-size:12px;font-weight:700;letter-spacing:.04em;text-transform:uppercase;color:#2E427B}
+.ca-cours{display:inline-flex;align-items:center;justify-content:center;width:20px;height:20px;border:1px solid #D6D9E0;border-radius:4px;color:#2E427B;font-size:13px}.ca-cours.on{background:#E3EBFE;border-color:#2E427B}
+.ca-n{margin:10px 0 0;font-size:13px;color:#B63132}
+</style>
+
+<div class="bp-root" data-ca>
+  <h1 style="position:absolute;width:1px;height:1px;overflow:hidden;clip-path:inset(50%);margin:0">Clôture annuelle</h1>
+  <div class="no-print" data-ca-actions>
+    <button type="button" data-ca-cloturer>Clôturer l'exercice</button>
+  </div>
+  <div class="bp-grid"><section class="bp-pan" aria-label="Exercices">
+    <div class="ca-t">Exercices</div>
+    <div style="overflow:auto;max-height:340px"><table class="bp-tb" style="min-width:820px"><thead><tr><th class="c">Exercice</th><th class="c">Date début</th><th class="c">Date fin</th><th class="c">En cours</th><th class="c">Date de clôture</th><th>Clôturé par</th></tr></thead><tbody data-ca-lignes></tbody></table></div>
+    <div class="bp-vide" data-ca-vide hidden>Aucun exercice : créez-en dans Exercices comptables.</div>
+    <p class="ca-n" data-ca-note hidden></p>
+  </section></div>
+  <div class="bp-toast" role="status" hidden data-ca-toast></div>
+</div>
+
+<script>
+(function () {
+  var root = document.querySelector('[data-ca]'); if (!root) return;
+  function q(s) { return root.querySelector(s); }
+  var sel = null;   // année sélectionnée
+  function esc(s) { return String(s == null ? '' : s).replace(/[&<>"]/g, function (c) { return { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c]; }); }
+  function exercices() { return (window.EXERCICES_API && window.EXERCICES_API.liste()) || []; }
+  function exo() { return exercices().filter(function (e) { return e.annee === sel; })[0]; }
+  function precedent(e) { return exercices().filter(function (x) { return +x.annee < +e.annee && !x.cloture; }).sort(function (a, b) { return +a.annee - +b.annee; })[0]; }
+  function liste() {
+    var E = exercices(), e;
+    if (!E.some(function (x) { return x.annee === sel; })) { var c = E.filter(function (x) { return x.cours; })[0]; sel = c ? c.annee : (E[0] || {}).annee; }
+    e = exo();
+    q('[data-ca-vide]').hidden = E.length > 0;
+    q('[data-ca-lignes]').innerHTML = E.map(function (x) {
+      return '<tr data-a="' + esc(x.annee) + '"' + (x.annee === sel ? ' class="sel"' : '') + '><td class="c"><b>' + esc(x.annee) + '</b></td><td class="c">' + esc(x.debut) + '</td><td class="c">' + esc(x.fin) + '</td>' +
+        '<td class="c"><span class="ca-cours' + (x.cours ? ' on' : '') + '" aria-label="' + (x.cours ? 'En cours' : 'Non') + '">' + (x.cours ? '<i class="ti ti-check"></i>' : '') + '</span></td><td class="c">' + (x.cloture ? esc(x.cloture) : '—') + '</td><td>' + (x.cloture ? esc(x.par || '—') : '—') + '</td></tr>';
+    }).join('');
+    var prec = e && !e.cloture ? precedent(e) : null, n = q('[data-ca-note]');
+    q('[data-ca-actions] [data-ca-cloturer]').disabled = !e || !!e.cloture || !!prec;
+    n.hidden = !prec; n.textContent = prec ? 'L\'exercice ' + e.annee + ' ne peut être clôturé qu\'après la clôture de l\'exercice ' + prec.annee + '.' : '';
+  }
+  q('[data-ca-lignes]').addEventListener('click', function (ev) { var tr = ev.target.closest('tr[data-a]'); if (tr) { sel = tr.dataset.a; liste(); } });
+  root.addEventListener('click', function (ev) {
+    var b = ev.target.closest('button'); if (!b || b.disabled || !b.hasAttribute('data-ca-cloturer')) return;
+    var e = exo(); if (!e || !window.EXERCICES_API) return;
+    window.EXERCICES_API.cloturer(e.annee);
+  });
+  window.addEventListener('exercices-changed', function (ev) { liste(); if (ev.detail) { var t = q('[data-ca-toast]'); t.textContent = 'Exercice ' + ev.detail.annee + ' clôturé le ' + ev.detail.date + '.'; t.hidden = false; clearTimeout(t._t); t._t = setTimeout(function () { t.hidden = true; }, 2500); } });
+  window.addEventListener('hashchange', liste); window.addEventListener('entite-options-changed', liste); window.addEventListener('cloture-changed', liste); window.addEventListener('load', liste);
+  setTimeout(liste, 400);
+})();
+</script>

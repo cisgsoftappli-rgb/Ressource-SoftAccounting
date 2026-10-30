@@ -1,0 +1,294 @@
+<!--
+  Écran « Petite caisse › Saisie » (Comptabilité générale) — onglets Saisie / Liste. Un lot de caisse = Numéro du lot (unique), Journal caisse, Compte de caisse, Devise,
+  Solde initial, puis ses opérations. « Ajouter des opérations » ouvre le formulaire d'opération (Date, Date pièce, Libellé, N° pièce, Recette (débit) ou
+  Dépense (crédit), Décharges, Imputation = type d'opération de Petite caisse, avec axes analytiques si le type l'exige). Solde = solde initial + recettes − dépenses.
+  Données : window.CAISSE_LOTS = [ { num, journal, compte, devise, solde, ops:[…] } ], copie localStorage softcompta.caisseLots. Préfixe csl / data-csl.
+  Lit window.JOURNAUX_PLAN, PLAN_COMPTABLE, DEVISES, CAISSE_TYPES, PLANS_REF. Ne pas nommer de fonction « $$ » (build.cjs).
+-->
+<style>
+[data-csl] .csl-f{display:grid;gap:12px;padding:16px}
+[data-csl] .csl-b{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:12px 16px;padding:12px;border:1px solid #D5DBE5;border-radius:6px;background:#fff}
+[data-csl] .csl-w{grid-column:1/-1}
+@media (max-width:700px){[data-csl] .csl-b{grid-template-columns:1fr}}
+[data-csl] .bp-in.err,[data-csl] .bp-sel.err{border-color:#B63132}
+[data-csl] .csl-er{display:none;font-size:12px;color:#B63132}[data-csl] .csl-er.show{display:block}
+[data-csl] .csl-ok{font-size:12px;color:#2E427B;margin-left:8px}
+[data-csl] tbody tr{cursor:pointer}[data-csl] tbody tr.csl-sel td{background:#E8ECF6}
+[data-csl] td.r,[data-csl] th.r{text-align:right;font-variant-numeric:tabular-nums}
+[data-csl] .csl-ops{padding:0 16px 16px}
+[data-csl] .csl-oh{display:flex;align-items:center;justify-content:space-between;gap:12px;margin:4px 0 8px}
+[data-csl] .csl-oh h3{margin:0;font:600 14px var(--font-heading);color:#2E427B}
+[data-csl] .csl-tot{display:flex;gap:24px;justify-content:flex-end;flex-wrap:wrap;padding:8px 4px;font-size:13px;color:#353944}[data-csl] .csl-tot b{color:#0B1332;font-variant-numeric:tabular-nums}
+[data-csl] .csl-x{border:0;background:none;color:#B63132;cursor:pointer;font-size:16px;min-height:0!important}
+.csl-ov{position:fixed;inset:0;z-index:2000;display:flex;align-items:center;justify-content:center;padding:16px;background:rgba(11,19,50,.55)}.csl-ov[hidden]{display:none}
+.csl-md{display:flex;flex-direction:column;width:min(760px,100%);max-height:92vh;background:#fff;border-radius:14px;box-shadow:0 24px 60px rgba(11,19,50,.35);overflow:hidden}
+.csl-mh{display:flex;align-items:center;justify-content:space-between;gap:12px;padding:14px 20px;border-bottom:1px solid #E9EBF0}.csl-mh h2{margin:0;font:600 17px var(--font-heading);color:#2E427B}
+.csl-mb{padding:14px 20px;overflow:auto;display:grid;gap:10px}
+.csl-mb h3{margin:8px 0 0;padding-bottom:4px;border-bottom:1px solid #2E427B;font:600 15px var(--font-heading);color:#2E427B}
+.csl-g{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1fr);gap:10px 16px}
+@media (max-width:620px){.csl-g{grid-template-columns:1fr}}
+.csl-mb .bp-champ>span{font-size:12px}.csl-mb .csl-w{grid-column:1/-1}
+.csl-mb .bp-in[readonly]{background:#F5F7F9;color:#474C58}
+.csl-mb .r{text-align:right}
+.csl-sd{display:flex;justify-content:center;gap:18px;align-items:center;font:600 20px var(--font-heading);color:#4A7BD0}.csl-sd i{font-style:normal;color:#353944;font-weight:400}
+.csl-mf{display:flex;align-items:center;justify-content:flex-end;gap:8px;padding:12px 20px;border-top:1px solid #E9EBF0}
+.csl-mf .csl-er{margin-right:auto}
+.csl-mf button{height:36px;padding:0 18px;border:1px solid #C5CAD6;border-radius:8px;background:#fff;color:#353944;font:600 13px var(--font-sans);cursor:pointer}.csl-mf button:hover{background:#F5F7F9}.csl-mf button.p{background:#2E427B;border-color:#2E427B;color:#fff}.csl-mf button.p:hover{background:#243569}
+.csl-ana{grid-column:1/-1;display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:10px 16px;padding:10px;border:1px dashed #B8C2DA;border-radius:6px;background:#F5F7FB}.csl-ana[hidden]{display:none}
+@media (max-width:620px){.csl-ana{grid-template-columns:1fr}}
+</style>
+
+<div class="bp-root" data-csl>
+  <h1 style="position:absolute;width:1px;height:1px;overflow:hidden;clip-path:inset(50%);margin:0">Petite caisse — Saisie</h1>
+
+  <div class="no-print">
+    <button type="button" data-csl-ajouter>Ajouter</button>
+    <button type="button" data-csl-modifier>Modifier</button>
+    <button type="button" data-csl-supprimer>Supprimer</button>
+    <button type="button" data-csl-operations>Ajouter des opérations</button>
+    <button type="button" data-csl-enregistrer>Enregistrer</button>
+    <button type="button" data-csl-annuler>Annuler</button>
+    <span class="csl-ok" data-csl-msg role="status"></span>
+  </div>
+
+  <div class="bp-tabs" role="tablist">
+    <button type="button" role="tab" data-csl-tab="saisie">Saisie</button>
+    <button type="button" role="tab" class="on" data-csl-tab="liste">Liste <span class="bp-n" data-csl-compte></span></button>
+  </div>
+
+  <div class="bp-grid">
+    <section class="bp-pan" aria-label="Liste des lots de caisse" data-csl-pan="liste">
+      <h2>Lots de caisse <small>Double-clic ou « Modifier » pour ouvrir le lot en saisie</small></h2>
+      <div style="overflow:auto;max-height:560px">
+        <table class="bp-tb" style="min-width:760px"><thead>
+          <tr><th>N° du lot</th><th>Site</th><th>Journal caisse</th><th>Devise</th><th class="r">Opérations</th><th class="r">Solde final</th></tr>
+        </thead><tbody data-csl-lignes></tbody></table>
+      </div>
+      <div class="bp-vide" data-csl-vide hidden>Aucun lot : utilisez « Ajouter ».</div>
+    </section>
+
+    <section class="bp-pan" aria-label="Saisie d'un lot de caisse" data-csl-pan="saisie" hidden>
+      <form class="csl-f" data-csl-form onsubmit="return false" novalidate>
+        <div class="csl-b">
+          <label class="bp-champ"><span>Numéro du lot <b>*</b></span><input class="bp-in" data-f="num" type="text" maxlength="30" placeholder="Ex : PC-2026-001"><span class="csl-er" data-er="num"></span></label>
+          <label class="bp-champ"><span>Site <b>*</b></span><select class="bp-sel" data-f="site"></select><span class="csl-er" data-er="site"></span></label>
+          <label class="bp-champ"><span>Journal caisse <b>*</b></span><select class="bp-sel" data-f="journal"></select><span class="csl-er" data-er="journal"></span></label>
+          <label class="bp-champ"><span>Devise <b>*</b></span><select class="bp-sel" data-f="devise"></select><span class="csl-er" data-er="devise"></span></label>
+        </div>
+      </form>
+      <div class="csl-ops">
+        <div class="csl-oh"><h3>Opérations du lot <span class="bp-n" data-csl-nop></span></h3></div>
+        <div style="overflow:auto;max-height:320px">
+          <table class="bp-tb" style="min-width:820px"><thead>
+            <tr><th class="c">Date</th><th>Libellé</th><th>N° pièce</th><th>Imputation</th><th class="r">Recette (débit)</th><th class="r">Dépense (crédit)</th><th></th></tr>
+          </thead><tbody data-csl-ops></tbody></table>
+        </div>
+        <div class="bp-vide" data-csl-opvide>Aucune opération : utilisez « Ajouter des opérations ».</div>
+        <div class="csl-tot"><span>Recettes <b data-csl-t1></b></span><span>Dépenses <b data-csl-t2></b></span><span>Solde <b data-csl-t3></b></span></div>
+      </div>
+    </section>
+  </div>
+
+  <div class="csl-ov" data-csl-ov hidden><div class="csl-md" role="dialog" aria-modal="true" aria-labelledby="csl-md-t" data-csl-md>
+    <div class="csl-mh"><h2 id="csl-md-t" data-csl-mt>Caisse</h2><button type="button" class="lm-x" data-csl-ox aria-label="Fermer" style="width:36px;height:36px;border:0;border-radius:50%;background:#F5F7F9;cursor:pointer">✕</button></div>
+    <div class="csl-mb">
+      <div class="csl-g">
+        <label class="bp-champ"><span>Date <b>*</b></span><input class="bp-in" data-o="date" type="date"><span class="csl-er" data-oer="date"></span></label>
+        <label class="bp-champ"><span>Date pièce</span><input class="bp-in" data-o="datePiece" type="date"></label>
+        <label class="bp-champ csl-w"><span>Libellé <b>*</b></span><input class="bp-in" data-o="libelle" type="text" maxlength="120"><span class="csl-er" data-oer="libelle"></span></label>
+        <label class="bp-champ csl-w"><span>N° pièce de référence</span><input class="bp-in" data-o="ref" type="text" maxlength="40"></label>
+        <label class="bp-champ"><span>Recette (débit) <b data-csl-dv></b></span><input class="bp-in r" data-o="rec" type="number" min="0" step="any" inputmode="decimal" placeholder="0,00"></label>
+        <label class="bp-champ"><span>Dépense (crédit) <b data-csl-dv2></b></span><input class="bp-in r" data-o="dep" type="number" min="0" step="any" inputmode="decimal" placeholder="0,00"></label>
+        <span class="csl-er csl-w" data-oer="montant"></span>
+      </div>
+      <h3>Décharges</h3>
+      <div class="csl-g">
+        <label class="bp-champ csl-w"><span>Nom d'utilisateur</span><input class="bp-in" data-o="user" readonly></label>
+        <label class="bp-champ csl-w"><span>Nom de la personne</span><input class="bp-in" data-o="nom" type="text" maxlength="80"></label>
+        <label class="bp-champ"><span>Type de la pièce d'identité</span><input class="bp-in" data-o="typeId" type="text" maxlength="40"></label>
+        <label class="bp-champ"><span>Numéro de la pièce d'identité</span><input class="bp-in" data-o="numId" type="text" maxlength="40"></label>
+        <label class="bp-champ"><span>Date de la pièce d'identité</span><input class="bp-in" data-o="dateId" type="date"></label>
+        <label class="bp-champ"><span>Mode de paiement</span><select class="bp-sel" data-o="mode"><option value="">—</option><option>Espèces</option><option>Chèque</option><option>Virement</option><option>Mobile money</option></select></label>
+      </div>
+      <h3>Imputation</h3>
+      <div class="csl-g">
+        <label class="bp-champ csl-w"><span>Imputation (type d'opération) <b>*</b></span><select class="bp-sel" data-o="type"></select><span class="csl-er" data-oer="type"></span></label>
+        <div class="csl-ana" data-csl-ana hidden></div>
+      </div>
+      <h3>Solde</h3>
+      <div class="csl-sd"><span data-csl-sr>0,00</span><i>/</i><span data-csl-sdp>0,00</span></div>
+    </div>
+    <div class="csl-mf"><span class="csl-er" data-oer="gen"></span><button type="button" data-csl-oann>Annuler</button><button type="button" data-csl-onv>Ajouter et nouvelle</button><button type="button" class="p" data-csl-oval>Ajouter l'opération</button></div>
+  </div></div>
+</div>
+
+<script>
+(function () {
+  var root = document.querySelector('[data-csl]'); if (!root) return;
+  function q(s) { return root.querySelector(s); } function qa(s) { return [].slice.call(root.querySelectorAll(s)); }
+  function f(n) { return q('[data-f="' + n + '"]'); } function o(n) { return q('[data-o="' + n + '"]'); }
+  function esc(s) { return String(s == null ? '' : s).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;'); }
+  var CLE = 'softcompta.caisseLots', sel = -1, edit = -1, cur = null;
+  var data = [{ num: 'PC-2026-001', site: '01', journal: '01CAISSE', compte: '', devise: 'MGA', solde: 0, ops: [
+    { date: '2026-10-05', datePiece: '2026-10-05', libelle: 'Achat carburant véhicule projet', ref: 'BC-0412', rec: 0, dep: 120000, nom: 'Rakoto Jean', typeId: 'CIN', numId: '101 234 567 890', dateId: '2018-03-12', mode: 'Espèces', type: 'Carburant', ana: {} },
+    { date: '2026-10-12', datePiece: '2026-10-12', libelle: 'Remboursement avance mission', ref: 'RA-0033', rec: 200000, dep: 0, nom: 'Rasoa Marie', typeId: 'CIN', numId: '101 987 654 321', dateId: '2016-07-02', mode: 'Espèces', type: 'Remboursement avance', ana: {} }] }];
+  try { var sv = JSON.parse(localStorage.getItem(CLE) || 'null'); if (Array.isArray(sv)) data = sv; } catch (e) {}
+  function nb(v) { return Number(v || 0).toLocaleString('fr-FR', { minimumFractionDigits: 2, maximumFractionDigits: 2 }); }
+  function date(d) { return d ? d.split('-').reverse().join('/') : ''; }
+  function aujourdhui() { var d = new Date(); return d.getFullYear() + '-' + ('0' + (d.getMonth() + 1)).slice(-2) + '-' + ('0' + d.getDate()).slice(-2); }
+  function msg(t) { q('[data-csl-msg]').textContent = t || ''; }
+  function effacer() { qa('.csl-er').forEach(function (e) { e.classList.remove('show'); e.textContent = ''; }); qa('.err').forEach(function (e) { e.classList.remove('err'); }); }
+  function err(n, m) { var e = q('[data-er="' + n + '"]'); if (e) { e.textContent = m; e.classList.add('show'); } f(n).classList.add('err'); }
+  function oerr(n, m, ch) { var e = q('[data-oer="' + n + '"]'); if (e) { e.textContent = m; e.classList.add('show'); } if (ch) o(ch).classList.add('err'); }
+  function maj(s) { if (s && s.__combo && s.__combo.maj) s.__combo.maj(); }
+  function publier() { window.CAISSE_LOTS = data; try { localStorage.setItem(CLE, JSON.stringify(data)); } catch (e) {} window.dispatchEvent(new Event('caisse-lots-changed')); }
+  function somme(l, k) { return (l.ops || []).reduce(function (a, x) { return a + (Number(x[k]) || 0); }, 0); }
+  function soldeFinal(l) { return (Number(l.solde) || 0) + somme(l, 'rec') - somme(l, 'dep'); }
+
+  // listes de choix
+  function journaux() {
+    var j = (window.JOURNAUX_PLAN || []).filter(function (x) { return /caisse/i.test(x.nature || '') || /caisse/i.test(x.type || '') || /caisse/i.test(x.libelle || x.lib || ''); });
+    var l = j.map(function (x) { return [x.code, x.libelle || x.lib || '']; });
+    if (!l.length) l = [['CA', 'Journal Caisse']];
+    return l;
+  }
+  function sites() { var l = ((window.PLANS_REF || {}).sites || []).filter(function (x) { return x[0] !== '00'; }).map(function (x) { return [x[0], x[1]]; }); return l.length ? l : [['01', 'Site principal']]; }
+  function comptes() {
+    var pc = window.PLAN_COMPTABLE || [], l = pc.filter(function (r) { return /^53/.test(r.code) && !pc.some(function (x) { return x.parent === r.code; }); }).map(function (r) { return [r.code, r.libelle]; });
+    return l.length ? l : [['531000', 'CAISSE']];
+  }
+  function devises() { var d = (window.DEVISES || []).filter(function (x) { return x.actif !== false; }).map(function (x) { return [x.code, x.libelle || x.lib || x.code]; }); return d.length ? d : [['MGA', 'Ariary']]; }
+  function locale() { var l = 'MGA'; [].slice.call(document.querySelectorAll('.ig-f')).forEach(function (x) { var a = x.querySelector('.ig-l'), s = x.querySelector('select'); if (a && s && a.textContent.trim() === 'Monnaie locale' && s.value) l = s.value; }); return l; }
+  function opts(s, l, vide, courant) {
+    var v = courant != null ? courant : s.value;
+    s.innerHTML = (vide ? '<option value="">' + vide + '</option>' : '') + l.map(function (r) { return '<option value="' + esc(r[0]) + '">' + esc(r[0]) + ' — ' + esc(r[1]) + '</option>'; }).join('');
+    if (v && !s.querySelector('option[value="' + v + '"]')) s.insertAdjacentHTML('beforeend', '<option value="' + esc(v) + '">' + esc(v) + '</option>');
+    s.value = v; if (!vide && !s.value && s.options.length) s.selectedIndex = 0; maj(s);
+  }
+  function remplir(l) {
+    opts(f('journal'), journaux(), '', l ? l.journal : null); opts(f('site'), sites(), '', l ? l.site : null); opts(f('devise'), devises(), '', l ? l.devise : locale());
+  }
+  function plansAna() { return window.CAISSE_PLANS ? window.CAISSE_PLANS() : []; }
+  function types() { return window.CAISSE_TYPES || []; }
+  function typeDe(lib) { return types().filter(function (t) { return t.libelle === lib; })[0]; }
+
+  // lot
+  function charger(l) {
+    remplir(l); effacer(); cur = JSON.parse(JSON.stringify(l || { num: '', ops: [] }));
+    f('num').value = l ? l.num : ''; majOps();
+  }
+  function lireLot() { cur.num = f('num').value.trim(); cur.journal = f('journal').value; cur.site = f('site').value; cur.compte = cur.compte || ''; cur.devise = f('devise').value; cur.solde = 0; }
+  function majOps() {
+    var dv = cur.devise || f('devise').value || '', h = '';
+    (cur.ops || []).forEach(function (x, i) {
+      h += '<tr><td class="c">' + date(x.date) + '</td><td>' + esc(x.libelle) + '</td><td>' + esc(x.ref) + '</td><td>' + esc(x.type) + '</td><td class="r">' + (x.rec ? nb(x.rec) : '') + '</td><td class="r">' + (x.dep ? nb(x.dep) : '') + '</td><td class="c"><button type="button" class="csl-x" data-ox="' + i + '" aria-label="Supprimer l’opération">✕</button></td></tr>';
+    });
+    q('[data-csl-ops]').innerHTML = h; q('[data-csl-opvide]').hidden = !!(cur.ops || []).length; q('[data-csl-nop]').textContent = '(' + (cur.ops || []).length + ')';
+    var s0 = 0, r = somme(cur, 'rec'), d = somme(cur, 'dep');
+    q('[data-csl-t1]').textContent = nb(r); q('[data-csl-t2]').textContent = nb(d); q('[data-csl-t3]').textContent = nb(s0 + r - d) + ' ' + dv;
+  }
+  function onglet(n) {
+    qa('[data-csl-tab]').forEach(function (b) { b.classList.toggle('on', b.getAttribute('data-csl-tab') === n); });
+    qa('[data-csl-pan]').forEach(function (p) { p.hidden = p.getAttribute('data-csl-pan') !== n; });
+    qa('[data-csl-enregistrer],[data-csl-annuler],[data-csl-operations]').forEach(function (b) { b.disabled = n !== 'saisie'; });
+    qa('[data-csl-ajouter],[data-csl-modifier],[data-csl-supprimer]').forEach(function (b) { b.disabled = n === 'saisie'; });
+  }
+  function lister() {
+    var h = '';
+    data.forEach(function (l, i) {
+      var cel = [l.num, l.site, l.journal, l.devise, (l.ops || []).length, nb(soldeFinal(l))];
+      h += '<tr data-i="' + i + '"' + (i === sel ? ' class="csl-sel"' : '') + '>' + cel.map(function (c, k) { return '<td' + (k >= 4 ? ' class="r"' : '') + '>' + esc(c) + '</td>'; }).join('') + '</tr>';
+    });
+    q('[data-csl-lignes]').innerHTML = h; q('[data-csl-vide]').hidden = data.length > 0; q('[data-csl-compte]').textContent = '(' + data.length + ')';
+  }
+  function ouvrir(i) { edit = i; charger(i >= 0 ? data[i] : null); onglet('saisie'); }
+  q('[data-csl-tab="saisie"]').addEventListener('click', function () { if (q('[data-csl-pan="saisie"]').hidden) ouvrir(sel); });
+  q('[data-csl-tab="liste"]').addEventListener('click', function () { onglet('liste'); lister(); });
+  q('[data-csl-ajouter]').addEventListener('click', function () { msg(); ouvrir(-1); });
+  q('[data-csl-modifier]').addEventListener('click', function () { if (sel < 0) { msg('Sélectionnez un lot dans la liste.'); return; } msg(); ouvrir(sel); });
+  q('[data-csl-supprimer]').addEventListener('click', function () {
+    if (sel < 0) { msg('Sélectionnez un lot dans la liste.'); return; }
+    if (!window.confirm('Supprimer le lot ' + data[sel].num + ' et ses ' + (data[sel].ops || []).length + ' opération(s) ?')) return;
+    data.splice(sel, 1); sel = -1; publier(); lister(); msg('Lot supprimé.');
+  });
+  q('[data-csl-annuler]').addEventListener('click', function () { msg(); onglet('liste'); lister(); });
+  q('[data-csl-lignes]').addEventListener('click', function (e) { var tr = e.target.closest('tr[data-i]'); if (!tr) return; sel = +tr.dataset.i; qa('[data-csl-lignes] tr').forEach(function (r) { r.classList.toggle('csl-sel', r === tr); }); msg(); });
+  q('[data-csl-lignes]').addEventListener('dblclick', function (e) { var tr = e.target.closest('tr[data-i]'); if (tr) { sel = +tr.dataset.i; ouvrir(sel); } });
+  q('[data-csl-ops]').addEventListener('click', function (e) { var b = e.target.closest('[data-ox]'); if (!b) return; cur.ops.splice(+b.dataset.ox, 1); majOps(); });
+  f('devise').addEventListener('change', function () { cur.devise = this.value; majOps(); });
+  q('[data-csl-enregistrer]').addEventListener('click', function () {
+    effacer(); lireLot(); var ok = true;
+    if (!cur.num) { err('num', 'Le numéro du lot est obligatoire.'); ok = false; }
+    else if (data.some(function (x, i) { return i !== edit && x.num.toLowerCase() === cur.num.toLowerCase(); })) { err('num', 'Ce numéro de lot existe déjà.'); ok = false; }
+    if (!cur.journal) { err('journal', 'Le journal est obligatoire.'); ok = false; }
+    if (!cur.site) { err('site', 'Le site est obligatoire.'); ok = false; }
+    if (!cur.devise) { err('devise', 'La devise est obligatoire.'); ok = false; }
+    if (!ok) return;
+    if (edit >= 0) data[edit] = cur; else { data.push(cur); edit = data.length - 1; }
+    sel = edit; publier(); msg('Lot enregistré.'); onglet('liste'); lister();
+  });
+
+  // formulaire d'opération
+  function majAna() {
+    var t = typeDe(o('type').value), ok = !!(t && t.analytique), a = q('[data-csl-ana]'); a.hidden = !ok;
+    if (!ok) { a.innerHTML = ''; return; }
+    if (a.__t !== t.libelle) {
+      a.__t = t.libelle; var h = '';
+      plansAna().forEach(function (p) { h += '<label class="bp-champ"><span>' + esc(p.lib) + '</span><select class="bp-sel" data-p="' + esc(p.code) + '"></select></label>'; });
+      a.innerHTML = h + '<span class="csl-er" data-oer="ana" style="grid-column:1/-1"></span>';
+      plansAna().forEach(function (p) { var s = a.querySelector('[data-p="' + p.code + '"]'); opts(s, p.rows, 'Sélectionner', (t.ana || {})[p.code] || ''); });
+    }
+  }
+  function majSens() {
+    var t = typeDe(o('type').value), r = o('rec'), d = o('dep');
+    r.disabled = !!(t && t.nature === 'Dépense'); d.disabled = !!(t && t.nature === 'Recette');
+    if (r.disabled) r.value = ''; if (d.disabled) d.value = ''; majAna(); majSolde();
+  }
+  function majSolde() {
+    var r = Number(o('rec').value) || 0, d = Number(o('dep').value) || 0;
+    q('[data-csl-sr]').textContent = nb(r - d) + ' ' + (cur.devise || ''); q('[data-csl-sdp]').textContent = nb(soldeFinal(cur) + r - d) + ' ' + (cur.devise || '');
+  }
+  function ouvrirOp() {
+    lireLot(); effacer(); var ok = true;
+    if (!cur.num) { err('num', 'Renseignez d’abord le numéro du lot.'); ok = false; }
+    if (!cur.journal) { err('journal', 'Le journal est obligatoire.'); ok = false; }
+    if (!cur.site) { err('site', 'Le site est obligatoire.'); ok = false; }
+    if (!cur.devise) { err('devise', 'La devise est obligatoire.'); ok = false; }
+    if (!ok) { msg('Complétez l’en-tête du lot avant d’ajouter des opérations.'); return; }
+    msg(); videOp(); q('[data-csl-ov]').hidden = false; o('date').focus();
+  }
+  function videOp() {
+    qa('[data-oer]').forEach(function (e) { e.classList.remove('show'); e.textContent = ''; }); qa('.csl-md .err').forEach(function (e) { e.classList.remove('err'); });
+    q('#csl-md-t').textContent = 'Caisse n° ' + cur.num + ' / Site : ' + cur.site + ' / Journal : ' + cur.journal;
+    ['date', 'datePiece', 'libelle', 'ref', 'rec', 'dep', 'nom', 'typeId', 'numId', 'dateId'].forEach(function (k) { o(k).value = ''; });
+    o('date').value = aujourdhui(); o('datePiece').value = aujourdhui(); o('mode').value = ''; maj(o('mode'));
+    var u = ''; try { var e = document.querySelector('[data-user-name]'); u = e ? e.textContent.trim() : ''; } catch (x) {} o('user').value = u || 'Super Administrateur';
+    opts(o('type'), types().map(function (t) { return [t.libelle, t.nature]; }), 'Sélectionner un type d’opération', '');
+    var a = q('[data-csl-ana]'); a.hidden = true; a.__t = null; a.innerHTML = '';
+    q('[data-csl-dv]').textContent = '(' + cur.devise + ')'; q('[data-csl-dv2]').textContent = '(' + cur.devise + ')'; majSens();
+  }
+  function ajouterOp() {
+    qa('[data-oer]').forEach(function (e) { e.classList.remove('show'); e.textContent = ''; }); qa('.csl-md .err').forEach(function (e) { e.classList.remove('err'); });
+    var ok = true, r = Number(o('rec').value) || 0, d = Number(o('dep').value) || 0, t = typeDe(o('type').value);
+    var x = { date: o('date').value, datePiece: o('datePiece').value, libelle: o('libelle').value.trim(), ref: o('ref').value.trim(), rec: r, dep: d, nom: o('nom').value.trim(), typeId: o('typeId').value.trim(), numId: o('numId').value.trim(), dateId: o('dateId').value, mode: o('mode').value, type: o('type').value, ana: {} };
+    if (!x.date) { oerr('date', 'La date est obligatoire.', 'date'); ok = false; }
+    if (!x.libelle) { oerr('libelle', 'Le libellé est obligatoire.', 'libelle'); ok = false; }
+    if (!(r > 0 || d > 0) || (r > 0 && d > 0)) { oerr('montant', 'Saisissez soit une recette, soit une dépense (montant supérieur à 0).', r > 0 ? 'dep' : 'rec'); ok = false; }
+    if (!x.type) { oerr('type', 'L’imputation est obligatoire.', 'type'); ok = false; }
+    if (t && t.analytique) { qa('[data-csl-ana] [data-p]').forEach(function (s) { if (s.value) x.ana[s.getAttribute('data-p')] = s.value; }); if (!Object.keys(x.ana).length) { oerr('ana', 'Renseignez au moins un plan analytique.'); ok = false; } }
+    if (!ok) return false;
+    cur.ops.push(x); majOps(); return true;
+  }
+  function fermerOp() { q('[data-csl-ov]').hidden = true; }
+  q('[data-csl-operations]').addEventListener('click', ouvrirOp);
+  q('[data-csl-ox]').addEventListener('click', fermerOp); q('[data-csl-oann]').addEventListener('click', fermerOp);
+  q('[data-csl-oval]').addEventListener('click', function () { if (ajouterOp()) { fermerOp(); msg('Opération ajoutée au lot (pensez à enregistrer le lot).'); } });
+  q('[data-csl-onv]').addEventListener('click', function () { if (ajouterOp()) { videOp(); o('libelle').focus(); } });
+  o('type').addEventListener('change', majSens); o('rec').addEventListener('input', majSolde); o('dep').addEventListener('input', majSolde);
+  q('[data-csl-ov]').addEventListener('keydown', function (e) { if (e.key === 'Escape') fermerOp(); });
+  window.addEventListener('caisse-types-changed', function () { if (!q('[data-csl-ov]').hidden) videOp(); });
+  window.addEventListener('devises-changed', function () { if (!q('[data-csl-pan="saisie"]').hidden) remplir(cur); });
+  window.addEventListener('hashchange', function () { if (location.hash === '#caissesaisie') lister(); });
+  publier(); onglet('liste'); lister();
+})();
+</script>

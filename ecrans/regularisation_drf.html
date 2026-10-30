@@ -1,0 +1,222 @@
+<!--
+  Écran « Régularisation de la demande » (Gestion des demandes de remboursement › Traitement) — capture Angular app-regularisation-drf + fonctionnalité de pointage
+  fournie (artefact regularisation-drf.html) : fenêtre « Sélection de la convention et de la demande » au chargement, puis récapitulatif
+  (montant demandé multi-monnaies, montants par statut Payé / Litige / Apuré / Rejeté, solde restant à régulariser) et fenêtre
+  « Pointage des mouvements » (filtres par colonne, un statut unique par ligne, « Tout » par statut sur les lignes visibles).
+-->
+<style>
+.rg{color:#212529;--rg-paye:#1f9d63;--rg-paye-bg:#e5f7ee;--rg-lit:#d98a1c;--rg-lit-bg:#fdf1de;--rg-apu:#2563a8;--rg-apu-bg:#e8eef7;--rg-rej:#d0473d;--rg-rej-bg:#fbe9e7;--rg-mar:#0b2545;--rg-brd:#dbe2ec}
+.rg-h{margin:0;font-size:20px;font-weight:700;color:#0f172a}.rg-sub{margin:6px 0 0;font-size:13px;color:#64748b}
+.rg-head{margin-bottom:20px}
+.rg-btn{border:0;border-radius:6px;min-height:38px;padding:0 18px;font:inherit;font-size:13.5px;font-weight:600;cursor:pointer;background:#2563a8;color:#fff}
+.rg-btn:hover{background:#1b4079}.rg-btn:disabled{opacity:.5;cursor:not-allowed}
+.rg-btn.ghost{background:transparent;color:#1b4079;border:1px solid var(--rg-brd)}.rg-btn.ghost:hover{background:#e8eef7}
+.rg-btn.out{background:transparent;color:#2563a8;border:1px solid #2563a8;min-height:34px;font-size:12.5px;padding:0 14px}.rg-btn.out:hover{background:#e8eef7}
+.rg-ov{position:fixed;inset:0;z-index:2000;display:flex;align-items:center;justify-content:center;background:#0f172a99;backdrop-filter:blur(2px);padding:16px}
+.rg-md{display:flex;flex-direction:column;width:100%;max-width:448px;max-height:92vh;background:#fff;border:1px solid #e2e8f099;border-radius:16px;box-shadow:0 25px 50px -12px #0f172a40;overflow:hidden}
+.rg-md.wide{max-width:1020px}
+.rg-mh{flex:none;background:#152847;color:#fff;padding:16px 22px;display:flex;justify-content:space-between;align-items:center}
+.rg-mh h2{margin:0;font-size:15px;font-weight:700;color:#fff}
+.rg-x{border:0;background:none;color:#c9d6e8;font-size:20px;line-height:1;cursor:pointer}.rg-x:hover{color:#fff}
+.rg-mb{flex:1;overflow:auto;padding:22px}
+.rg-mf{flex:none;border-top:1px solid #f1f5f9;background:#f8fafc;padding:14px 22px;display:flex;justify-content:flex-end;gap:10px}
+.rg-fld{display:flex;flex-direction:column;gap:6px;margin-bottom:18px}
+.rg-lab{font-size:12px;font-weight:700;text-transform:uppercase;letter-spacing:.03em;color:#6b7280}
+.rg-in{border:1px solid #dbdfe9;border-radius:8px;padding:10px 12px;font:inherit;font-size:14px;color:#232320;background:#fff;width:100%}
+.rg-in:disabled{background:#f3f4f6;color:#9ca3af}
+.rg-ro{border:1px solid #dbdfe9;border-radius:8px;background:#f3f4f6;padding:10px 12px;font-size:14px;color:#4b5563}
+.rg-hint{font-size:12px;color:#9ca3af}
+.rg-fs{background:#fff;border:1px solid var(--rg-brd);border-radius:8px;box-shadow:0 1px 3px #0b254514;padding:16px 20px;display:flex;flex-wrap:wrap;align-items:center;gap:28px;margin-bottom:20px}
+.rg-fi{display:flex;flex-direction:column;gap:3px}.rg-fi span{font-size:11px;text-transform:uppercase;letter-spacing:.5px;color:#6b7785;font-weight:600}.rg-fi b{font-size:13.5px;color:var(--rg-mar)}
+.rg-fs .rg-btn{margin-left:auto}
+.rg-card{background:#fff;border:1px solid var(--rg-brd);border-radius:8px;box-shadow:0 1px 3px #0b254514;padding:22px 24px;margin-bottom:20px}
+.rg-card h3{margin:0 0 16px;font-size:15px;color:var(--rg-mar);font-weight:700;display:flex;align-items:center;gap:8px}
+.rg-card h3:before{content:"";width:4px;height:16px;background:#2563a8;border-radius:2px}
+.rg-g4{display:grid;grid-template-columns:repeat(4,1fr);gap:14px}
+.rg-cur{border:1px solid var(--rg-brd);border-radius:8px;padding:14px 16px;background:linear-gradient(180deg,#e8eef7 0%,#fff 65%)}
+.rg-cur span{font-size:11px;font-weight:700;color:#1b4079;letter-spacing:.6px}.rg-cur b{display:block;font-size:19px;color:var(--rg-mar);margin-top:6px;font-variant-numeric:tabular-nums}
+.rg-st{position:relative;overflow:hidden;border-radius:8px;padding:16px 16px 14px}
+.rg-st i{position:absolute;top:0;left:0;right:0;height:4px}
+.rg-st span{display:block;font-size:12px;font-weight:700;letter-spacing:.3px}.rg-st b{display:block;font-size:20px;margin-top:10px;font-variant-numeric:tabular-nums}.rg-st em{display:block;font-style:normal;font-size:11.5px;color:#6b7785;margin-top:4px}
+.rg-st.paye{background:var(--rg-paye-bg)}.rg-st.paye i{background:var(--rg-paye)}.rg-st.paye span,.rg-st.paye b{color:var(--rg-paye)}
+.rg-st.litige{background:var(--rg-lit-bg)}.rg-st.litige i{background:var(--rg-lit)}.rg-st.litige span,.rg-st.litige b{color:var(--rg-lit)}
+.rg-st.apure{background:var(--rg-apu-bg)}.rg-st.apure i{background:var(--rg-apu)}.rg-st.apure span,.rg-st.apure b{color:var(--rg-apu)}
+.rg-st.rejete{background:var(--rg-rej-bg)}.rg-st.rejete i{background:var(--rg-rej)}.rg-st.rejete span,.rg-st.rejete b{color:var(--rg-rej)}
+.rg-note{font-size:11.5px;color:#6b7785;margin-top:10px}
+.rg-act{display:flex;justify-content:flex-end;margin-top:20px}
+.rg-sum{display:grid;grid-template-columns:repeat(4,1fr);gap:10px;margin-bottom:18px}
+.rg-mini{border-radius:6px;padding:9px 12px;font-size:12px}.rg-mini .l{font-weight:700;letter-spacing:.3px}.rg-mini .v{font-weight:700;font-size:14px;margin-top:3px;font-variant-numeric:tabular-nums}
+.rg-tw{border:1px solid var(--rg-brd);border-radius:8px;overflow:auto;max-height:360px}
+.rg-t{width:100%;border-collapse:collapse;font-size:13px}
+.rg-t thead th{position:sticky;top:0;z-index:2;background:#e8eef7;color:var(--rg-mar);text-align:left;padding:10px 12px;font-size:11.5px;text-transform:uppercase;letter-spacing:.4px;font-weight:700;border-bottom:1px solid var(--rg-brd);white-space:nowrap}
+.rg-t .c{text-align:center}.rg-t td{padding:9px 12px;border-bottom:1px solid var(--rg-brd);vertical-align:middle}
+.rg-t tbody tr:hover{background:#f7f8fa}.rg-t td.am{text-align:right;font-weight:600;font-variant-numeric:tabular-nums;white-space:nowrap}
+.rg-t tr.fl td{background:#f7f8fa;padding:6px 10px;position:static}.rg-t tr.fl input,.rg-t tr.fl select{width:100%;font-size:12px;padding:5px 7px;border:1px solid var(--rg-brd);border-radius:4px;background:#fff}
+.rg-t tr.sa td{background:#e8eef7;font-size:11px;font-weight:700;color:#13315c;padding:7px 12px}
+.rg-sab{background:#fff;border:1px solid #2563a8;color:#2563a8;font-size:10.5px;font-weight:700;padding:3px 9px;border-radius:12px;cursor:pointer}.rg-sab:hover{background:#2563a8;color:#fff}
+.rg-t input[type=radio]{width:16px;height:16px;cursor:pointer}
+.rg-t .r-paye{accent-color:var(--rg-paye)}.rg-t .r-litige{accent-color:var(--rg-lit)}.rg-t .r-apure{accent-color:var(--rg-apu)}.rg-t .r-rejete{accent-color:var(--rg-rej)}
+@media(max-width:900px){.rg-g4,.rg-sum{grid-template-columns:repeat(2,1fr)}}
+</style>
+<app-regularisation-drf>
+<div class="rg" data-rg-root>
+  <div class="rg-head"><h1 class="rg-h">Régularisation des demandes</h1><p class="rg-sub">Filtrez une demande de remboursement et pointez les mouvements pour suivre le solde à apurer.</p></div>
+
+  <div data-rg-work style="display:none">
+    <div class="rg-fs">
+      <div class="rg-fi"><span>Code de la convention</span><b data-rg-s="conv"></b></div>
+      <div class="rg-fi"><span>Numéro de la demande</span><b data-rg-s="drf"></b></div>
+      <div class="rg-fi"><span>Période de tri</span><b data-rg-s="per"></b></div>
+      <div class="rg-fi"><span>Monnaie du pointage</span><b data-rg-s="mon"></b></div>
+      <button type="button" class="rg-btn out" data-rg-change>Changer la sélection</button>
+    </div>
+    <div class="rg-card"><h3>Montant demandé (multi-monnaies)</h3><div class="rg-g4" data-rg-curs></div></div>
+    <div class="rg-card"><h3>Montants par statut</h3>
+      <div class="rg-g4" data-rg-stat></div>
+      <div class="rg-note">Solde restant à régulariser : <strong data-rg-solde></strong></div>
+      <div class="rg-act"><button type="button" class="rg-btn" data-rg-open>Pointage des mouvements</button></div>
+    </div>
+  </div>
+
+  <!-- Fenêtre 1 : sélection convention / Demande (capture Angular) -->
+  <div class="rg-ov" data-rg-ov role="presentation">
+    <div class="rg-md" role="dialog" aria-modal="true" aria-label="Sélection de la convention et de la demande">
+      <div class="rg-mh"><h2>Sélection de la convention et de la demande</h2><button type="button" class="rg-x" data-rg-close aria-label="Fermer" style="display:none">&times;</button></div>
+      <div class="rg-mb">
+        <label class="rg-fld"><span class="rg-lab">Code de la convention</span><select class="rg-in" data-rg-conv><option value="" disabled selected>Sélectionner</option><option>IDA01 — 7286 MG CAT 1 2 3</option><option>01 PRET FIDA N°2000001263-MG</option><option>02 DON AFD N°CMG3011-01</option><option>03 PRET BAD N°2100155078854</option></select></label>
+        <label class="rg-fld"><span class="rg-lab">Numéro de la demande</span><select class="rg-in" data-rg-drf disabled><option value="" disabled selected>Sélectionner</option></select></label>
+        <label class="rg-fld"><span class="rg-lab">Période de sélection</span><div class="rg-ro" data-rg-per>—</div><span class="rg-hint">Calculée automatiquement à partir du numéro de la demande sélectionnée.</span></label>
+        <label class="rg-fld" style="margin-bottom:0"><span class="rg-lab">Monnaie du pointage</span><select class="rg-in" data-rg-mon>
+          <option value="" disabled>Sélectionner</option><option value="CDF">CDF — CDF</option><option value="CNY">CNY — Yuan</option><option value="EUR">EUR — Euro</option><option value="GBP">GBP — Livre Sterling</option><option value="KMF">KMF — Franc Comorien</option><option value="MGA">MGA — Ariary</option><option value="MUR">MUR — ROUPIE</option><option value="USD" selected>USD — Dollar Américain</option><option value="XOF">XOF — FRANC CFA</option><option value="DTS">DTS — Droit de tirage spécial</option></select>
+          <span class="rg-hint">Monnaie utilisée pour l'affichage des montants lors du pointage des mouvements.</span></label>
+      </div>
+      <div class="rg-mf"><button type="button" class="rg-btn" data-rg-ok disabled>Valider la sélection</button></div>
+    </div>
+  </div>
+
+  <!-- Fenêtre 2 : pointage des mouvements -->
+  <div class="rg-ov" data-rg-pov role="presentation" style="display:none">
+    <div class="rg-md wide" role="dialog" aria-modal="true" aria-label="Pointage des mouvements">
+      <div class="rg-mh"><h2 data-rg-ptitle>Pointage des mouvements</h2><button type="button" class="rg-x" data-rg-pclose aria-label="Fermer">&times;</button></div>
+      <div class="rg-mb">
+        <div class="rg-sum" data-rg-psum></div>
+        <div class="rg-tw"><table class="rg-t">
+          <thead>
+            <tr><th style="width:9%">Date comptable</th><th style="width:11%">N° de pièce</th><th style="width:19%">Libellé du mouvement</th><th style="width:10%">Catégorie</th><th class="c" style="width:12%">Montant (<span data-rg-th></span>)</th><th class="c">Payé</th><th class="c">Litige</th><th class="c">Apuré</th><th class="c">Rejeté</th></tr>
+            <tr class="fl"><td><input data-rg-f="date" placeholder="jj/mm/aaaa"></td><td><input data-rg-f="num" placeholder="N° pièce"></td><td><input data-rg-f="lib" placeholder="Rechercher…"></td><td><select data-rg-f="cat"><option value="">Toutes</option></select></td><td><input data-rg-f="mont" placeholder="Montant"></td>
+              <td colspan="4"><select data-rg-f="stat"><option value="">Tous les statuts</option><option value="paye">Payé</option><option value="litige">Litige</option><option value="apure">Apuré</option><option value="rejete">Rejeté</option><option value="none">Non pointé</option></select></td></tr>
+            <tr class="sa"><td colspan="4">Sélectionner tout par statut (lignes visibles)</td><td></td><td class="c"><button type="button" class="rg-sab" data-rg-sa="paye">Tout</button></td><td class="c"><button type="button" class="rg-sab" data-rg-sa="litige">Tout</button></td><td class="c"><button type="button" class="rg-sab" data-rg-sa="apure">Tout</button></td><td class="c"><button type="button" class="rg-sab" data-rg-sa="rejete">Tout</button></td></tr>
+          </thead>
+          <tbody data-rg-rows></tbody>
+        </table></div>
+        <div class="rg-note">Choix unique par ligne. Les filtres par colonne réduisent la liste affichée ; le bouton « Tout » applique le statut uniquement aux lignes visibles. Litige : réapparaît sur la prochaine demande. Rejeté : marqué non facturable dans les prochaines Demande. Apuré : disparaît du prochain tri.</div>
+      </div>
+      <div class="rg-mf"><button type="button" class="rg-btn ghost" data-rg-pclose>Annuler</button><button type="button" class="rg-btn" data-rg-psave>Enregistrer le pointage</button></div>
+    </div>
+  </div>
+</div>
+<script>
+(function () {
+  var root = document.currentScript.parentElement.querySelector('[data-rg-root]');
+  var q = function (s) { return root.querySelector(s); }, qa = function (s) { return Array.prototype.slice.call(root.querySelectorAll(s)); };
+  var DRFS = [['26', '01/04/2026 — 30/06/2026'], ['25', '01/01/2026 — 31/03/2026'], ['24', '01/10/2025 — 31/12/2025']];
+  var TOTAL_USD = 106464.69;
+  var RATES = { USD: 1, EUR: 98210.15 / 106464.69, DTS: 79640.02 / 106464.69, MGA: 487322940 / 106464.69, GBP: 0.79, CNY: 7.2, XOF: 600, KMF: 450, MUR: 45, CDF: 2800 };
+  var MV = [
+    { id: 1, date: '12/04/2026', num: 'PC-2026-0114', lib: 'Facture EntTP – Terrassement lot 3', cat: 'Travaux', m: 38500.00, s: 'litige' },
+    { id: 2, date: '18/04/2026', num: 'PC-2026-0119', lib: 'Décompte n°4 – Fondations bâtiment admin', cat: 'Travaux', m: 11500.00, s: 'litige' },
+    { id: 3, date: '22/04/2026', num: 'PC-2026-0125', lib: 'Acompte fournitures – Ciment & agrégats', cat: 'Travaux', m: 100.00, s: 'paye' },
+    { id: 4, date: '03/05/2026', num: 'PC-2026-0132', lib: 'Honoraires bureau de contrôle Q2', cat: 'Services', m: 9200.00, s: '' },
+    { id: 5, date: '09/05/2026', num: 'PC-2026-0138', lib: 'Location engins – Pelle hydraulique', cat: 'Travaux', m: 14800.00, s: '' },
+    { id: 6, date: '15/05/2026', num: 'PC-2026-0141', lib: 'Mission de supervision technique', cat: 'Services', m: 6400.00, s: '' },
+    { id: 7, date: '29/05/2026', num: 'PC-2026-0149', lib: 'Achat groupe électrogène chantier', cat: 'Équipement', m: 15964.69, s: '' },
+    { id: 8, date: '06/06/2026', num: 'PC-2026-0156', lib: 'Assurance chantier – 2e trimestre', cat: 'Services', m: 5400.00, s: '' }
+  ];
+  var conv = q('[data-rg-conv]'), drf = q('[data-rg-drf]'), per = q('[data-rg-per]'), mon = q('[data-rg-mon]'), ok = q('[data-rg-ok]'), ov = q('[data-rg-ov]'), pov = q('[data-rg-pov]');
+  var cur = 'USD', sel = null;
+  function fmt(n) { var p = Math.abs(n).toFixed(2).split('.'); p[0] = p[0].replace(/\B(?=(\d{3})+(?!\d))/g, ' '); return (n < 0 ? '-' : '') + p.join(','); }
+  function conv$(u) { return u * (RATES[cur] || 1); }
+  function chk() { ok.disabled = !(conv.value && drf.value && mon.value); }
+  var dmy = function (v) { var p = String(v).split('-'); return p[2] + '/' + p[1] + '/' + p[0]; };
+  // Demande de la convention IDA01 : états de dépense confirmés (confection validée) issus de « État de dépense ».
+  function drfsOf() {
+    if (!/^IDA01/.test(conv.value)) return DRFS;
+    return (window.__selectionsDRF || []).filter(function (s) { return s.conv === 'IDA01' && s.st !== 'En cours' && s.st !== 'Annulée'; })
+      .map(function (s) { return [s.num, dmy(s.d1) + ' — ' + dmy(s.d2)]; });
+  }
+  function fillDrf() {
+    var l = drfsOf(), cur = drf.value;
+    drf.innerHTML = '<option value="" disabled selected>Sélectionner</option>' + l.map(function (d) { return '<option value="' + d[0] + '">' + d[0] + '</option>'; }).join('');
+    if (cur && l.some(function (d) { return d[0] === cur; })) drf.value = cur;
+  }
+  window.addEventListener('selections-change', function () { if (conv.value && !drf.disabled) { fillDrf(); chk(); } });
+  conv.addEventListener('change', function () {
+    drf.value = ''; fillDrf();
+    drf.disabled = false; per.textContent = '—'; chk();
+  });
+  drf.addEventListener('change', function () { var d = drfsOf().filter(function (x) { return x[0] === drf.value; })[0]; per.textContent = d ? d[1] : '—'; chk(); });
+  mon.addEventListener('change', chk);
+
+  function totals() {
+    var t = { paye: 0, litige: 0, apure: 0, rejete: 0 }, c = { paye: 0, litige: 0, apure: 0, rejete: 0 };
+    MV.forEach(function (m) { if (t.hasOwnProperty(m.s)) { t[m.s] += m.m; c[m.s]++; } });
+    return { t: t, c: c };
+  }
+  var LAB = { paye: 'Payé', litige: 'Litige', apure: 'Apuré', rejete: 'Rejeté' };
+  function drawDash() {
+    var x = totals();
+    q('[data-rg-s="conv"]').textContent = sel.conv; q('[data-rg-s="drf"]').textContent = sel.drf; q('[data-rg-s="per"]').textContent = sel.per; q('[data-rg-s="mon"]').textContent = cur;
+    q('[data-rg-curs]').innerHTML = [['USD', '106 464,69'], ['EUR', '98 210,15'], ['DTS', '79 640,02'], ['MGA', '487 322 940']].map(function (c) { return '<div class="rg-cur"><span>' + c[0] + '</span><b>' + c[1] + '</b></div>'; }).join('');
+    q('[data-rg-stat]').innerHTML = Object.keys(LAB).map(function (k) { return '<div class="rg-st ' + k + '"><i></i><span>● ' + LAB[k] + '</span><b>' + fmt(conv$(x.t[k])) + ' ' + cur + '</b><em>' + x.c[k] + (x.c[k] > 1 ? ' mouvements' : ' mouvement') + '</em></div>'; }).join('');
+    q('[data-rg-solde]').textContent = fmt(conv$(TOTAL_USD - (x.t.paye + x.t.apure))) + ' ' + cur;
+  }
+  function drawSum() {
+    var x = totals(), bg = { paye: ['--rg-paye-bg', '--rg-paye'], litige: ['--rg-lit-bg', '--rg-lit'], apure: ['--rg-apu-bg', '--rg-apu'], rejete: ['--rg-rej-bg', '--rg-rej'] };
+    q('[data-rg-psum]').innerHTML = Object.keys(LAB).map(function (k) { return '<div class="rg-mini" style="background:var(' + bg[k][0] + ');color:var(' + bg[k][1] + ')"><div class="l">' + LAB[k] + '</div><div class="v">' + fmt(conv$(x.t[k])) + ' ' + cur + '</div></div>'; }).join('');
+  }
+  function flt(k) { return (q('[data-rg-f="' + k + '"]').value || '').trim().toLowerCase(); }
+  function visibles() {
+    var d = flt('date'), n = flt('num'), l = flt('lib'), c = q('[data-rg-f="cat"]').value, m = flt('mont'), s = q('[data-rg-f="stat"]').value;
+    return MV.filter(function (r) {
+      if (d && r.date.toLowerCase().indexOf(d) < 0) return false;
+      if (n && r.num.toLowerCase().indexOf(n) < 0) return false;
+      if (l && r.lib.toLowerCase().indexOf(l) < 0) return false;
+      if (c && r.cat !== c) return false;
+      if (m && fmt(conv$(r.m)).toLowerCase().indexOf(m) < 0) return false;
+      if (s === 'none' && r.s) return false;
+      if (s && s !== 'none' && r.s !== s) return false;
+      return true;
+    });
+  }
+  function drawRows() {
+    q('[data-rg-th]').textContent = cur;
+    var v = visibles(), b = q('[data-rg-rows]');
+    if (!v.length) { b.innerHTML = '<tr><td colspan="9" style="text-align:center;padding:22px;color:#6b7785">Aucun mouvement ne correspond aux filtres.</td></tr>'; return; }
+    b.innerHTML = v.map(function (m) {
+      return '<tr><td>' + m.date + '</td><td>' + m.num + '</td><td>' + m.lib + '</td><td>' + m.cat + '</td><td class="am">' + fmt(conv$(m.m)) + ' ' + cur + '</td>' +
+        ['paye', 'litige', 'apure', 'rejete'].map(function (k) { return '<td class="c"><input type="radio" class="r-' + k + '" name="rg-s' + m.id + '" value="' + k + '" data-rg-id="' + m.id + '"' + (m.s === k ? ' checked' : '') + '></td>'; }).join('') + '</tr>';
+    }).join('');
+  }
+  function openP() {
+    qa('[data-rg-f]').forEach(function (e) { e.value = ''; });
+    var cats = []; MV.forEach(function (m) { if (cats.indexOf(m.cat) < 0) cats.push(m.cat); }); cats.sort();
+    q('[data-rg-f="cat"]').innerHTML = '<option value="">Toutes</option>' + cats.map(function (c) { return '<option>' + c + '</option>'; }).join('');
+    q('[data-rg-ptitle]').textContent = 'Pointage des mouvements — Demande N°' + sel.drf;
+    drawRows(); drawSum(); pov.style.display = '';
+  }
+  ok.addEventListener('click', function () {
+    cur = mon.value; sel = { conv: conv.value, drf: drf.value, per: per.textContent };
+    ov.style.display = 'none'; q('[data-rg-work]').style.display = ''; drawDash();
+  });
+  q('[data-rg-change]').addEventListener('click', function () { ov.style.display = ''; q('[data-rg-close]').style.display = ''; });
+  q('[data-rg-close]').addEventListener('click', function () { ov.style.display = 'none'; });
+  q('[data-rg-open]').addEventListener('click', openP);
+  qa('[data-rg-pclose]').forEach(function (b) { b.addEventListener('click', function () { pov.style.display = 'none'; }); });
+  q('[data-rg-psave]').addEventListener('click', function () { drawDash(); pov.style.display = 'none'; });
+  pov.addEventListener('click', function (e) { if (e.target === pov) pov.style.display = 'none'; });
+  q('[data-rg-rows]').addEventListener('change', function (e) { var id = e.target.dataset.rgId; if (!id) return; MV.filter(function (m) { return m.id === +id; })[0].s = e.target.value; drawSum(); });
+  qa('[data-rg-f]').forEach(function (e) { e.addEventListener(e.tagName === 'SELECT' ? 'change' : 'input', drawRows); });
+  qa('[data-rg-sa]').forEach(function (b) { b.addEventListener('click', function () { visibles().forEach(function (m) { m.s = b.dataset.rgSa; }); drawRows(); drawSum(); }); });
+})();
+</script>
+</app-regularisation-drf>

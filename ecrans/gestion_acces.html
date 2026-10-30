@@ -1,0 +1,712 @@
+<!--
+  Écran « Administration › Gestion des accès » (onglets Utilisateurs / Journaux / Permissions).
+  Reprise de la capture « Permissions » : liste des groupes, recherche, Accès tout / Aucun accès,
+  tableau des menus repliable (Visible + Voir, Créer, Modifier, Supprimer, Valider, Annuler, Imprimer, Import, Export XLS, Export PDF).
+  Les sous-menus détaillés sont ceux des écrans de la maquette ; les droits sont simulés en mémoire.
+-->
+<style>
+.ga{color:#334155}
+.ga h1{margin:0;font-size:24px;font-weight:700;color:#1e293b}.ga .ga-sub{margin:2px 0 12px;font-size:14px;color:#64748b}
+.ga-card{background:#fff;border:1px solid #e2e8f0;border-radius:12px;box-shadow:0 1px 2px #0f172a0d;overflow:hidden}
+.ga-tabs{display:flex;border-bottom:1px solid #e2e8f0;padding:0 12px}
+.ga-tab{display:inline-flex;align-items:center;gap:8px;padding:10px 16px;border:0;border-bottom:2px solid transparent;background:none;font:inherit;font-size:14px;font-weight:500;color:#64748b;cursor:pointer}
+.ga-tab:hover{color:#334155}.ga-tab.on{border-bottom-color:#059669;color:#047857}
+.ga-body{display:flex;gap:12px;padding:12px;align-items:stretch;min-height:480px}
+.ga-side{width:224px;flex:none;border:1px solid #e2e8f0;border-radius:12px;display:flex;flex-direction:column;overflow:hidden;background:#fff;max-height:640px}
+.ga-sh{padding:14px 16px 10px;border-bottom:1px solid #f1f5f9}.ga-sh b{display:block;font-size:10px;letter-spacing:.08em;text-transform:uppercase;color:#94a3b8}.ga-sh span{display:block;margin-top:4px;font-size:11px;color:#94a3b8;line-height:1.35}
+.ga-gl{overflow:auto;padding:8px;display:flex;flex-direction:column;gap:4px}
+.ga-g{display:flex;gap:8px;align-items:flex-start;text-align:left;width:100%;border:0;border-left:4px solid transparent;border-radius:8px;background:none;padding:9px 10px;font:inherit;cursor:pointer}
+.ga-g:hover{background:#f8fafc}.ga-g.on{background:#ecfdf5;border-left-color:#059669}
+.ga-g .n{display:block;font-size:13px;font-weight:600;color:#1e293b}.ga-g.on .n{color:#065f46}.ga-g .d{display:block;margin-top:2px;font-size:11px;color:#94a3b8;line-height:1.3}
+.ga-g .b{flex:none;margin-top:2px;font-size:10px;font-weight:600;border:1px solid #e2e8f0;background:#f8fafc;color:#64748b;border-radius:999px;padding:1px 8px}.ga-g.on .b{background:#fff;border-color:#a7f3d0;color:#047857}
+.ga-main{flex:1;min-width:0;border:1px solid #e2e8f0;border-radius:12px;display:flex;flex-direction:column;overflow:hidden;background:#fff}
+.ga-mh{display:flex;justify-content:space-between;gap:12px;flex-wrap:wrap;padding:12px 16px;border-bottom:1px solid #f1f5f9}
+.ga-mh h2{margin:0;font-size:16px;font-weight:700;color:#1e293b}.ga-mh p{margin:2px 0 0;font-size:12px;color:#64748b}
+.ga-btn{display:inline-flex;align-items:center;gap:6px;height:34px;padding:0 14px;border:1px solid #e2e8f0;border-radius:8px;background:#fff;color:#475569;font:inherit;font-size:12px;font-weight:600;cursor:pointer}
+.ga-btn:hover{background:#f8fafc}.ga-btn.ok{background:#059669;border-color:#059669;color:#fff}.ga-btn.ok:hover{background:#047857}
+.ga-tb{display:flex;align-items:center;gap:16px;flex-wrap:wrap;padding:10px 16px;border-bottom:1px solid #f1f5f9}
+.ga-q{position:relative;flex:1;min-width:180px}.ga-q i{position:absolute;left:10px;top:50%;transform:translateY(-50%);color:#94a3b8;font-size:14px}
+.ga-q input{width:100%;box-sizing:border-box;height:36px;border:1px solid #e2e8f0;border-radius:8px;padding:0 12px 0 32px;font:inherit;font-size:14px;outline:none}.ga-q input:focus{border-color:#10b981;box-shadow:0 0 0 3px #10b9811a}
+.ga-rd{display:flex;gap:16px;font-size:14px}.ga-rd label{display:flex;align-items:center;gap:6px;cursor:pointer}.ga-rd input{accent-color:#059669}
+.ga-sc{overflow:auto;max-height:520px;padding:0 8px 12px}
+.ga-t{width:max-content;min-width:100%;border-collapse:collapse;font-size:13px}
+.ga-t th{position:sticky;top:0;z-index:2;background:#f8fafc;border-bottom:1px solid #e2e8f0;padding:11px 6px;text-align:center;font-size:10px;font-weight:700;letter-spacing:.06em;text-transform:uppercase;color:#64748b;white-space:nowrap;min-width:72px}
+.ga-t th:first-child,.ga-t td:first-child{position:sticky;left:0;z-index:1;text-align:left;padding-left:12px;min-width:300px;background:#fff}
+.ga-t th:first-child{z-index:3;background:#f8fafc}
+.ga-t td{padding:9px 6px;text-align:center;border-bottom:1px solid #f1f5f9}
+.ga-t tr.top td{background:#f8fafc}.ga-t tr.top td:first-child{background:#f8fafc}
+.ga-t tr.off{opacity:.6}
+.ga-nm{display:flex;align-items:center;gap:8px;white-space:nowrap;color:#1e293b}
+.ga-nm .tg{width:24px;height:24px;flex:none;border:0;border-radius:6px;background:none;color:#94a3b8;cursor:pointer;display:inline-flex;align-items:center;justify-content:center}.ga-nm .tg:hover{background:#f1f5f9;color:#475569}
+.ga-nm .sp{width:24px;flex:none;text-align:center;color:#cbd5e1}
+.ga-nm i.ic{color:#059669;font-size:15px}.ga-nm .c{font-size:10px;font-weight:500;color:#94a3b8}
+.ga-sw{position:relative;width:36px;height:20px;border:0;border-radius:999px;background:#cbd5e1;cursor:pointer;padding:0;transition:background .15s}
+.ga-sw:after{content:"";position:absolute;top:2px;left:2px;width:16px;height:16px;border-radius:50%;background:#fff;box-shadow:0 1px 2px #0003;transition:left .15s}
+.ga-sw[aria-checked="true"]{background:#10b981}.ga-sw[aria-checked="true"]:after{left:18px}.ga-sw:disabled{opacity:.4;cursor:not-allowed}
+.ga-t input[type=checkbox]{width:16px;height:16px;accent-color:#059669;cursor:pointer}.ga-t input:disabled{opacity:.4;cursor:not-allowed}
+.ga-na{color:#cbd5e1}
+.ga-t.ga-tj{width:100%}.ga-t.ga-tj th:first-child,.ga-t.ga-tj td:first-child{min-width:0!important;width:84px!important;text-align:center;padding-left:6px;position:static}.ga-t.ga-tj th,.ga-t.ga-tj td{min-width:0!important;white-space:nowrap}.ga-t.ga-tj th.lib,.ga-t.ga-tj td.lib{width:100%;white-space:normal}
+.ga-empty{padding:40px;text-align:center;color:#94a3b8;font-size:14px}
+.ga-toast{position:fixed;left:50%;bottom:28px;transform:translateX(-50%);background:#065f46;color:#fff;padding:10px 18px;border-radius:10px;font-size:13px;z-index:3000;box-shadow:0 10px 30px #0003}
+@media (max-width:900px){.ga-body{flex-direction:column}.ga-side{width:auto;max-height:220px}}
+</style>
+<div class="ga" data-ga>
+  <h1>Permissions</h1>
+  <p class="ga-sub">Droits des groupes sur les menus SoftCompta.</p>
+  <div class="ga-card">
+    <div class="ga-tabs">
+      <button type="button" class="ga-tab" data-ga-tab="users"><i class="ti ti-user-cog"></i> Utilisateurs</button>
+      <button type="button" class="ga-tab" data-ga-tab="jnl"><i class="ti ti-notebook"></i> Journaux</button>
+      <button type="button" class="ga-tab" data-ga-tab="sites"><i class="ti ti-building"></i> Sites</button>
+      <button type="button" class="ga-tab" data-ga-tab="axes" data-regr><i class="ti ti-sitemap"></i> Plan de regroupement</button>
+      <button type="button" class="ga-tab on" data-ga-tab="perm"><i class="ti ti-shield-check"></i> Permissions</button>
+    </div>
+    <div data-ga-pane="users" style="display:none" data-gu>
+      <div class="ga-tb" style="padding:12px 16px"><div class="ga-q"><i class="ti ti-search"></i><input type="text" placeholder="Rechercher un utilisateur…" data-gu-q></div>
+        <div style="display:flex;gap:8px;flex-wrap:wrap"><button type="button" class="ga-btn ok" data-gu-new><i class="ti ti-user-plus"></i> Nouvel utilisateur</button><button type="button" class="ga-btn" data-gu-edit disabled><i class="ti ti-pencil"></i> Modifier</button><button type="button" class="ga-btn" data-gu-del disabled><i class="ti ti-trash"></i> Supprimer</button><button type="button" class="ga-btn" data-gu-print><i class="ti ti-printer"></i> Imprimer</button><button type="button" class="ga-btn" data-gu-pdf><i class="ti ti-file-type-pdf"></i> PDF</button><button type="button" class="ga-btn" data-gu-xlsx><i class="ti ti-file-spreadsheet"></i> Excel (XLSX)</button></div></div>
+      <div class="ga-sc" style="padding:0 12px 12px"><table class="ga-t ga-tu"><thead><tr><th>Identifiant</th><th>Nom</th><th>Groupe</th><th>Email</th><th>Rôle</th><th>Statut</th></tr></thead><tbody data-gu-rows></tbody></table></div>
+      <div class="gu-ov" data-gu-ov hidden>
+        <div class="gu-md" role="dialog" aria-label="Nouvel utilisateur">
+          <div class="gu-steps" data-gu-steps></div>
+          <div class="gu-bd" data-gu-body></div>
+          <div class="gu-ft"><span class="gu-err" data-gu-err></span><span style="flex:1"></span>
+            <button type="button" class="ga-btn" data-gu-cancel>Annuler</button><button type="button" class="ga-btn" data-gu-prev>Précédent</button><button type="button" class="ga-btn ok" data-gu-next>Suivant</button></div>
+        </div>
+      </div>
+    </div>
+    <div data-ga-pane="jnl" style="display:none">
+      <div class="ga-body">
+        <aside class="ga-side"><div class="ga-sh"><b>Utilisateurs</b><span>Sélectionnez un utilisateur pour affecter ses journaux.</span></div>
+          <div style="padding:8px 8px 0"><div class="ga-q"><i class="ti ti-search"></i><input type="text" placeholder="Rechercher…" data-gj-qu></div></div>
+          <div class="ga-gl" data-gj-users></div></aside>
+        <div class="ga-main">
+          <div class="ga-mh"><div><h2 data-gj-title></h2><p data-gj-sub></p></div>
+            <div style="display:flex;gap:8px;flex-wrap:wrap;align-items:center"><button type="button" class="ga-btn" data-gj-reset><i class="ti ti-refresh"></i> Réinitialiser</button><button type="button" class="ga-btn ok" data-gj-save><i class="ti ti-device-floppy"></i> Enregistrer</button></div></div>
+          <div class="ga-tb"><div class="ga-q"><i class="ti ti-search"></i><input type="text" placeholder="Rechercher un journal…" data-gj-qj></div>
+            <div class="ga-rd"><label><input type="radio" name="gjAll" data-gj-all="1"> Tous les journaux</label><label><input type="radio" name="gjAll" data-gj-all="0"> Aucun journal</label></div></div>
+          <div class="ga-sc"><table class="ga-t ga-tj"><thead><tr><th>Rattaché</th><th style="text-align:left">Code</th><th class="lib" style="text-align:left">Libellé</th><th style="text-align:left">Type</th><th style="text-align:left">Nature</th></tr></thead><tbody data-gj-rows></tbody></table></div>
+        </div>
+      </div>
+    </div>
+    <div data-ga-pane="sites" style="display:none"></div>
+    <div data-ga-pane="axes" data-regr style="display:none"></div>
+    <div data-ga-pane="perm">
+      <div class="ga-body">
+        <aside class="ga-side"><div class="ga-sh"><b>Groupes</b><span>Sélectionnez un groupe pour paramétrer ses droits.</span></div><div class="ga-gl" data-ga-groups></div></aside>
+        <div class="ga-main">
+          <div class="ga-mh"><div><h2 data-ga-title></h2><p>Visible, consultation, CRUD, validation, import et export (Excel / PDF).</p></div>
+            <div style="display:flex;gap:8px;flex-wrap:wrap;align-items:center"><button type="button" class="ga-btn" data-ga-reset><i class="ti ti-refresh"></i> Réinitialiser</button><button type="button" class="ga-btn ok" data-ga-save><i class="ti ti-device-floppy"></i> Enregistrer</button></div></div>
+          <div class="ga-tb"><div class="ga-q"><i class="ti ti-search"></i><input type="text" placeholder="Rechercher un menu…" data-ga-q></div>
+            <div class="ga-rd"><label><input type="radio" name="gaAll" data-ga-all="1"> Accès tout</label><label><input type="radio" name="gaAll" data-ga-all="0"> Aucun accès</label></div></div>
+          <div class="ga-sc"><table class="ga-t"><thead data-ga-head></thead><tbody data-ga-rows></tbody></table></div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+<script>
+(function () {
+  var root = document.currentScript.parentElement.querySelector('[data-ga]');
+  var q = function (s) { return root.querySelector(s); }, qa = function (s) { return [].slice.call(root.querySelectorAll(s)); };
+  var COLS = [['voir', 'Voir'], ['creer', 'Créer'], ['modif', 'Modifier'], ['suppr', 'Supprimer'], ['valid', 'Valider'], ['annul', 'Annuler'], ['impr', 'Imprimer'], ['imp', 'Import'], ['xls', 'Export XLS'], ['pdf', 'Export PDF']];
+  var CRUD = ['voir', 'creer', 'modif', 'suppr'], EDIT = ['voir', 'impr', 'xls', 'pdf'], NAV = ['voir'], ALL = COLS.map(function (c) { return c[0]; });
+  function N(name, icon, kids, o) { return Object.assign({ name: name, icon: icon, kids: kids || [], ops: NAV }, o || {}); }
+  var TREE = [
+    N('Tableau de bord', 'ti-dashboard', [N('Tableau de bord', 'ti-dashboard'), N('Tableau de bord contrats', 'ti-dashboard')], { ops: [], open: 1 }),
+    N('Paramétrages', 'ti-settings', [
+      N('Administration', 'ti-shield', [N('Utilisateurs', 'ti-users', 0, { ops: CRUD }), N('Gestion des accès', 'ti-shield-check'), N('Paramétrage des traces', 'ti-list-details'), N('Journal de traces', 'ti-history', 0, { ops: EDIT }), N('Nettoyages', 'ti-eraser', 0, { ops: ['voir', 'suppr'] }), N('Alertes', 'ti-bell', 0, { ops: CRUD })], { ops: ALL }),
+      N('Paramètres généraux', 'ti-settings', [N('Pays', 'ti-world', 0, { ops: CRUD }), N('Devise', 'ti-coin', 0, { ops: CRUD }), N('Unités', 'ti-ruler', 0, { ops: CRUD }), N('Administration de l’entité', 'ti-building', 0, { ops: ['voir', 'modif'] }), N('Fonctions', 'ti-id-badge', 0, { ops: CRUD }), N('Signataires', 'ti-signature', 0, { ops: CRUD }), N('Liste des banques', 'ti-building-bank', 0, { ops: CRUD })], { ops: ALL }),
+      N('Paramètres comptables', 'ti-layers-intersect', [N('Exercices comptables', 'ti-calendar', 0, { ops: CRUD }), N('Configuration des plans', 'ti-sitemap', 0, { ops: ['voir', 'modif'] }), N('Saisie des plans', 'ti-edit', 0, { ops: CRUD.concat('imp') }), N('Mode de règlement', 'ti-credit-card', 0, { ops: CRUD })], { ops: ALL }),
+      N('Paramètres financiers', 'ti-cash-banknote', [N('Devis programme', 'ti-file-spreadsheet', 0, { ops: CRUD.concat('imp') }), N('Gestion des sélections', 'ti-list-check', 0, { ops: CRUD }), N('Procédures financières', 'ti-route', 0, { ops: CRUD })], { ops: ALL, off: 1 })
+    ], { ops: [], open: 1 }),
+    N('Comptabilité générale', 'ti-books', [
+      N('Comptabilité générale', 'ti-books', [N('Compte de tiers', 'ti-address-book', 0, { ops: CRUD.concat('imp') }), N('Saisie d’écritures', 'ti-edit', 0, { ops: CRUD.concat(['valid', 'imp']) })], { ops: ALL }),
+      N('Gestion des cours', 'ti-currency-dollar', 0, { ops: ALL }), N('Petite caisse', 'ti-cash', 0, { ops: ALL })
+    ], { ops: ALL, open: 1 }),
+    N('Comptabilité analytique', 'ti-chart-bar', [N('Plans analytiques', 'ti-layers-intersect', 0, { ops: CRUD.concat('imp') }), N('Comptes analytiques', 'ti-grid-dots', 0, { ops: NAV })], { ops: ALL, open: 1 }),
+    N('Immobilisations', 'ti-archive', [N('Paramétrages', 'ti-settings', 0, { ops: ALL }), N('Saisies', 'ti-edit', 0, { ops: ALL })], { ops: ALL, open: 1 }),
+    N('Gestion des contrats', 'ti-file-text', [N('Paramétrages', 'ti-settings', [N('Type de passation', 'ti-gavel', 0, { ops: CRUD }), N('Type de marché', 'ti-briefcase', 0, { ops: CRUD })], { ops: ALL }), N('Saisies', 'ti-edit', 0, { ops: ALL }), N('Suivi et historique', 'ti-clock', 0, { ops: EDIT })], { ops: ALL, open: 1 }),
+    N('États comptables', 'ti-files', [
+      N('Général', 'ti-books', [N('Balance générale', 'ti-scale', 0, { ops: EDIT }), N('Balance auxiliaire', 'ti-scale', 0, { ops: EDIT }), N('Grand livre général', 'ti-book', 0, { ops: EDIT })], { ops: ALL }),
+      N('Analytique', 'ti-chart-bar', [N('Balance', 'ti-scale', 0, { ops: EDIT })], { ops: ALL }), N('Immobilisation', 'ti-archive', 0, { ops: ALL }), N('Contrat', 'ti-file-text', 0, { ops: ALL }),
+      N('Déclaration fiscale', 'ti-file', [N('Paramétrages', 'ti-settings', [N('Type de taxe', 'ti-percentage', 0, { ops: CRUD }), N('Modèle d’état', 'ti-template', 0, { ops: CRUD })], { ops: ALL }), N('Traitement', 'ti-player-play', 0, { ops: ['voir', 'valid', 'annul', 'impr', 'xls', 'pdf'] })], { ops: ALL }),
+      N('États personnalisés', 'ti-table', [N('Paramètres', 'ti-settings', [N('Modèle Listing', 'ti-template', 0, { ops: CRUD }), N('Modèle Récapitulatif', 'ti-template', 0, { ops: CRUD })], { ops: ALL }), N('Édition', 'ti-printer', [N('Liste', 'ti-list', 0, { ops: EDIT }), N('Récapitulatif', 'ti-sum', 0, { ops: EDIT })], { ops: ALL })], { ops: ALL })
+    ], { ops: ALL, open: 1 }),
+    N('États financiers', 'ti-chart-bar', [N('Bilan', 'ti-book', 0, { ops: ALL }), N('Compte de résultat', 'ti-files', 0, { ops: ALL }), N('Emplois et ressources', 'ti-chart-bar', 0, { ops: ALL }), N('Tableau de Flux de trésorerie', 'ti-cash', 0, { ops: ALL }),
+      N('Compte spécial', 'ti-file-text', [N('Paramétrages', 'ti-settings', 0, { ops: CRUD }), N('Édition', 'ti-printer', 0, { ops: EDIT })], { ops: ALL, open: 1 }), N('Utilisation de fonds', 'ti-coins', 0, { ops: ALL }), N('Suivi budgétaire', 'ti-chart-bar', 0, { ops: ALL })], { ops: ALL, open: 1 }),
+    N('Comptabilité Projets & Bailleurs', 'ti-briefcase', [
+      N('Saisie PAD', 'ti-edit', 0, { ops: CRUD }),
+      N('Gestion des demandes de remboursement', 'ti-files', [
+        N('Paramétrages', 'ti-settings', [N('Gestion des sélections', 'ti-list-check', 0, { ops: CRUD }), N('Modèle récapitulatif', 'ti-template', 0, { ops: CRUD }), N('Modèle SOE', 'ti-template', 0, { ops: CRUD })], { ops: ALL }),
+        N('Saisie', 'ti-edit', [N('État de dépense', 'ti-receipt', 0, { ops: ['voir', 'modif', 'valid', 'annul', 'impr', 'xls', 'pdf'] })], { ops: ALL }),
+        N('Traitement', 'ti-player-play', [N('Régularisation de la demande', 'ti-checklist', 0, { ops: ['voir', 'modif', 'valid', 'annul'] }), N('Appendice 4 — EJCD', 'ti-file-text', 0, { ops: EDIT })], { ops: ALL })
+      ], { ops: ALL }),
+      N('Suivi', 'ti-clock', [N('Historique des demandes', 'ti-history', 0, { ops: EDIT })], { ops: ALL })
+    ], { ops: [], off: 1, open: 1 })
+  ];
+  var FLAT = [];
+  (function walk(list, depth, parent, path) { list.forEach(function (n, i) { n.id = path + i; n.depth = depth; n.parent = parent; FLAT.push(n); walk(n.kids, depth + 1, n, n.id + '.'); }); })(TREE, 0, null, 'm');
+  var GROUPS = [['Administrateur', 'Groupe des administrateurs SoftCompta', 'ADMIN', 'all'], ['ADMINOK', 'Admin', 'ADMINOK', 'all'], ['ADMINREHETRA', 'Admin', 'ADMINREHETRA', 'all'], ['COMPTA2', 'COMPTA2', 'COMPTA2', 'std'], ['COMPTA ENTREPRISE', 'Standard', 'COMPTA-ENTREPRISE', 'std'], ['CONSULTATION', 'Reader', 'CONSULTATION', 'read'], ['kkk', 'Standard', 'KKK', 'std'], ['STANDARD', 'Standard', 'STANDARD', 'std'], ['Superadministrateur', 'Groupe des super-administrateurs SoftCompta', 'SUPERADMIN', 'all'], ['TESTADM', 'TESTADM', 'TESTADM', 'std'], ['TESTGP1', 'TESTGP1', 'TESTGP1', 'read'], ['test groupe', 'Standard', 'TEST-GROUPE', 'std'], ['Utilisateur', 'Groupe des utilisateurs standard SoftCompta', 'USER', 'read']];
+  function init(kind) {
+    var s = {};
+    FLAT.forEach(function (n) {
+      var c = {};
+      n.ops.forEach(function (k) { c[k] = kind === 'all' ? 1 : kind === 'std' ? (k === 'voir' || k === 'creer' || k === 'modif' || k === 'impr' ? 1 : 0) : (k === 'voir' || k === 'impr' || k === 'xls' || k === 'pdf' ? 1 : 0); });
+      s[n.id] = { v: n.off ? 0 : (kind === 'all' || n.depth < 3 ? 1 : 1), c: c };
+      if (kind !== 'all' && n.off) s[n.id].v = 0;
+    });
+    return s;
+  }
+  var STATE = {}, cur = 0, filter = '', collapsed = {};
+  FLAT.forEach(function (n) { if (n.kids.length && !n.open) collapsed[n.id] = 1; });
+  GROUPS.forEach(function (g, i) { STATE[i] = init(g[3]); });
+  function esc(s) { var d = document.createElement('div'); d.textContent = s; return d.innerHTML; }
+  function say(t) { var d = document.createElement('div'); d.className = 'ga-toast'; d.textContent = t; document.body.appendChild(d); setTimeout(function () { d.remove(); }, 2200); }
+  function anc(n) { var o = true; for (var p = n.parent; p; p = p.parent) if (!STATE[cur][p.id].v) o = false; return o; }
+  function hidden(n) { for (var p = n.parent; p; p = p.parent) if (collapsed[p.id]) return true; return false; }
+  function matches(n) { var t = filter.toLowerCase(); if (!t) return true; if (n.name.toLowerCase().indexOf(t) >= 0) return true; return n.kids.some(matches) || (function up(p) { return p ? (p.name.toLowerCase().indexOf(t) >= 0 || up(p.parent)) : false; })(n.parent); }
+  function drawGroups() {
+    q('[data-ga-groups]').innerHTML = GROUPS.map(function (g, i) { return '<button type="button" class="ga-g' + (i === cur ? ' on' : '') + '" data-gi="' + i + '"><span style="flex:1;min-width:0"><span class="n">' + esc(g[0]) + '</span><span class="d">' + esc(g[1]) + '</span></span><span class="b">' + esc(g[2]) + '</span></button>'; }).join('');
+    q('[data-ga-title]').textContent = 'Droits — ' + GROUPS[cur][0];
+  }
+  function draw() {
+    q('[data-ga-head]').innerHTML = '<tr><th>Menus</th><th>Visible</th>' + COLS.map(function (c) { return '<th>' + c[1] + '</th>'; }).join('') + '</tr>';
+    var st = STATE[cur], h = '', n0 = 0;
+    FLAT.forEach(function (n) {
+      if (hidden(n) && !filter) return; if (!matches(n)) return; n0++;
+      var on = anc(n), s = st[n.id], top = n.depth === 0 && n.kids.length;
+      h += '<tr class="' + (top ? 'top ' : '') + (on ? '' : 'off') + '" data-id="' + n.id + '"><td><div class="ga-nm" style="padding-left:' + (n.depth * 16) + 'px">' +
+        (n.kids.length ? '<button type="button" class="tg" data-tg="' + n.id + '" aria-expanded="' + !collapsed[n.id] + '"><i class="ti ti-chevron-' + (collapsed[n.id] ? 'right' : 'down') + '"></i></button>' : '<span class="sp">' + (n.depth ? '↳' : '') + '</span>') +
+        '<i class="ti ic ' + n.icon + '"></i><span style="' + (n.kids.length && n.depth < 1 ? 'font-weight:600' : 'font-weight:500') + '">' + esc(n.name) + '</span>' + (n.kids.length ? '<span class="c">' + n.kids.length + ' sous-menus</span>' : '') + '</div></td>' +
+        '<td><button type="button" class="ga-sw" role="switch" aria-checked="' + !!s.v + '" data-v="' + n.id + '"' + (on ? '' : ' disabled') + '></button></td>' +
+        COLS.map(function (c) {
+          var k = c[0];
+          if (n.kids.length && n.ops.length === 0 && k !== 'voir') return '<td><input type="checkbox" disabled></td>';
+          if (n.ops.indexOf(k) < 0) return n.kids.length ? '<td><input type="checkbox" disabled></td>' : '<td class="ga-na">—</td>';
+          return '<td><input type="checkbox" data-c="' + n.id + '|' + k + '"' + (s.c[k] ? ' checked' : '') + (s.v && on ? '' : ' disabled') + '></td>';
+        }).join('') + '</tr>';
+    });
+    q('[data-ga-rows]').innerHTML = h || '<tr><td colspan="12" class="ga-empty">Aucun menu ne correspond à la recherche.</td></tr>';
+    var all = FLAT.every(function (n) { return st[n.id].v; }), none = FLAT.every(function (n) { return !st[n.id].v; });
+    qa('[data-ga-all]').forEach(function (r) { r.checked = r.dataset.gaAll === '1' ? all : none; });
+  }
+  function byId(id) { return FLAT.filter(function (n) { return n.id === id; })[0]; }
+  root.addEventListener('click', function (e) {
+    var t = e.target, b;
+    if ((b = t.closest('[data-ga-tab]'))) { qa('[data-ga-tab]').forEach(function (x) { x.classList.toggle('on', x === b); }); qa('[data-ga-pane]').forEach(function (p) { p.style.display = p.dataset.gaPane === b.dataset.gaTab ? '' : 'none'; }); }
+    else if ((b = t.closest('[data-gi]'))) { cur = +b.dataset.gi; drawGroups(); draw(); }
+    else if ((b = t.closest('[data-tg]'))) { collapsed[b.dataset.tg] = collapsed[b.dataset.tg] ? 0 : 1; draw(); }
+    else if ((b = t.closest('[data-v]'))) { var s = STATE[cur][b.dataset.v]; s.v = s.v ? 0 : 1; draw(); }
+    else if (t.closest('[data-ga-reset]')) { STATE[cur] = init(GROUPS[cur][3]); draw(); say('Droits du groupe « ' + GROUPS[cur][0] + ' » réinitialisés.'); }
+    else if (t.closest('[data-ga-save]')) say('Droits du groupe « ' + GROUPS[cur][0] + ' » enregistrés.');
+  });
+  root.addEventListener('change', function (e) {
+    var t = e.target;
+    if (t.dataset.c) { var p = t.dataset.c.split('|'); STATE[cur][p[0]].c[p[1]] = t.checked ? 1 : 0; }
+    else if (t.dataset.gaAll != null) { var on = t.dataset.gaAll === '1'; FLAT.forEach(function (n) { STATE[cur][n.id].v = on ? 1 : 0; if (on) Object.keys(STATE[cur][n.id].c).forEach(function (k) { STATE[cur][n.id].c[k] = 1; }); }); draw(); }
+  });
+  q('[data-ga-q]').addEventListener('input', function () { filter = this.value.trim(); draw(); });
+  drawGroups(); draw();
+})();
+</script>
+<style>
+.ga-t.ga-tu{width:100%}.ga-t.ga-tu th,.ga-t.ga-tu td{min-width:0!important;text-align:left;padding:12px 14px;white-space:nowrap;position:static!important}
+.ga-t.ga-tu th{background:#2E427B!important;color:#fff!important;border:0}
+.ga-t.ga-tu td{border-bottom:1px solid #eef0f4;background:#fff!important}
+
+.ga-t.ga-tu tbody tr:hover td{background:#f8fafc!important}.ga-t.ga-tu tbody tr.sel td{background:#eef1f8!important}
+.gu-pill{display:inline-block;border-radius:999px;padding:3px 12px;font-size:12px;font-weight:500;background:#ede9fe;color:#6d28d9}.gu-pill.nil{background:#f1f3f8;color:#94a3b8}
+.gu-sw{display:inline-flex;align-items:center;gap:8px;font-size:12px;font-weight:600;color:#059669}.gu-sw.off{color:#94a3b8}
+.gu-sw button{position:relative;display:inline-block;flex:none;box-sizing:border-box;width:36px!important;height:20px!important;min-width:36px!important;min-height:20px!important;max-width:36px!important;max-height:20px!important;border:0!important;border-radius:999px!important;background:#10b981!important;cursor:pointer;padding:0!important;margin:0;line-height:0;font-size:0;box-shadow:none!important}.gu-sw.off button{background:#cbd5e1!important}
+.gu-sw button:after{content:"";position:absolute;top:2px;left:18px;width:16px;height:16px;border-radius:50%;background:#fff;box-shadow:none}.gu-sw.off button:after{left:2px}
+.gu-ov{position:fixed;inset:0;z-index:2500;background:#0b133266;display:flex;align-items:center;justify-content:center;padding:16px}.gu-ov[hidden]{display:none}
+.gu-md{width:760px;max-width:100%;max-height:92vh;display:flex;flex-direction:column;background:#fff;border-radius:14px;box-shadow:0 20px 60px #0b133255;overflow:hidden}
+.gu-steps{display:flex;align-items:center;gap:12px;padding:14px 20px;background:#f8fafc;border-bottom:1px solid #e2e8f0}
+.gu-st{display:flex;align-items:center;gap:10px;font-size:13px;color:#94a3b8;font-weight:600}.gu-st small{display:block;font-size:10px;letter-spacing:.06em;text-transform:uppercase;font-weight:700}
+.gu-st i{width:30px;height:30px;border-radius:50%;background:#e2e8f0;color:#64748b;display:inline-flex;align-items:center;justify-content:center;font-style:normal;font-weight:700;flex:none}
+.gu-st.on i,.gu-st.ok i{background:#059669;color:#fff}.gu-st.on{color:#1e293b}.gu-ln{flex:1;height:1px;background:#e2e8f0}
+.gu-bd{padding:18px 20px;overflow:auto;flex:1;min-height:320px;font-size:13px}
+.gu-ft{display:flex;align-items:center;gap:8px;padding:12px 20px;border-top:1px solid #e2e8f0}.gu-err{color:#b91c1c;font-size:12px}
+.gu-hint{margin:0 0 12px;color:#64748b}
+.gu-sg{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:12px}
+.gu-sg button{height:42px;border-radius:10px;border:1px solid #e2e8f0;background:#fff;font:inherit;font-weight:600;cursor:pointer}.gu-sg button.on{background:#059669;border-color:#059669;color:#fff}
+.gu-gl{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-top:12px}
+.gu-gc{text-align:left;border:2px solid #e2e8f0;border-radius:12px;background:#fff;padding:12px 14px;font:inherit;cursor:pointer}.gu-gc.on{border-color:#059669;background:#f0fdf9}
+.gu-gc b{display:flex;justify-content:space-between;gap:8px;font-size:14px;color:#1e293b}.gu-gc b span{font-size:10px;font-weight:600;background:#d1fae5;color:#047857;border-radius:999px;padding:2px 10px}.gu-gc small{display:block;margin-top:6px;color:#94a3b8;font-size:12px}
+.gu-fg{display:grid;grid-template-columns:1fr 1fr;gap:12px 16px}.gu-f{display:flex;flex-direction:column;gap:4px}.gu-f.w{grid-column:1/-1}
+.gu-f label{font-size:10px;font-weight:700;letter-spacing:.06em;text-transform:uppercase;color:#94a3b8}.gu-f label em{color:#dc2626;font-style:normal}
+.gu-in{height:40px;border:1px solid #e2e8f0;border-radius:10px;padding:0 12px;font:inherit;font-size:14px;outline:none;background:#fff;width:100%;box-sizing:border-box}.gu-in:focus{border-color:#2E427B;box-shadow:0 0 0 3px #2E427B1f}
+.gu-ms{position:relative}.gu-mb{display:flex;justify-content:space-between;align-items:center;width:100%;height:40px;border:1px solid #e2e8f0;border-radius:10px;background:#fff;padding:0 12px;font:inherit;font-size:14px;cursor:pointer;text-align:left}
+.gu-mp{position:absolute;left:0;right:0;top:44px;z-index:5;background:#fff;border:1px solid #e2e8f0;border-radius:10px;box-shadow:0 10px 30px #0b133233;padding:8px}.gu-mp input[type=text]{width:100%;box-sizing:border-box;height:34px;border:1px solid #e2e8f0;border-radius:8px;padding:0 10px;font:inherit;margin-bottom:6px}
+.gu-mp label{display:flex;align-items:center;gap:8px;padding:7px 6px;font-size:13px;text-transform:none;letter-spacing:0;font-weight:400;color:#1e293b;cursor:pointer}.gu-mp label:hover{background:#f8fafc}.gu-mp input{accent-color:#059669}
+.gu-sb{margin-top:10px;border:1px solid #e2e8f0;border-radius:12px;background:#f8fafc;padding:12px;display:flex;flex-direction:column;gap:10px}
+.gu-pl{display:flex;align-items:center;gap:8px;border:1px solid #a7f3d0;background:#ecfdf5;border-radius:10px;padding:8px 12px}.gu-pl b{background:#059669;color:#fff;border-radius:999px;font-size:11px;padding:2px 10px;text-transform:uppercase}
+.gu-mg{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+.gu-mc{display:flex;align-items:center;gap:12px;border:1px solid #e2e8f0;border-radius:12px;padding:12px;background:#fff}.gu-mc.on{border-color:#059669;background:#f0fdf9}.gu-mc.lock{opacity:.9}
+.gu-mc span.ic{width:38px;height:38px;border-radius:10px;display:inline-flex;align-items:center;justify-content:center;color:#fff;font-size:18px;flex:none}.gu-mc b{display:block;font-size:14px;color:#1e293b}.gu-mc small{color:#94a3b8;font-size:12px}.gu-mc input{margin-left:auto;accent-color:#059669;width:16px;height:16px}
+</style>
+<script>
+// Onglet « Utilisateurs » : liste + assistant de création en 3 étapes (données simulées en mémoire)
+(function () {
+  var host = document.currentScript.parentElement.querySelector('[data-gu]');
+  var q = function (s) { return host.querySelector(s); };
+  function esc(s) { return String(s == null ? '' : s).replace(/[&<>"]/g, function (c) { return { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c]; }); }
+  var GROUPES = [['Administrateur', 'Administrateur'], ['ADMINOK', 'Administrateur'], ['ADMINREHETRA', 'Administrateur'], ['COMPTA2', 'Administrateur'], ['COMPTA ENTREPRISE', 'Standard'], ['CONSULTATION', 'Lecture seule'], ['TESTADM', 'Administrateur']];
+  var USERS = [
+    { id: 'superadmin', nom: 'Administrateur Super', groupe: 'TESTADM', email: 'superadmin@softappli.mg', actif: true },
+    { id: 'ANDRY', nom: 'ANDRY', groupe: '', email: 'andry@gmail.com', actif: true },
+    { id: 'ANDY', nom: 'ANDY', groupe: '', email: 'Andy@gmail.com', actif: true },
+    { id: 'ANGELA', nom: 'ANGELA', groupe: '', email: 'angela@gmail.com', actif: true },
+    { id: 'ANTHONY', nom: 'ANTHONY ANTHONY', groupe: 'ADMINOK', email: 'anthony@gmail.com', actif: true },
+    { id: 'HERY', nom: 'RAKOTO Hery', groupe: 'CONSULTATION', email: 'hery@gmail.com', actif: true }
+  ];
+  window.GA_USERS = USERS;
+  var MODULES = [['SoftAccounting', 'Comptabilité & pilotage financier', 'ti-cash', '#f59e0b', 1], ['SoftDocs', 'Gestion documentaire', 'ti-folder', '#7c9cf0'], ['Soft e-Paiement', 'Paiements', 'ti-credit-card', '#b388f5'], ['SoftSign', 'Signature électronique', 'ti-signature', '#64748b'], ['SoftFunds', 'Avances et justificatifs', 'ti-cash-banknote', '#7c8fe6'], ['SoftPayroll', 'Paie', 'ti-users', '#ec7fb0'], ['SoftBudget', 'Budget', 'ti-stack-2', '#6fb1a8'], ['SoftÉtatFi', 'États financiers', 'ti-chart-bar', '#5fb8d0'], ['SoftLibrary', 'Bibliothèque', 'ti-archive', '#7ccb8a'], ['SoftShop', 'Caisse / boutique', 'ti-shopping-cart', '#f4a26b']];
+  var filtre = '', step = 1, F = null;
+  function role(u) { var g = GROUPES.filter(function (x) { return x[0] === u.groupe; })[0]; return g ? g[1] : ''; }
+  function pill(t, extra) { return t ? '<span class="gu-pill">' + esc(t) + '</span>' : '<span class="gu-pill nil">—</span>'; }
+  function draw() {
+    var L = USERS.filter(function (u) { return !filtre || (u.id + ' ' + u.nom + ' ' + u.email).toLowerCase().indexOf(filtre) >= 0; });
+    q('[data-gu-rows]').innerHTML = L.map(function (u) {
+      return '<tr data-gu-r="' + esc(u.id) + '" class="' + (u.id === selId ? 'sel' : '') + '" style="cursor:pointer' + (u.id === selId ? ';box-shadow:inset 3px 0 0 #2E427B' : '') + '"><td style="font-weight:600">' + esc(u.id) + '</td><td>' + esc(u.nom) + '</td><td>' + pill(u.groupe) + '</td><td class="em">' + esc(u.email) + '</td><td>' + pill(role(u)) + '</td>' +
+        '<td><span class="gu-sw' + (u.actif ? '' : ' off') + '"><button type="button" data-gu-tg="' + esc(u.id) + '" aria-label="Statut"></button>' + (u.actif ? 'Actif' : 'Inactif') + '</span></td></tr>';
+    }).join('') || '<tr><td colspan="6" class="ga-empty">Aucun utilisateur.</td></tr>';
+    if (selId && !trouver(selId)) selId = '';
+    q('[data-gu-edit]').disabled = !selId; q('[data-gu-del]').disabled = !selId;
+  }
+  function nbGroupe(n) { return USERS.filter(function (u) { return u.groupe === n; }).length; }
+  function steps() {
+    var T = [['Groupe utilisateur'], ['Informations'], ['Modules associés']];
+    q('[data-gu-steps]').innerHTML = T.map(function (t, i) {
+      var n = i + 1, c = n < step ? 'ok' : n === step ? 'on' : '';
+      return (i ? '<span class="gu-ln"></span>' : '') + '<span class="gu-st ' + c + '"><i>' + (n < step ? '<span class="ti ti-check"></span>' : n) + '</i><span><small>Étape ' + n + '</small>' + t[0] + '</span></span>';
+    }).join('');
+    q('[data-gu-prev]').style.display = step > 1 ? '' : 'none';
+    q('[data-gu-next]').textContent = step === 3 ? (F.edit ? 'Enregistrer' : 'Créer l’utilisateur') : 'Suivant';
+  }
+  function body() {
+    var b = q('[data-gu-body]'), h = '';
+    if (step === 1) {
+      h = '<p class="gu-hint">Sélectionnez un groupe existant ou créez-en un nouveau (Administrateur, Standard ou Lecture seule).</p>' +
+        '<div class="gu-sg"><button type="button" data-gu-mode="exist" class="' + (F.mode === 'exist' ? 'on' : '') + '">Groupe existant</button><button type="button" data-gu-mode="new" class="' + (F.mode === 'new' ? 'on' : '') + '">Nouveau groupe</button></div>';
+      if (F.mode === 'exist') {
+        h += '<div class="ga-q"><i class="ti ti-search"></i><input type="text" placeholder="Rechercher un groupe…" data-gu-gq value="' + esc(F.gq || '') + '"></div><div class="gu-gl">' +
+          GROUPES.filter(function (g) { return !F.gq || g[0].toLowerCase().indexOf(F.gq.toLowerCase()) >= 0; }).map(function (g) {
+            return '<button type="button" class="gu-gc' + (F.groupe === g[0] ? ' on' : '') + '" data-gu-g="' + esc(g[0]) + '"><b>' + esc(g[0]) + '<span>Personnalisé</span></b><small>' + esc(g[1]) + ' · ' + nbGroupe(g[0]) + ' utilisateur(s)</small></button>';
+          }).join('') + '</div>';
+      } else {
+        h += '<div class="gu-fg"><div class="gu-f"><label>Nom du groupe <em>*</em></label><input class="gu-in" data-gu-k="gnom" value="' + esc(F.gnom) + '"></div>' +
+          '<div class="gu-f"><label>Type <em>*</em></label><select class="gu-in" data-gu-k="gtype"><option>Administrateur</option><option>Standard</option><option>Lecture seule</option></select></div></div>';
+      }
+    } else if (step === 2) {
+      h = '<div class="gu-fg"><div class="gu-f w"><label>Nom complet <em>*</em></label><input class="gu-in" data-gu-k="nom" value="' + esc(F.nom) + '"></div>' +
+        '<div class="gu-f"><label>Nom d’utilisateur <em>*</em></label><input class="gu-in" data-gu-k="id" value="' + esc(F.id) + '"' + (F.edit ? ' readonly' : '') + '></div>' +
+        '<div class="gu-f"><label>Email <em>*</em></label><input class="gu-in" type="email" data-gu-k="email" value="' + esc(F.email) + '"></div>' +
+        '<div class="gu-f"><label>Mot de passe <em>*</em></label><input class="gu-in" type="password" data-gu-k="pw" value="' + esc(F.pw) + '"></div>' +
+        '<div class="gu-f"><label>Confirmation <em>*</em></label><input class="gu-in" type="password" data-gu-k="pw2" value="' + esc(F.pw2) + '"></div>' +
+        '</div>';
+    } else {
+      h = '<h3 style="margin:0;font-size:16px">Modules associés</h3><p class="gu-hint">SoftCompta est activé par défaut. Depuis SoftCompta, les autres modules ne peuvent pas être activés.</p><div class="gu-mg">' +
+        MODULES.map(function (m) { return '<div class="gu-mc' + (m[4] ? ' on lock' : '') + '"><span class="ic" style="background:' + m[3] + '"><i class="ti ' + m[2] + '"></i></span><span><b>' + esc(m[0]) + '</b><small>' + esc(m[1]) + '</small></span><input type="checkbox" disabled' + (m[4] ? ' checked' : '') + '></div>'; }).join('') + '</div>';
+    }
+    b.innerHTML = h; var sGroup = b.querySelector('[data-gu-k="gtype"]'); if (sGroup) sGroup.value = F.gtype;
+    steps();
+  }
+  function open() { F = { mode: 'exist', groupe: '', gq: '', gnom: '', gtype: 'Standard', nom: '', id: '', email: '', pw: '', pw2: '', open: '', mq: '' }; step = 1; q('[data-gu-err]').textContent = ''; q('[data-gu-ov]').hidden = false; body(); }
+  function close() { q('[data-gu-ov]').hidden = true; }
+  function err(m) { q('[data-gu-err]').textContent = m || ''; return !m; }
+  function valide() {
+    if (step === 1) { if (F.mode === 'exist') return err(F.groupe || F.edit ? '' : 'Sélectionnez un groupe.'); return err(F.gnom.trim() ? '' : 'Saisissez le nom du groupe.'); }
+    if (step === 2) {
+      if (!F.nom.trim() || !F.id.trim() || !F.email.trim() || (!F.edit && !F.pw)) return err('Renseignez les champs obligatoires (*).');
+      if (!F.edit && USERS.some(function (u) { return u.id.toLowerCase() === F.id.trim().toLowerCase(); })) return err('Ce nom d’utilisateur existe déjà.');
+      if (F.pw !== F.pw2) return err('Le mot de passe et sa confirmation sont différents.');
+    }
+    return err('');
+  }
+  function toast(t) { var d = document.createElement('div'); d.className = 'ga-toast'; d.textContent = t; document.body.appendChild(d); setTimeout(function () { d.remove(); }, 2200); }
+  var selId = '';
+  var ENTETE = ['Identifiant', 'Nom', 'Groupe', 'Email', 'Rôle', 'Statut'];
+  function trouver(id) { return USERS.filter(function (x) { return x.id === id; })[0]; }
+  function liste() {
+    return USERS.filter(function (u) { return !filtre || (u.id + ' ' + u.nom + ' ' + u.email).toLowerCase().indexOf(filtre) >= 0; })
+      .map(function (u) { return [u.id, u.nom, u.groupe || '—', u.email, role(u) || '—', u.actif ? 'Actif' : 'Inactif']; });
+  }
+  function editer() {
+    var u = trouver(selId); if (!u) return;
+    open(); F.edit = u.id; F.mode = 'exist'; F.groupe = u.groupe; F.nom = u.nom; F.id = u.id; F.email = u.email;
+ body();
+  }
+  function supprimer() {
+    var u = trouver(selId); if (!u) return;
+    if (u.id === 'superadmin') { toast('L’administrateur principal ne peut pas être supprimé.'); return; }
+    var ov = document.createElement('div'); ov.className = 'gu-ov';
+    ov.innerHTML = '<div class="gu-md" style="width:440px" role="alertdialog"><div class="gu-bd" style="min-height:0"><h3 style="margin:0 0 8px;font-size:16px">Supprimer l’utilisateur ?</h3><p class="gu-hint" style="margin:0">« ' + esc(u.id) + ' — ' + esc(u.nom) + ' » sera retiré de la liste et de ses rattachements aux journaux. Cette action est définitive.</p></div>' +
+      '<div class="gu-ft"><span style="flex:1"></span><button type="button" class="ga-btn" data-no>Annuler</button><button type="button" class="ga-btn" data-yes style="background:#b91c1c;border-color:#b91c1c;color:#fff">Supprimer</button></div></div>';
+    ov.addEventListener('click', function (e) {
+      if (e.target.closest('[data-yes]')) { USERS.splice(USERS.indexOf(u), 1); selId = ''; ov.remove(); draw(); window.dispatchEvent(new Event('ga-users-changed')); toast('Utilisateur « ' + u.id + ' » supprimé.'); }
+      else if (e.target.closest('[data-no]') || e.target === ov) ov.remove();
+    });
+    host.appendChild(ov);
+  }
+  function telecharger(nom, type, octets) {
+    var url = URL.createObjectURL(new Blob([octets], { type: type })), a = document.createElement('a');
+    a.href = url; a.download = nom; document.body.appendChild(a); a.click(); a.remove(); setTimeout(function () { URL.revokeObjectURL(url); }, 4000);
+  }
+  function utf8(s) { return new TextEncoder().encode(s); }
+  var CRC = (function () { var t = [], c, n, k; for (n = 0; n < 256; n++) { c = n; for (k = 0; k < 8; k++) c = c & 1 ? 0xEDB88320 ^ (c >>> 1) : c >>> 1; t[n] = c >>> 0; } return t; })();
+  function crc32(b) { var c = 0xFFFFFFFF; for (var i = 0; i < b.length; i++) c = CRC[(c ^ b[i]) & 255] ^ (c >>> 8); return (c ^ 0xFFFFFFFF) >>> 0; }
+  function zip(fichiers) {
+    var parts = [], centr = [], off = 0;
+    function u16(v) { return [v & 255, (v >>> 8) & 255]; } function u32(v) { return [v & 255, (v >>> 8) & 255, (v >>> 16) & 255, (v >>> 24) & 255]; }
+    fichiers.forEach(function (f) {
+      var nom = utf8(f[0]), d = utf8(f[1]), crc = crc32(d);
+      var loc = [].concat([0x50, 0x4B, 3, 4], u16(20), u16(0x0800), u16(0), u16(0), u16(0x21), u32(crc), u32(d.length), u32(d.length), u16(nom.length), u16(0));
+      parts.push(new Uint8Array(loc), nom, d);
+      centr.push([].concat([0x50, 0x4B, 1, 2], u16(20), u16(20), u16(0x0800), u16(0), u16(0), u16(0x21), u32(crc), u32(d.length), u32(d.length), u16(nom.length), u16(0), u16(0), u16(0), u16(0), u32(0), u32(off)), Array.prototype.slice.call(nom));
+      off += loc.length + nom.length + d.length;
+    });
+    var cd = [].concat.apply([], centr);
+    parts.push(new Uint8Array(cd), new Uint8Array([].concat([0x50, 0x4B, 5, 6], u16(0), u16(0), u16(fichiers.length), u16(fichiers.length), u32(cd.length), u32(off), u16(0))));
+    var tot = parts.reduce(function (n, p) { return n + p.length; }, 0), out = new Uint8Array(tot), p0 = 0;
+    parts.forEach(function (p) { out.set(p, p0); p0 += p.length; });
+    return out;
+  }
+  function xml(s) { return String(s).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;'); }
+  function colonne(i) { return String.fromCharCode(65 + i); }
+  function exporterXlsx() {
+    var L = [ENTETE].concat(liste());
+    var rows = L.map(function (r, i) { return '<row r="' + (i + 1) + '">' + r.map(function (v, j) { return '<c r="' + colonne(j) + (i + 1) + '" t="inlineStr"' + (i === 0 ? ' s="1"' : '') + '><is><t>' + xml(v) + '</t></is></c>'; }).join('') + '</row>'; }).join('');
+    var cols = [16, 28, 20, 32, 18, 10].map(function (w, i) { return '<col min="' + (i + 1) + '" max="' + (i + 1) + '" width="' + w + '" customWidth="1"/>'; }).join('');
+    var X = '<?xml version="1.0" encoding="UTF-8" standalone="yes"?>\n';
+    var f = [
+      ['[Content_Types].xml', X + '<Types xmlns="http://schemas.openxmlformats.org/package/2006/content-types"><Default Extension="rels" ContentType="application/vnd.openxmlformats-package.relationships+xml"/><Default Extension="xml" ContentType="application/xml"/><Override PartName="/xl/workbook.xml" ContentType="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet.main+xml"/><Override PartName="/xl/worksheets/sheet1.xml" ContentType="application/vnd.openxmlformats-officedocument.spreadsheetml.worksheet+xml"/><Override PartName="/xl/styles.xml" ContentType="application/vnd.openxmlformats-officedocument.spreadsheetml.styles+xml"/></Types>'],
+      ['_rels/.rels', X + '<Relationships xmlns="http://schemas.openxmlformats.org/package/2006/relationships"><Relationship Id="rId1" Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/officeDocument" Target="xl/workbook.xml"/></Relationships>'],
+      ['xl/workbook.xml', X + '<workbook xmlns="http://schemas.openxmlformats.org/spreadsheetml/2006/main" xmlns:r="http://schemas.openxmlformats.org/officeDocument/2006/relationships"><sheets><sheet name="Utilisateurs" sheetId="1" r:id="rId1"/></sheets></workbook>'],
+      ['xl/_rels/workbook.xml.rels', X + '<Relationships xmlns="http://schemas.openxmlformats.org/package/2006/relationships"><Relationship Id="rId1" Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/worksheet" Target="worksheets/sheet1.xml"/><Relationship Id="rId2" Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/styles" Target="styles.xml"/></Relationships>'],
+      ['xl/styles.xml', X + '<styleSheet xmlns="http://schemas.openxmlformats.org/spreadsheetml/2006/main"><fonts count="2"><font><sz val="11"/><name val="Calibri"/></font><font><b/><color rgb="FFFFFFFF"/><sz val="11"/><name val="Calibri"/></font></fonts><fills count="3"><fill><patternFill patternType="none"/></fill><fill><patternFill patternType="gray125"/></fill><fill><patternFill patternType="solid"><fgColor rgb="FF2E427B"/></patternFill></fill></fills><borders count="1"><border/></borders><cellStyleXfs count="1"><xf/></cellStyleXfs><cellXfs count="2"><xf/><xf fontId="1" fillId="2" applyFont="1" applyFill="1"/></cellXfs></styleSheet>'],
+      ['xl/worksheets/sheet1.xml', X + '<worksheet xmlns="http://schemas.openxmlformats.org/spreadsheetml/2006/main"><cols>' + cols + '</cols><sheetData>' + rows + '</sheetData></worksheet>']
+    ];
+    telecharger('utilisateurs.xlsx', 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet', zip(f));
+    toast('Export Excel (XLSX) généré : ' + (L.length - 1) + ' utilisateur(s).');
+  }
+  function latin(s) { return String(s).replace(/[—–]/g, '-').replace(/[’‘]/g, "'").replace(/[“”«»]/g, '"').replace(/[^\x00-\xFF]/g, '?'); }
+  function pdfTxt(s) { return latin(s).replace(/([()\\])/g, '\\$1'); }
+  function exporterPdf() {
+    var L = liste(), W = 842, H = 595, M = 40, X = [M, M + 100, M + 270, M + 410, M + 620, M + 700], ligne = 20, pages = [], cur;
+    function neuve() { cur = []; pages.push(cur); cur.push('0.18 0.26 0.48 rg ' + M + ' ' + (H - M - 4) + ' ' + (W - 2 * M) + ' 18 re f'); cur.push('BT /F2 9 Tf 1 1 1 rg'); ENTETE.forEach(function (e, i) { cur.push('1 0 0 1 ' + (X[i] + 4) + ' ' + (H - M + 2) + ' Tm (' + pdfTxt(e.toUpperCase()) + ') Tj'); }); cur.push('ET'); return H - M - 4; }
+    var y = neuve() - ligne + 4;
+    L.forEach(function (r) {
+      if (y < M + 20) y = neuve() - ligne + 4;
+      cur.push('0.85 0.86 0.89 RG ' + M + ' ' + (y - 6) + ' m ' + (W - M) + ' ' + (y - 6) + ' l S');
+      cur.push('BT /F1 9 Tf 0.04 0.07 0.2 rg'); r.forEach(function (c, i) { cur.push('1 0 0 1 ' + (X[i] + 4) + ' ' + y + ' Tm (' + pdfTxt(c) + ') Tj'); }); cur.push('ET');
+      y -= ligne;
+    });
+    var obj = [], n = pages.length;
+    obj[1] = '<< /Type /Catalog /Pages 2 0 R >>';
+    obj[2] = '<< /Type /Pages /Kids [' + pages.map(function (_, i) { return (5 + 2 * i) + ' 0 R'; }).join(' ') + '] /Count ' + n + ' >>';
+    obj[3] = '<< /Type /Font /Subtype /Type1 /BaseFont /Helvetica /Encoding /WinAnsiEncoding >>';
+    obj[4] = '<< /Type /Font /Subtype /Type1 /BaseFont /Helvetica-Bold /Encoding /WinAnsiEncoding >>';
+    pages.forEach(function (p, i) {
+      var pie = 'BT /F1 8 Tf 0.4 0.45 0.55 rg 1 0 0 1 ' + M + ' 20 Tm (' + pdfTxt('SoftCompta - Liste des utilisateurs - page ' + (i + 1) + '/' + n) + ') Tj ET';
+      var flux = p.join('\n') + '\n' + pie;
+      obj[5 + 2 * i] = '<< /Type /Page /Parent 2 0 R /MediaBox [0 0 ' + W + ' ' + H + '] /Resources << /Font << /F1 3 0 R /F2 4 0 R >> >> /Contents ' + (6 + 2 * i) + ' 0 R >>';
+      obj[6 + 2 * i] = '<< /Length ' + flux.length + ' >>\nstream\n' + flux + '\nendstream';
+    });
+    var out = '%PDF-1.4\n', off = [];
+    for (var i = 1; i < obj.length; i++) { off[i] = out.length; out += i + ' 0 obj\n' + obj[i] + '\nendobj\n'; }
+    var xr = out.length; out += 'xref\n0 ' + obj.length + '\n0000000000 65535 f \n';
+    for (i = 1; i < obj.length; i++) out += ('0000000000' + off[i]).slice(-10) + ' 00000 n \n';
+    out += 'trailer\n<< /Size ' + obj.length + ' /Root 1 0 R >>\nstartxref\n' + xr + '\n%%EOF';
+    var oct = new Uint8Array(out.length); for (i = 0; i < out.length; i++) oct[i] = out.charCodeAt(i) & 255;
+    telecharger('utilisateurs.pdf', 'application/pdf', oct);
+    toast('Export PDF généré : ' + L.length + ' utilisateur(s).');
+  }
+  function imprimer() {
+    var w = window.open('', '_blank'); if (!w) { toast('Autorisez les fenêtres pop-up pour imprimer.'); return; }
+    w.document.write('<!doctype html><meta charset="utf-8"><title>Liste des utilisateurs</title><style>body{font:13px system-ui,sans-serif;color:#0B1332;margin:24px}h1{font-size:18px}table{border-collapse:collapse;width:100%}th{background:#2E427B;color:#fff;text-align:left;padding:8px 10px;font-size:11px;text-transform:uppercase;-webkit-print-color-adjust:exact;print-color-adjust:exact}td{padding:8px 10px;border-bottom:1px solid #D6D9E0}</style><h1>Liste des utilisateurs</h1><table><thead><tr>' +
+      ENTETE.map(function (e) { return '<th>' + xml(e) + '</th>'; }).join('') + '</tr></thead><tbody>' + liste().map(function (r) { return '<tr>' + r.map(function (c) { return '<td>' + xml(c) + '</td>'; }).join('') + '</tr>'; }).join('') + '</tbody></table>');
+    w.document.close(); w.focus(); setTimeout(function () { w.print(); }, 300);
+  }
+  host.addEventListener('click', function (e) {
+    var t = e.target, b;
+    if (t.closest('[data-gu-new]')) open();
+    else if (t.closest('[data-gu-edit]')) editer();
+    else if (t.closest('[data-gu-del]')) supprimer();
+    else if (t.closest('[data-gu-print]')) imprimer();
+    else if (t.closest('[data-gu-pdf]')) exporterPdf();
+    else if (t.closest('[data-gu-xlsx]')) exporterXlsx();
+    else if ((b = t.closest('[data-gu-tg]'))) { var u = trouver(b.dataset.guTg); u.actif = !u.actif; draw(); }
+    else if ((b = t.closest('[data-gu-r]'))) { selId = b.dataset.guR; draw(); }
+    else if (t.closest('[data-gu-cancel]')) close();
+    else if (t.closest('[data-gu-prev]')) { step--; err(''); body(); }
+    else if (t.closest('[data-gu-next]')) {
+      if (!valide()) return;
+      if (step < 3) { step++; F.open = ''; body(); return; }
+      var g = F.mode === 'new' ? F.gnom.trim().toUpperCase() : F.groupe;
+      if (F.mode === 'new') GROUPES.push([g, F.gtype]);
+      var rec = { id: F.id.trim(), nom: F.nom.trim(), groupe: g, email: F.email.trim(), actif: true };
+      if (F.edit) { var u0 = trouver(F.edit); rec.actif = u0.actif; Object.assign(u0, rec); } else { USERS.push(rec); selId = rec.id; }
+      close(); draw(); window.dispatchEvent(new Event('ga-users-changed')); toast('Utilisateur « ' + rec.id + ' » ' + (F.edit ? 'modifié.' : 'créé.'));
+    }
+    else if ((b = t.closest('[data-gu-mode]'))) { F.mode = b.dataset.guMode; err(''); body(); }
+    else if ((b = t.closest('[data-gu-g]'))) { F.groupe = b.dataset.guG; body(); }
+    else if ((b = t.closest('[data-msb]'))) { F.open = F.open === b.dataset.msb ? '' : b.dataset.msb; F.mq = ''; body(); }
+    else if (!t.closest('.gu-mp') && F && F.open) { F.open = ''; body(); }
+  });
+  host.addEventListener('change', function (e) {
+    var t = e.target, k, p;
+    if ((k = t.dataset.guK)) { F[k] = t.value; if (k === 'gtype') F.gtype = t.value; return; }
+  });
+  host.addEventListener('input', function (e) {
+    var t = e.target;
+    if (t.dataset.guQ != null || t.hasAttribute('data-gu-q')) { filtre = t.value.trim().toLowerCase(); draw(); }
+    else if (t.hasAttribute('data-gu-gq')) { F.gq = t.value; body(); var n = q('[data-gu-gq]'); n.focus(); n.setSelectionRange(n.value.length, n.value.length); }
+    else if (t.dataset.msq) { F.mq = t.value; body(); var m = host.querySelector('[data-msq]'); m.focus(); m.setSelectionRange(m.value.length, m.value.length); }
+    else if (t.dataset.guK) { F[t.dataset.guK] = t.value; }
+  });
+  draw();
+})();
+</script>
+<script>
+// Rattachement des utilisateurs aux journaux (données simulées en mémoire ; journaux = écran « Saisie des journaux »)
+(function () {
+  var root = document.currentScript.parentElement.querySelector('[data-ga]');
+  var q = function (s) { return root.querySelector(s); };
+  var USERS = [];
+  function chargeUsers() { USERS = (window.GA_USERS || []).map(function (u) { return [u.id, u.nom, /^(superadmin|admin)$/i.test(u.id) ? 1 : 0]; }); if (cur >= USERS.length) cur = 0; }
+  var SEL = {}, cur = 0, fu = '', fj = '', ARR = {};
+  function esc(s) { return String(s == null ? '' : s).replace(/[&<>"]/g, function (c) { return { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c]; }); }
+  function jn() { return (window.JOURNAUX_PLAN || []).filter(function (j) { return j.actif !== false; }); }
+  function sel(u) { if (!SEL[u]) { SEL[u] = {}; if (USERS.filter(function (x) { return x[0] === u; })[0][2]) jn().forEach(function (j) { SEL[u][j.code] = 1; }); } return SEL[u]; }
+  function drawUsers() {
+    chargeUsers();
+    var h = USERS.map(function (u, i) { return [u, i]; }).filter(function (p) { return !fu || (p[0][0] + ' ' + p[0][1]).toLowerCase().indexOf(fu) >= 0; }).map(function (p) {
+      var n = SEL[p[0][0]] ? Object.keys(SEL[p[0][0]]).length : (p[0][2] ? jn().length : 0);
+      return '<button type="button" class="ga-g' + (p[1] === cur ? ' on' : '') + '" data-gju="' + p[1] + '"><span style="flex:1;min-width:0"><span class="n">' + esc(p[0][0]) + '</span><span class="d">' + esc(p[0][1]) + '</span></span><span class="b">' + n + '</span></button>';
+    }).join('');
+    q('[data-gj-users]').innerHTML = h || '<div class="ga-empty">Aucun utilisateur.</div>';
+  }
+  function draw() {
+    chargeUsers();
+    var u = USERS[cur], s = sel(u[0]), L = jn(), n = Object.keys(s).length;
+    q('[data-gj-title]').textContent = 'Journaux — ' + u[0];
+    q('[data-gj-sub]').textContent = n + ' journal(aux) rattaché(s) sur ' + L.length + ' · cochez les journaux que cet utilisateur peut utiliser en saisie.';
+    var rows = L.filter(function (j) { return !fj || (j.code + ' ' + j.libelle).toLowerCase().indexOf(fj) >= 0; });
+    q('[data-gj-rows]').innerHTML = rows.length ? rows.map(function (j) {
+      return '<tr><td style="padding-left:6px"><input type="checkbox" data-gjc="' + esc(j.code) + '"' + (s[j.code] ? ' checked' : '') + '></td><td style="text-align:left;font-weight:600;padding-left:6px">' + esc(j.code) + '</td><td class="lib" style="text-align:left;padding-left:6px">' + esc(j.libelle) + '</td><td style="text-align:left;padding-left:6px">' + esc(j.type) + '</td><td style="text-align:left;padding-left:6px">' + esc(j.nature) + '</td></tr>';
+    }).join('') : '<tr><td colspan="5" class="ga-empty">Aucun journal. Créez-les dans « Saisie des journaux ».</td></tr>';
+    [].forEach.call(root.querySelectorAll('[data-gj-all]'), function (r) { r.checked = r.dataset.gjAll === '1' ? (L.length > 0 && n === L.length) : n === 0; });
+    drawUsers();
+  }
+  function say(t) { var d = document.createElement('div'); d.className = 'ga-toast'; d.textContent = t; document.body.appendChild(d); setTimeout(function () { d.remove(); }, 2200); }
+  root.addEventListener('click', function (e) {
+    var t = e.target, b;
+    if ((b = t.closest('[data-ga-tab="jnl"]'))) { setTimeout(draw, 0); }
+    else if ((b = t.closest('[data-gju]'))) { cur = +b.dataset.gju; draw(); }
+    else if (t.closest('[data-gj-reset]')) { delete SEL[USERS[cur][0]]; draw(); say('Rattachements de « ' + USERS[cur][0] + ' » réinitialisés.'); }
+    else if (t.closest('[data-gj-save]')) { window.JOURNAUX_USERS = SEL; say('Rattachements de « ' + USERS[cur][0] + ' » enregistrés.'); }
+  });
+  root.addEventListener('change', function (e) {
+    var t = e.target, s = sel(USERS[cur][0]);
+    if (t.dataset.gjc) { if (t.checked) s[t.dataset.gjc] = 1; else delete s[t.dataset.gjc]; draw(); }
+    else if (t.dataset.gjAll != null) { SEL[USERS[cur][0]] = {}; if (t.dataset.gjAll === '1') jn().forEach(function (j) { SEL[USERS[cur][0]][j.code] = 1; }); draw(); }
+  });
+  q('[data-gj-qu]').addEventListener('input', function () { fu = this.value.trim().toLowerCase(); drawUsers(); });
+  q('[data-gj-qj]').addEventListener('input', function () { fj = this.value.trim().toLowerCase(); draw(); });
+  window.addEventListener('journaux-changed', draw); window.addEventListener('ga-users-changed', draw);
+})();
+</script>
+<script>
+// Rattachements des utilisateurs aux sites et au plan de regroupement (même principe que l'onglet Journaux ; données simulées en mémoire)
+(function () {
+  var root = document.currentScript.parentElement.querySelector('[data-ga]');
+  function esc(s) { return String(s == null ? '' : s).replace(/[&<>"]/g, function (c) { return { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c]; }); }
+  function say(t) { var d = document.createElement('div'); d.className = 'ga-toast'; d.textContent = t; document.body.appendChild(d); setTimeout(function () { d.remove(); }, 2200); }
+  window.RATTACHEMENTS = window.RATTACHEMENTS || {};
+  var LIB_SITE = { '01': 'Siège' };
+  function sites() {
+    var n = {}; (window.JOURNAUX_PLAN || []).forEach(function (j) { if (j.site) n[j.site] = (n[j.site] || 0) + 1; });
+    return Object.keys(n).sort().map(function (c) { return { code: c, cols: [LIB_SITE[c] || 'Site ' + c, n[c] + ' journal(aux)'] }; });
+  }
+  function axes() {
+    var g = window.REGROUPEMENT && window.REGROUPEMENT(); if (!g) return [];
+    return g.elements.map(function (e) { return { code: e.code, cols: [e.libelle] }; });
+  }
+  function infoAxes() { var g = window.REGROUPEMENT && window.REGROUPEMENT(); return g ? 'niveau ' + g.niveau + (g.niveauLibelle ? ' « ' + g.niveauLibelle + ' »' : '') + ' du plan ' + g.planLibelle : ''; }
+  function monter(c) {
+    var pane = root.querySelector('[data-ga-pane="' + c.tab + '"]'); if (!pane) return;
+    pane.innerHTML = '<div class="ga-body"><aside class="ga-side"><div class="ga-sh"><b>Utilisateurs</b><span>Sélectionnez un utilisateur pour affecter ses ' + c.pluriel + '.</span></div>' +
+      '<div style="padding:8px 8px 0"><div class="ga-q"><i class="ti ti-search"></i><input type="text" placeholder="Rechercher…" data-r-qu></div></div><div class="ga-gl" data-r-users></div></aside>' +
+      '<div class="ga-main"><div class="ga-mh"><div><h2 data-r-title></h2><p data-r-sub></p></div><div style="display:flex;gap:8px;flex-wrap:wrap;align-items:center">' +
+      '<button type="button" class="ga-btn" data-r-reset><i class="ti ti-refresh"></i> Réinitialiser</button><button type="button" class="ga-btn ok" data-r-save><i class="ti ti-device-floppy"></i> Enregistrer</button></div></div>' +
+      '<div class="ga-tb"><div class="ga-q"><i class="ti ti-search"></i><input type="text" placeholder="' + c.ph + '" data-r-qi></div><div class="ga-rd"><label><input type="radio" name="r' + c.tab + '" data-r-all="1"> Tous les ' + c.pluriel + '</label><label><input type="radio" name="r' + c.tab + '" data-r-all="0"> Aucun</label></div></div>' +
+      '<div class="ga-sc"><table class="ga-t ga-tj"><thead><tr><th>Rattaché</th><th style="text-align:left">Code</th>' + c.heads.map(function (h, i) { return '<th' + (i === 0 ? ' class="lib"' : '') + ' style="text-align:left">' + h + '</th>'; }).join('') + '</tr></thead><tbody data-r-rows></tbody></table></div></div></div>';
+    var q = function (s) { return pane.querySelector(s); };
+    var USERS = [], SEL = {}, cur = 0, fu = '', fi = '';
+    function users() { USERS = (window.GA_USERS || []).map(function (u) { return [u.id, u.nom, /^(superadmin|admin)$/i.test(u.id) ? 1 : 0]; }); if (cur >= USERS.length) cur = 0; }
+    function sel(u) { if (!SEL[u]) { SEL[u] = {}; if (USERS.filter(function (x) { return x[0] === u; })[0][2]) c.items().forEach(function (i) { SEL[u][i.code] = 1; }); } return SEL[u]; }
+    function drawUsers() {
+      q('[data-r-users]').innerHTML = USERS.map(function (u, i) { return [u, i]; }).filter(function (p) { return !fu || (p[0][0] + ' ' + p[0][1]).toLowerCase().indexOf(fu) >= 0; }).map(function (p) {
+        var n = SEL[p[0][0]] ? Object.keys(SEL[p[0][0]]).length : (p[0][2] ? c.items().length : 0);
+        return '<button type="button" class="ga-g' + (p[1] === cur ? ' on' : '') + '" data-r-u="' + p[1] + '"><span style="flex:1;min-width:0"><span class="n">' + esc(p[0][0]) + '</span><span class="d">' + esc(p[0][1]) + '</span></span><span class="b">' + n + '</span></button>';
+      }).join('') || '<div class="ga-empty">Aucun utilisateur.</div>';
+    }
+    function draw() {
+      users(); if (!USERS.length) { drawUsers(); return; }
+      var u = USERS[cur], s = sel(u[0]), L = c.items(), n = Object.keys(s).filter(function (k) { return L.some(function (i) { return i.code === k; }); }).length;
+      q('[data-r-title]').textContent = c.titre + ' — ' + u[0];
+      q('[data-r-sub]').textContent = n + ' ' + c.singulier + '(s) rattaché(s) sur ' + L.length + ' · ' + (c.info && c.info() ? c.info() + ' · ' : '') + c.aide;
+      var rows = L.filter(function (i) { return !fi || (i.code + ' ' + i.cols.join(' ')).toLowerCase().indexOf(fi) >= 0; });
+      q('[data-r-rows]').innerHTML = rows.length ? rows.map(function (i) {
+        return '<tr><td style="padding-left:6px"><input type="checkbox" data-r-c="' + esc(i.code) + '"' + (s[i.code] ? ' checked' : '') + '></td><td style="text-align:left;font-weight:600;padding-left:6px">' + esc(i.code) + '</td>' +
+          i.cols.map(function (v, k) { return '<td' + (k === 0 ? ' class="lib"' : '') + ' style="text-align:left;padding-left:6px">' + esc(v) + '</td>'; }).join('') + '</tr>';
+      }).join('') : '<tr><td colspan="' + (2 + c.heads.length) + '" class="ga-empty">' + c.vide + '</td></tr>';
+      [].forEach.call(pane.querySelectorAll('[data-r-all]'), function (r) { r.checked = r.dataset.rAll === '1' ? (L.length > 0 && n === L.length) : n === 0; });
+      drawUsers();
+    }
+    pane.addEventListener('click', function (e) {
+      var t = e.target, b;
+      if ((b = t.closest('[data-r-u]'))) { cur = +b.dataset.rU; draw(); }
+      else if (t.closest('[data-r-reset]')) { delete SEL[USERS[cur][0]]; draw(); say('Rattachements de « ' + USERS[cur][0] + ' » réinitialisés.'); }
+      else if (t.closest('[data-r-save]')) { window.RATTACHEMENTS[c.tab] = SEL; say('Rattachements ' + c.de + ' de « ' + USERS[cur][0] + ' » enregistrés.'); }
+    });
+    pane.addEventListener('change', function (e) {
+      var t = e.target, s = sel(USERS[cur][0]);
+      if (t.dataset.rC) { if (t.checked) s[t.dataset.rC] = 1; else delete s[t.dataset.rC]; draw(); }
+      else if (t.dataset.rAll != null) { SEL[USERS[cur][0]] = {}; if (t.dataset.rAll === '1') c.items().forEach(function (i) { SEL[USERS[cur][0]][i.code] = 1; }); draw(); }
+    });
+    q('[data-r-qu]').addEventListener('input', function () { fu = this.value.trim().toLowerCase(); users(); drawUsers(); });
+    q('[data-r-qi]').addEventListener('input', function () { fi = this.value.trim().toLowerCase(); draw(); });
+    root.addEventListener('click', function (e) { if (e.target.closest('[data-ga-tab="' + c.tab + '"]')) setTimeout(draw, 0); });
+    ['ga-users-changed', 'journaux-changed', 'plans-changed', 'plans-actifs', 'regroupement-changed'].forEach(function (ev) { window.addEventListener(ev, draw); });
+  }
+  monter({ tab: 'sites', titre: 'Sites', pluriel: 'sites', singulier: 'site', de: 'aux sites', heads: ['Libellé', 'Journaux'], ph: 'Rechercher un site…', aide: 'cochez les sites auxquels cet utilisateur a accès.', vide: 'Aucun site. Ils proviennent des journaux de « Saisie des journaux ».', items: sites });
+  monter({ tab: 'axes', titre: 'Plan de regroupement', pluriel: 'éléments', singulier: 'élément', de: 'au plan de regroupement', heads: ['Libellé'], ph: 'Rechercher un élément…', aide: 'cochez les éléments du plan de regroupement que cet utilisateur peut utiliser.', vide: 'Aucun plan de regroupement choisi. Activez-en un dans Administration de l’entité > Analytique.', items: axes, info: infoAxes });
+})();
+</script>
+<script>
+// Gestion des accès : exports PDF / XLSX du tableau affiché (Journaux, Sites, Plan de regroupement, Permissions). Boutons relayés dans la barre d'actions de page.
+(function () {
+  var root = document.currentScript.parentElement.querySelector('[data-ga]');
+  function say(t) { var d = document.createElement('div'); d.className = 'ga-toast'; d.textContent = t; document.body.appendChild(d); setTimeout(function () { d.remove(); }, 2400); }
+  function utf8(s) { return new TextEncoder().encode(s); }
+  var CRC = (function () { var t = [], c, n, k; for (n = 0; n < 256; n++) { c = n; for (k = 0; k < 8; k++) c = c & 1 ? 0xEDB88320 ^ (c >>> 1) : c >>> 1; t[n] = c >>> 0; } return t; })();
+  function crc32(b) { var c = 0xFFFFFFFF; for (var i = 0; i < b.length; i++) c = CRC[(c ^ b[i]) & 255] ^ (c >>> 8); return (c ^ 0xFFFFFFFF) >>> 0; }
+  function zip(fichiers) {
+    var parts = [], centr = [], off = 0;
+    function u16(v) { return [v & 255, (v >>> 8) & 255]; } function u32(v) { return [v & 255, (v >>> 8) & 255, (v >>> 16) & 255, (v >>> 24) & 255]; }
+    fichiers.forEach(function (f) {
+      var nom = utf8(f[0]), d = utf8(f[1]), crc = crc32(d);
+      var loc = [].concat([0x50, 0x4B, 3, 4], u16(20), u16(0x0800), u16(0), u16(0), u16(0x21), u32(crc), u32(d.length), u32(d.length), u16(nom.length), u16(0));
+      parts.push(new Uint8Array(loc), nom, d);
+      centr.push([].concat([0x50, 0x4B, 1, 2], u16(20), u16(20), u16(0x0800), u16(0), u16(0), u16(0x21), u32(crc), u32(d.length), u32(d.length), u16(nom.length), u16(0), u16(0), u16(0), u16(0), u32(0), u32(off)), Array.prototype.slice.call(nom));
+      off += loc.length + nom.length + d.length;
+    });
+    var cd = [].concat.apply([], centr);
+    parts.push(new Uint8Array(cd), new Uint8Array([].concat([0x50, 0x4B, 5, 6], u16(0), u16(0), u16(fichiers.length), u16(fichiers.length), u32(cd.length), u32(off), u16(0))));
+    var tot = parts.reduce(function (n, p) { return n + p.length; }, 0), out = new Uint8Array(tot), p0 = 0;
+    parts.forEach(function (p) { out.set(p, p0); p0 += p.length; });
+    return out;
+  }
+  function xml(s) { return String(s).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;'); }
+  function col(i) { var s = ''; i++; while (i > 0) { var r = (i - 1) % 26; s = String.fromCharCode(65 + r) + s; i = Math.floor((i - 1) / 26); } return s; }
+  function telecharger(nom, type, octets) {
+    var url = URL.createObjectURL(new Blob([octets], { type: type })), a = document.createElement('a');
+    a.href = url; a.download = nom; document.body.appendChild(a); a.click(); a.remove(); setTimeout(function () { URL.revokeObjectURL(url); }, 4000);
+  }
+  function largeurs(tete, lignes) { return tete.map(function (h, i) { var m = String(h).length; lignes.forEach(function (r) { m = Math.max(m, String(r[i] == null ? '' : r[i]).length); }); return Math.max(6, Math.min(60, m)); }); }
+  function xlsx(fichier, feuille, tete, lignes) { xlsxFeuilles(fichier, [{ nom: feuille, tete: tete, lignes: lignes }]); }
+  // classeur à plusieurs feuilles : feuilles = [ { nom, tete, lignes } ]
+  function xlsxFeuilles(fichier, feuilles) {
+    var X = '<?xml version="1.0" encoding="UTF-8" standalone="yes"?>\n', n = feuilles.length, parts = [], ov = '', wb = '', rel = '';
+    feuilles.forEach(function (fe, k) {
+      var L = [fe.tete].concat(fe.lignes);
+      var rows = L.map(function (r, i) { return '<row r="' + (i + 1) + '">' + r.map(function (v, j) { return '<c r="' + col(j) + (i + 1) + '" t="inlineStr"' + (i === 0 ? ' s="1"' : '') + '><is><t>' + xml(v == null ? '' : v) + '</t></is></c>'; }).join('') + '</row>'; }).join('');
+      var cols = largeurs(fe.tete, fe.lignes).map(function (w, i) { return '<col min="' + (i + 1) + '" max="' + (i + 1) + '" width="' + (w + 3) + '" customWidth="1"/>'; }).join('');
+      parts.push(['xl/worksheets/sheet' + (k + 1) + '.xml', X + '<worksheet xmlns="http://schemas.openxmlformats.org/spreadsheetml/2006/main"><cols>' + cols + '</cols><sheetData>' + rows + '</sheetData></worksheet>']);
+      ov += '<Override PartName="/xl/worksheets/sheet' + (k + 1) + '.xml" ContentType="application/vnd.openxmlformats-officedocument.spreadsheetml.worksheet+xml"/>';
+      wb += '<sheet name="' + xml(fe.nom.slice(0, 31)) + '" sheetId="' + (k + 1) + '" r:id="rId' + (k + 1) + '"/>';
+      rel += '<Relationship Id="rId' + (k + 1) + '" Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/worksheet" Target="worksheets/sheet' + (k + 1) + '.xml"/>';
+    });
+    telecharger(fichier, 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet', zip([
+      ['[Content_Types].xml', X + '<Types xmlns="http://schemas.openxmlformats.org/package/2006/content-types"><Default Extension="rels" ContentType="application/vnd.openxmlformats-package.relationships+xml"/><Default Extension="xml" ContentType="application/xml"/><Override PartName="/xl/workbook.xml" ContentType="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet.main+xml"/>' + ov + '<Override PartName="/xl/styles.xml" ContentType="application/vnd.openxmlformats-officedocument.spreadsheetml.styles+xml"/></Types>'],
+      ['_rels/.rels', X + '<Relationships xmlns="http://schemas.openxmlformats.org/package/2006/relationships"><Relationship Id="rId1" Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/officeDocument" Target="xl/workbook.xml"/></Relationships>'],
+      ['xl/workbook.xml', X + '<workbook xmlns="http://schemas.openxmlformats.org/spreadsheetml/2006/main" xmlns:r="http://schemas.openxmlformats.org/officeDocument/2006/relationships"><sheets>' + wb + '</sheets></workbook>'],
+      ['xl/_rels/workbook.xml.rels', X + '<Relationships xmlns="http://schemas.openxmlformats.org/package/2006/relationships">' + rel + '<Relationship Id="rId' + (n + 1) + '" Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/styles" Target="styles.xml"/></Relationships>'],
+      ['xl/styles.xml', X + '<styleSheet xmlns="http://schemas.openxmlformats.org/spreadsheetml/2006/main"><fonts count="2"><font><sz val="11"/><name val="Calibri"/></font><font><b/><color rgb="FFFFFFFF"/><sz val="11"/><name val="Calibri"/></font></fonts><fills count="3"><fill><patternFill patternType="none"/></fill><fill><patternFill patternType="gray125"/></fill><fill><patternFill patternType="solid"><fgColor rgb="FF2E427B"/></patternFill></fill></fills><borders count="1"><border/></borders><cellStyleXfs count="1"><xf/></cellStyleXfs><cellXfs count="2"><xf/><xf fontId="1" fillId="2" applyFont="1" applyFill="1"/></cellXfs></styleSheet>']
+    ].concat(parts)));
+  }
+  // modèle d'importation : feuille « Modèle » (une colonne par champ attendu + lignes d'exemple) et feuille « Instructions » (obligatoire, format, exemple)
+  function modeleImport(fichier, champs, exemples) {
+    xlsxFeuilles(fichier, [
+      { nom: 'Modèle', tete: champs.map(function (c) { return c.col; }), lignes: exemples || [] },
+      { nom: 'Instructions', tete: ['Colonne', 'Obligatoire', 'Format / valeurs acceptées', 'Exemple'], lignes: champs.map(function (c) { return [c.col, c.oblig ? 'Oui' : 'Non', c.format, c.exemple]; }) }
+    ]);
+  }
+  function latin(s) { return String(s == null ? '' : s).replace(/[—–]/g, '-').replace(/[’‘]/g, "'").replace(/[“”«»]/g, '"').replace(/[^\x00-\xFF]/g, '?'); }
+  function pdfTxt(s) { return latin(s).replace(/([()\\])/g, '\\$1'); }
+  function pdf(fichier, titre, sous, tete, lignes) {
+    var W = 842, H = 595, M = 36, utile = W - 2 * M, pw = largeurs(tete, lignes), tot = pw.reduce(function (a, b) { return a + b; }, 0), X = [], x = M, cap = [], FS = 8, ligne = 18, pages = [], cur, y;
+    pw.forEach(function (p) { var w = utile * p / tot; X.push(x); cap.push(Math.max(3, Math.floor((w - 8) / (FS * 0.52)))); x += w; });
+    function coupe(t, n) { t = latin(t); return t.length > n ? t.slice(0, Math.max(1, n - 2)) + '..' : t; }
+    function neuve(premiere) {
+      cur = []; pages.push(cur); y = H - M;
+      if (premiere) { cur.push('BT /F2 13 Tf 0.04 0.07 0.2 rg 1 0 0 1 ' + M + ' ' + y + ' Tm (' + pdfTxt(titre) + ') Tj ET'); y -= 15; if (sous) { cur.push('BT /F1 9 Tf 0.36 0.38 0.43 rg 1 0 0 1 ' + M + ' ' + y + ' Tm (' + pdfTxt(sous) + ') Tj ET'); y -= 10; } y -= 10; }
+      cur.push('0.18 0.26 0.48 rg ' + M + ' ' + (y - 5) + ' ' + utile + ' 17 re f'); cur.push('BT /F2 ' + FS + ' Tf 1 1 1 rg');
+      tete.forEach(function (h, i) { cur.push('1 0 0 1 ' + (X[i] + 4) + ' ' + (y) + ' Tm (' + pdfTxt(coupe(String(h).toUpperCase(), cap[i])) + ') Tj'); }); cur.push('ET'); y -= ligne + 2;
+    }
+    neuve(true);
+    lignes.forEach(function (r) {
+      if (y < M + 14) neuve(false);
+      cur.push('0.85 0.86 0.89 RG ' + M + ' ' + (y - 5) + ' m ' + (W - M) + ' ' + (y - 5) + ' l S');
+      cur.push('BT /F1 ' + FS + ' Tf 0.04 0.07 0.2 rg'); r.forEach(function (c, i) { cur.push('1 0 0 1 ' + (X[i] + 4) + ' ' + y + ' Tm (' + pdfTxt(coupe(c == null ? '' : c, cap[i])) + ') Tj'); }); cur.push('ET');
+      y -= ligne;
+    });
+    var obj = [], n = pages.length;
+    obj[1] = '<< /Type /Catalog /Pages 2 0 R >>';
+    obj[2] = '<< /Type /Pages /Kids [' + pages.map(function (_, i) { return (5 + 2 * i) + ' 0 R'; }).join(' ') + '] /Count ' + n + ' >>';
+    obj[3] = '<< /Type /Font /Subtype /Type1 /BaseFont /Helvetica /Encoding /WinAnsiEncoding >>';
+    obj[4] = '<< /Type /Font /Subtype /Type1 /BaseFont /Helvetica-Bold /Encoding /WinAnsiEncoding >>';
+    pages.forEach(function (p, i) {
+      var flux = p.join('\n') + '\nBT /F1 8 Tf 0.4 0.45 0.55 rg 1 0 0 1 ' + M + ' 20 Tm (' + pdfTxt('SoftCompta - ' + titre + ' - page ' + (i + 1) + '/' + n) + ') Tj ET';
+      obj[5 + 2 * i] = '<< /Type /Page /Parent 2 0 R /MediaBox [0 0 ' + W + ' ' + H + '] /Resources << /Font << /F1 3 0 R /F2 4 0 R >> >> /Contents ' + (6 + 2 * i) + ' 0 R >>';
+      obj[6 + 2 * i] = '<< /Length ' + flux.length + ' >>\nstream\n' + flux + '\nendstream';
+    });
+    var out = '%PDF-1.4\n', off = [], i;
+    for (i = 1; i < obj.length; i++) { off[i] = out.length; out += i + ' 0 obj\n' + obj[i] + '\nendobj\n'; }
+    var xr = out.length; out += 'xref\n0 ' + obj.length + '\n0000000000 65535 f \n';
+    for (i = 1; i < obj.length; i++) out += ('0000000000' + off[i]).slice(-10) + ' 00000 n \n';
+    out += 'trailer\n<< /Size ' + obj.length + ' /Root 1 0 R >>\nstartxref\n' + xr + '\n%%EOF';
+    var oct = new Uint8Array(out.length); for (i = 0; i < out.length; i++) oct[i] = out.charCodeAt(i) & 255;
+    telecharger(fichier, 'application/pdf', oct);
+  }
+  // Lecture du tableau affiché : cases et interrupteurs deviennent Oui / Non
+  function lire(pane) {
+    var t = pane.querySelector('table.ga-t'); if (!t) return null;
+    var tete = [].map.call(t.querySelectorAll('thead th'), function (th) { return th.textContent.replace(/\s+/g, ' ').trim(); });
+    var lignes = [].map.call(t.querySelectorAll('tbody tr'), function (tr) {
+      return [].map.call(tr.children, function (td) {
+        var c = td.querySelector('input[type=checkbox]'); if (c) return c.checked ? 'Oui' : (c.disabled ? '' : 'Non');
+        var s = td.querySelector('[aria-checked]'); if (s) return s.getAttribute('aria-checked') === 'true' ? 'Oui' : 'Non';
+        return td.textContent.replace(/\s+/g, ' ').trim();
+      });
+    }).filter(function (r) { return r.some(function (v) { return v; }) && r.length === tete.length; });
+    return { tete: tete, lignes: lignes };
+  }
+  var NOMS = { jnl: 'Journaux', sites: 'Sites', axes: 'Plan de regroupement', perm: 'Permissions' };
+  root.addEventListener('click', function (e) {
+    var b = e.target.closest('[data-ga-xport]'); if (!b) return;
+    var pane = b.closest('[data-ga-pane]'), tab = pane.dataset.gaPane, d = lire(pane); if (!d || !d.lignes.length) { say('Rien à exporter.'); return; }
+    var h2 = pane.querySelector('.ga-mh h2'), titre = 'Gestion des accès - ' + NOMS[tab], sous = h2 ? h2.textContent.trim() : '', f = 'gestion_acces_' + tab;
+    if (b.dataset.gaXport === 'pdf') { pdf(f + '.pdf', titre, sous, d.tete, d.lignes); say('Export PDF généré : ' + d.lignes.length + ' ligne(s).'); }
+    else { xlsx(f + '.xlsx', NOMS[tab], d.tete, d.lignes); say('Export Excel (XLSX) généré : ' + d.lignes.length + ' ligne(s).'); }
+  });
+  window.EXPORT_TABLEAU = { xlsx: xlsx, pdf: pdf, xlsxFeuilles: xlsxFeuilles, modeleImport: modeleImport };   // partagé avec le Journal de traces
+  // boutons dans l'en-tête de chaque onglet concerné (miroités ensuite dans la barre d'actions de page)
+  Object.keys(NOMS).forEach(function (tab) {
+    var pane = root.querySelector('[data-ga-pane="' + tab + '"]'), zone = pane && pane.querySelector('.ga-mh > div:last-child'); if (!zone) return;
+    zone.insertAdjacentHTML('afterbegin', '<button type="button" class="ga-btn" data-ga-xport="pdf"><i class="ti ti-file-type-pdf"></i> PDF</button><button type="button" class="ga-btn" data-ga-xport="xlsx"><i class="ti ti-file-spreadsheet"></i> Excel (XLSX)</button>');
+  });
+})();
+</script>

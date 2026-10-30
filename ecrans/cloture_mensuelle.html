@@ -1,0 +1,88 @@
+<!--
+  Écran « Clôture mensuelle » (Comptabilité générale › Travaux périodiques › Clôture mensuelle) — périodes (mois) d'un exercice avec leur statut (Ouverte / Clôturée).
+  Une période se clôture dans l'ordre (la plus ancienne ouverte) et seule la dernière période clôturée peut être rouverte. Utilisable si « Clôture mensuelle des périodes »
+  est activée dans Paramétrages › Paramètres comptables › Clôture comptable (window.CLOTURE_CFG.mensuelle) et si l'exercice n'est pas clôturé.
+  Boutons relayés par la barre d'actions de page (CFG « clotmens »). État partagé : window.PERIODES_CLOTUREES = { annee : { 'AAAA-MM' : 'jj/mm/aaaa' } }.
+  Ne pas nommer de fonction « $$ » (build.cjs).
+-->
+<style>
+.cm-bar{display:flex;flex-wrap:wrap;align-items:end;gap:16px;margin:0 0 14px}.cm-bar label{display:grid;gap:4px;font-size:12px;color:#5B606D;min-width:180px}
+.cm-info{font-size:13px;color:#474C58;align-self:center}.cm-info b{color:#0B1332}
+.cm-badge{display:inline-flex;align-items:center;padding:2px 10px;border:1px solid;border-radius:6px;font-size:12px;font-weight:600}.cm-badge.on{background:#ECFDF5;border-color:#A7F3D0;color:#047857}.cm-badge.off{background:#F5F7F9;border-color:#D6D9E0;color:#5B606D}
+</style>
+
+<div class="bp-root" data-cm>
+  <h1 style="position:absolute;width:1px;height:1px;overflow:hidden;clip-path:inset(50%);margin:0">Clôture mensuelle</h1>
+  <div class="no-print" data-cm-actions>
+    <button type="button" data-cm-cloturer>Clôturer la période</button>
+    <button type="button" data-cm-rouvrir>Rouvrir la période</button>
+  </div>
+  <div class="bp-grid"><section class="bp-pan" aria-label="Périodes mensuelles">
+    <div class="cm-bar">
+      <label>Exercice<select class="bp-sel" data-cm-ex data-no-combo></select></label>
+      <span class="cm-info" data-cm-info></span>
+    </div>
+    <div style="overflow:auto;max-height:560px"><table class="bp-tb" style="min-width:640px"><thead><tr><th>Période</th><th class="c">Début</th><th class="c">Fin</th><th class="c">Statut</th><th class="c">Clôturée le</th></tr></thead><tbody data-cm-lignes></tbody></table></div>
+  </section></div>
+  <div class="bp-toast" role="status" hidden data-cm-toast></div>
+</div>
+
+<script>
+(function () {
+  var root = document.querySelector('[data-cm]'); if (!root) return;
+  function q(s) { return root.querySelector(s); }
+  var MOIS = ['janvier', 'février', 'mars', 'avril', 'mai', 'juin', 'juillet', 'août', 'septembre', 'octobre', 'novembre', 'décembre'];
+  window.PERIODES_CLOTUREES = window.PERIODES_CLOTUREES || {};
+  var sel = -1;
+  function esc(s) { return String(s == null ? '' : s).replace(/[&<>"]/g, function (c) { return { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c]; }); }
+  function toast(m) { var t = q('[data-cm-toast]'); t.textContent = m; t.hidden = false; clearTimeout(toast.t); toast.t = setTimeout(function () { t.hidden = true; }, 2500); }
+  function d(fr) { var p = fr.split('/'); return new Date(+p[2], +p[1] - 1, +p[0]); }
+  function fr(dt) { return ('0' + dt.getDate()).slice(-2) + '/' + ('0' + (dt.getMonth() + 1)).slice(-2) + '/' + dt.getFullYear(); }
+  function exercices() { return (window.EXERCICES_API && window.EXERCICES_API.liste()) || []; }
+  function exo() { var v = q('[data-cm-ex]').value; return exercices().filter(function (e) { return e.annee === v; })[0]; }
+  function mois(e) {
+    var L = [], c = d(e.debut), fin = d(e.fin);
+    while (c <= fin) { var dd = new Date(c.getFullYear(), c.getMonth() + 1, 0), f = dd > fin ? fin : dd; L.push({ cle: c.getFullYear() + '-' + ('0' + (c.getMonth() + 1)).slice(-2), lib: MOIS[c.getMonth()] + ' ' + c.getFullYear(), debut: fr(c), fin: fr(f) }); c = new Date(c.getFullYear(), c.getMonth() + 1, 1); }
+    return L;
+  }
+  function actif() { return !document.documentElement.matches('.sans-mensuelle') && (!window.CLOTURE_CFG || window.CLOTURE_CFG.mensuelle !== false); }
+  function etat() {
+    var e = exo(), L = e ? mois(e) : [], clos = (window.PERIODES_CLOTUREES[e && e.annee]) || {}, bloque = !e || !!e.cloture || !actif();
+    var iPrem = L.findIndex(function (m) { return !clos[m.cle]; }), iDern = -1; L.forEach(function (m, i) { if (clos[m.cle]) iDern = i; });
+    var a = q('[data-cm-actions]');
+    a.querySelector('[data-cm-cloturer]').disabled = bloque || sel < 0 || sel !== iPrem;
+    a.querySelector('[data-cm-rouvrir]').disabled = bloque || sel < 0 || sel !== iDern;
+    q('[data-cm-info]').innerHTML = !e ? '' : (e.cloture ? 'Exercice clôturé le <b>' + esc(e.cloture) + '</b> : aucune modification.' : (!actif() ? 'La <b>clôture mensuelle</b> est désactivée (Paramétrages › Clôture comptable).' : '<b>' + L.filter(function (m) { return clos[m.cle]; }).length + '</b> période(s) clôturée(s) sur ' + L.length + '.'));
+  }
+  function liste() {
+    var e = exo(), L = e ? mois(e) : [], clos = (window.PERIODES_CLOTUREES[e && e.annee]) || {};
+    q('[data-cm-lignes]').innerHTML = L.map(function (m, i) {
+      var c = clos[m.cle];
+      return '<tr data-i="' + i + '"' + (i === sel ? ' class="sel"' : '') + '><td>' + esc(m.lib.charAt(0).toUpperCase() + m.lib.slice(1)) + '</td><td class="c">' + m.debut + '</td><td class="c">' + m.fin + '</td><td class="c"><span class="cm-badge ' + (c ? 'on' : 'off') + '">' + (c ? 'Clôturée' : 'Ouverte') + '</span></td><td class="c">' + (c || '—') + '</td></tr>';
+    }).join('');
+    etat();
+  }
+  function remplir() {
+    var s = q('[data-cm-ex]'), v = s.value, L = exercices();
+    s.innerHTML = L.map(function (e) { return '<option value="' + e.annee + '">' + e.annee + (e.cours ? ' (en cours)' : '') + '</option>'; }).join('');
+    var cours = L.filter(function (e) { return e.cours; })[0];
+    s.value = v && L.some(function (e) { return e.annee === v; }) ? v : (cours ? cours.annee : (L[0] || {}).annee);
+    liste();
+  }
+  q('[data-cm-ex]').addEventListener('change', function () { sel = -1; liste(); });
+  q('[data-cm-lignes]').addEventListener('click', function (ev) { var tr = ev.target.closest('tr[data-i]'); if (tr) { sel = +tr.dataset.i; liste(); } });
+  root.addEventListener('click', function (ev) {
+    var b = ev.target.closest('button'); if (!b || b.disabled) return;
+    var e = exo(), L = mois(e), m = L[sel], clos = window.PERIODES_CLOTUREES[e.annee] = window.PERIODES_CLOTUREES[e.annee] || {};
+    if (b.hasAttribute('data-cm-cloturer')) {
+      if (!window.confirm('Clôturer la période ' + m.lib + ' ? La saisie sera bloquée sur cette période.')) return;
+      var dt = new Date(); clos[m.cle] = fr(dt); liste(); toast('Période ' + m.lib + ' clôturée.');
+    } else if (b.hasAttribute('data-cm-rouvrir')) {
+      if (!window.confirm('Rouvrir la période ' + m.lib + ' ? La saisie sera de nouveau possible sur cette période.')) return;
+      delete clos[m.cle]; liste(); toast('Période ' + m.lib + ' rouverte.');
+    }
+  });
+  window.addEventListener('hashchange', remplir); window.addEventListener('cloture-changed', etat); window.addEventListener('load', remplir);
+  setTimeout(remplir, 400);
+})();
+</script>

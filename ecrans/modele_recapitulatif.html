@@ -1,0 +1,135 @@
+<!--
+  Écran « Modèle d'état récapitulatif » (Comptabilité Projets & Bailleurs › Gestion des demandes de remboursement › Paramétrages › Modèle récapitulatif).
+  Reprise de la capture : titre, bouton « Nouveau modèle », recherche, état vide « Aucun modèle trouvé ».
+  La fenêtre de création et les colonnes du tableau n'étaient pas capturées : conçues pour la maquette.
+-->
+<style>
+.rc-card{border:1px solid #e2e8f0;border-radius:12px;background:#fff;box-shadow:0 1px 2px #0f172a0d;color:#1e293b}
+.rc-head{display:flex;flex-wrap:wrap;align-items:center;justify-content:space-between;gap:16px;border-bottom:1px solid #e2e8f0;padding:20px}
+.rc-h1{font-size:20px;font-weight:700;color:#0f172a;margin:0}
+.rc-sub{margin:4px 0 0;font-size:14px;color:#64748b}
+.rc-btn{border:0;border-radius:8px;background:#0f766e;color:#fff;padding:8px 16px;font:inherit;font-size:14px;font-weight:600;cursor:pointer}
+.rc-btn:hover{background:#115e59}
+.rc-btn.rc-sec{background:#fff;color:#334155;border:1px solid #cbd5e1;font-weight:500}
+.rc-btn.rc-sec:hover{background:#f8fafc}
+.rc-search{padding:16px;border-bottom:1px solid #e2e8f0}
+.rc-ctl{width:100%;border:1px solid #cbd5e1;border-radius:8px;padding:8px 12px;font:inherit;font-size:14px;outline:none;background:#fff}
+.rc-ctl:focus{border-color:#0d9488;box-shadow:0 0 0 2px #ccfbf1}
+.rc-ctl.rc-bad{border-color:#ef4444}
+.rc-empty{padding:40px;text-align:center}
+.rc-empty b{display:block;font-size:14px;color:#334155}
+.rc-empty span{display:block;margin-top:4px;font-size:12px;color:#64748b}
+.rc-wrap{overflow-x:auto}
+.rc-table{width:100%;border-collapse:collapse;font-size:14px}
+.rc-table th{background:#f8fafc;color:#475569;font-size:11px;font-weight:700;letter-spacing:.06em;text-transform:uppercase;text-align:left;padding:12px 16px}
+.rc-table td{padding:12px 16px;border-top:1px solid #e2e8f0}
+.rc-del{border:1px solid #fecaca;border-radius:8px;background:#fff;color:#dc2626;width:32px;height:32px;cursor:pointer}
+.rc-modal{position:fixed;inset:0;z-index:2000;display:flex;align-items:center;justify-content:center;background:#0f172a99;padding:16px}
+.rc-dialog{width:100%;max-width:460px;background:#fff;border-radius:12px;padding:24px;box-shadow:0 20px 50px #0f172a40}
+.rc-dialog h2{font-size:18px;font-weight:700;margin:0 0 16px}
+.rc-field{margin-bottom:16px}
+.rc-label{display:block;margin-bottom:6px;font-size:13px;font-weight:600}
+.rc-req{color:#ef4444}
+.rc-foot{display:flex;align-items:center;justify-content:flex-end;gap:8px}
+.rc-msg{margin-right:auto;font-size:12.5px;font-weight:600;color:#ef4444}
+</style>
+<app-modeles-etat-reporting-list>
+<div data-rc-root>
+  <section class="rc-card">
+    <div class="rc-head">
+      <div>
+        <h1 class="rc-h1">Modèle d'état récapitulatif</h1>
+        <p class="rc-sub">Paramétrez et personnalisez les modèles d’état de reporting récapitulatif à présenter aux bailleurs.</p>
+      </div>
+      <button type="button" class="rc-btn" data-rc-new>Nouveau modèle</button>
+    </div>
+    <div class="rc-search"><input type="text" class="rc-ctl" data-rc-q placeholder="Rechercher par nom, source ou bailleur..."></div>
+    <div class="rc-empty" data-rc-empty><b>Aucun modèle trouvé</b><span>Créez un modèle pour commencer la personnalisation.</span></div>
+    <div class="rc-wrap" data-rc-list style="display:none"><table class="rc-table">
+      <thead><tr><th>Nom</th><th>Source</th><th>Bailleur</th><th style="text-align:right">Actions</th></tr></thead>
+      <tbody data-rc-rows></tbody>
+    </table></div>
+  </section>
+
+  <div class="rc-modal" data-rc-modal style="display:none">
+    <div class="rc-dialog">
+      <h2>Nouveau modèle</h2>
+      <div class="rc-field"><label class="rc-label">Nom du modèle <span class="rc-req">*</span></label><input class="rc-ctl" data-rc-f="nom" placeholder="Ex : Récapitulatif par catégorie"></div>
+      <div class="rc-field"><label class="rc-label">Source <span class="rc-req">*</span></label>
+        <select class="rc-ctl" data-rc-f="src"><option value="">— Sélectionner —</option><option>Grand livre analytique</option><option>Balance analytique</option><option>Demande de remboursement</option></select></div>
+      <div class="rc-field"><label class="rc-label">Bailleur <span class="rc-req">*</span></label>
+        <select class="rc-ctl" data-rc-f="bail"><option value="">— Sélectionner —</option><option>Banque mondiale</option><option>FIDA</option><option>Union européenne</option><option>Fonds mondial</option></select></div>
+      <div class="rc-foot"><span class="rc-msg" data-rc-msg></span>
+        <button type="button" class="rc-btn rc-sec" data-rc-cancel>Annuler</button>
+        <button type="button" class="rc-btn" data-rc-save>Enregistrer</button></div>
+    </div>
+  </div>
+</div>
+<script>
+(function () {
+  var root = document.currentScript.parentElement.querySelector('[data-rc-root]');
+  var q = function (s) { return root.querySelector(s); };
+  var rows = q('[data-rc-rows]'), modal = q('[data-rc-modal]'), msg = q('[data-rc-msg]'), search = q('[data-rc-q]');
+  var F = ['nom', 'src', 'bail'];
+  var f = function (k) { return q('[data-rc-f="' + k + '"]'); };
+  function esc(s) { var d = document.createElement('div'); d.textContent = s; return d.innerHTML; }
+  function refresh() {
+    var t = search.value.trim().toLowerCase(), shown = 0;
+    Array.prototype.slice.call(rows.querySelectorAll('tr')).forEach(function (r) {
+      var on = !t || r.textContent.toLowerCase().indexOf(t) >= 0; r.style.display = on ? '' : 'none'; if (on) shown++;
+    });
+    q('[data-rc-empty]').style.display = shown ? 'none' : '';
+    q('[data-rc-list]').style.display = shown ? '' : 'none';
+  }
+  function close() { modal.style.display = 'none'; F.forEach(function (k) { f(k).value = ''; f(k).classList.remove('rc-bad'); }); msg.textContent = ''; }
+  search.addEventListener('input', refresh);
+  q('[data-rc-new]').addEventListener('click', function () { modal.style.display = ''; f('nom').focus(); });
+  q('[data-rc-cancel]').addEventListener('click', close);
+  F.forEach(function (k) { f(k).addEventListener('input', function () { f(k).classList.remove('rc-bad'); msg.textContent = ''; }); });
+  q('[data-rc-save]').addEventListener('click', function () {
+    var ko = 0; F.forEach(function (k) { var b = !f(k).value.trim(); f(k).classList.toggle('rc-bad', b); if (b) ko++; });
+    if (ko) { msg.textContent = 'Renseignez les champs obligatoires.'; return; }
+    var tr = document.createElement('tr');
+    tr.innerHTML = '<td><b>' + esc(f('nom').value.trim()) + '</b></td><td>' + esc(f('src').value) + '</td><td>' + esc(f('bail').value) + '</td>' +
+      '<td><div style="display:flex;justify-content:flex-end;gap:6px"><button type="button" class="rc-btn rc-sec" data-rc-dup>Dupliquer</button><button type="button" class="rc-del" data-rc-del aria-label="Supprimer"><i class="ti ti-trash"></i></button></div></td>';
+    rows.appendChild(tr); close(); refresh();
+  });
+  function rowInfo(tr) { var td = tr.querySelectorAll('td'); return { nom: td[0].textContent.trim(), src: td[1].textContent.trim(), bail: td[2].textContent.trim(), code: tr.dataset.rcCode || '', base: tr.dataset.rcBase || td[0].textContent.trim() }; }
+  function codes() { return Array.prototype.map.call(rows.querySelectorAll('tr[data-rc-code]'), function (t) { return t.dataset.rcCode.toLowerCase(); }); }
+  function addDup(src, code, nom) {
+    var tr = document.createElement('tr'); tr.setAttribute('data-rc-code', code); tr.setAttribute('data-rc-base', src.base);
+    tr.innerHTML = '<td><b>' + esc(nom) + '</b></td><td>' + esc(src.src) + '</td><td>' + esc(src.bail) + '</td>' +
+      '<td><div style="display:flex;justify-content:flex-end;gap:6px"><button type="button" class="rc-btn rc-sec" data-rc-dup>Dupliquer</button><button type="button" class="rc-btn rc-sec" data-rc-open data-rc-name="' + esc(nom) + '" data-rc-code="' + esc(code) + '" data-rc-base="' + esc(src.base) + '">Ouvrir le designer</button><button type="button" class="rc-del" data-rc-del aria-label="Supprimer"><i class="ti ti-trash"></i></button></div></td>';
+    rows.appendChild(tr); refresh();
+  }
+  window.addEventListener('mf-model-dup', function (e) {
+    var d = e.detail || {}; if (d.from !== 'recap') return;
+    var tr = Array.prototype.filter.call(rows.querySelectorAll('tr'), function (t) { return t.querySelector('b') && t.querySelector('b').textContent.trim() === d.srcNom; })[0];
+    if (tr) addDup(rowInfo(tr), d.code, d.nom);
+  });
+  rows.addEventListener('click', function (e) {
+    var du = e.target.closest('[data-rc-dup]');
+    if (du) { var src = rowInfo(du.closest('tr')); window.__dupModele({ source: { code: src.code, nom: src.nom }, exists: function (c) { return codes().indexOf(c.toLowerCase()) >= 0; }, onOk: function (c, n) { addDup(src, c, n); } }); return; }
+    var b = e.target.closest('[data-rc-del]'); if (b) { b.closest('tr').remove(); refresh(); return; }
+    var o = e.target.closest('[data-rc-open]'); if (!o) return;
+    var nom = o.dataset.rcName, base = o.dataset.rcBase || nom, ejcd = /EJCD/i.test(base), rcat = /r.capitulatif par cat/i.test(base), decl = ejcd || rcat || /déclaration/i.test(base);
+    window.__mfDesigner = { code: o.dataset.rcCode || (ejcd ? 'EJCD' : rcat ? 'RECAPCAT' : decl ? 'DECLARATION' : 'SOE'), nom: nom, base: base, def: false }; if (rcat) { window.__mfDesigner.type = 'Récapitulatif'; window.__mfDesigner.src = 'Demande de remboursement'; }
+    window.__designerFrom = 'recap'; location.hash = decl ? 'designer2' : 'designer';
+  });
+  var RECAP = /EJCD|récapitulatif|déclaration/i;
+  function buildProc() {
+    Array.prototype.slice.call(rows.querySelectorAll('tr[data-rc-proc]')).forEach(function (r) { r.remove(); });
+    var map = {}, order = [];
+    (window.__pfProcs || []).forEach(function (p) { p.models.forEach(function (m) {
+      if (!RECAP.test(m)) return; var k = p.proc + '|' + m;
+      if (!map[k]) { map[k] = { proc: p.proc, model: m, convs: [] }; order.push(k); } map[k].convs.push(p.conv);
+    }); });
+    var html = order.map(function (k) { var r = map[k];
+      return '<tr data-rc-proc><td><b>' + esc(r.model) + '</b></td><td>Procédure ' + esc(r.proc) + '</td><td>' + esc(r.convs.join(', ')) + '</td>' +
+        '<td><div style="display:flex;justify-content:flex-end;gap:6px"><button type="button" class="rc-btn rc-sec" data-rc-dup>Dupliquer</button><button type="button" class="rc-btn rc-sec" data-rc-open data-rc-name="' + esc(r.model) + '">Ouvrir le designer</button></div></td></tr>'; }).join('');
+    rows.insertAdjacentHTML('afterbegin', html); refresh();
+  }
+  window.addEventListener('pf-change', buildProc); buildProc();
+})();
+</script>
+</app-modeles-etat-reporting-list>

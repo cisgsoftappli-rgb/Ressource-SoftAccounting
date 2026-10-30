@@ -1,0 +1,137 @@
+<app-analytique _nghost-ng-c3637292053=""><div><p class="text-[13px] text-[#888780] mb-6 mt-[-4px]"> Activez les plans analytiques à utiliser par l'entité (jusqu'à 10). Les plans activés seront visibles au niveau du paramétrage des plans (Comptabilité analytique). </p><div class="bg-white rounded-2xl border border-[#edf1f5] shadow-[0_10px_30px_#4c577d14] overflow-hidden" data-an><div class="flex items-center gap-2 px-5 py-3.5 border-b border-[#edf1f5]"><i class="ti ti-chart-pie text-base text-[#3e97ff]"></i><span class="text-[15px] font-bold text-[#2c2c2a]">Plans analytiques</span><span class="text-[13px] font-normal text-[#888780] ml-1" data-an-compte>11</span></div><div class="table-scroll"><table class="w-full text-sm"><thead class="bg-[#fafaf9] border-b border-[#edf1f5]"><tr><th class="text-center px-5 py-3 text-[11px] font-bold uppercase tracking-wider text-[#888780] whitespace-nowrap">Activer</th><th class="text-left px-5 py-3 text-[11px] font-bold uppercase tracking-wider text-[#888780] whitespace-nowrap">Code</th><th class="text-left px-5 py-3 text-[11px] font-bold uppercase tracking-wider text-[#888780] whitespace-nowrap">Libellé</th><th class="text-left px-5 py-3 text-[11px] font-bold uppercase tracking-wider text-[#888780] whitespace-nowrap">Abréviation</th><th class="text-center px-5 py-3 text-[11px] font-bold uppercase tracking-wider text-[#888780] whitespace-nowrap">Plan de regroupement</th><th class="text-left px-5 py-3 text-[11px] font-bold uppercase tracking-wider text-[#888780] whitespace-nowrap">Niveau de regroupement</th></tr></thead><tbody class="divide-y divide-[#f1f0ec]" data-an-lignes></tbody></table></div><p class="px-5 py-3 text-[13px] text-[#888780]">Le libellé et l'abréviation viennent de « Gestion des plans › Configuration des plans ». Seuls les plans activés apparaissent dans les autres modules (menu « Saisie des plans », états, sélections).</p><div class="flex justify-end gap-2 px-6 py-4 border-t border-[#edf1f5]"><button type="button" data-an-annuler class="inline-flex items-center gap-1.5 min-h-[44px] px-3 rounded-lg border border-[#d3d1c7] bg-white text-[#2c2c2a] text-[13px] font-medium cursor-pointer hover:bg-[#f4f6fa] transition-colors disabled:opacity-50 disabled:cursor-not-allowed"> Annuler </button><button type="button" data-an-enregistrer class="inline-flex items-center gap-1.5 min-h-[44px] px-3.5 rounded-lg border-0 bg-[#3e97ff] text-white text-[13px] font-bold cursor-pointer hover:bg-[#0c447c] transition-colors disabled:opacity-50 disabled:cursor-not-allowed"> Enregistrer </button></div></div></div></app-analytique>
+<style>
+.an-sw{position:relative;display:inline-block;width:36px;height:20px;line-height:0;vertical-align:middle}
+.an-sw input{-webkit-appearance:none;appearance:none;display:block;position:relative;margin:0;width:36px;height:20px;border:0;border-radius:999px;background:#c9ced8;box-shadow:none;outline:0;opacity:1;cursor:pointer;transition:background .15s}
+.an-sw input::after{content:"";position:absolute;top:2px;left:2px;width:16px;height:16px;border-radius:50%;background:#fff;box-shadow:none;transition:left .15s}
+.an-sw input:checked{background:#10b981}.an-sw input:checked::after{left:18px}
+.an-sw input:focus-visible{box-shadow:0 0 0 2px #fff,0 0 0 4px #2E427B}
+.an-sw-off{opacity:.4;cursor:not-allowed}.an-sw-off input{cursor:not-allowed}.plan-off{display:none !important}.an-vide{color:#888780}</style>
+<script>
+(function () {
+  // Plans analytiques : activation (cases « Activer »), libellé et abréviation repris de la configuration des plans. Données en mémoire.
+  var MENU = { PC: 'pl_comptable', PLAN1: 'pl_activite', PLAN2: 'pl_budget', PLAN3: 'pl_financier', PLAN4: 'pl_geo', PLAN5: 'pl_5', PLAN6: 'pl_6', PLAN7: 'pl_7', PLAN8: 'pl_8', PLAN9: 'pl_9', PLAN10: 'pl_10' };
+  var CODES = ['PC', 'PLAN1', 'PLAN2', 'PLAN3', 'PLAN4', 'PLAN5', 'PLAN6', 'PLAN7', 'PLAN8', 'PLAN9', 'PLAN10'];
+  var enreg = { actif: {}, regr: {}, niv: {} }, brouillon = { actif: {}, regr: {}, niv: {} };
+  CODES.forEach(function (c) { enreg.actif[c] = c === 'PC' || /^PLAN[1-4]$/.test(c); enreg.regr[c] = c === 'PLAN3'; enreg.niv[c] = c === 'PLAN3' ? 1 : 0; });
+  function copie(o) { return { actif: JSON.parse(JSON.stringify(o.actif)), regr: JSON.parse(JSON.stringify(o.regr)), niv: JSON.parse(JSON.stringify(o.niv)) }; }
+  brouillon = copie(enreg);
+  // plan de regroupement : { code du plan : n° du niveau } pour les plans dont le regroupement est activé (0 = niveau non choisi)
+  window.PLANS_REGROUPEMENT = function () { var r = {}; CODES.forEach(function (c) { if (enreg.actif[c] && enreg.regr[c]) r[c] = enreg.niv[c]; }); return r; };
+  // Mécanisme : le plan choisi (un seul) et son niveau fournissent les éléments de regroupement de tous les écrans dépendants
+  window.REGROUPEMENT = function () {
+    var r = window.PLANS_REGROUPEMENT(), code = Object.keys(r)[0]; if (!code || !r[code]) return null;
+    var n = r[code], p = plan(code), L = window.PLANS_LIGNES && window.PLANS_LIGNES[code], nv = p.niveaux && p.niveaux[n - 1];
+    var els = L ? L.rows.filter(function (x) { return x.actif && L.niveau(x.code) === n; }).map(function (x) { return { code: x.code, libelle: x.libelle }; }) : [];
+    return { plan: code, planLibelle: p.libelle, niveau: n, niveauLibelle: nv ? nv.libelle : '', elements: els };
+  };
+  // Règle générale : tant qu'aucun plan de regroupement n'est activé, tout champ ou écran qui en dépend (marqué data-regr) est masqué dans les autres modules
+  function appliquerRegroupement() {
+    var actif = !!window.REGROUPEMENT();
+    // champs repris des captures : « Plan de regroupement » (ancien libellé « Axe de regroupement » renommé)
+    [].forEach.call(document.querySelectorAll('.filter-label'), function (l) {
+      if (!/regroupement/i.test(l.textContent)) return;
+      if (/^\s*Axes? de regroupement/i.test(l.textContent)) l.textContent = 'Plan de regroupement';
+      if (l.parentElement && !l.parentElement.hasAttribute('data-regr')) l.parentElement.setAttribute('data-regr', '');
+    });
+    document.documentElement.classList.toggle('sans-regroupement', !actif);
+    if (!actif) { var on = document.querySelector('.ga-tab.on[data-regr]'); if (on) { var p = document.querySelector('[data-ga-tab="perm"]'); if (p) p.click(); } }
+  }
+  window.addEventListener('regroupement-changed', appliquerRegroupement); window.addEventListener('hashchange', function () { setTimeout(appliquerRegroupement, 200); });
+  window.addEventListener('load', function () { setTimeout(appliquerRegroupement, 300); }); setInterval(appliquerRegroupement, 1000);
+  window.PLANS_ACTIFS = function () { return CODES.filter(function (c) { return enreg.actif[c]; }); };
+  function esc(s) { return String(s == null ? '' : s).replace(/[&<>"]/g, function (c) { return { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c]; }); }
+  function plan(c) { return (window.PLANS_CFG || []).filter(function (p) { return p.code === c; })[0] || { code: c, libelle: c, abrev: '' }; }
+  // Règle d'activation : un plan non activé n'apparaît dans aucun module (menu, configuration des plans, listes de choix, grand livre…)
+  var NOMS = { 'PLAN COMPTABLE': 'PC', 'ACTIVITE': 'PLAN1', 'POSTE BUDGETAIRE': 'PLAN2', 'FINANCEMENT': 'PLAN3', 'GEOGRAPHIQUE': 'PLAN4', 'NATURE': 'PLAN5', 'CATEGORIE DE DEPENSE': 'PLAN6',
+    'Activite': 'PLAN1', 'Poste budgetaire': 'PLAN2', 'Financement': 'PLAN3', 'Geographique': 'PLAN4' };
+  for (var k = 5; k <= 10; k++) NOMS['Plan ' + k] = 'PLAN' + k;
+  var styleGlg = document.createElement('style');
+  function codeDe(texte, valeur) {
+    var m = /^(PC|PLAN\d+)$/.exec(valeur || ''); if (m) return m[1];
+    texte = (texte || '').trim(); m = /^(PC|PLAN\d+)\s+—/.exec(texte); if (m) return m[1];
+    return NOMS[texte.replace(/\s+—.*$/, '')] || null;
+  }
+  // Affichage des plans dans les autres modules : abréviation définie dans « Configuration des plans » (à défaut, le nom d'origine)
+  function abrev(c) { var p = (window.PLANS_CFG || []).filter(function (x) { return x.code === c; })[0]; return p && p.abrev ? p.abrev : ''; }
+  function reecrire(e, c, forme) {
+    if (!e || !c) return; if (e.__orig === undefined) e.__orig = e.textContent.trim();
+    var ab = abrev(c), t = ab ? (forme ? forme(e.__orig, ab) : ab) : e.__orig; if (e.textContent !== t) e.textContent = t;
+  }
+  function reecrireLabel(l, c) {
+    var tn = [].slice.call(l.childNodes).filter(function (n) { return n.nodeType === 3 && n.textContent.trim(); }).pop(); if (!tn) return;
+    if (l.__orig === undefined) l.__orig = tn.textContent.trim(); tn.textContent = ' ' + (abrev(c) || l.__orig);
+  }
+  function appliquer() {
+    if (!styleGlg.parentNode) document.head.appendChild(styleGlg);
+    var actif = function (c) { return !c || !(c in enreg.actif) || enreg.actif[c]; };
+    var css = [];
+    // listes de choix (sélections, designer, balance analytique, saisie des plans…) : « PLAN1 — ACTIVITE », « ACTIVITE », « Plan 7 », valeur PLAN1…
+    [].slice.call(document.querySelectorAll('[data-screen="saisie"] option, [data-screen="gestsel"] option, [data-screen="gestsel2"] option, [data-screen="designer"] option, [data-screen="balana"] option, [data-screen="ecritures"] option[value^="PLAN"]')).forEach(function (o) {
+      var c = o.__plan || codeDe(o.textContent, o.value); if (!c) return; o.__plan = c;
+      o.hidden = !actif(c); o.disabled = !actif(c);
+      if (c !== 'PC') reecrire(o, c, function (orig, ab) { return /\s—\s/.test(orig) ? orig.replace(/(\s—\s).*$/, '$1' + ab) : ab; });
+      var s = o.parentNode; if (s && s.tagName === 'SELECT' && s.selectedOptions[0] && s.selectedOptions[0].disabled) s.value = '';
+    });
+    // saisie d'écritures : axes de la fenêtre d'imputation analytique
+    var axes = [].slice.call(document.querySelectorAll('select[data-axe]')); var visibles = 0;
+    axes.forEach(function (s) { var c = NOMS[s.getAttribute('data-axe')]; var on = actif(c); reecrire(s.parentNode && s.parentNode.querySelector('label'), c); if (s.parentNode) s.parentNode.classList.toggle('plan-off', !on); if (on && !s.disabled) visibles++; });
+    if (axes.length) { var h = document.querySelector('.entry-analytic-axes-heading span'); if (h) h.textContent = visibles + ' axes paramétrés'; }
+    // état de dépense : imputations de la ligne
+    [].slice.call(document.querySelectorAll('[data-ed-imp]')).forEach(function (i) { if (i.parentNode) { i.parentNode.classList.toggle('plan-off', !actif(NOMS[i.getAttribute('data-ed-imp')])); reecrire(i.parentNode.querySelector('label'), NOMS[i.getAttribute('data-ed-imp')]); } });
+    // grand livre général : cases « Plan de regroupement » + colonnes de plan (colonne = 13 + n° du plan)
+    [].slice.call(document.querySelectorAll('.glg-plans label')).forEach(function (l) {
+      var c = l.__plan || NOMS[l.textContent.trim()]; if (!c) return; l.__plan = c; reecrireLabel(l, c);
+      var off = !actif(c); l.classList.toggle('plan-off', off); if (off) l.querySelector('input').checked = false;
+    });
+    CODES.slice(1).forEach(function (c) { if (!actif(c)) css.push('app-grand-livre-general .glg-table tr:not(.g):not(.t):not(.s):not(.m):not(.plus) > :nth-child(' + (13 + +c.slice(4)) + '){display:none}'); });
+    // saisie d'écritures : les colonnes d'axes de la liste des lignes sont construites par ecritures.js (plans actifs seulement)
+    [].slice.call(document.querySelectorAll('.glg-table th')).forEach(function (th) { var c = th.__plan || NOMS[th.textContent.trim()]; if (c) { th.__plan = c; reecrire(th, c); } });
+    styleGlg.textContent = css.join('\n');
+  }
+  function menu() {
+    CODES.forEach(function (c) {
+      var a = document.querySelector('[data-nav="' + MENU[c] + '"]'); if (a) a.classList.toggle('plan-off', !enreg.actif[c]);
+    });
+    appliquer(); window.dispatchEvent(new Event('plans-actifs'));
+  }
+  // choix du niveau du plan sur lequel porte le regroupement (niveaux définis dans Configuration des plans)
+  function niveauxHtml(c, p, actif) {
+    var nv = p.niveaux || [], v = brouillon.niv[c] || 0;
+    if (!nv.length) return '<span class="an-vide">—</span>';
+    return '<select data-an-niv="' + c + '" class="border border-[#d3d1c7] rounded-lg bg-white text-[13px] px-2" style="width:240px;height:36px" aria-label="Niveau de regroupement ' + esc(p.libelle) + '"' + (actif ? '' : ' disabled') + '>' +
+      '<option value="0"' + (v ? '' : ' selected') + '>— Choisir un niveau —</option>' +
+      nv.map(function (l, i) { return '<option value="' + (i + 1) + '"' + (v === i + 1 ? ' selected' : '') + '>Niveau ' + (i + 1) + ' — ' + esc(l.libelle) + '</option>'; }).join('') + '</select>';
+  }
+  function rendre() {
+    var tb = document.querySelector('[data-an-lignes]'); if (!tb) return;
+    tb.innerHTML = CODES.map(function (c) {
+      var p = plan(c), on = brouillon.actif[c], fixe = c === 'PC';
+      return '<tr class="hover:bg-[#fafaf9] transition-colors' + (on ? '' : ' opacity-60') + '"><td class="px-5 py-2.5 text-center"><input type="checkbox" data-an-act="' + c + '" class="w-4 h-4 cursor-pointer disabled:cursor-not-allowed disabled:opacity-40" aria-label="Activer ' + esc(p.libelle) + '"' + (on ? ' checked' : '') + (fixe ? ' disabled title="Le plan comptable est toujours actif"' : '') + '></td>' +
+        '<td class="px-5 py-2.5 text-[13px] font-mono text-[#475569]">' + c + '</td><td class="px-5 py-2.5 text-[13px] text-[#2c2c2a]">' + esc(p.libelle) + '</td>' +
+        '<td class="px-5 py-2.5 text-[13px] font-mono text-[#475569]">' + (p.abrev ? esc(p.abrev) : '<span class="an-vide" title="À renseigner dans Configuration des plans">—</span>') + '</td>' +
+        '<td class="px-5 py-2.5 text-center"><label class="an-sw' + (on ? '' : ' an-sw-off') + '" title="' + (on ? 'Choisir ce plan comme unique plan de regroupement' : 'Activez d\u2019abord le plan') + '"><input type="checkbox" data-an-reg="' + c + '" aria-label="Activer le regroupement : ' + esc(p.libelle) + '"' + (brouillon.regr[c] ? ' checked' : '') + (on ? '' : ' disabled') + '></label></td>' +
+        '<td class="px-5 py-2.5" style="width:280px">' + niveauxHtml(c, p, on && brouillon.regr[c]) + '</td></tr>';
+    }).join('');
+    var n = document.querySelector('[data-an-compte]'); if (n) n.textContent = CODES.filter(function (c) { return brouillon.actif[c]; }).length + ' / ' + CODES.length;
+  }
+  document.addEventListener('change', function (e) {
+    var t = e.target; if (!t.closest || !t.closest('[data-an]')) return;
+    if (t.hasAttribute('data-an-act')) { var a = t.getAttribute('data-an-act'); brouillon.actif[a] = t.checked; if (!t.checked && brouillon.regr[a]) { brouillon.regr[a] = false; brouillon.niv[a] = 0; } rendre(); }
+    if (t.hasAttribute('data-an-reg')) { var r = t.getAttribute('data-an-reg'); if (t.checked) CODES.forEach(function (c) { if (c !== r) { brouillon.regr[c] = false; brouillon.niv[c] = 0; } }); // un seul axe de regroupement à la fois
+      brouillon.regr[r] = t.checked; brouillon.niv[r] = t.checked ? (brouillon.niv[r] || 1) : 0; rendre(); }
+    if (t.hasAttribute('data-an-niv')) brouillon.niv[t.getAttribute('data-an-niv')] = +t.value;
+  });
+  document.addEventListener('click', function (e) {
+    var b = e.target.closest && e.target.closest('button'); if (!b || !b.closest('[data-an]')) return;
+    if (b.hasAttribute('data-an-annuler')) { brouillon = copie(enreg); rendre(); }
+    if (b.hasAttribute('data-an-enregistrer')) {
+      var manque = CODES.filter(function (c) { return brouillon.actif[c] && brouillon.regr[c] && !brouillon.niv[c]; });
+      if (manque.length) { var sel = document.querySelector('[data-an-niv="' + manque[0] + '"]'); if (sel) { sel.style.borderColor = '#B63132'; sel.focus(); } return; }
+      enreg = copie(brouillon); menu(); rendre(); window.dispatchEvent(new Event('regroupement-changed'));
+    }
+  });
+  window.addEventListener('plans-changed', function () { rendre(); appliquer(); });
+  window.addEventListener('load', function () { rendre(); menu(); });
+  rendre(); menu();
+})();
+</script>

@@ -1,0 +1,159 @@
+<!--
+  Écran « Signataires » (Paramètres généraux › Signataires) — onglets Saisie / Liste : liste filtrable des signataires, saisie
+  (Code *, Libellé *, Nom du signataire *, Fonction, Type de document). Boutons dans la barre d'actions (Ajouter, Modifier, Supprimer,
+  Enregistrer, Annuler, Imprimer, PDF, Excel). Données d'exemple fictives, en mémoire ; liste exposée en window.SIGNATAIRES
+  (événement « signataires-changed »). S'appuie sur les styles bp-* de l'écran « Paramétrage du bilan ». Ne pas nommer de fonction « $$ » (build.cjs).
+-->
+<style>
+.sg-code{font-family:ui-monospace,Consolas,monospace;font-weight:600}
+.sg-help{font-size:12px;color:#5B606D}
+.sg-er{display:none;font-size:12px;color:#B63132}.sg-er.show{display:block}
+.bp-in.err,.bp-sel.err{border-color:#B63132}
+.sg-badge{display:inline-flex;align-items:center;padding:2px 10px;border:1px solid;border-radius:6px;font-size:12px;font-weight:600}.sg-badge.on{background:#ECFDF5;border-color:#A7F3D0;color:#047857}.sg-badge.off{background:#F5F7F9;border-color:#D6D9E0;color:#5B606D}
+.sg-tag{display:inline-block;padding:2px 10px;border:1px solid #D6D9E0;border-radius:6px;background:#F5F7F9;font-size:12px;font-weight:600;color:#474C58}
+</style>
+
+<div class="bp-root" data-sg>
+  <h1 style="position:absolute;width:1px;height:1px;overflow:hidden;clip-path:inset(50%);margin:0">Signataires</h1>
+
+  <div class="no-print" data-sg-actions>
+    <button type="button" data-sg-ajouter>Ajouter</button>
+    <button type="button" data-sg-modifier>Modifier</button>
+    <button type="button" data-sg-supprimer>Supprimer</button>
+    <button type="button" data-sg-enregistrer>Enregistrer</button>
+    <button type="button" data-sg-annuler>Annuler</button>
+    <button type="button" data-sg-imprimer>Imprimer</button>
+    <button type="button" data-sg-pdf>PDF</button>
+    <button type="button" data-sg-xlsx>Excel (XLSX)</button>
+  </div>
+
+  <div class="bp-tabs" role="tablist">
+    <button type="button" role="tab" class="on" data-sg-tab="saisie">Saisie</button>
+    <button type="button" role="tab" data-sg-tab="liste">Liste <span class="bp-n" data-sg-compte></span></button>
+  </div>
+
+  <div class="bp-grid">
+    <section class="bp-pan" aria-label="Liste des signataires" data-sg-pan="liste" hidden>
+      <h2>Signataires <small>Double-clic ou « Modifier » pour ouvrir la ligne en saisie</small></h2>
+      <div style="overflow:auto;max-height:560px">
+        <table class="bp-tb" style="min-width:760px"><thead>
+          <tr><th>Code</th><th>Libellé</th><th>Nom du signataire</th><th>Fonction</th><th>Type de document</th><th>Statut</th></tr>
+          <tr class="flt"><th><input class="bp-in" data-fc="0" aria-label="Filtrer Code"></th><th><input class="bp-in" data-fc="1" aria-label="Filtrer Libellé"></th>
+            <th><input class="bp-in" data-fc="2" aria-label="Filtrer Nom du signataire"></th><th><input class="bp-in" data-fc="3" aria-label="Filtrer Fonction"></th>
+            <th><select class="bp-sel" data-fc="4" aria-label="Filtrer Type de document"></select></th><th><select class="bp-sel" data-fc="5" aria-label="Filtrer Statut"><option value=""></option><option value="actif">Actif</option><option value="inactif">Inactif</option></select></th></tr>
+        </thead><tbody data-sg-lignes></tbody></table>
+      </div>
+      <div class="bp-vide" data-sg-vide hidden>Aucun signataire : utilisez « Ajouter ».</div>
+    </section>
+
+    <section class="bp-pan" aria-label="Saisie d'un signataire" data-sg-pan="saisie">
+      <form class="bp-form" data-sg-form onsubmit="return false" novalidate>
+        <div style="display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:12px">
+          <label class="bp-champ"><span>Code <b>*</b></span><input class="bp-in" data-f="code" maxlength="12" autocomplete="off" placeholder="SIG01"><span class="sg-help">Lettres et chiffres, 12 caractères au plus. Non modifiable après création.</span><span class="sg-er" data-er="code"></span></label>
+          <label class="bp-champ"><span>Libellé <b>*</b></span><input class="bp-in" data-f="lib" maxlength="80" autocomplete="off" placeholder="Directeur financier"><span class="sg-er" data-er="lib"></span></label>
+          <label class="bp-champ"><span>Nom du signataire <b>*</b></span><input class="bp-in" data-f="nom" maxlength="80" autocomplete="off" placeholder="Nom et prénom"><span class="sg-er" data-er="nom"></span></label>
+          <label class="bp-champ"><span>Fonction</span><input class="bp-in" data-f="fonction" maxlength="80" autocomplete="off" placeholder="Directeur administratif et financier"><span class="sg-help">Fonction imprimée sous la signature.</span></label>
+          <label class="bp-champ"><span>Type de document</span><select class="bp-sel" data-f="doc"></select><span class="sg-help">Document sur lequel ce signataire peut apposer sa signature.</span></label>
+          <div class="bp-chk" style="align-self:end"><label><input type="checkbox" data-f="actif" checked>Actif</label><span class="sg-help" style="display:block">Un signataire inactif n'est plus proposé.</span></div>
+        </div>
+      </form>
+    </section>
+  </div>
+  <div class="bp-toast" role="status" hidden data-sg-toast></div>
+</div>
+
+<script>
+(function () {
+  var root = document.querySelector('[data-sg]'); if (!root) return;
+  function q(s) { return root.querySelector(s); } function qa(s) { return [].slice.call(root.querySelectorAll(s)); }
+  var DOCS = ['Tous les documents', 'Bilan', 'Compte de résultat', 'Tableau de flux de trésorerie', 'Balance générale', 'Balance auxiliaire', 'Grand livre général', 'Journal', 'Écriture comptable (pièce)', 'État de rapprochement bancaire', 'Déclaration fiscale', 'Demande de remboursement'];
+  var data = [
+    { code: 'SIG01', lib: 'Directeur financier', nom: 'Nom Prénom (exemple 1)', fonction: 'Directeur administratif et financier', doc: 'Bilan' },
+    { code: 'SIG02', lib: 'Comptable principal', nom: 'Nom Prénom (exemple 2)', fonction: 'Chef comptable', doc: 'Balance générale' },
+    { code: 'SIG03', lib: 'Coordonnateur de projet', nom: 'Nom Prénom (exemple 3)', fonction: 'Coordonnateur du projet', doc: 'Demande de remboursement' },
+    { code: 'SIG04', lib: 'Trésorier', nom: 'Nom Prénom (exemple 4)', fonction: 'Responsable de la trésorerie', doc: 'État de rapprochement bancaire' }
+  ];
+  data.forEach(function (s) { s.actif = true; });
+  var sel = -1, mode = 'consultation';
+  function esc(s) { return String(s == null ? '' : s).replace(/[&<>"]/g, function (c) { return { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c]; }); }
+  function toast(m) { var t = q('[data-sg-toast]'); t.textContent = m; t.hidden = false; clearTimeout(toast.t); toast.t = setTimeout(function () { t.hidden = true; }, 2500); }
+  function err(k, m) { var e = q('[data-er="' + k + '"]'); e.textContent = m || ''; e.classList.toggle('show', !!m); }
+  var optDocs = DOCS.map(function (d) { return '<option value="' + esc(d) + '">' + esc(d) + '</option>'; }).join('');
+  q('[data-f=doc]').innerHTML = '<option value="">— Sélectionner un type de document —</option>' + optDocs;
+  q('[data-fc="4"]').innerHTML = '<option value=""></option>' + optDocs;
+  function publier() { window.SIGNATAIRES = data.map(function (s) { return { code: s.code, libelle: s.lib, nom: s.nom, fonction: s.fonction, typeDocument: s.doc, actif: s.actif }; }); window.dispatchEvent(new Event('signataires-changed')); }
+  function filtrer() {
+    var F = []; qa('[data-fc]').forEach(function (e) { F[+e.dataset.fc] = e.value.trim().toLowerCase(); });
+    qa('[data-sg-lignes] tr').forEach(function (tr) { tr.hidden = F.some(function (v, k) { if (!v) return false; var t = tr.children[k].textContent.trim().toLowerCase(); return k >= 4 ? t !== v : t.indexOf(v) < 0; }); });
+  }
+  qa('[data-fc]').forEach(function (e) { e.addEventListener('input', filtrer); e.addEventListener('change', filtrer); });
+  function liste() {
+    q('[data-sg-compte]').textContent = data.length ? data.length + (data.length > 1 ? ' lignes' : ' ligne') : '';
+    q('[data-sg-vide]').hidden = data.length > 0;
+    q('[data-sg-lignes]').innerHTML = data.map(function (s, i) {
+      return '<tr data-i="' + i + '"' + (i === sel ? ' class="sel"' : '') + '><td><span class="sg-code">' + esc(s.code) + '</span></td><td>' + esc(s.lib) + '</td><td>' + esc(s.nom) + '</td><td>' + (s.fonction ? esc(s.fonction) : '—') + '</td><td>' + (s.doc ? '<span class="sg-tag">' + esc(s.doc) + '</span>' : '—') + '</td><td class="c" data-v="' + (s.actif ? 'actif' : 'inactif') + '"><span class="sg-badge ' + (s.actif ? 'on' : 'off') + '">' + (s.actif ? 'Actif' : 'Inactif') + '</span></td></tr>';
+    }).join(''); filtrer();
+  }
+  function form(s) {
+    s = s || { code: '', lib: '', nom: '', fonction: '', doc: '', actif: true };
+    q('[data-f=code]').value = s.code; q('[data-f=lib]').value = s.lib; q('[data-f=nom]').value = s.nom; q('[data-f=fonction]').value = s.fonction; q('[data-f=doc]').value = s.doc; q('[data-f=actif]').checked = s.actif !== false;
+    ['code', 'lib', 'nom'].forEach(function (k) { err(k); q('[data-f=' + k + ']').classList.remove('err'); });
+  }
+  function etat() {
+    var ed = mode !== 'consultation';
+    qa('[data-sg-form] input,[data-sg-form] select').forEach(function (e) { e.disabled = !ed; });
+    q('[data-f=code]').disabled = mode !== 'creation';
+    var a = q('[data-sg-actions]');
+    a.querySelector('[data-sg-ajouter]').disabled = ed; a.querySelector('[data-sg-modifier]').disabled = ed || sel < 0; a.querySelector('[data-sg-supprimer]').disabled = ed || sel < 0;
+    a.querySelector('[data-sg-enregistrer]').disabled = !ed; a.querySelector('[data-sg-annuler]').disabled = !ed;
+    ['imprimer', 'pdf', 'xlsx'].forEach(function (k) { a.querySelector('[data-sg-' + k + ']').disabled = !data.length; });
+  }
+  function onglet(n) { qa('[data-sg-pan]').forEach(function (p) { p.hidden = p.dataset.sgPan !== n; }); qa('[data-sg-tab]').forEach(function (t) { var on = t.dataset.sgTab === n; t.classList.toggle('on', on); t.setAttribute('aria-selected', on); }); }
+  function choisir(i) { if (mode !== 'consultation') return; sel = i; liste(); form(data[i]); etat(); }
+  qa('[data-sg-tab]').forEach(function (t) { t.addEventListener('click', function () { onglet(t.dataset.sgTab); }); });
+  var tb = q('[data-sg-lignes]');
+  tb.addEventListener('click', function (e) { var tr = e.target.closest('tr[data-i]'); if (tr) choisir(+tr.dataset.i); });
+  tb.addEventListener('dblclick', function (e) { var tr = e.target.closest('tr[data-i]'); if (tr) { choisir(+tr.dataset.i); onglet('saisie'); } });
+  q('[data-f=code]').addEventListener('input', function () { this.value = this.value.toUpperCase().replace(/[^A-Z0-9]/g, ''); });
+  function enregistrer() {
+    var code = q('[data-f=code]').value.trim(), lib = q('[data-f=lib]').value.trim(), nom = q('[data-f=nom]').value.trim(), ok = true, ancien = mode === 'edition' ? data[sel].code : null;
+    ['code', 'lib', 'nom'].forEach(function (k) { err(k); q('[data-f=' + k + ']').classList.remove('err'); });
+    function ko(k, m) { err(k, m); q('[data-f=' + k + ']').classList.add('err'); ok = false; }
+    if (!code) ko('code', 'Le code est obligatoire.'); else if (data.some(function (x) { return x.code === code && x.code !== ancien; })) ko('code', 'Ce code existe déjà.');
+    if (!lib) ko('lib', 'Le libellé est obligatoire.');
+    if (!nom) ko('nom', 'Le nom du signataire est obligatoire.');
+    if (!ok) return;
+    var rec = { code: code, lib: lib, nom: nom, fonction: q('[data-f=fonction]').value.trim(), doc: q('[data-f=doc]').value, actif: q('[data-f=actif]').checked };
+    if (mode === 'creation') { data.push(rec); sel = data.length - 1; } else data[sel] = rec;
+    mode = 'consultation'; liste(); form(data[sel]); etat(); onglet('liste'); publier(); toast(ancien ? 'Signataire modifié.' : 'Signataire enregistré.');
+  }
+  function table() { var L = data.filter(function (s, i) { var tr = tb.children[i]; return !tr || !tr.hidden; }); return { tete: ['Code', 'Libellé', 'Nom du signataire', 'Fonction', 'Type de document', 'Statut'], lignes: L.map(function (s) { return [s.code, s.lib, s.nom, s.fonction || '—', s.doc || '—', s.actif ? 'Actif' : 'Inactif']; }) }; }
+  function exporter(k) {
+    var X = window.EXPORT_TABLEAU, t = table(); if (!X) { toast('Module d’export indisponible.'); return; } if (!t.lignes.length) { toast('Rien à exporter.'); return; }
+    if (k === 'pdf') X.pdf('signataires.pdf', 'Signataires', t.lignes.length + ' ligne(s)', t.tete, t.lignes); else X.xlsx('signataires.xlsx', 'Signataires', t.tete, t.lignes);
+    toast('Export ' + (k === 'pdf' ? 'PDF' : 'Excel (XLSX)') + ' généré : ' + t.lignes.length + ' ligne(s).');
+  }
+  function imprimer() {
+    var t = table(), w = window.open('', '_blank'); if (!w) { toast('Autorisez les fenêtres pop-up pour imprimer.'); return; }
+    w.document.write('<!doctype html><meta charset="utf-8"><title>Signataires</title><style>body{font:13px system-ui,sans-serif;color:#0B1332;margin:24px}h1{font-size:18px}table{border-collapse:collapse;width:100%}th{background:#2E427B;color:#fff;text-align:left;padding:8px 10px;font-size:11px;text-transform:uppercase;-webkit-print-color-adjust:exact;print-color-adjust:exact}td{padding:8px 10px;border-bottom:1px solid #D6D9E0}</style><h1>Signataires</h1><table><thead><tr>' +
+      t.tete.map(function (h) { return '<th>' + esc(h) + '</th>'; }).join('') + '</tr></thead><tbody>' + t.lignes.map(function (r) { return '<tr>' + r.map(function (c) { return '<td>' + esc(c) + '</td>'; }).join('') + '</tr>'; }).join('') + '</tbody></table>');
+    w.document.close(); w.focus(); setTimeout(function () { w.print(); }, 300);
+  }
+  root.addEventListener('click', function (e) {
+    var b = e.target.closest('button'); if (!b || b.disabled) return;
+    if (b.hasAttribute('data-sg-ajouter')) { onglet('saisie'); mode = 'creation'; sel = -1; liste(); form(null); etat(); q('[data-f=code]').focus(); return; }
+    if (b.hasAttribute('data-sg-modifier')) { onglet('saisie'); mode = 'edition'; etat(); q('[data-f=lib]').focus(); return; }
+    if (b.hasAttribute('data-sg-annuler')) { mode = 'consultation'; liste(); form(sel >= 0 ? data[sel] : null); etat(); return; }
+    if (b.hasAttribute('data-sg-enregistrer')) { enregistrer(); return; }
+    if (b.hasAttribute('data-sg-supprimer')) {
+      var s = data[sel]; if (!s) return;
+      if (!window.confirm('Supprimer le signataire « ' + s.nom + ' » (' + s.code + ') ? Cette action est définitive.')) return;
+      data.splice(sel, 1); sel = -1; liste(); form(null); etat(); publier(); toast('Signataire supprimé.'); return;
+    }
+    if (b.hasAttribute('data-sg-imprimer')) { imprimer(); return; }
+    if (b.hasAttribute('data-sg-pdf')) { exporter('pdf'); return; }
+    if (b.hasAttribute('data-sg-xlsx')) { exporter('xlsx'); return; }
+  });
+  liste(); form(null); etat(); onglet('liste'); publier();
+})();
+</script>

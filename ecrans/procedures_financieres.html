@@ -1,0 +1,247 @@
+<!--
+  Écran « Procédures financières » (Paramétrages › Paramètres financiers › Procédures financières).
+  Écran conçu pour la maquette (pas de capture) : choix de la convention, de la procédure financière
+  (IDA, FIDA, FED, FM) puis des modèles d'états, dont la liste dépend de la procédure.
+  IDA et FIDA : modèles donnés par le métier. FED et FM : listes d'exemple à confirmer.
+-->
+<style>
+.pf-page{background:#FBF9F5;padding:24px;border-radius:12px;min-height:420px;color:#2c2c2a}
+.pf-h1{font-size:20px;font-weight:700;margin:0}
+.pf-lead{margin:4px 0 24px;max-width:72ch;font-size:13px;line-height:1.6;color:#888780}
+.pf-card{max-width:672px;border:1px solid #edf1f5;border-radius:12px;background:#fff;box-shadow:0 10px 30px #4c577d14;padding:24px;margin-bottom:24px}
+.pf-field{margin-bottom:20px}
+.pf-label{display:block;margin-bottom:6px;font-size:13px;font-weight:600}
+.pf-req{margin-left:2px;color:#e0554f}
+.pf-ctl{width:100%;border:1px solid #d3d1c7;border-radius:8px;background:#fff;padding:10px 12px;font:inherit;font-size:13px;color:#2c2c2a;outline:none}
+.pf-ctl:focus{border-color:#3e97ff;box-shadow:0 0 0 2px #3e97ff33}
+.pf-ctl.pf-bad{border-color:#e0554f}
+.pf-ctl:disabled{background:#f1f5f9;color:#94a3b8;cursor:not-allowed}
+.pf-hint{margin:6px 0 0;font-size:12px;color:#888780}
+.pf-models{border:1px solid #e5e1d6;border-radius:8px;background:#faf7f1;padding:8px 12px}
+.pf-models.pf-bad{border-color:#e0554f}
+.pf-model{display:flex;align-items:center;gap:10px;padding:7px 0;font-size:13px;cursor:pointer}
+.pf-model + .pf-model{border-top:1px solid #efeadf}
+.pf-model input{width:16px;height:16px;accent-color:#0A3925}
+.pf-all{display:flex;justify-content:space-between;align-items:center;margin-bottom:6px;font-size:12px;color:#888780}
+.pf-link{border:0;background:none;padding:0;font:inherit;font-size:12px;font-weight:600;color:#7a5c2e;cursor:pointer}
+.pf-empty{padding:14px 4px;font-size:13px;color:#888780}
+.pf-actions{display:flex;justify-content:flex-end;align-items:center;gap:8px;border-top:1px solid #edf1f5;padding-top:20px}
+.pf-btn{min-height:40px;border-radius:8px;padding:0 16px;font:inherit;font-size:13px;font-weight:500;cursor:pointer;border:1px solid #d3d1c7;background:#fff;color:#2c2c2a}
+.pf-btn:hover{background:#f4f6fa}
+.pf-btn.pf-pri{border-color:#0f1b2d;background:#0f1b2d;color:#fff;font-weight:700;padding:0 20px}
+.pf-btn.pf-pri:hover{background:#1c2c47}
+.pf-msg{margin-right:auto;font-size:12.5px;font-weight:600}
+.pf-msg.ok{color:#15803d}.pf-msg.ko{color:#e0554f}
+.pf-h2{font-size:14px;font-weight:700;margin:0 0 12px}
+.pf-tablewrap{overflow-x:auto;border:1px solid #edf1f5;border-radius:12px;background:#fff;box-shadow:0 10px 30px #4c577d14}
+.pf-table{width:100%;border-collapse:collapse;font-size:13px}
+.pf-table th{background:#f3ede2;color:#7a5c2e;font-size:11px;font-weight:700;letter-spacing:.06em;text-transform:uppercase;text-align:left;padding:12px 16px}
+.pf-table td{padding:12px 16px;color:#4b5675;border-top:1px solid #edf1f5;vertical-align:middle}
+.pf-table .pf-b{font-weight:600;color:#2c2c2a}
+.pf-pill{display:inline-flex;border-radius:999px;background:#e6f4ea;color:#1d7a3f;padding:4px 10px;font-size:11px;font-weight:600}
+.pf-chips{display:flex;flex-wrap:wrap;gap:6px}
+.pf-chip{border:1px solid #e5e1d6;background:#faf7f1;color:#5f5f5a;border-radius:6px;padding:2px 8px;font-size:11px}
+.pf-ico{width:32px;height:32px;display:inline-flex;align-items:center;justify-content:center;border:1px solid #e5e1d6;border-radius:8px;background:#fff;color:#e0554f;font-size:15px;cursor:pointer}
+.pf-none td{text-align:center;color:#888780}
+.pf-table tbody tr[data-conv]{cursor:pointer}.pf-table tbody tr.pf-sel td{background:#eaf3ff}
+</style>
+<app-procedures-financieres>
+<div class="pf-page" data-pf-root>
+  <div class="mb-3 flex flex-wrap items-center gap-2 rounded-xl border border-slate-200 bg-white px-4 py-2 shadow-sm">
+    <div class="mr-3" title="Association d'une procédure financière et de ses modèles d'états à une convention">
+      <h2 class="text-base font-bold text-slate-900">Procédures financières</h2>
+      <p class="text-xs text-slate-500">Projet <b>COMPTA HASINA</b></p>
+    </div>
+    <button type="button" data-pf-act="ajouter" class="inline-flex items-center gap-2 rounded-lg border-0 bg-blue-600 px-4 py-2 text-sm font-bold text-white transition hover:bg-blue-700 disabled:cursor-not-allowed disabled:opacity-50"><i class="ti ti-plus"></i> Ajouter</button>
+    <button type="button" data-pf-act="modifier" class="inline-flex items-center gap-2 rounded-lg border border-slate-300 bg-white px-4 py-2 text-sm font-semibold transition hover:bg-slate-50 disabled:cursor-not-allowed disabled:opacity-50"><i class="ti ti-pencil"></i> Modifier</button>
+    <button type="button" data-pf-act="supprimer" class="inline-flex items-center gap-2 rounded-lg border border-red-200 bg-white px-4 py-2 text-sm font-semibold text-red-600 transition hover:bg-red-50 disabled:cursor-not-allowed disabled:opacity-50"><i class="ti ti-trash"></i> Supprimer</button>
+    <button type="button" data-pf-act="enregistrer" class="inline-flex items-center gap-2 rounded-lg border-0 bg-emerald-600 px-4 py-2 text-sm font-semibold text-white transition hover:bg-emerald-700 disabled:cursor-not-allowed disabled:opacity-50"><i class="ti ti-device-floppy"></i> Enregistrer</button>
+    <button type="button" data-pf-act="annuler" class="inline-flex items-center gap-2 rounded-lg border border-slate-300 bg-white px-4 py-2 text-sm font-semibold transition hover:bg-slate-50 disabled:cursor-not-allowed disabled:opacity-50"><i class="ti ti-x"></i> Annuler</button>
+    <span class="flex-1"></span>
+    <span class="w-fit rounded-full px-3 py-1 text-xs font-semibold bg-slate-100 text-slate-600" data-pf-mode>Consultation</span>
+  </div>
+
+  <div class="flex items-center gap-1 border-b border-[#edf1f5] mb-4">
+    <button type="button" data-pf-tab="saisie" data-on="inline-flex items-center gap-1.5 px-4 py-2 text-[13px] font-semibold border-b-2 -mb-px transition-colors cursor-pointer border-[#3e97ff] text-[#3e97ff]" data-off="inline-flex items-center gap-1.5 px-4 py-2 text-[13px] font-semibold border-b-2 -mb-px transition-colors cursor-pointer border-transparent text-[#888780]" class="inline-flex items-center gap-1.5 px-4 py-2 text-[13px] font-semibold border-b-2 -mb-px transition-colors cursor-pointer border-[#3e97ff] text-[#3e97ff]"><i class="text-base ti ti-edit"></i> Saisie</button>
+    <button type="button" data-pf-tab="liste" data-on="inline-flex items-center gap-1.5 px-4 py-2 text-[13px] font-semibold border-b-2 -mb-px transition-colors cursor-pointer border-[#3e97ff] text-[#3e97ff]" data-off="inline-flex items-center gap-1.5 px-4 py-2 text-[13px] font-semibold border-b-2 -mb-px transition-colors cursor-pointer border-transparent text-[#888780]" class="inline-flex items-center gap-1.5 px-4 py-2 text-[13px] font-semibold border-b-2 -mb-px transition-colors cursor-pointer border-transparent text-[#888780]"><i class="text-base ti ti-list-details"></i> Liste des procédures <span class="rounded-full bg-slate-100 px-2 text-xs text-slate-600" data-pf-count>1</span></button>
+    <span class="flex-1"></span>
+    <h3 class="text-sm font-bold text-slate-900" data-pf-formtitle>Procédure financière</h3>
+    <span class="ml-3 text-xs text-slate-500"><span class="text-red-500">*</span> obligatoire</span>
+  </div>
+
+  <div data-pf-pane="saisie">
+  <div class="pf-card">
+    <div class="pf-field">
+      <label class="pf-label">Sélection de la convention <span class="pf-req">*</span></label>
+      <select class="pf-ctl" data-pf-conv>
+        <option value="">— Sélectionner une convention —</option>
+        <option>CONV-001 — Projet Résilience Rurale</option>
+        <option>CONV-002 — Appui à la Filière Riz</option>
+        <option>CONV-003 — Programme Santé Communautaire</option>
+        <option>CONV-004 — Eau et Assainissement</option>
+      </select>
+    </div>
+    <div class="pf-field">
+      <label class="pf-label">Sélection de la procédure financière <span class="pf-req">*</span></label>
+      <select class="pf-ctl" data-pf-proc>
+        <option value="">— Sélectionner une procédure —</option>
+        <option value="IDA">IDA</option><option value="FIDA">FIDA</option><option value="FED">FED</option><option value="FM">FM</option>
+      </select>
+    </div>
+    <div class="pf-field">
+      <label class="pf-label">Monnaie d’émission <span class="pf-req">*</span></label>
+      <select class="pf-ctl" data-pf-mon>
+        <option value="">— Sélectionner une monnaie —</option>
+      </select>
+    </div>
+    <div class="pf-field">
+      <label class="pf-label">Sélection des modèles d'états <span class="pf-req">*</span></label>
+      <div class="pf-models" data-pf-models><div class="pf-empty">Sélectionnez d'abord une procédure financière.</div></div>    </div>
+    <div class="pf-actions" style="display:none">
+      <span class="pf-msg" data-pf-msg></span>
+      <button type="button" class="pf-btn" data-pf-reset>Annuler</button>
+      <button type="button" class="pf-btn pf-pri" data-pf-save>Enregistrer</button>
+    </div>
+  </div>
+
+  </div>
+
+  <div data-pf-pane="liste" style="display:none">
+  <div class="pf-tablewrap"><table class="pf-table">
+    <thead><tr><th>Convention</th><th>Procédure</th><th>Monnaie d’émission</th><th>Modèles d'états</th><th style="text-align:right">Actions</th></tr></thead>
+    <tbody data-pf-rows><tr data-conv="CONV-001 — Projet Résilience Rurale" data-mon="USD"><td class="pf-b">CONV-001 — Projet Résilience Rurale</td><td><span class="pf-pill">IDA</span></td><td data-pf-monc>USD</td><td><div class="pf-chips"><span class="pf-chip">Formulaire 2F</span><span class="pf-chip">Formulaire 3F</span><span class="pf-chip">Formulaire 4F</span><span class="pf-chip">EJCD</span><span class="pf-chip">État récapitulatif par catégorie</span></div></td><td><div style="display:flex;justify-content:flex-end"><button type="button" class="pf-ico" data-pf-del aria-label="Supprimer"><i class="ti ti-trash"></i></button></div></td></tr></tbody>
+  </table></div>
+  <footer class="border-t border-slate-200 bg-slate-50/50 px-5 py-3 text-xs text-slate-500" style="margin-top:12px">Double-cliquez sur une ligne pour la modifier dans l'onglet Saisie.</footer>
+  </div>
+</div>
+<script>
+(function () {
+  var root = document.currentScript.parentElement.querySelector('[data-pf-root]');
+  var q = function (s) { return root.querySelector(s); };
+  var MODELES = {
+    IDA: ['Formulaire 2F', 'Formulaire 3F', 'Formulaire 4F', 'EJCD', 'État récapitulatif par catégorie'],
+    FIDA: ['101', '102', '103', '104', '105', '106'],
+    FED: ['Rapport financier', 'Demande de paiement', 'État des dépenses', 'Prévisions de trésorerie'],
+    FM: ['PU/DR (rapport d\'avancement et demande de décaissement)', 'Budget détaillé', 'État des dépenses par module']
+  };
+  var mon = q('[data-pf-mon]');
+  // Monnaies proposées = celles de « Administration de l’entité › Monnaies » (monnaie locale, devises 1 à 3).
+  var entInit = false;
+  function entSelects() {
+    var sc = document.querySelector('[data-screen="entite"]'), out = [];
+    if (!sc) return out;
+    Array.prototype.forEach.call(sc.querySelectorAll('label'), function (l) {
+      if (/^(Monnaie locale|Devise [123])$/i.test(l.textContent.trim())) { var s = l.parentElement.querySelector('select'); if (s) out.push(s); }
+    });
+    return out;
+  }
+  function refreshMon() {
+    var sel = entSelects();
+    if (!entInit && sel.length === 4 && sel.every(function (s) { return !s.value; })) { ['MGA', 'USD', 'MUR'].forEach(function (v, i) { sel[i].value = v; }); }
+    if (sel.length) entInit = true;
+    var seen = [], opts = [];
+    sel.forEach(function (s) { var o = s.options[s.selectedIndex]; if (s.value && seen.indexOf(s.value) < 0) { seen.push(s.value); opts.push('<option value="' + s.value + '">' + o.textContent + '</option>'); } });
+    var cur = mon.value;
+    mon.innerHTML = '<option value="">— Sélectionner une monnaie —</option>' + opts.join('');
+    mon.value = seen.indexOf(cur) >= 0 ? cur : '';
+  }
+  document.addEventListener('change', function (e) { if (e.target.closest && e.target.closest('[data-screen="entite"]')) refreshMon(); });
+  window.addEventListener('hashchange', refreshMon);
+  mon.addEventListener('focus', refreshMon);
+  var conv = q('[data-pf-conv]'), proc = q('[data-pf-proc]'), box = q('[data-pf-models]'), msg = q('[data-pf-msg]');
+  function esc(s) { var d = document.createElement('div'); d.textContent = s; return d.innerHTML; }
+  function say(t, c) { msg.textContent = t; msg.className = 'pf-msg ' + (c || ''); }
+  function checks() { return Array.prototype.slice.call(box.querySelectorAll('input[type=checkbox]')); }
+  function renderModels() {
+    var l = MODELES[proc.value];
+    if (!l) { box.innerHTML = '<div class="pf-empty">Sélectionnez d\'abord une procédure financière.</div>'; return; }
+    box.innerHTML = '<div class="pf-all"><span>' + l.length + ' modèles disponibles pour ' + esc(proc.value) + '</span><button type="button" class="pf-link" data-pf-all>Tout sélectionner</button></div>' +
+      l.map(function (m) { return '<label class="pf-model"><input type="checkbox" value="' + esc(m) + '"><span>' + esc(m) + '</span></label>'; }).join('');
+  }
+  mon.addEventListener('change', function () { mon.classList.remove('pf-bad'); say(''); });
+  proc.addEventListener('change', function () { proc.classList.remove('pf-bad'); box.classList.remove('pf-bad'); say(''); renderModels(); });
+  conv.addEventListener('change', function () { conv.classList.remove('pf-bad'); say(''); });
+  box.addEventListener('change', function () { box.classList.remove('pf-bad'); say(''); });
+  box.addEventListener('click', function (e) {
+    if (!e.target.closest('[data-pf-all]')) return;
+    var c = checks(), all = c.every(function (x) { return x.checked; });
+    c.forEach(function (x) { x.checked = !all; });
+    e.target.closest('[data-pf-all]').textContent = all ? 'Tout sélectionner' : 'Tout désélectionner';
+  });
+  function publish() {
+    window.__pfProcs = Array.prototype.slice.call(q('[data-pf-rows]').querySelectorAll('tr[data-conv]')).map(function (r) {
+      return { conv: r.dataset.conv, proc: r.querySelector('.pf-pill').textContent, mon: r.dataset.mon || '', models: Array.prototype.slice.call(r.querySelectorAll('.pf-chip')).map(function (c) { return c.textContent; }) };
+    });
+    window.dispatchEvent(new Event('pf-change'));
+  }
+  var panes = { saisie: q('[data-pf-pane="saisie"]'), liste: q('[data-pf-pane="liste"]') };
+  function showTab(t) {
+    panes.saisie.style.display = t === 'saisie' ? '' : 'none'; panes.liste.style.display = t === 'liste' ? '' : 'none';
+    Array.prototype.forEach.call(root.querySelectorAll('[data-pf-tab]'), function (b) { b.className = b.dataset[b.dataset.pfTab === t ? 'on' : 'off']; });
+    q('[data-pf-formtitle]').textContent = t === 'saisie' ? 'Procédure financière' : 'Procédures paramétrées';
+  }
+  Array.prototype.forEach.call(root.querySelectorAll('[data-pf-tab]'), function (b) { b.addEventListener('click', function () { showTab(b.dataset.pfTab); }); });
+  var mode = 'consult', selRow = null;
+  var act = function (k) { return q('[data-pf-act="' + k + '"]'); };
+  function setMode(m) {
+    mode = m; var ed = m !== 'consult';
+    conv.disabled = !ed; proc.disabled = !ed; mon.disabled = !ed; box.style.pointerEvents = ed ? '' : 'none'; box.style.opacity = ed ? '' : '.65';
+    var b = q('[data-pf-mode]'); b.textContent = { consult: 'Consultation', creation: 'Création', modif: 'Modification' }[m];
+    b.className = 'w-fit rounded-full px-3 py-1 text-xs font-semibold ' + (ed ? 'bg-blue-100 text-blue-700' : 'bg-slate-100 text-slate-600');
+    refreshBtns();
+  }
+  function refreshBtns() {
+    var ed = mode !== 'consult';
+    act('ajouter').disabled = ed; act('modifier').disabled = ed || !selRow; act('supprimer').disabled = ed || !selRow;
+    act('enregistrer').disabled = !ed; act('annuler').disabled = !ed;
+  }
+  function select(tr) {
+    Array.prototype.forEach.call(q('[data-pf-rows]').querySelectorAll('tr'), function (r) { r.classList.remove('pf-sel'); });
+    selRow = tr || null; if (tr) tr.classList.add('pf-sel'); refreshBtns();
+  }
+  function loadRow(tr) {
+    var cv = tr.dataset.conv; var opt = Array.prototype.filter.call(conv.options, function (o) { return o.value === cv || o.text === cv; })[0];
+    conv.value = opt ? opt.value : ''; proc.value = tr.querySelector('.pf-pill').textContent; refreshMon(); mon.value = tr.dataset.mon || ''; renderModels();
+    var have = Array.prototype.map.call(tr.querySelectorAll('.pf-chip'), function (c) { return c.textContent; });
+    checks().forEach(function (x) { x.checked = have.indexOf(x.value) >= 0; });
+  }
+  q('[data-pf-rows]').addEventListener('click', function (e) { var tr = e.target.closest('tr[data-conv]'); if (tr && !e.target.closest('[data-pf-del]')) select(tr); });
+  act('ajouter').addEventListener('click', function () { reset(); setMode('creation'); showTab('saisie'); say(''); });
+  act('modifier').addEventListener('click', function () { if (!selRow) return; loadRow(selRow); setMode('modif'); showTab('saisie'); say(''); });
+  act('supprimer').addEventListener('click', function () { if (!selRow) return; var tr = selRow; select(null); tr.remove(); var rows = q('[data-pf-rows]'); if (!rows.querySelector('tr')) rows.innerHTML = '<tr class="pf-none" data-pf-none><td colspan="5">Aucune procédure paramétrée.</td></tr>'; publish(); count(); });
+  act('enregistrer').addEventListener('click', function () { q('[data-pf-save]').click(); });
+  act('annuler').addEventListener('click', function () { reset(); setMode('consult'); say(''); });
+  function count() { q('[data-pf-count]').textContent = q('[data-pf-rows]').querySelectorAll('tr[data-conv]').length; }
+  q('[data-pf-rows]').addEventListener('dblclick', function (e) {
+    var tr = e.target.closest('tr[data-conv]'); if (!tr || e.target.closest('[data-pf-del]') || mode !== 'consult') return;
+    select(tr); loadRow(tr); setMode('modif'); showTab('saisie');
+  });
+  function reset() { conv.value = ''; proc.value = ''; mon.value = ''; renderModels(); [conv, proc, mon, box].forEach(function (f) { f.classList.remove('pf-bad'); }); say(''); }
+  q('[data-pf-reset]').addEventListener('click', reset);
+  q('[data-pf-save]').addEventListener('click', function () {
+    var sel = checks().filter(function (x) { return x.checked; }).map(function (x) { return x.value; });
+    var bc = !conv.value, bp = !proc.value, bm = !bp && !sel.length, bo = !mon.value;
+    conv.classList.toggle('pf-bad', bc); proc.classList.toggle('pf-bad', bp); mon.classList.toggle('pf-bad', bo); box.classList.toggle('pf-bad', bp || bm);
+    if (bc || bp || bo || bm) { say(bm ? 'Sélectionnez au moins un modèle d\'état.' : 'Renseignez les champs obligatoires.', 'ko'); return; }
+    var rows = q('[data-pf-rows]'), none = q('[data-pf-none]');
+    if (none) none.remove();
+    Array.prototype.slice.call(rows.querySelectorAll('tr')).forEach(function (r) { if (r.dataset.conv === conv.value) r.remove(); });
+    var tr = document.createElement('tr'); tr.dataset.conv = conv.value; tr.dataset.mon = mon.value;
+    tr.innerHTML = '<td class="pf-b">' + esc(conv.value) + '</td><td><span class="pf-pill">' + esc(proc.value) + '</span></td><td data-pf-monc>' + esc(mon.value) + '</td>' +
+      '<td><div class="pf-chips">' + sel.map(function (m) { return '<span class="pf-chip">' + esc(m) + '</span>'; }).join('') + '</div></td>' +
+      '<td><div style="display:flex;justify-content:flex-end"><button type="button" class="pf-ico" data-pf-del aria-label="Supprimer"><i class="ti ti-trash"></i></button></div></td>';
+    rows.appendChild(tr);
+    reset(); say('Procédure financière enregistrée.', 'ok'); publish(); count(); select(null); setMode('consult'); showTab('liste');
+  });
+  publish();
+  q('[data-pf-rows]').addEventListener('click', function (e) {
+    var b = e.target.closest('[data-pf-del]'); if (!b) return;
+    var rows = q('[data-pf-rows]'); b.closest('tr').remove();
+    if (!rows.querySelector('tr')) rows.innerHTML = '<tr class="pf-none" data-pf-none><td colspan="5">Aucune procédure paramétrée.</td></tr>';
+    select(null); publish(); count();
+  });
+  count(); setMode('consult'); refreshMon();
+  window.addEventListener('load', refreshMon);
+})();
+</script>
+</app-procedures-financieres>

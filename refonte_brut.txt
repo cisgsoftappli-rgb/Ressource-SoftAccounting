@@ -1,0 +1,89 @@
+﻿1|Modules | Sous module | Fenêtre | Fonctionnalité | Regle de gestion | Commentaire
+2|Tableau de bord |  |  |  |  | 
+3|Paramétrages | Administrations |  |  |  | 
+4| |  | Utilisateurs |  |  | 
+5| |  | Gestion des accès |  |  | 
+6| |  | Paramétrage des traces |  |  | 
+7| |  | Journal d'audit |  |  | 
+8| |  | Purge |  |  | 
+9| | Paramètres généraux |  |  |  | 
+10| |  | Pays |  |  | 
+11| |  | Devises |  |  | 
+12| |  | Fonctions |  |  | 
+13| |  | Unités |  |  | 
+14| |  | Administration de l'entité |  |  | Liste des modules à revoir / Ajout vue liste dans l'onglet module
+15| |  | Numérotation |  |  | 
+16| |  | Fonctions |  |  | 
+17| |  | Signataires |  |  | Option groupe de signataire à revoir
+18| |  | Liste des banques |  |  | Fefonte
+19| | Paramètres comptables |  |  |  | 
+20| |  | Exercices comptables |  |  | Refonte / Statut à revoir
+21| |  | Racine des comptes |  |  | Refonte
+22| |  | Configuration des plans |  |  | 
+23| |  | Saisie des plans |  |  | Refonte / Rattachement plan / Comportement obligatoire
+24| |  | Codes Journaux |  |  | Refonte avec modification signataire
+25| |  | Imputations OCR |  |  | A revoir
+26| |  | Modalités de paiement |  |  | Refonte
+27| |  | Modes de règlement |  |  | Refonte
+28| |  | Clôture comptable |  |  | Refonte
+29| | Paramètres financiers |  |  |  | 
+30| |  | Devis programme |  |  | 
+31| |  | Gestion des sélections |  |  | A aligner avec le nouveaux plan
+32| |  | Procédures financières |  |  | 
+33|Comptabilité générale |  |  |  |  | 
+34| | Plan des tiers |  |  |  | Refonte
+35| | Saisie des écritures |  |  |  | Refonte
+36| | Liste des écritures (correction) |  |  |  | Refonte
+37| | Lettrage |  |  |  | Refonte d'amélioration
+38| | Rapprochement bancaire |  |  |  | Refonte d'amélioration
+39| | Gestion des cours |  |  |  | Refonte d'amélioration
+40| | Validation des écritures (Workflow) |  |  |  | Refonte d'amélioration
+41| | Clôture comptable |  |  |  | 
+42|Immobilisation |  |  |  |  | 
+43| | Paramétrages |  |  |  | 
+44| |  | Plan établissements |  |  | Refonte
+45| |  | Plan détenteur |  |  | Refonte
+46| |  | Famille d'immobilisations |  |  | Refonte
+47| | Saisies |  |  |  | 
+48| |  | Fiches immobilisations |  |  | Refonte / Rajout cession et état d'inventaire
+49| |  | Réaffectation |  |  | Refonte
+50| | Gestion des dotations |  |  |  | 
+51| |  | Calcul des dotations |  |  | 
+52|Gestion des contrats |  |  |  |  | 
+53| | Paramétrages |  |  |  | Refonte
+54| | Saisies |  |  |  | Refonte
+55| | Suivi et historique |  |  |  | Refonte
+56| | Edition d'une fiche |  |  |  | Refonte
+57|Etats Comptables |  |  |  |  | 
+58| | Général |  |  |  | 
+59| | Analytique | Grand livre |  |  | Refonte
+60| |  | Balance |  |  | Refonte
+61| |  | Détail des mouvements |  |  | Refonte
+62| |  | Annexe 6 |  |  | Refonte
+63| | Immobilisation |  |  |  | 
+64| |  | Etats d'amortissement |  |  | Refonte
+65| |  | Etats d'acquisition |  |  | Refonte
+66| | Contrat |  |  |  | 
+67| |  | Détail des mouvements |  |  | Refonte
+68| |  | Suivi des contrats |  |  | Refonte
+69| | Déclaration fiscale | Gestion des tris |  |  | Refonte
+70| |  | Modèle d'état annexe |  |  | Refonte
+71| |  | Modèle d'états de déclaration fiscale |  |  | Refonte
+72| |  | Traitement |  |  | Refonte
+73| |  | Historique de déclaration |  |  | Refonte
+74| | Etat de dépense | Gestion des tris |  |  | Refonte
+75| |  | Modèle d'état SOE |  |  | Refonte
+76| |  | Modèle d'états récapitulatifs |  |  | Refonte
+77| |  | Traitement |  |  | Refonte
+78| |  | Régularisation |  |  | Refonte
+79| |  | Historique des états de dépenses |  |  | Refonte
+80| |  | Etat de la convention |  |  | Refonte
+81|Etats Financiers |  |  |  |  | 
+82| | Bilan |  |  |  | Refonte
+83| | Compte de résultat |  |  |  | Refonte
+84| | TER/TSU |  |  |  | Refonte
+85| | TFT |  |  |  | Refonte
+86| | TUF |  |  |  | Refonte
+87| | Suivi bugétaire |  |  |  | Refonte
+88|Tchat |  |  |  |  | 
+89| | Tchat |  |  |  | 
