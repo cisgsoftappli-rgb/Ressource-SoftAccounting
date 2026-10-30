@@ -1,0 +1,268 @@
+<!--
+  Écran « Famille d'immobilisation » (Immobilisations › Paramétrages › Famille d'immobilisations) — onglets Saisie / Liste (comme les autres
+  écrans de paramétrage). Une famille regroupe des immobilisations et porte leurs paramètres comptables et d'amortissement :
+  Informations générales (Code famille *, Libellé *, Nature *, Actif, Description), Paramètres comptables (comptes d'immobilisation *,
+  d'amortissement *, de dotation *, de sortie / cession, de plus-value, de moins-value : comptes de détail du plan comptable, window.PLAN_COMPTABLE)
+  et Paramètres d'amortissement (amortissable, méthode, durée + unité, taux avec calcul automatique, prorata temporis, date de début, périodicité).
+  Boutons dans la barre d'actions (Ajouter, Modifier, Supprimer, Enregistrer, Annuler, Imprimer, PDF, Excel). Données en mémoire, vides au départ ;
+  familles actives exposées en window.FAMILLES_IMMOBILISATION (événement « familles-immobilisation-changed »).
+  Styles bp-* de « Paramétrage du bilan ». Pas de fonction « $$ » (build.cjs).
+-->
+<style>
+.fi-badge{display:inline-flex;align-items:center;padding:2px 10px;border:1px solid;border-radius:6px;font-size:12px;font-weight:600}
+.fi-badge.on{background:#ECFDF5;border-color:#A7F3D0;color:#047857}.fi-badge.off{background:#F5F7F9;border-color:#D6D9E0;color:#5B606D}
+.fi-code{font-family:ui-monospace,Consolas,monospace;font-weight:600}
+.fi-help{font-size:12px;color:#5B606D}
+.fi-er{display:none;font-size:12px;color:#B63132}.fi-er.show{display:block}
+.bp-in.err,.bp-sel.err{border-color:#B63132}
+.fi-card{border:1px solid #D6D9E0;border-radius:12px;padding:16px;background:#fff}
+.fi-card h3{margin:0 0 12px;font-size:14px;font-weight:600;color:#18244F}
+.fi-g4{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:12px}
+.fi-g4 .fi-full{grid-column:1/-1}
+.fi-cols{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:16px;margin-top:16px}
+.fi-stack{display:flex;flex-direction:column;gap:12px}
+.fi-row2{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1fr);gap:12px}
+.fi-taux{display:flex;align-items:center;gap:8px}.fi-taux .bp-in{flex:1}
+.fi-taux label{display:flex;align-items:center;gap:6px;white-space:nowrap;font-size:13px}
+[data-fi] [hidden]{display:none!important}
+[data-fi] .bp-champ>span:first-child{text-transform:uppercase;letter-spacing:.04em;font-size:12px;font-weight:600}
+[data-fi] textarea.bp-in{min-height:64px;resize:vertical;font:inherit}
+@media (max-width:1000px){.fi-cols{grid-template-columns:1fr}.fi-g4{grid-template-columns:repeat(2,minmax(0,1fr))}}
+</style>
+
+<div class="bp-root" data-fi>
+  <h1 style="position:absolute;width:1px;height:1px;overflow:hidden;clip-path:inset(50%);margin:0">Famille d'immobilisation</h1>
+
+  <div class="no-print" data-fi-actions>
+    <button type="button" data-fi-ajouter>Ajouter</button>
+    <button type="button" data-fi-modifier>Modifier</button>
+    <button type="button" data-fi-supprimer>Supprimer</button>
+    <button type="button" data-fi-enregistrer>Enregistrer</button>
+    <button type="button" data-fi-annuler>Annuler</button>
+    <button type="button" data-fi-imprimer>Imprimer</button>
+    <button type="button" data-fi-pdf>PDF</button>
+    <button type="button" data-fi-xlsx>Excel (XLSX)</button>
+  </div>
+
+  <p class="fi-help" style="margin:0 0 12px">Regrouper les immobilisations et définir leurs paramètres comptables et d'amortissement.</p>
+
+  <div class="bp-tabs" role="tablist">
+    <button type="button" role="tab" class="on" data-fi-tab="saisie">Saisie</button>
+    <button type="button" role="tab" data-fi-tab="liste">Liste <span class="bp-n" data-fi-compte></span></button>
+  </div>
+
+  <div class="bp-grid">
+    <section class="bp-pan" aria-label="Liste des familles d'immobilisation" data-fi-pan="liste" hidden>
+      <h2>Familles d'immobilisation <small>Double-clic ou « Modifier » pour ouvrir la ligne en saisie</small></h2>
+      <div style="overflow:auto;max-height:560px">
+        <table class="bp-tb" style="min-width:760px"><thead>
+          <tr><th>Code</th><th>Libellé</th><th>Nature</th><th>Compte immo.</th><th>Durée</th><th>Statut</th></tr>
+          <tr class="flt">
+            <th><input class="bp-in" data-fc="0" aria-label="Filtrer Code"></th>
+            <th><input class="bp-in" data-fc="1" aria-label="Filtrer Libellé"></th>
+            <th><select class="bp-sel" data-fc="2" aria-label="Filtrer Nature"><option value=""></option><option value="corporel">Corporel</option><option value="incorporel">Incorporel</option><option value="financier">Financier</option></select></th>
+            <th><input class="bp-in" data-fc="3" aria-label="Filtrer Compte"></th>
+            <th><input class="bp-in" data-fc="4" aria-label="Filtrer Durée"></th>
+            <th><select class="bp-sel" data-fc="5" aria-label="Filtrer Statut"><option value=""></option><option value="actif">Actif</option><option value="inactif">Inactif</option></select></th>
+          </tr>
+        </thead><tbody data-fi-lignes></tbody></table>
+      </div>
+      <div class="bp-vide" data-fi-vide hidden>Aucune famille enregistrée. Créez la première pour démarrer (« Ajouter »).</div>
+    </section>
+
+    <section class="bp-pan" aria-label="Saisie d'une famille d'immobilisation" data-fi-pan="saisie">
+      <form data-fi-form onsubmit="return false" novalidate>
+        <div class="fi-card">
+          <h3>Informations générales</h3>
+          <div class="fi-g4">
+            <label class="bp-champ"><span>Code famille <b>*</b></span><input class="bp-in fi-code" data-f="code" maxlength="12" autocomplete="off" placeholder="Ex. : IMM-001"><span class="fi-er" data-er="code"></span></label>
+            <label class="bp-champ"><span>Libellé <b>*</b></span><input class="bp-in" data-f="lib" maxlength="80" autocomplete="off" placeholder="Ex. : Matériel informatique"><span class="fi-er" data-er="lib"></span></label>
+            <label class="bp-champ"><span>Nature <b>*</b></span><select class="bp-sel" data-f="nature"><option>Corporel</option><option>Incorporel</option><option>Financier</option></select></label>
+            <div class="bp-chk" style="align-self:end"><label><input type="checkbox" data-f="actif" checked>Actif</label></div>
+            <label class="bp-champ fi-full"><span>Description</span><textarea class="bp-in" data-f="desc" maxlength="300" placeholder="Saisir une description…"></textarea></label>
+          </div>
+        </div>
+
+        <div class="fi-cols">
+          <div class="fi-card">
+            <h3>Paramètres comptables</h3>
+            <div class="fi-stack">
+              <label class="bp-champ"><span>Compte d'immobilisation <b>*</b></span><select class="bp-sel" data-f="c_immo"></select><span class="fi-er" data-er="c_immo"></span></label>
+              <label class="bp-champ"><span>Compte d'amortissement <b data-fi-req>*</b></span><select class="bp-sel" data-f="c_amort"></select><span class="fi-er" data-er="c_amort"></span></label>
+              <label class="bp-champ"><span>Compte de dotation <b data-fi-req>*</b></span><select class="bp-sel" data-f="c_dot"></select><span class="fi-er" data-er="c_dot"></span></label>
+              <label class="bp-champ"><span>Compte de sortie / cession</span><select class="bp-sel" data-f="c_sortie"></select></label>
+              <label class="bp-champ"><span>Compte de plus-value</span><select class="bp-sel" data-f="c_plus"></select></label>
+              <label class="bp-champ"><span>Compte de moins-value</span><select class="bp-sel" data-f="c_moins"></select></label>
+            </div>
+          </div>
+
+          <div class="fi-card">
+            <h3>Paramètres d'amortissement</h3>
+            <div class="fi-stack">
+              <div class="bp-chk"><label><input type="checkbox" data-f="amortissable" checked>Immobilisation amortissable</label></div>
+              <label class="bp-champ"><span>Méthode d'amortissement <b>*</b></span><select class="bp-sel" data-f="methode"><option>Linéaire</option><option>Dégressif</option></select></label>
+              <div class="bp-champ"><span>Durée d'amortissement <b>*</b></span>
+                <div class="fi-row2"><input class="bp-in" type="number" min="1" step="1" data-f="duree" aria-label="Durée d'amortissement"><select class="bp-sel" data-f="unite" aria-label="Unité de durée"><option>Ans</option><option>Mois</option></select></div>
+                <span class="fi-er" data-er="duree"></span>
+              </div>
+              <div class="bp-champ"><span>Taux d'amortissement</span>
+                <div class="fi-taux"><input class="bp-in" type="number" min="0" max="100" step="0.01" data-f="taux" aria-label="Taux d'amortissement"><span>%</span><label><input type="checkbox" data-f="auto" checked>Calcul automatique</label></div>
+                <span class="fi-er" data-er="taux"></span>
+              </div>
+              <label class="bp-champ"><span>Prorata temporis</span><select class="bp-sel" data-f="prorata"><option>Oui</option><option>Non</option></select></label>
+              <label class="bp-champ"><span>Date de début d'amortissement</span><input class="bp-in" type="date" data-f="debut"></label>
+              <label class="bp-champ"><span>Périodicité <b>*</b></span><select class="bp-sel" data-f="period"><option>Annuel</option><option>Semestriel</option><option>Trimestriel</option><option>Mensuel</option></select></label>
+            </div>
+          </div>
+        </div>
+      </form>
+    </section>
+  </div>
+  <div class="bp-toast" role="status" hidden data-fi-toast></div>
+</div>
+
+<script>
+(function () {
+  var root = document.querySelector('[data-fi]'); if (!root) return;
+  function q(s) { return root.querySelector(s); } function qa(s) { return [].slice.call(root.querySelectorAll(s)); }
+  var data = [], sel = -1, mode = 'consultation';
+  var CPT = ['c_immo', 'c_amort', 'c_dot', 'c_sortie', 'c_plus', 'c_moins'];
+  var CHAMPS = ['code', 'lib', 'nature', 'desc', 'c_immo', 'c_amort', 'c_dot', 'c_sortie', 'c_plus', 'c_moins', 'methode', 'duree', 'unite', 'taux', 'prorata', 'debut', 'period'];
+  var AMORT = ['methode', 'duree', 'unite', 'taux', 'auto', 'prorata', 'debut', 'period'];
+  function esc(s) { return String(s == null ? '' : s).replace(/[&<>"]/g, function (c) { return { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c]; }); }
+  function f(k) { return q('[data-f=' + k + ']'); }
+  function toast(m) { var t = q('[data-fi-toast]'); t.textContent = m; t.hidden = false; clearTimeout(toast.t); toast.t = setTimeout(function () { t.hidden = true; }, 2500); }
+  function err(k, m) { var e = q('[data-er="' + k + '"]'); if (e) { e.textContent = m || ''; e.classList.toggle('show', !!m); } var x = f(k); if (x) x.classList.toggle('err', !!m); }
+  function effacerErreurs() { ['code', 'lib', 'c_immo', 'c_amort', 'c_dot', 'duree', 'taux'].forEach(function (k) { err(k); }); }
+  function dureeTxt(r) { return r.amortissable ? r.duree + ' ' + (r.unite === 'Mois' ? 'mois' : (r.duree > 1 ? 'ans' : 'an')) : '—'; }
+
+  // comptes de détail du plan comptable (ceux qui ne sont le parent d'aucun autre compte)
+  function comptes() {
+    var pc = window.PLAN_COMPTABLE || [], parents = {};
+    pc.forEach(function (r) { if (r.parent) parents[r.parent] = 1; });
+    var det = pc.filter(function (r) { return !parents[r.code]; }); if (!det.length) det = pc;
+    var cl2 = det.filter(function (r) { return /^2/.test(r.code); });   // le compte d'immobilisation est un compte de classe 2 ; les autres comptes restent choisis dans tout le plan (le plan d'un projet n'a pas toujours de 28x / 681)
+    CPT.forEach(function (k) {
+      var s = f(k), v = s.value, L = k === 'c_immo' && cl2.length ? cl2 : det;
+      s.innerHTML = '<option value="">— Sélectionner —</option>' + L.map(function (r) { return '<option value="' + esc(r.code) + '">' + esc(r.code + ' — ' + r.libelle) + '</option>'; }).join('') +
+        (v && !L.some(function (r) { return r.code === v; }) ? '<option value="' + esc(v) + '">' + esc(v) + '</option>' : '');
+      s.value = v;
+    });
+  }
+  function annees() { var d = +f('duree').value || 0; return f('unite').value === 'Mois' ? d / 12 : d; }
+  function tauxAuto() {
+    if (!f('auto').checked) return;
+    var a = annees(); if (!(a > 0)) { f('taux').value = ''; return; }
+    var t = 100 / a; if (f('methode').value === 'Dégressif') t *= a <= 4 ? 1.25 : a <= 6 ? 1.75 : 2.25;
+    f('taux').value = Math.min(100, Math.round(t * 100) / 100);
+  }
+  function filtrer() {
+    var F = []; qa('[data-fc]').forEach(function (e) { F[+e.dataset.fc] = e.value.trim().toLowerCase(); });
+    qa('[data-fi-lignes] tr').forEach(function (tr) { tr.hidden = F.some(function (v, k) { if (!v) return false; var td = tr.children[k]; var t = (td.dataset.v || td.textContent).toLowerCase(); return (k === 2 || k === 5) ? t !== v : t.indexOf(v) < 0; }); });
+  }
+  qa('[data-fc]').forEach(function (e) { e.addEventListener('input', filtrer); e.addEventListener('change', filtrer); });
+  function liste() {
+    q('[data-fi-compte]').textContent = data.length ? data.length : '';
+    q('[data-fi-vide]').hidden = data.length > 0;
+    q('[data-fi-lignes]').innerHTML = data.map(function (r, i) {
+      return '<tr data-i="' + i + '"' + (i === sel ? ' class="sel"' : '') + '><td><span class="fi-code">' + esc(r.code) + '</span></td><td>' + esc(r.lib) + '</td><td data-v="' + esc(r.nature.toLowerCase()) + '">' + esc(r.nature) + '</td>' +
+        '<td><span class="fi-code">' + esc(r.c_immo) + '</span></td><td>' + esc(dureeTxt(r)) + '</td>' +
+        '<td class="c" data-v="' + (r.actif ? 'actif' : 'inactif') + '"><span class="fi-badge ' + (r.actif ? 'on' : 'off') + '">' + (r.actif ? 'Actif' : 'Inactif') + '</span></td></tr>';
+    }).join(''); filtrer();
+  }
+  function form(r) {
+    r = r || { code: '', lib: '', nature: 'Corporel', actif: true, desc: '', c_immo: '', c_amort: '', c_dot: '', c_sortie: '', c_plus: '', c_moins: '', amortissable: true, methode: 'Linéaire', duree: '', unite: 'Ans', taux: '', auto: true, prorata: 'Oui', debut: '', period: 'Annuel' };
+    comptes();
+    CHAMPS.forEach(function (k) { f(k).value = r[k] == null ? '' : r[k]; });
+    f('actif').checked = r.actif !== false; f('amortissable').checked = r.amortissable !== false; f('auto').checked = r.auto !== false;
+    if (r.auto !== false) tauxAuto();
+    effacerErreurs();
+  }
+  function etat() {
+    var ed = mode !== 'consultation', am = f('amortissable').checked;
+    qa('[data-fi-form] input,[data-fi-form] select,[data-fi-form] textarea').forEach(function (e) { e.disabled = !ed; });
+    f('code').disabled = mode !== 'creation';
+    AMORT.forEach(function (k) { f(k).disabled = !ed || !am; });
+    f('taux').disabled = !ed || !am || f('auto').checked;
+    qa('[data-fi-req]').forEach(function (b) { b.style.visibility = am ? '' : 'hidden'; });
+    var a = q('[data-fi-actions]');
+    a.querySelector('[data-fi-ajouter]').disabled = ed; a.querySelector('[data-fi-modifier]').disabled = ed || sel < 0; a.querySelector('[data-fi-supprimer]').disabled = ed || sel < 0;
+    a.querySelector('[data-fi-enregistrer]').disabled = !ed; a.querySelector('[data-fi-annuler]').disabled = !ed;
+    ['imprimer', 'pdf', 'xlsx'].forEach(function (k) { a.querySelector('[data-fi-' + k + ']').disabled = !data.length; });
+  }
+  function onglet(n) { qa('[data-fi-pan]').forEach(function (p) { p.hidden = p.dataset.fiPan !== n; }); qa('[data-fi-tab]').forEach(function (t) { var on = t.dataset.fiTab === n; t.classList.toggle('on', on); t.setAttribute('aria-selected', on); }); }
+  function choisir(i) { if (mode !== 'consultation') return; sel = i; liste(); form(data[i]); etat(); }
+  qa('[data-fi-tab]').forEach(function (t) { t.addEventListener('click', function () { onglet(t.dataset.fiTab); }); });
+  var tb = q('[data-fi-lignes]');
+  tb.addEventListener('click', function (e) { var tr = e.target.closest('tr[data-i]'); if (tr) choisir(+tr.dataset.i); });
+  tb.addEventListener('dblclick', function (e) { var tr = e.target.closest('tr[data-i]'); if (tr) { choisir(+tr.dataset.i); onglet('saisie'); } });
+  f('code').addEventListener('input', function () { this.value = this.value.toUpperCase().replace(/[^A-Z0-9-]/g, ''); });
+  ['duree', 'unite', 'methode', 'auto'].forEach(function (k) { f(k).addEventListener('input', function () { tauxAuto(); etat(); }); f(k).addEventListener('change', function () { tauxAuto(); etat(); }); });
+  f('amortissable').addEventListener('change', etat);
+
+  function lire() {
+    var r = { actif: f('actif').checked, amortissable: f('amortissable').checked, auto: f('auto').checked };
+    CHAMPS.forEach(function (k) { r[k] = f(k).value.trim(); });
+    r.duree = r.duree === '' ? '' : +r.duree; r.taux = r.taux === '' ? '' : +r.taux;
+    if (!r.amortissable) { r.duree = ''; r.taux = ''; }
+    return r;
+  }
+  function enregistrer() {
+    var r = lire(), ok = true, ancien = mode === 'edition' ? data[sel].code : null;
+    effacerErreurs();
+    if (!r.code) { err('code', 'Le code famille est obligatoire.'); ok = false; }
+    else if (data.some(function (x) { return x.code === r.code && x.code !== ancien; })) { err('code', 'Ce code existe déjà.'); ok = false; }
+    if (!r.lib) { err('lib', 'Le libellé est obligatoire.'); ok = false; }
+    if (!r.c_immo) { err('c_immo', 'Le compte d’immobilisation est obligatoire.'); ok = false; }
+    if (r.amortissable) {
+      if (!r.c_amort) { err('c_amort', 'Le compte d’amortissement est obligatoire.'); ok = false; }
+      else if (r.c_amort === r.c_immo) { err('c_amort', 'Le compte d’amortissement doit différer du compte d’immobilisation.'); ok = false; }
+      if (!r.c_dot) { err('c_dot', 'Le compte de dotation est obligatoire.'); ok = false; }
+      if (!(r.duree >= 1 && r.duree === Math.floor(r.duree))) { err('duree', 'La durée est un entier supérieur ou égal à 1.'); ok = false; }
+      if (r.taux !== '' && !(r.taux > 0 && r.taux <= 100)) { err('taux', 'Le taux est compris entre 0 et 100 %.'); ok = false; }
+      else if (r.taux === '' && ok) { err('taux', 'Le taux est obligatoire (cochez « Calcul automatique » ou saisissez-le).'); ok = false; }
+    }
+    if (!ok) return;
+    if (mode === 'creation') { data.push(r); sel = data.length - 1; } else data[sel] = r;
+    mode = 'consultation'; liste(); form(data[sel]); etat(); onglet('liste'); publier(); toast(ancien ? 'Famille modifiée.' : 'Famille enregistrée.');
+  }
+  function publier() {
+    window.FAMILLES_IMMOBILISATION = data.filter(function (r) { return r.actif; }).map(function (r) { return { code: r.code, libelle: r.lib, nature: r.nature, compte: r.c_immo, amortissable: r.amortissable, methode: r.methode, duree: r.duree, unite: r.unite, taux: r.taux }; });
+    window.dispatchEvent(new Event('familles-immobilisation-changed'));
+  }
+
+  // exports : tableau complet, filtres de la liste compris
+  function table() {
+    var L = data.filter(function (m, i) { var tr = tb.children[i]; return !tr || !tr.hidden; });
+    return { tete: ['Code', 'Libellé', 'Nature', 'Compte immo.', 'Durée', 'Statut'], lignes: L.map(function (r) { return [r.code, r.lib, r.nature, r.c_immo, dureeTxt(r), r.actif ? 'Actif' : 'Inactif']; }) };
+  }
+  function exporter(k) {
+    var X = window.EXPORT_TABLEAU, t = table(); if (!X) { toast('Module d’export indisponible.'); return; } if (!t.lignes.length) { toast('Rien à exporter.'); return; }
+    if (k === 'pdf') X.pdf('familles_immobilisation.pdf', 'Familles d’immobilisation', t.lignes.length + ' ligne(s)', t.tete, t.lignes); else X.xlsx('familles_immobilisation.xlsx', 'Familles d’immobilisation', t.tete, t.lignes);
+    toast('Export ' + (k === 'pdf' ? 'PDF' : 'Excel (XLSX)') + ' généré : ' + t.lignes.length + ' ligne(s).');
+  }
+  function imprimer() {
+    var t = table(), w = window.open('', '_blank'); if (!w) { toast('Autorisez les fenêtres pop-up pour imprimer.'); return; }
+    w.document.write('<!doctype html><meta charset="utf-8"><title>Familles d’immobilisation</title><style>body{font:13px system-ui,sans-serif;color:#0B1332;margin:24px}h1{font-size:18px}table{border-collapse:collapse;width:100%}th{background:#2E427B;color:#fff;text-align:left;padding:8px 10px;font-size:11px;text-transform:uppercase;-webkit-print-color-adjust:exact;print-color-adjust:exact}td{padding:8px 10px;border-bottom:1px solid #D6D9E0}</style><h1>Familles d’immobilisation</h1><table><thead><tr>' +
+      t.tete.map(function (h) { return '<th>' + esc(h) + '</th>'; }).join('') + '</tr></thead><tbody>' + t.lignes.map(function (r) { return '<tr>' + r.map(function (c) { return '<td>' + esc(c) + '</td>'; }).join('') + '</tr>'; }).join('') + '</tbody></table>');
+    w.document.close(); w.focus(); setTimeout(function () { w.print(); }, 300);
+  }
+  root.addEventListener('click', function (e) {
+    var b = e.target.closest('button'); if (!b || b.disabled) return;
+    if (b.hasAttribute('data-fi-ajouter')) { onglet('saisie'); mode = 'creation'; sel = -1; liste(); form(null); etat(); f('code').focus(); return; }
+    if (b.hasAttribute('data-fi-modifier')) { onglet('saisie'); mode = 'edition'; etat(); f('lib').focus(); return; }
+    if (b.hasAttribute('data-fi-annuler')) { mode = 'consultation'; liste(); form(sel >= 0 ? data[sel] : null); etat(); return; }
+    if (b.hasAttribute('data-fi-enregistrer')) { enregistrer(); return; }
+    if (b.hasAttribute('data-fi-supprimer')) {
+      var r = data[sel]; if (!r) return;
+      if (!window.confirm('Supprimer la famille d’immobilisation « ' + r.lib + ' » ? Cette action est définitive.')) return;
+      data.splice(sel, 1); sel = -1; liste(); form(null); etat(); publier(); toast('Famille supprimée.'); return;
+    }
+    if (b.hasAttribute('data-fi-imprimer')) { imprimer(); return; }
+    if (b.hasAttribute('data-fi-pdf')) { exporter('pdf'); return; }
+    if (b.hasAttribute('data-fi-xlsx')) { exporter('xlsx'); return; }
+  });
+  window.addEventListener('plans-changed', comptes);
+  liste(); form(null); etat(); onglet('liste'); publier();
+})();
+</script>

@@ -1,0 +1,349 @@
+<!--
+  Écran « Collaborateur responsable » (Immobilisations › Paramétrages › Collaborateur responsable) — structure hiérarchique et codification des
+  collaborateurs responsables des immobilisations. Onglets « Collaborateurs responsables » (arbre + saisie) et « Structure & codification » (niveaux :
+  libellé, longueur du segment de code). Code complet = code du parent + « . » + segment du niveau. Boutons dans la barre d'actions
+  (Ajouter, Modifier, Supprimer, Enregistrer, Annuler, Imprimer, PDF, Excel). Données en mémoire ; collaborateurs actifs exposés en
+  window.COLLABORATEURS_RESPONSABLES (événement « collaborateurs-responsables-changed »). Styles bp-* de « Paramétrage du bilan ». Pas de fonction « $$ » (build.cjs).
+-->
+<style>
+.cor-badge{display:inline-flex;align-items:center;padding:2px 10px;border:1px solid;border-radius:6px;font-size:12px;font-weight:600}
+.cor-badge.on{background:#ECFDF5;border-color:#A7F3D0;color:#047857}.cor-badge.off{background:#F5F7F9;border-color:#D6D9E0;color:#5B606D}
+.cor-code{font-family:ui-monospace,Consolas,monospace;font-weight:600}
+.cor-help{font-size:12px;color:#5B606D}
+.cor-er{display:none;font-size:12px;color:#B63132}.cor-er.show{display:block}
+.bp-in.err,.bp-sel.err{border-color:#B63132}
+.cor-kpis{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:12px;margin-bottom:12px}
+.cor-kpi{border:1px solid #D6D9E0;border-radius:12px;padding:12px 16px;background:#fff}
+.cor-kpi b{display:block;font-size:24px;line-height:1.2;color:#18244F}.cor-kpi span{font-size:12px;color:#5B606D}
+.cor-kpi.ok b{color:#047857}.cor-kpi.warn b{color:#B45309}
+.cor-tg{width:22px;height:22px;min-height:22px!important;padding:0!important;border:1px solid #D6D9E0;border-radius:6px;background:#fff;cursor:pointer;font-size:12px;line-height:1}
+.cor-tg[disabled]{visibility:hidden}
+.cor-nom{display:flex;align-items:center;gap:8px}
+.cor-opt{display:flex;align-items:center;gap:12px;margin-bottom:8px;flex-wrap:wrap}
+.cor-sec{margin:6px 0 0;font-size:14px;font-weight:600;color:#2E427B}
+.cor-nbar{display:flex;align-items:flex-end;justify-content:space-between;gap:12px;margin-top:12px;flex-wrap:wrap}
+.cor-nbar .bp-tabs{margin:0}
+.cor-ics{display:flex;gap:6px;padding-bottom:4px}
+.cor-ic{display:inline-flex;align-items:center;justify-content:center;width:36px;height:36px;border:1px solid #D6D9E0;border-radius:8px;background:#fff;color:#2E427B;font-size:18px;cursor:pointer;padding:0}
+.cor-ic:hover:not(:disabled){background:#F4F7FE;border-color:#2E427B}.cor-ic:disabled{opacity:.45;cursor:default}
+[data-cor-niveaux] tr:hover td{cursor:pointer}
+[data-cor] [hidden]{display:none!important}
+[data-cor] .bp-champ>span:first-child{text-transform:uppercase;letter-spacing:.04em;font-size:12px;font-weight:600}
+@media (max-width:900px){.cor-kpis{grid-template-columns:repeat(2,minmax(0,1fr))}}
+</style>
+
+<div class="bp-root" data-cor>
+  <h1 style="position:absolute;width:1px;height:1px;overflow:hidden;clip-path:inset(50%);margin:0">Collaborateur responsable</h1>
+
+  <div class="no-print" data-cor-actions>
+    <button type="button" data-cor-ajouter>Ajouter</button>
+    <button type="button" data-cor-modifier>Modifier</button>
+    <button type="button" data-cor-supprimer>Supprimer</button>
+    <button type="button" data-cor-enregistrer>Enregistrer</button>
+    <button type="button" data-cor-annuler>Annuler</button>
+    <button type="button" data-cor-imprimer>Imprimer</button>
+    <button type="button" data-cor-pdf>PDF</button>
+    <button type="button" data-cor-xlsx>Excel (XLSX)</button>
+  </div>
+
+  <p class="cor-help" style="margin:0 0 12px">Structure et codification des collaborateurs responsables des immobilisations (direction, service, collaborateur…).</p>
+
+  <div class="cor-kpis" data-cor-kpis>
+    <div class="cor-kpi"><b data-cor-k="niveaux">0</b><span>Niveaux configurés</span></div>
+    <div class="cor-kpi"><b data-cor-k="total">0</b><span>Collaborateurs au total</span></div>
+    <div class="cor-kpi ok"><b data-cor-k="actifs">0</b><span>Actifs</span></div>
+    <div class="cor-kpi warn"><b data-cor-k="inactifs">0</b><span>Inactifs</span></div>
+  </div>
+
+  <div class="bp-tabs" role="tablist">
+    <button type="button" role="tab" class="on" data-cor-tab="collaborateurs">Collaborateurs responsables</button>
+    <button type="button" role="tab" data-cor-tab="structure">Structure &amp; codification</button>
+  </div>
+
+  <div class="bp-grid">
+    <section class="bp-pan" aria-label="Collaborateurs responsables" data-cor-pan="collaborateurs">
+      <form class="bp-form" data-cor-form onsubmit="return false" novalidate hidden style="margin-bottom:16px">
+        <div style="display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:12px">
+          <label class="bp-champ"><span>Niveau <b>*</b></span><select class="bp-sel" data-f="niveau"></select><span class="cor-help" data-cor-niv-aide></span><span class="cor-er" data-er="niveau"></span></label>
+          <label class="bp-champ"><span>Rattaché à</span><select class="bp-sel" data-f="parent"></select><span class="cor-er" data-er="parent"></span></label>
+          <label class="bp-champ"><span>Code <b>*</b></span><input class="bp-in cor-code" data-f="seg" autocomplete="off"><span class="cor-help" data-cor-code-aide></span><span class="cor-er" data-er="seg"></span></label>
+          <label class="bp-champ"><span>Nom du collaborateur <b>*</b></span><input class="bp-in" data-f="lib" maxlength="80" autocomplete="off" placeholder="Service comptabilité"><span class="cor-er" data-er="lib"></span></label>
+          <div class="bp-chk" style="align-self:end"><label><input type="checkbox" data-f="actif" checked>Actif</label><span class="cor-help" style="display:block">Un collaborateur inactif n’est plus proposé comme responsable d’une immobilisation.</span></div>
+        </div>
+      </form>
+
+      <div class="cor-opt">
+        <label class="bp-chk"><input type="checkbox" data-cor-inactifs>Afficher les collaborateurs inactifs</label>
+        <span class="cor-help">« + » pour développer — clic sur une ligne pour la sélectionner, double-clic pour la modifier</span>
+      </div>
+      <div style="overflow:auto;max-height:520px">
+        <table class="bp-tb" style="min-width:600px"><thead>
+          <tr><th>Code</th><th>Nom du collaborateur</th><th>Niveau</th><th>Statut</th></tr>
+          <tr class="flt"><th><input class="bp-in" data-fc="0" aria-label="Filtrer Code"></th><th><input class="bp-in" data-fc="1" aria-label="Filtrer Nom"></th>
+            <th><select class="bp-sel" data-fc="2" aria-label="Filtrer Niveau" data-cor-fniv></select></th>
+            <th><select class="bp-sel" data-fc="3" aria-label="Filtrer Statut"><option value=""></option><option value="actif">Actif</option><option value="inactif">Inactif</option></select></th></tr>
+        </thead><tbody data-cor-lignes></tbody></table>
+      </div>
+      <div class="bp-vide" data-cor-vide hidden></div>
+    </section>
+
+    <section class="bp-pan" aria-label="Structure et codification" data-cor-pan="structure" hidden>
+      <div class="cor-sec">Niveaux de la structure</div>
+      <p class="cor-help" style="margin:4px 0 0">Le code complet d'un collaborateur est celui de son parent suivi du segment de son niveau, séparés par un point.</p>
+      <div class="cor-nbar">
+        <div class="bp-tabs" role="tablist">
+          <button type="button" role="tab" class="on" data-cor-ntab="saisie">Saisie</button>
+          <button type="button" role="tab" data-cor-ntab="liste">Liste <span class="bp-n" data-cor-ncompte></span></button>
+        </div>
+        <div class="cor-ics no-print">
+          <button type="button" class="cor-ic" data-cor-n="ajouter" title="Ajouter un niveau" aria-label="Ajouter un niveau"><i class="ti ti-plus"></i></button>
+          <button type="button" class="cor-ic" data-cor-n="modifier" title="Modifier le niveau sélectionné" aria-label="Modifier le niveau sélectionné"><i class="ti ti-pencil"></i></button>
+          <button type="button" class="cor-ic" data-cor-n="valider" title="Valider le niveau" aria-label="Valider le niveau"><i class="ti ti-check"></i></button>
+          <button type="button" class="cor-ic" data-cor-n="supprimer" title="Supprimer le niveau sélectionné (dernier niveau, s'il est vide)" aria-label="Supprimer le niveau sélectionné"><i class="ti ti-trash"></i></button>
+        </div>
+      </div>
+      <div data-cor-npan="saisie" style="margin-top:12px">
+        <div class="bp-l3">
+          <label class="bp-champ"><span>Niveau</span><input class="bp-in" data-nf="niveau" disabled style="text-align:center"></label>
+          <label class="bp-champ"><span>Libellé du niveau <b>*</b></span><input class="bp-in" data-nf="libelle" maxlength="40" autocomplete="off"><span class="cor-er" data-er="nlibelle"></span></label>
+          <label class="bp-champ"><span>Format de codification</span><select class="bp-sel" data-nf="format"><option>Numérique</option><option>Alphabétique</option><option>Alphanumérique</option></select></label>
+          <label class="bp-champ"><span>Nombre de caractères <b>*</b></span><input class="bp-in" data-nf="car" type="number" min="1" max="20" step="1"><span class="cor-er" data-er="ncar"></span><span class="cor-help" data-cor-nfige></span></label>
+        </div>
+      </div>
+      <div data-cor-npan="liste" style="margin-top:12px" hidden>
+        <div style="overflow:auto"><table class="bp-tb"><thead><tr><th class="c">Niveau</th><th>Libellé du niveau</th><th>Format de codification</th><th class="c">Nombre de caractères</th></tr></thead><tbody data-cor-niveaux></tbody></table></div>
+        <div class="bp-vide" data-cor-nvide hidden>Aucun niveau : utilisez « + » dans l'onglet Saisie pour créer le premier niveau.</div>
+      </div>
+    </section>
+  </div>
+  <div class="bp-toast" role="status" hidden data-cor-toast></div>
+</div>
+
+<script>
+(function () {
+  var root = document.querySelector('[data-cor]'); if (!root) return;
+  function q(s) { return root.querySelector(s); } function qa(s) { return [].slice.call(root.querySelectorAll(s)); }
+  var niveaux = [];   // à définir dans l'onglet « Structure & codification »
+  // id unique par collaborateur ; code complet recalculé à partir des parents
+  var data = [];
+  var nextId = 1, sel = 0, mode = 'consultation', ouverts = {}, parentFixe = 0;
+  function esc(s) { return String(s == null ? '' : s).replace(/[&<>"]/g, function (c) { return { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c]; }); }
+  function toast(m) { var t = q('[data-cor-toast]'); t.textContent = m; t.hidden = false; clearTimeout(toast.t); toast.t = setTimeout(function () { t.hidden = true; }, 2500); }
+  function err(k, m) { var e = q('[data-er="' + k + '"]'); e.textContent = m || ''; e.classList.toggle('show', !!m); var f = q('[data-f="' + k + '"]'); if (f) f.classList.toggle('err', !!m); }
+  function par(id) { for (var i = 0; i < data.length; i++) if (data[i].id === id) return data[i]; return null; }
+  function code(l) { var c = [], x = l; while (x) { c.unshift(x.seg); x = par(x.p); } return c.join('.'); }
+  function enfants(id) { return data.filter(function (l) { return l.p === id; }); }
+  function descendants(id) { var r = []; enfants(id).forEach(function (e) { r.push(e); r = r.concat(descendants(e.id)); }); return r; }
+  function nivLib(n) { return niveaux[n - 1] ? niveaux[n - 1].lib : 'Niveau ' + n; }
+  function publier() {
+    window.COLLABORATEURS_RESPONSABLES = data.filter(function (l) { return l.actif; }).map(function (l) { return { code: code(l), libelle: l.lib, niveau: nivLib(l.n) }; });
+    window.dispatchEvent(new Event('collaborateurs-responsables-changed'));
+  }
+  function kpis() {
+    var a = data.filter(function (l) { return l.actif; }).length;
+    q('[data-cor-k=niveaux]').textContent = niveaux.length; q('[data-cor-k=total]').textContent = data.length;
+    q('[data-cor-k=actifs]').textContent = a; q('[data-cor-k=inactifs]').textContent = data.length - a;
+  }
+  function selectNiveaux() {
+    var o = niveaux.map(function (n, i) { return '<option value="' + (i + 1) + '">' + (i + 1) + ' — ' + esc(n.lib) + '</option>'; }).join('');
+    q('[data-f=niveau]').innerHTML = o;
+    q('[data-cor-fniv]').innerHTML = '<option value=""></option>' + niveaux.map(function (n, i) { return '<option value="' + (i + 1) + '">' + esc(n.lib) + '</option>'; }).join('');
+  }
+  // ordre d'affichage : arbre dans l'ordre des codes ; ligne masquée si un ancêtre est replié ou inactif (selon l'option)
+  function visibles() {
+    var inact = q('[data-cor-inactifs]').checked, out = [];
+    (function rec(pid) {
+      enfants(pid).sort(function (a, b) { return a.seg < b.seg ? -1 : a.seg > b.seg ? 1 : 0; }).forEach(function (l) {
+        if (!l.actif && !inact) return;
+        out.push(l); if (ouverts[l.id]) rec(l.id);
+      });
+    })(0);
+    return out;
+  }
+  function filtrer() {
+    var F = []; qa('[data-fc]').forEach(function (e) { F[+e.dataset.fc] = e.value.trim().toLowerCase(); });
+    qa('[data-cor-lignes] tr').forEach(function (tr) { tr.hidden = F.some(function (v, k) { if (!v) return false; var td = tr.children[k]; var t = (td.dataset.v || td.textContent).toLowerCase(); return k >= 2 ? t !== v : t.indexOf(v) < 0; }); });
+  }
+  qa('[data-fc]').forEach(function (e) { e.addEventListener('input', filtrer); e.addEventListener('change', filtrer); });
+  q('[data-cor-inactifs]').addEventListener('change', function () { liste(); });
+  function liste() {
+    kpis();
+    var L = visibles();
+    // un filtre actif révèle aussi les lignes repliées
+    var filtre = qa('[data-fc]').some(function (e) { return e.value.trim(); });
+    if (filtre) { L = []; var inact = q('[data-cor-inactifs]').checked; (function rec(pid) { enfants(pid).sort(function (a, b) { return a.seg < b.seg ? -1 : 1; }).forEach(function (l) { if (l.actif || inact) { L.push(l); rec(l.id); } }); })(0); }
+    var v = q('[data-cor-vide]');
+    v.hidden = L.length > 0;
+    v.textContent = niveaux.length ? (data.length ? 'Aucun collaborateur à afficher.' : 'Aucun collaborateur responsable : utilisez « Ajouter ».') : 'Aucun collaborateur responsable. Créez d’abord la structure (onglet « Structure & codification »), puis ajoutez des collaborateurs.';
+    q('[data-cor-lignes]').innerHTML = L.map(function (l) {
+      var k = enfants(l.id).length;
+      return '<tr data-i="' + l.id + '"' + (l.id === sel ? ' class="sel"' : '') + '><td><span class="cor-nom" style="padding-left:' + ((l.n - 1) * 20) + 'px">' +
+        '<button type="button" class="cor-tg" data-tg="' + l.id + '"' + (k ? '' : ' disabled') + ' aria-label="Développer ou replier">' + (ouverts[l.id] ? '−' : '+') + '</button>' +
+        '<span class="cor-code">' + esc(code(l)) + '</span></span></td><td>' + esc(l.lib) + '</td><td data-v="' + l.n + '">' + esc(nivLib(l.n)) + '</td>' +
+        '<td class="c" data-v="' + (l.actif ? 'actif' : 'inactif') + '"><span class="cor-badge ' + (l.actif ? 'on' : 'off') + '">' + (l.actif ? 'Actif' : 'Inactif') + '</span></td></tr>';
+    }).join(''); filtrer();
+  }
+  function parentsPossibles(n, exclure) {
+    if (n <= 1) return [];
+    var ex = exclure ? descendants(exclure).map(function (d) { return d.id; }).concat([exclure]) : [];
+    return data.filter(function (l) { return l.n === n - 1 && ex.indexOf(l.id) < 0; });
+  }
+  function majParent(n, valeur, exclure) {
+    var s = q('[data-f=parent]'), P = parentsPossibles(n, exclure);
+    s.innerHTML = n <= 1 ? '<option value="0">— Aucun (niveau 1) —</option>' : '<option value="0">— Sélectionner —</option>' + P.map(function (l) { return '<option value="' + l.id + '">' + esc(code(l)) + ' — ' + esc(l.lib) + '</option>'; }).join('');
+    s.value = valeur ? String(valeur) : '0'; s.disabled = n <= 1 || mode === 'consultation';
+  }
+  function aides() {
+    var n = +q('[data-f=niveau]').value, lg = niveaux[n - 1] ? niveaux[n - 1].lg : 0, p = +q('[data-f=parent]').value, pl = par(p);
+    q('[data-cor-code-aide]').textContent = lg ? 'Segment de ' + lg + ' caractère' + (lg > 1 ? 's' : '') + ' (' + fmtMot(niveaux[n - 1].fmt) + ')' + (pl ? ' — code complet : ' + code(pl) + '.…' : '') + '. Non modifiable après création.' : '';
+    q('[data-f=seg]').maxLength = lg || 10;
+    q('[data-cor-niv-aide]').textContent = n > 1 ? 'Le rattachement doit être un collaborateur de niveau ' + (n - 1) + ' (' + nivLib(n - 1) + ').' : '';
+  }
+  function form(l) {
+    l = l || { n: 1, p: 0, seg: '', lib: '', actif: true };
+    q('[data-f=niveau]').value = l.n; majParent(l.n, l.p, l.id); q('[data-f=seg]').value = l.seg; q('[data-f=lib]').value = l.lib; q('[data-f=actif]').checked = l.actif !== false;
+    ['niveau', 'parent', 'seg', 'lib'].forEach(function (k) { err(k); }); aides();
+  }
+  function etat() {
+    var ed = mode !== 'consultation';
+    q('[data-cor-form]').hidden = !ed;
+    qa('[data-cor-form] input,[data-cor-form] select').forEach(function (e) { e.disabled = !ed; });
+    q('[data-f=niveau]').disabled = mode !== 'creation'; q('[data-f=seg]').disabled = mode !== 'creation';
+    q('[data-f=parent]').disabled = !ed || +q('[data-f=niveau]').value <= 1 || mode !== 'creation';
+    var a = q('[data-cor-actions]'), vide = !data.length, onSt = q('[data-cor-pan=structure]').hidden === false;
+    a.querySelector('[data-cor-ajouter]').disabled = ed || onSt || !niveaux.length; a.querySelector('[data-cor-modifier]').disabled = ed || onSt || !par(sel); a.querySelector('[data-cor-supprimer]').disabled = ed || onSt || !par(sel);
+    a.querySelector('[data-cor-enregistrer]').disabled = !ed || onSt; a.querySelector('[data-cor-annuler]').disabled = !ed || onSt;
+    ['imprimer', 'pdf', 'xlsx'].forEach(function (k) { a.querySelector('[data-cor-' + k + ']').disabled = vide; });
+  }
+  function onglet(n) { qa('[data-cor-pan]').forEach(function (p) { p.hidden = p.dataset.corPan !== n; }); qa('[data-cor-tab]').forEach(function (t) { var on = t.dataset.corTab === n; t.classList.toggle('on', on); t.setAttribute('aria-selected', on); }); etat(); }
+  qa('[data-cor-tab]').forEach(function (t) { t.addEventListener('click', function () { onglet(t.dataset.corTab); }); });
+
+  function choisir(id) { if (mode !== 'consultation') return; sel = id; var l = par(id); liste(); form(l); etat(); }
+  var tb = q('[data-cor-lignes]');
+  tb.addEventListener('click', function (e) {
+    var tg = e.target.closest('[data-tg]');
+    if (tg) { var id = +tg.dataset.tg; ouverts[id] = !ouverts[id]; liste(); return; }
+    var tr = e.target.closest('tr[data-i]'); if (tr) choisir(+tr.dataset.i);
+  });
+  tb.addEventListener('dblclick', function (e) { var tr = e.target.closest('tr[data-i]'); if (tr && mode === 'consultation') { choisir(+tr.dataset.i); mode = 'edition'; etat(); q('[data-f=lib]').focus(); } });
+  q('[data-f=niveau]').addEventListener('change', function () { majParent(+this.value, 0); etat(); aides(); });
+  q('[data-f=parent]').addEventListener('change', aides);
+  q('[data-f=seg]').addEventListener('input', function () { var nv = niveaux[+q('[data-f=niveau]').value - 1]; this.value = fmtFiltre(nv ? nv.fmt : 'Alphanumérique', this.value); });
+
+  function enregistrer() {
+    var l = mode === 'edition' ? par(sel) : null, n = +q('[data-f=niveau]').value, p = +q('[data-f=parent]').value;
+    var seg = q('[data-f=seg]').value.trim(), lib = q('[data-f=lib]').value.trim(), ok = true, lg = niveaux[n - 1] ? niveaux[n - 1].lg : 0;
+    ['niveau', 'parent', 'seg', 'lib'].forEach(function (k) { err(k); });
+    if (mode === 'creation') {
+      if (n > 1 && !p) { err('parent', 'Choisissez le rattachement (niveau ' + (n - 1) + ').'); ok = false; }
+      if (!seg) { err('seg', 'Le code est obligatoire.'); ok = false; }
+      else if (seg.length !== lg) { err('seg', 'Le code doit comporter exactement ' + lg + ' caractère' + (lg > 1 ? 's' : '') + ' (' + fmtMot(niveaux[n - 1].fmt) + ').'); ok = false; }
+      else if (data.some(function (x) { return x.p === p && x.seg === seg; })) { err('seg', 'Ce code existe déjà sous ce parent.'); ok = false; }
+    }
+    if (!lib) { err('lib', 'Le nom du collaborateur est obligatoire.'); ok = false; }
+    if (!ok) return;
+    var actif = q('[data-f=actif]').checked;
+    if (l) { l.lib = lib; l.actif = actif; if (!actif) descendants(l.id).forEach(function (d) { d.actif = false; }); }
+    else { l = { id: nextId++, n: n, p: p, seg: seg, lib: lib, actif: actif }; data.push(l); if (p) ouverts[p] = true; }
+    sel = l.id; var edit = mode === 'edition'; mode = 'consultation'; liste(); form(l); etat(); publier(); toast(edit ? 'Collaborateur responsable modifié.' : 'Collaborateur responsable enregistré.');
+  }
+
+  // Structure & codification
+  // Même principe que « Niveaux du plan » (Configuration des plans) : sous-onglets Saisie / Liste, icônes + ✎ ✓ 🗑,
+  // champs Niveau (automatique), Libellé du niveau *, Format de codification, Nombre de caractères * (1 à 20).
+  // En plus : un niveau utilisé par des collaborateurs garde son format et sa longueur ; seul le dernier niveau, s'il est vide, peut être supprimé.
+  var nsel = -1, nmode = 'aucun'; // nmode : aucun | ajout | edition
+  function fmtFiltre(f, v) { return String(v).toUpperCase().replace(f === 'Numérique' ? /[^0-9]/g : f === 'Alphabétique' ? /[^A-Z]/g : /[^A-Z0-9]/g, ''); }
+  function fmtMot(f) { return f === 'Numérique' ? 'chiffres' : f === 'Alphabétique' ? 'lettres' : 'lettres et chiffres'; }
+  function niveauxUtilises(i) { return data.some(function (l) { return l.n === i + 1; }); }
+  function nonglet(n) { qa('[data-cor-npan]').forEach(function (p) { p.hidden = p.dataset.corNpan !== n; }); qa('[data-cor-ntab]').forEach(function (t) { var on = t.dataset.corNtab === n; t.classList.toggle('on', on); t.setAttribute('aria-selected', on); }); }
+  function formNiveau() {
+    var l = nsel >= 0 ? niveaux[nsel] : (nmode === 'ajout' ? { lib: '', fmt: 'Numérique', lg: 2 } : null);
+    q('[data-nf=niveau]').value = nmode === 'ajout' ? niveaux.length + 1 : (nsel >= 0 ? nsel + 1 : '');
+    q('[data-nf=libelle]').value = l ? l.lib : ''; q('[data-nf=format]').value = l ? l.fmt : 'Numérique'; q('[data-nf=car]').value = l ? l.lg : '';
+    q('[data-cor-nfige]').textContent = nmode === 'edition' && niveauxUtilises(nsel) ? 'Des collaborateurs existent à ce niveau : format et nombre de caractères figés.' : '';
+    err('nlibelle'); err('ncar'); q('[data-nf=libelle]').classList.remove('err'); q('[data-nf=car]').classList.remove('err');
+  }
+  function etatN() {
+    var ns = nmode !== 'aucun', fige = nmode === 'edition' && niveauxUtilises(nsel);
+    qa('[data-nf]').forEach(function (e) { e.disabled = !ns || e.dataset.nf === 'niveau' || (fige && (e.dataset.nf === 'format' || e.dataset.nf === 'car')); });
+    var ic = function (k) { return q('[data-cor-n=' + k + ']'); }, dernier = nsel === niveaux.length - 1;
+    ic('ajouter').disabled = ns; ic('modifier').disabled = ns || nsel < 0; ic('valider').disabled = !ns;
+    ic('supprimer').disabled = ns || nsel < 0 || !dernier || niveauxUtilises(nsel);
+  }
+  function tabNiveaux() {
+    q('[data-cor-ncompte]').textContent = niveaux.length ? niveaux.length : '';
+    q('[data-cor-nvide]').hidden = niveaux.length > 0;
+    q('[data-cor-niveaux]').innerHTML = niveaux.map(function (n, i) {
+      return '<tr data-n="' + i + '"' + (i === nsel ? ' class="sel"' : '') + '><td class="c">' + (i + 1) + '</td><td>' + esc(n.lib) + '</td><td>' + esc(n.fmt) + '</td><td class="c">' + esc(n.lg) + '</td></tr>';
+    }).join('');
+    formNiveau(); etatN(); selectNiveaux(); kpis();
+  }
+  function validerNiveau() {
+    var l = q('[data-nf=libelle]').value.trim(), c = +q('[data-nf=car]').value, ok = true, fige = nmode === 'edition' && niveauxUtilises(nsel);
+    err('nlibelle'); err('ncar');
+    if (!l) { err('nlibelle', 'Le libellé du niveau est obligatoire.'); q('[data-nf=libelle]').classList.add('err'); ok = false; }
+    if (!(c >= 1 && c <= 20 && c === Math.floor(c))) { err('ncar', 'Entier de 1 à 20.'); q('[data-nf=car]').classList.add('err'); ok = false; }
+    if (!ok) return;
+    var rec = { lib: l, fmt: fige ? niveaux[nsel].fmt : q('[data-nf=format]').value, lg: fige ? niveaux[nsel].lg : c };
+    var ajout = nmode === 'ajout';
+    if (ajout) { niveaux.push(rec); nsel = niveaux.length - 1; } else niveaux[nsel] = rec;
+    toast('Niveau ' + (nsel + 1) + (ajout ? ' ajouté.' : ' modifié.'));
+    nmode = 'aucun'; tabNiveaux(); nonglet('liste'); liste(); form(par(sel)); etat(); publier();
+  }
+  qa('[data-cor-ntab]').forEach(function (t) { t.addEventListener('click', function () { nonglet(t.dataset.corNtab); }); });
+  q('[data-cor-niveaux]').addEventListener('click', function (e) { var tr = e.target.closest('tr[data-n]'); if (!tr || nmode !== 'aucun') return; nsel = +tr.dataset.n; tabNiveaux(); });
+  q('[data-cor-niveaux]').addEventListener('dblclick', function (e) { var tr = e.target.closest('tr[data-n]'); if (tr && nmode === 'aucun') { nsel = +tr.dataset.n; nmode = 'edition'; tabNiveaux(); nonglet('saisie'); q('[data-nf=libelle]').focus(); } });
+  q('[data-nf=car]').addEventListener('input', function () { err('ncar'); });
+
+  // exports : arbre complet filtré par les filtres de la liste
+  function table() {
+    var L = visibles(); var rows = qa('[data-cor-lignes] tr');
+    var ids = rows.filter(function (tr) { return !tr.hidden; }).map(function (tr) { return +tr.dataset.i; });
+    L = (ids.length ? ids.map(par) : []).filter(Boolean);
+    return { tete: ['Code', 'Nom du collaborateur', 'Niveau', 'Statut'], lignes: L.map(function (l) { return [code(l), l.lib, nivLib(l.n), l.actif ? 'Actif' : 'Inactif']; }) };
+  }
+  function exporter(k) {
+    var X = window.EXPORT_TABLEAU, t = table(); if (!X) { toast('Module d’export indisponible.'); return; } if (!t.lignes.length) { toast('Rien à exporter.'); return; }
+    if (k === 'pdf') X.pdf('collaborateurs_responsables.pdf', 'Collaborateurs responsables', t.lignes.length + ' ligne(s)', t.tete, t.lignes); else X.xlsx('collaborateurs_responsables.xlsx', 'Collaborateurs responsables', t.tete, t.lignes);
+    toast('Export ' + (k === 'pdf' ? 'PDF' : 'Excel (XLSX)') + ' généré : ' + t.lignes.length + ' ligne(s).');
+  }
+  function imprimer() {
+    var t = table(), w = window.open('', '_blank'); if (!w) { toast('Autorisez les fenêtres pop-up pour imprimer.'); return; }
+    w.document.write('<!doctype html><meta charset="utf-8"><title>Collaborateurs responsables</title><style>body{font:13px system-ui,sans-serif;color:#0B1332;margin:24px}h1{font-size:18px}table{border-collapse:collapse;width:100%}th{background:#2E427B;color:#fff;text-align:left;padding:8px 10px;font-size:11px;text-transform:uppercase;-webkit-print-color-adjust:exact;print-color-adjust:exact}td{padding:8px 10px;border-bottom:1px solid #D6D9E0}</style><h1>Collaborateurs responsables</h1><table><thead><tr>' +
+      t.tete.map(function (h) { return '<th>' + esc(h) + '</th>'; }).join('') + '</tr></thead><tbody>' + t.lignes.map(function (r) { return '<tr>' + r.map(function (c) { return '<td>' + esc(c) + '</td>'; }).join('') + '</tr>'; }).join('') + '</tbody></table>');
+    w.document.close(); w.focus(); setTimeout(function () { w.print(); }, 300);
+  }
+  root.addEventListener('click', function (e) {
+    var b = e.target.closest('button'); if (!b || b.disabled) return;
+    var kn = b.getAttribute('data-cor-n');
+    if (kn === 'ajouter') { nmode = 'ajout'; nsel = -1; tabNiveaux(); nonglet('saisie'); q('[data-nf=libelle]').focus(); return; }
+    if (kn === 'modifier') { nmode = 'edition'; tabNiveaux(); nonglet('saisie'); q('[data-nf=libelle]').focus(); return; }
+    if (kn === 'valider') { validerNiveau(); return; }
+    if (kn === 'supprimer') {
+      if (!window.confirm('Supprimer le niveau ' + (nsel + 1) + ' « ' + niveaux[nsel].lib + ' » ?')) return;
+      niveaux.splice(nsel, 1); nsel = -1; tabNiveaux(); liste(); form(par(sel)); etat(); publier(); toast('Niveau supprimé.'); return;
+    }
+    if (b.hasAttribute('data-cor-ajouter')) {
+      onglet('collaborateurs'); var l0 = par(sel); mode = 'creation';
+      // depuis une ligne sélectionnée : proposer le niveau suivant avec ce collaborateur pour parent (au dernier niveau : frère)
+      var n = 1, p = 0; if (l0) { if (l0.n < niveaux.length) { n = l0.n + 1; p = l0.id; } else { n = l0.n; p = l0.p; } }
+      form({ n: n, p: p, seg: '', lib: '', actif: true }); etat(); q('[data-f=seg]').focus(); return;
+    }
+    if (b.hasAttribute('data-cor-modifier')) { onglet('collaborateurs'); mode = 'edition'; etat(); q('[data-f=lib]').focus(); return; }
+    if (b.hasAttribute('data-cor-annuler')) { mode = 'consultation'; liste(); form(par(sel)); etat(); return; }
+    if (b.hasAttribute('data-cor-enregistrer')) { enregistrer(); return; }
+    if (b.hasAttribute('data-cor-supprimer')) {
+      var l = par(sel); if (!l) return;
+      var d = descendants(l.id);
+      if (d.length) { toast('Suppression impossible : ce collaborateur a ' + d.length + ' collaborateur(s) rattaché(s).'); return; }
+      if (!window.confirm('Supprimer le collaborateur responsable « ' + l.lib + ' » ? Cette action est définitive.')) return;
+      data.splice(data.indexOf(l), 1); sel = 0; liste(); form(null); etat(); publier(); tabNiveaux(); toast('Collaborateur responsable supprimé.'); return;
+    }
+    if (b.hasAttribute('data-cor-imprimer')) { imprimer(); return; }
+    if (b.hasAttribute('data-cor-pdf')) { exporter('pdf'); return; }
+    if (b.hasAttribute('data-cor-xlsx')) { exporter('xlsx'); return; }
+  });
+  selectNiveaux(); tabNiveaux(); liste(); form(null); etat(); onglet('collaborateurs'); nonglet('saisie'); publier();
+})();
+</script>
