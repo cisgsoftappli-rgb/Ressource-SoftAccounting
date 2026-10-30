@@ -80,6 +80,16 @@
 .dn-wrap .bp-tb tbody tr.sel td{background:#E3EBFE}.dn-wrap .bp-tb tbody tr.t-titre td:nth-child(2){font-weight:700}
 .dn-wrap .bp-tb input[type=checkbox]{pointer-events:none}
 .dn-er{font-size:12px;color:#B63132}
+.dn-ax{display:grid;grid-template-columns:190px minmax(0,1fr);border:1px solid #D6D9E0;border-radius:8px;overflow:hidden;background:#fff;min-height:260px}
+.dn-axl{display:flex;flex-direction:column;gap:6px;padding:8px;background:#F5F7F9;border-right:1px solid #E9EBF0}
+.dn-axl button{display:flex;align-items:center;justify-content:space-between;gap:6px;height:34px;padding:0 10px;border:1px solid #E9EBF0;border-radius:6px;background:#fff;color:#474C58;font:inherit;font-size:12px;font-weight:600;cursor:pointer;text-align:left}
+.dn-axl button:hover{border-color:#2E427B}.dn-axl button.on{background:#2E427B;border-color:#2E427B;color:#fff}.dn-axl .dn-bd{min-width:18px;padding:0 5px;border-radius:9px;background:#E3EBFE;color:#243569;font-size:11px;text-align:center}.dn-axl button.on .dn-bd{background:#fff}
+.dn-axr{min-width:0;display:flex;flex-direction:column}.dn-axt{display:flex;align-items:center;justify-content:space-between;gap:8px;padding:8px 10px;border-bottom:1px solid #E9EBF0}.dn-axt strong{font-size:12px;color:#0B1332}
+.dn-axb{display:flex;gap:4px}.dn-axb button{width:34px;height:34px;border:1px solid #D6D9E0;border-radius:6px;background:#fff;color:#2E427B;cursor:pointer;font-size:16px}.dn-axb button:hover{background:#E9EBF0}
+.dn-axtb{width:100%;border-collapse:collapse}.dn-axtb th{padding:8px 10px;background:#fff;border-bottom:2px solid #E9EBF0;font-size:12px;font-weight:700;text-align:center;color:#0B1332}.dn-axtb td{padding:4px 6px;border-bottom:1px solid #F1F2F5}
+.dn-axtb .bp-in,.dn-axtb .bp-sel,.dn-axtb .dg-in{height:32px}.dn-axtb th:last-child,.dn-axtb td:last-child{width:44px;text-align:center}.dn-axtb th:nth-child(3),.dn-axtb td:nth-child(3){width:78px}
+.dn-axe0{flex:1;display:flex;align-items:center;justify-content:center;padding:36px 12px;color:#747A88;font-size:15px}
+@media (max-width:900px){.dn-ax{grid-template-columns:1fr}.dn-axl{flex-direction:row;flex-wrap:wrap;border-right:0;border-bottom:1px solid #E9EBF0}}
 .dn-wrap .dg-in{height:36px;border-color:#878D9A;border-radius:8px;background:#fff;font-size:12px}.dn-wrap .dg-lab{font-size:12px;font-weight:600;color:#474C58}
 .dn-tabs{display:flex;gap:4px;border-bottom:1px solid #E9EBF0;margin-bottom:16px}.dn-tabs button{height:36px;padding:0 16px;border:0;border-bottom:2px solid transparent;background:none;font:inherit;font-size:13px;font-weight:600;color:#5B606D;cursor:pointer}
 .dn-tabs button:hover{color:#2E427B}.dn-tabs button.on{color:#2E427B;border-bottom-color:#2E427B}.dn-tabs .dn-n{margin-left:6px;border-radius:999px;background:#F1F2F5;padding:1px 8px;font-size:11px;color:#474C58}
@@ -353,7 +363,7 @@
 /* Onglet « Grille » du designer d'état récapitulatif / déclaration (états de type solde des comptes) */
 (function () {
   var root = document.currentScript.parentElement.querySelector('[data-dd-root]');
-  var host = root.querySelector('[data-dg-root]'), dnHost = root.querySelector('[data-dn-root]'), dnList = null, dnEd = null, dnTxt = false, dnTab = 'liste';
+  var host = root.querySelector('[data-dg-root]'), dnHost = root.querySelector('[data-dn-root]'), dnList = null, dnEd = null, dnTxt = false, dnTab = 'liste', dnAxe = '', axSnap = { key: '', json: '' };
   function esc(s) { var d = document.createElement('div'); d.textContent = s == null ? '' : s; return d.innerHTML; }
   function attr(s) { return esc(s).replace(/"/g, '&quot;'); }
   var STY = { font: 'Arial', fs: 12, b: 0, i: 0, u: 0, col: '#26312d', bw: 1, bs: 'solid', bc: '#e3ddd0', bg: '#ffffff', al: 'left', va: 'middle', pad: 4, lh: 1.2 };
@@ -547,16 +557,37 @@
     var ck = dnHost.querySelector('[data-dn-txt]'); if (ck) ck.checked = dnTxt;
     filtrerDn(); majBoutons();
   }
+  /* axes disponibles : compte, plans analytiques activés dans l'entité, catégories, tiers, journal, site */
+  function axesDispo(cl) {
+    var act = window.PLANS_ACTIFS ? window.PLANS_ACTIFS() : ['PC', 'PLAN1', 'PLAN2', 'PLAN3', 'PLAN4'], cfg = window.PLANS_CFG || [], l = [['COMPTE_GENERAL', 'Compte']];
+    for (var n = 1; n <= 10; n++) { var code = 'PLAN' + n, used = cl.axes.some(function (x) { return x.axe === code; }); if (act.indexOf(code) < 0 && !used) continue; var c = cfg.filter(function (x) { return x.code === code; })[0] || {}; l.push([code, c.abrev || c.libelle || 'Plan ' + n]); }
+    return l.concat([['CATEGORIE', 'Catégories'], ['TIERS', 'Tiers'], ['COMPTE_TIERS', 'Comptes - Tiers'], ['JOURNAL', 'Journal'], ['CENTRE_SAISIE', 'Site']]);
+  }
+  function valsDe(axe) {
+    if (VALS[axe]) return VALS[axe];
+    if (axe === 'CATEGORIE') return ['01', '02', '03', '04'];
+    var p = window.CAISSE_PLANS ? window.CAISSE_PLANS().filter(function (x) { return x.code === axe; })[0] : null;
+    return p ? p.rows.map(function (r) { return r[0]; }) : [];
+  }
+  function axesZone(cl) {
+    var key = ai + ':' + anchor.r + ',' + anchor.c; if (axSnap.key !== key) { axSnap = { key: key, json: JSON.stringify(cl.axes) }; dnAxe = ''; }
+    var dispo = axesDispo(cl), codes = dispo.map(function (x) { return x[0]; });
+    if (codes.indexOf(dnAxe) < 0) { var pr = cl.axes.filter(function (x) { return x.ranges.some(function (r) { return r.a || r.b; }); })[0]; dnAxe = pr && codes.indexOf(pr.axe) >= 0 ? pr.axe : codes[0]; }
+    var ix = -1; cl.axes.forEach(function (x, i) { if (x.axe === dnAxe && ix < 0) ix = i; });
+    var ax = ix >= 0 ? cl.axes[ix] : null, vals = valsDe(dnAxe), lab = dispo.filter(function (x) { return x[0] === dnAxe; })[0][1];
+    function nb(code) { var x = cl.axes.filter(function (y) { return y.axe === code; })[0]; return x ? x.ranges.filter(function (r) { return r.a || r.b; }).length : 0; }
+    function champ(v, k) { var at = ' data-dg-rg="' + ix + ',' + '@' + ',' + k + '"'; return vals.length ? '<select class="dg-in"' + at + '><option value="">Choisir…</option>' + selOpts(vals, v) + '</select>' : '<input class="bp-in" ' + at.slice(1) + ' value="' + attr(v) + '" placeholder="Valeur">'; }
+    var h = '<div class="bp-champ"><span>Axes &amp; fourchettes</span><div class="dn-ax"><div class="dn-axl" role="tablist">' + dispo.map(function (x) { var n = nb(x[0]); return '<button type="button" role="tab" data-dn-axe="' + x[0] + '"' + (x[0] === dnAxe ? ' class="on"' : '') + '><span>' + esc(x[1]) + '</span>' + (n ? '<span class="dn-bd">' + n + '</span>' : '') + '</button>'; }).join('') + '</div>';
+    h += '<div class="dn-axr"><div class="dn-axt"><strong>Axe : ' + esc(lab) + '</strong><span class="dn-axb"><button type="button" data-dn-rgadd title="Ajouter une fourchette" aria-label="Ajouter une fourchette"><i class="ti ti-plus"></i></button><button type="button" data-dn-axsave title="Enregistrer les fourchettes" aria-label="Enregistrer les fourchettes"><i class="ti ti-device-floppy"></i></button><button type="button" data-dn-axundo title="Annuler les modifications" aria-label="Annuler les modifications"><i class="ti ti-arrow-back-up"></i></button></span></div>';
+    if (ax && ax.ranges.length) h += '<table class="dn-axtb"><thead><tr><th>Min</th><th>Max</th><th>Sens</th><th></th></tr></thead><tbody>' + ax.ranges.map(function (rg, ri) { return '<tr><td>' + champ(rg.a, 'a').replace('@', ri) + '</td><td>' + champ(rg.b, 'b').replace('@', ri) + '</td><td><select class="dg-in" title="Sens" data-dg-rg="' + ix + ',' + ri + ',s"><option value="">S</option>' + selOpts(['C', 'D', 'S'], rg.s) + '</select></td><td><button type="button" class="dn-x" style="width:30px;height:30px;border:1px solid #E6B8B8;border-radius:6px;background:#fff;color:#B63132;cursor:pointer" data-dn-rgdel="' + ix + ',' + ri + '" title="Supprimer la fourchette" aria-label="Supprimer la fourchette"><i class="ti ti-trash"></i></button></td></tr>'; }).join('') + '</tbody></table>';
+    else h += '<div class="dn-axe0">Aucun enregistrement trouvé</div>';
+    h += '</div></div><p class="bp-note">Choisissez un axe dans la liste, puis ajoutez ses fourchettes (Min / Max). Le croisement des axes est évalué côté backend ; le nombre de fourchettes de chaque axe s’affiche à côté de son nom.</p></div>';
+    return h;
+  }
   function soldeZone(cl) {
     var h = '<div class="bp-sect"><div class="hd"><strong>Données comptables</strong></div>';
     h += '<label class="bp-champ"><span>Table de données</span><select class="bp-sel" data-dg-k="tbl">' + selOpts(TABLES, cl.tbl) + '</select></label>';
-    h += '<div class="bp-champ"><span>Axe analytique &amp; fourchettes de compte</span>' + cl.axes.map(function (ax, ai2) {
-      var vals = VALS[ax.axe] || [];
-      return '<div class="dg-axe"><div class="dg-axh"><span class="dg-chip">Axe ' + (ai2 + 1) + '</span><select class="dg-in" data-dg-axe="' + ai2 + '">' + selOpts(AXES, ax.axe) + '</select><button type="button" class="dg-sq" data-dg-axdel="' + ai2 + '"' + (cl.axes.length < 2 ? ' disabled' : '') + ' title="Supprimer cet axe">🗑</button></div>' +
-        ax.ranges.map(function (rg, ri) {
-          return '<div class="dg-rg"><span class="dg-rl">Fourchette ' + (ri + 1) + '</span><select class="dg-in" data-dg-rg="' + ai2 + ',' + ri + ',a"><option value="">Choisir…</option>' + selOpts(vals, rg.a) + '</select><select class="dg-in" data-dg-rg="' + ai2 + ',' + ri + ',b"><option value="">Choisir…</option>' + selOpts(vals, rg.b) + '</select><select class="dg-in" title="Sens" data-dg-rg="' + ai2 + ',' + ri + ',s"><option value="">S</option>' + selOpts(['C', 'D', 'S'], rg.s) + '</select><button type="button" class="dg-sq" data-dg-rgdel="' + ai2 + ',' + ri + '"' + (ax.ranges.length < 2 ? ' disabled' : '') + ' title="Supprimer cette fourchette">🗑</button></div>';
-        }).join('') + (vals.length ? '' : '<span class="dg-rs">Aucune valeur disponible pour cet axe.</span>') + '<button type="button" class="bp-b" data-dg-rgadd="' + ai2 + '">Ajouter une fourchette</button></div>';
-    }).join('') + '<div><button type="button" class="bp-b" data-dg-axadd>+ Ajouter un axe</button></div><p class="bp-note">Les axes et fourchettes sont fournis par le serveur selon la table de données ; le croisement des axes est évalué côté backend.</p></div>';
+    h += axesZone(cl);
     h += '<label class="bp-champ"><span>Périodicité</span><select class="bp-sel" data-dg-k="per">' + selOpts(PERS, cl.per) + '</select></label>';
     if (cl.per === 'decalage_unite') h += '<div class="dn-r3"><label class="bp-champ"><span>Unité</span><select class="bp-sel" data-dg-k="unit">' + selOpts(['jour', 'mois', 'trimestre', 'année'], cl.unit) + '</select></label><label class="bp-champ"><span>Décalage</span><input class="bp-in" type="number" data-dg-k="shift" value="' + cl.shift + '"></label></div>';
     if (cl.per === 'fourchette_mois') h += '<div class="dn-r3"><label class="bp-champ"><span>Mois début</span><input class="bp-in" type="number" min="1" max="12" data-dg-k="m1" value="' + cl.m1 + '"></label><label class="bp-champ"><span>Mois fin</span><input class="bp-in" type="number" min="1" max="12" data-dg-k="m2" value="' + cl.m2 + '"></label></div>';
@@ -601,6 +632,20 @@
       ouvrirSaisie(r0, c0); return;
     }
     if (e.target.closest('[data-dn-edit]')) { ouvrirSaisie(anchor.r, anchor.c); return; }
+    var cl;
+    if ((el = e.target.closest('[data-dn-axe]'))) { dnAxe = el.dataset.dnAxe; renderDnEd(); return; }
+    if (e.target.closest('[data-dn-rgadd]')) {
+      cl = ensure(t, anchor.r, anchor.c); if (cl.type !== 'solde') return;
+      var ax = cl.axes.filter(function (x) { return x.axe === dnAxe; })[0]; if (!ax) { ax = { axe: dnAxe, ranges: [] }; cl.axes = cl.axes.filter(function (x) { return x.ranges.length || x.axe !== 'COMPTE_GENERAL' || cl.axes.length < 2; }); cl.axes.push(ax); }
+      ax.ranges.push({ a: '', b: '', s: '' }); renderLeft(); renderDnEd(); return;
+    }
+    if ((el = e.target.closest('[data-dn-rgdel]'))) { cl = ensure(t, anchor.r, anchor.c); var q = el.dataset.dnRgdel.split(',').map(Number); cl.axes[q[0]].ranges.splice(q[1], 1); if (!cl.axes[q[0]].ranges.length && cl.axes.length > 1) cl.axes.splice(q[0], 1); renderLeft(); renderDnEd(); return; }
+    if (e.target.closest('[data-dn-axsave]')) {
+      cl = ensure(t, anchor.r, anchor.c); cl.axes.forEach(function (x) { x.ranges = x.ranges.filter(function (r) { return r.a || r.b; }); });
+      cl.axes = cl.axes.filter(function (x, i) { return x.ranges.length || i === 0 || cl.axes.every(function (y) { return !y.ranges.length; }) && i === 0; }); if (!cl.axes.length) cl.axes = [{ axe: 'COMPTE_GENERAL', ranges: [] }];
+      axSnap.json = JSON.stringify(cl.axes); renderLeft(); renderDnEd(); dnMsg('Fourchettes enregistrées.'); return;
+    }
+    if (e.target.closest('[data-dn-axundo]')) { cl = ensure(t, anchor.r, anchor.c); try { cl.axes = JSON.parse(axSnap.json); } catch (er) {} renderLeft(); renderDnEd(); return; }
     if (e.target.closest('[data-dg-axadd],[data-dg-axdel],[data-dg-rgadd],[data-dg-rgdel]')) onClick(e);
   }
   function convertir(t, nat) {
