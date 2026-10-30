@@ -1,0 +1,164 @@
+<!--
+  Écran « Gestion des contrats › Saisies › Génération des reliquats » — onglets « Simulation et Génération » / « Journal des opérations ».
+  Simulation : Exercice d'origine (N) et Exercice de destination (N+1) (destination strictement postérieure), bouton Simuler, indicateurs (Montant ventilé, Montant pris en charge, Reliquat à reporter),
+  liste des contrats éligibles (Numéro, Attributaire, Désignation, Statut, Montant ventilé, Prise en charge, Reliquat) à cocher, puis « Générer les reliquats ».
+  Journal : une ligne par contrat reporté (Date, Report, Numéro, Attributaire, Ventilé, Prise en charge, Reliquat, Utilisateur, Statut), avec Rafraîchir et pagination.
+  Données : contrats de « Fiche contrat » (window.CONTRATS), exercices de window.EXERCICES_API ; prise en charge simulée ; journal en localStorage softcompta.reliquats. Préfixe rq / data-rq.
+  S'appuie sur les styles bp-*. Ne pas nommer de fonction « $$ » (build.cjs).
+-->
+<style>
+[data-rq] .rq-card{padding:16px;border:1px solid #E9EBF0;border-radius:12px;background:#fff;margin-bottom:12px}
+[data-rq] .rq-h{margin:0 0 12px;font:700 12px var(--font-sans);letter-spacing:.04em;text-transform:uppercase;color:#2E427B}
+[data-rq] .rq-g{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:12px 16px}
+@media (max-width:700px){[data-rq] .rq-g{grid-template-columns:1fr}}
+[data-rq] .bp-in.err,[data-rq] .bp-sel.err{border-color:#B63132}
+[data-rq] .rq-er{display:none;font-size:12px;color:#B63132;margin-top:8px}[data-rq] .rq-er.show{display:block}
+[data-rq] .rq-ok{font-size:12px;color:#2E427B;margin-left:8px}
+[data-rq] .rq-kpi{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:12px;margin-bottom:12px}
+@media (max-width:700px){[data-rq] .rq-kpi{grid-template-columns:1fr}}
+[data-rq] .rq-kpi>div{padding:12px 16px;border:1px solid #E9EBF0;border-radius:12px;background:#fff}
+[data-rq] .rq-kpi span{display:block;font-size:11px;font-weight:600;letter-spacing:.04em;text-transform:uppercase;color:#5B606D}[data-rq] .rq-kpi b{display:block;margin-top:4px;font:600 18px var(--font-heading);color:#0B1332;font-variant-numeric:tabular-nums}[data-rq] .rq-kpi .pri b{color:#2E427B}
+[data-rq] .rq-bar{display:flex;align-items:center;justify-content:space-between;gap:12px;flex-wrap:wrap;margin-bottom:8px}
+[data-rq] .rq-bar h3{margin:0;font:600 14px var(--font-heading);color:#0B1332}[data-rq] .rq-bar h3 small{font:400 12px var(--font-sans);color:#5B606D;margin-left:8px}
+[data-rq] td.r,[data-rq] th.r{text-align:right;font-variant-numeric:tabular-nums;white-space:nowrap}
+[data-rq] td.c,[data-rq] th.c{width:36px;text-align:center}[data-rq] td.c input{width:16px;height:16px;accent-color:#2E427B}
+[data-rq] .rq-pied{display:flex;align-items:center;justify-content:space-between;gap:12px;flex-wrap:wrap;margin-top:12px;font-size:12px;color:#474C58}[data-rq] .rq-pied b{color:#0B1332}
+[data-rq] .rq-vide{padding:22px;text-align:center;color:#747A88;font-size:13px}
+[data-rq] .rq-st{display:inline-flex;align-items:center;padding:2px 10px;border:1px solid;border-radius:6px;font-size:12px;font-weight:600;background:#ECFDF5;border-color:#A7F3D0;color:#047857}
+[data-rq] .rq-pg{display:flex;align-items:center;justify-content:space-between;gap:12px;margin-top:12px;font-size:12px;color:#474C58}
+[data-rq] .rq-pg .t{display:flex;gap:6px}[data-rq] .rq-pg button{min-width:36px;height:32px;border:1px solid #D6D9E0;border-radius:6px;background:#fff;color:#474C58;font:inherit;font-size:12px;cursor:pointer}[data-rq] .rq-pg button:disabled{opacity:.4;cursor:not-allowed}
+</style>
+
+<div class="bp-root" data-rq>
+  <h1 style="position:absolute;width:1px;height:1px;overflow:hidden;clip-path:inset(50%);margin:0">Génération des reliquats</h1>
+
+  <div class="no-print">
+    <button type="button" data-rq-simuler>Simuler</button>
+    <button type="button" data-rq-generer>Générer les reliquats</button>
+    <button type="button" data-rq-rafraichir>Rafraîchir</button>
+    <span class="rq-ok" data-rq-msg role="status"></span>
+  </div>
+
+  <div class="bp-tabs" role="tablist">
+    <button type="button" role="tab" class="on" data-rq-tab="sim"><i class="ti ti-bolt"></i> Simulation et Génération</button>
+    <button type="button" role="tab" data-rq-tab="jrn"><i class="ti ti-history"></i> Journal des opérations</button>
+  </div>
+
+  <div class="bp-grid">
+    <section class="bp-pan" data-rq-pan="sim" aria-label="Simulation et génération">
+      <div class="rq-card">
+        <h2 class="rq-h">Exercices concernés</h2>
+        <div class="rq-g">
+          <label class="bp-champ"><span>Exercice d'origine (N) <b>*</b></span><select class="bp-sel" data-rq-n></select></label>
+          <label class="bp-champ"><span>Exercice de destination (N+1) <b>*</b></span><select class="bp-sel" data-rq-n1></select></label>
+        </div>
+        <div class="rq-er" data-rq-er role="alert"></div>
+      </div>
+      <div class="rq-kpi">
+        <div><span>Montant ventilé</span><b data-rq-k="vent">0,00</b></div>
+        <div><span>Montant pris en charge</span><b data-rq-k="pec">0,00</b></div>
+        <div class="pri"><span>Reliquat à reporter</span><b data-rq-k="reliq">0,00</b></div>
+      </div>
+      <div class="rq-card">
+        <div class="rq-bar"><h3><i class="ti ti-file-text"></i> Contrats éligibles <small data-rq-nel>0 contrat(s)</small></h3>
+          <div style="display:flex;gap:8px"><button type="button" class="bp-b" data-rq-tout>Tout sélectionner</button><button type="button" class="bp-b" data-rq-aucun>Tout désélectionner</button></div></div>
+        <div class="pf-tablewrap"><table class="pf-table" data-no-tf>
+          <thead><tr><th class="c"></th><th>Numéro</th><th>Attributaire</th><th>Désignation</th><th>Statut</th><th class="r">Montant ventilé</th><th class="r">Prise en charge</th><th class="r">Reliquat</th></tr></thead>
+          <tbody data-rq-corps></tbody>
+        </table></div>
+        <div class="rq-pied"><span data-rq-sel>0 sélectionné(s) · <b>0,00</b> à reporter</span></div>
+      </div>
+    </section>
+
+    <section class="bp-pan" data-rq-pan="jrn" aria-label="Journal des opérations" hidden>
+      <div class="rq-card">
+        <div class="rq-bar"><h3><i class="ti ti-history"></i> Journal des opérations <small data-rq-njr>0 traitement(s)</small></h3></div>
+        <div class="pf-tablewrap"><table class="pf-table" data-no-tf>
+          <thead><tr><th>Date</th><th>Report</th><th>Numéro</th><th>Attributaire</th><th class="r">Ventilé</th><th class="r">Prise en charge</th><th class="r">Reliquat</th><th>Utilisateur</th><th>Statut</th></tr></thead>
+          <tbody data-rq-jcorps></tbody>
+        </table></div>
+        <div class="rq-pg"><span data-rq-pginfo>Page 1 sur 1</span><div class="t"><button type="button" data-rq-prec aria-label="Page précédente"><i class="ti ti-chevron-left"></i></button><button type="button" data-rq-suiv aria-label="Page suivante"><i class="ti ti-chevron-right"></i></button></div></div>
+      </div>
+    </section>
+  </div>
+</div>
+
+<script>
+(function () {
+  var root = document.querySelector('[data-rq]'); if (!root) return;
+  function q(s) { return root.querySelector(s); } function qa(s) { return [].slice.call(root.querySelectorAll(s)); }
+  function esc(s) { return String(s == null ? '' : s).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;'); }
+  function nb(v) { return Number(v || 0).toLocaleString('fr-FR', { minimumFractionDigits: 2, maximumFractionDigits: 2 }); }
+  function msg(t) { q('[data-rq-msg]').textContent = t || ''; }
+  var CLE = 'softcompta.reliquats', journal = [], elig = [], coches = {}, page = 1, PAR = 10, simule = false;
+  try { var sv = JSON.parse(localStorage.getItem(CLE) || 'null'); if (Array.isArray(sv)) journal = sv; } catch (e) {}
+  var TIERS = { F001: 'FOURNISSEUR A', F002: 'FOURNISSEUR B', F003: 'FOURNISSEUR C', F101: 'ENTREPRISE DE TRAVAUX 1', F102: 'ENTREPRISE DE TRAVAUX 2' };
+  function exercices() { try { return (window.EXERCICES_API && window.EXERCICES_API.liste()) || []; } catch (e) { return []; } }
+  function lib(e) { return e.annee + ' — ' + (e.cloture ? 'CLÔTURÉ' : 'OUVERT'); }
+  function hash(s) { var h = 0; for (var i = 0; i < s.length; i++) h = (h * 31 + s.charCodeAt(i)) % 1000; return h / 1000; }
+  function total(k) { return (k.vent || []).reduce(function (a, v) { return a + (Number((v.mt || {}).MGA) || 0); }, 0); }
+  function pec(k) { return Math.round(total(k) * (.3 + hash(k.num) * .6)); }
+  function aujourdhui() { var d = new Date(), z = function (n) { return ('0' + n).slice(-2); }; return z(d.getDate()) + '/' + z(d.getMonth() + 1) + '/' + d.getFullYear() + ' ' + z(d.getHours()) + ':' + z(d.getMinutes()); }
+
+  function listes() {
+    var E = exercices(), n = q('[data-rq-n]'), n1 = q('[data-rq-n1]'), vn = n.value, v1 = n1.value;
+    var o = E.map(function (e) { return '<option value="' + esc(e.annee) + '">' + esc(lib(e)) + '</option>'; }).join('');
+    n.innerHTML = o; n1.innerHTML = o;
+    n.value = vn || (E.some(function (e) { return e.annee === '2026'; }) ? '2026' : (E[E.length - 1] || {}).annee || '');
+    n1.value = v1 || String(+n.value + 1);
+    if (!n1.value && E.length) n1.value = E[E.length - 1].annee;
+    [n, n1].forEach(function (s) { if (s.__combo && s.__combo.maj) s.__combo.maj(); });
+  }
+  function dejaReporte(k, a, b) { return journal.some(function (j) { return j.num === k.num && j.report === a + ' → ' + b && j.statut === 'Généré'; }); }
+  function eligibles(a, b) {
+    return (window.CONTRATS || []).filter(function (k) { var an = String(k.dateSign || '').slice(0, 4); return (k.statut || 'Actif') === 'Actif' && (!an || +an <= +a) && total(k) - pec(k) > 0 && !dejaReporte(k, a, b); });
+  }
+
+  function dessiner() {
+    var tv = 0, tp = 0, tr = 0;
+    elig.forEach(function (k) { tv += total(k); tp += pec(k); tr += total(k) - pec(k); });
+    q('[data-rq-k="vent"]').textContent = nb(tv); q('[data-rq-k="pec"]').textContent = nb(tp); q('[data-rq-k="reliq"]').textContent = nb(tr);
+    q('[data-rq-nel]').textContent = elig.length + ' contrat(s)';
+    q('[data-rq-corps]').innerHTML = elig.length ? elig.map(function (k, i) { return '<tr><td class="c"><input type="checkbox" data-i="' + i + '"' + (coches[k.num] ? ' checked' : '') + ' aria-label="Sélectionner ' + esc(k.num) + '"></td><td>' + esc(k.num) + '</td><td>' + esc(TIERS[k.tiers] || k.tiers || '') + '</td><td>' + esc(k.designation) + '</td><td>' + esc(k.statut || 'Actif') + '</td><td class="r">' + nb(total(k)) + '</td><td class="r">' + nb(pec(k)) + '</td><td class="r">' + nb(total(k) - pec(k)) + '</td></tr>'; }).join('') : '<tr><td colspan="8" class="rq-vide">' + (simule ? 'Aucun contrat éligible pour ce couple d’exercices.' : 'Lancez la simulation pour afficher les contrats éligibles.') + '</td></tr>';
+    var s = elig.filter(function (k) { return coches[k.num]; }), r = s.reduce(function (a, k) { return a + total(k) - pec(k); }, 0);
+    q('[data-rq-sel]').innerHTML = s.length + ' sélectionné(s) · <b>' + nb(r) + '</b> à reporter';
+    q('[data-rq-generer]').disabled = !s.length; q('[data-rq-tout]').disabled = !elig.length; q('[data-rq-aucun]').disabled = !elig.length;
+  }
+  function simuler() {
+    var e = q('[data-rq-er]'), a = q('[data-rq-n]').value, b = q('[data-rq-n1]').value; e.classList.remove('show');
+    if (!a || !b) { e.textContent = 'Les deux exercices sont obligatoires.'; e.classList.add('show'); return; }
+    if (+b <= +a) { e.textContent = 'L’exercice de destination doit être strictement postérieur à l’exercice d’origine.'; e.classList.add('show'); return; }
+    elig = eligibles(a, b); coches = {}; simule = true; dessiner(); msg('Simulation ' + a + ' → ' + b + ' : ' + elig.length + ' contrat(s) éligible(s).');
+  }
+  q('[data-rq-simuler]').addEventListener('click', simuler);
+  q('[data-rq-corps]').addEventListener('change', function (e) { var c = e.target.closest('[data-i]'); if (!c) return; coches[elig[+c.dataset.i].num] = c.checked; dessiner(); });
+  q('[data-rq-tout]').addEventListener('click', function () { elig.forEach(function (k) { coches[k.num] = true; }); dessiner(); });
+  q('[data-rq-aucun]').addEventListener('click', function () { coches = {}; dessiner(); });
+  q('[data-rq-generer]').addEventListener('click', function () {
+    var a = q('[data-rq-n]').value, b = q('[data-rq-n1]').value, s = elig.filter(function (k) { return coches[k.num]; }); if (!s.length) return;
+    s.forEach(function (k) { journal.unshift({ date: aujourdhui(), report: a + ' → ' + b, num: k.num, tiers: TIERS[k.tiers] || k.tiers || '', vent: total(k), pec: pec(k), reliq: total(k) - pec(k), user: 'superadmin', statut: 'Généré' }); });
+    try { localStorage.setItem(CLE, JSON.stringify(journal)); } catch (e) {}
+    elig = eligibles(a, b); coches = {}; dessiner(); jdessiner(); msg(s.length + ' reliquat(s) généré(s) de ' + a + ' vers ' + b + '.');
+  });
+
+  function jdessiner() {
+    var n = journal.length, np = Math.max(1, Math.ceil(n / PAR)); if (page > np) page = np;
+    q('[data-rq-njr]').textContent = n + ' traitement(s)';
+    q('[data-rq-jcorps]').innerHTML = n ? journal.slice((page - 1) * PAR, page * PAR).map(function (j) { return '<tr><td>' + esc(j.date) + '</td><td>' + esc(j.report) + '</td><td>' + esc(j.num) + '</td><td>' + esc(j.tiers) + '</td><td class="r">' + nb(j.vent) + '</td><td class="r">' + nb(j.pec) + '</td><td class="r">' + nb(j.reliq) + '</td><td>' + esc(j.user) + '</td><td><span class="rq-st">' + esc(j.statut) + '</span></td></tr>'; }).join('') : '<tr><td colspan="9" class="rq-vide">Aucune opération enregistrée.</td></tr>';
+    q('[data-rq-pginfo]').textContent = 'Page ' + page + ' sur ' + np; q('[data-rq-prec]').disabled = page <= 1; q('[data-rq-suiv]').disabled = page >= np;
+  }
+  q('[data-rq-prec]').addEventListener('click', function () { page--; jdessiner(); }); q('[data-rq-suiv]').addEventListener('click', function () { page++; jdessiner(); });
+  q('[data-rq-rafraichir]').addEventListener('click', function () { try { var s = JSON.parse(localStorage.getItem(CLE) || 'null'); if (Array.isArray(s)) journal = s; } catch (e) {} jdessiner(); msg('Journal actualisé.'); });
+
+  function tab(n) {
+    qa('[data-rq-tab]').forEach(function (b) { b.classList.toggle('on', b.dataset.rqTab === n); });
+    qa('[data-rq-pan]').forEach(function (p) { p.hidden = p.dataset.rqPan !== n; });
+    q('[data-rq-simuler]').hidden = n !== 'sim'; q('[data-rq-generer]').hidden = n !== 'sim'; q('[data-rq-rafraichir]').hidden = n !== 'jrn';
+    if (n === 'jrn') jdessiner();
+  }
+  qa('[data-rq-tab]').forEach(function (b) { b.addEventListener('click', function () { tab(b.dataset.rqTab); }); });
+  window.addEventListener('hashchange', function () { if (location.hash === '#reliquats') { listes(); } });
+
+  listes(); dessiner(); jdessiner(); tab('sim');
+})();
+</script>

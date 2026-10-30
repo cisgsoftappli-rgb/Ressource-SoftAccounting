@@ -1,0 +1,364 @@
+<!--
+  Écran « Gestion des contrats › Saisies › Fiche contrat » — onglets Saisie / Liste.
+  Saisie : Informations générales (Site, Tiers (compte général) puis Auxiliaire, dates, Statut, Numéro, Désignation, Type de marché, Type de passation)
+  puis quatre onglets : Ventilation des montants (analytique selon les plans activés dans l'entité, montants par devise, Forex, total estimé),
+  Modalités de paiement (comptant ou échelonné), Exécution (jalons) et Lettres de garantie (actif une fois le contrat identifié).
+  Données : window.CONTRATS, copie localStorage softcompta.contrats. Préfixe fct / data-fct. Lit PLANS_ACTIFS, PLANS_CFG, PLANS_LIGNES, PLANS_REF, PLAN_COMPTABLE, DEVISES.
+  Ne pas nommer de fonction « $$ » (build.cjs).
+-->
+<style>
+[data-fct] .fct-card{padding:16px;border:1px solid #E9EBF0;border-radius:12px;background:#fff;margin-bottom:12px}
+[data-fct] .fct-h{display:flex;align-items:center;gap:6px;margin:0 0 12px;font:700 11px var(--font-sans);letter-spacing:.04em;text-transform:uppercase;color:#2E427B}
+[data-fct] .fct-g{display:grid;grid-template-columns:repeat(12,minmax(0,1fr));gap:12px 16px}
+[data-fct] .fct-g>*{grid-column:span 3}[data-fct] .fct-g>.s2{grid-column:span 2}[data-fct] .fct-g>.s4{grid-column:span 4}[data-fct] .fct-g>.s6{grid-column:span 6}[data-fct] .fct-g>.s8{grid-column:span 8}[data-fct] .fct-g>.s12{grid-column:1/-1}
+@media (max-width:1000px){[data-fct] .fct-g>*,[data-fct] .fct-g>.s2,[data-fct] .fct-g>.s4,[data-fct] .fct-g>.s6,[data-fct] .fct-g>.s8{grid-column:span 6}}
+@media (max-width:620px){[data-fct] .fct-g>*,[data-fct] .fct-g>.s2,[data-fct] .fct-g>.s4,[data-fct] .fct-g>.s6,[data-fct] .fct-g>.s8{grid-column:1/-1}}
+[data-fct] .bp-in.err,[data-fct] .bp-sel.err{border-color:#B63132}
+[data-fct] .fct-er{display:none;font-size:12px;color:#B63132}[data-fct] .fct-er.show{display:block}
+[data-fct] .fct-ok{font-size:12px;color:#2E427B;margin-left:8px}
+[data-fct] .fct-sub{margin:0 0 12px}
+[data-fct] .fct-n{display:inline-flex;align-items:center;justify-content:center;min-width:18px;height:18px;margin-left:6px;padding:0 5px;border-radius:9px;background:#2E427B;color:#fff;font-size:11px;font-weight:700}
+[data-fct] .bp-tabs button:disabled{color:#A9AEBB;cursor:not-allowed}
+[data-fct] .fct-dev{display:grid;grid-template-columns:repeat(auto-fill,minmax(130px,1fr));gap:10px 12px;align-items:start}
+[data-fct] .fct-dev small{display:block;margin-top:2px;font-size:11px;color:#B45309}
+[data-fct] .fct-bar{display:flex;align-items:center;justify-content:space-between;gap:12px;flex-wrap:wrap;margin:14px 0 8px;padding-top:12px;border-top:1px solid #E9EBF0}
+[data-fct] .fct-bar h3{margin:0;font:600 13px var(--font-sans);color:#0B1332}
+[data-fct] .fct-bar .fct-ab{display:flex;gap:8px;flex-wrap:wrap}
+[data-fct] td.r,[data-fct] th.r{text-align:right;font-variant-numeric:tabular-nums}
+[data-fct] tbody tr.fct-row{cursor:pointer}[data-fct] tbody tr.fct-sel td{background:#E8ECF6}
+[data-fct] .fct-tot{margin-top:10px;font-size:13px;color:#474C58}[data-fct] .fct-tot b{color:#0B1332}
+[data-fct] .fct-vide{padding:22px;text-align:center;color:#747A88;font-size:13px}
+[data-fct] .fct-rad{display:flex;align-items:center;gap:18px;flex-wrap:wrap}[data-fct] .fct-rad label{display:inline-flex;align-items:center;gap:6px;font-size:13px;color:#353944}
+[data-fct] .fct-al{font-size:13px;font-weight:600}[data-fct] .fct-al.ok{color:#047857}[data-fct] .fct-al.ko{color:#B63132}
+[data-fct] .fct-x{border:0;background:none;color:#B63132;cursor:pointer;font-size:16px;min-height:0!important}
+</style>
+
+<div class="bp-root" data-fct>
+  <h1 style="position:absolute;width:1px;height:1px;overflow:hidden;clip-path:inset(50%);margin:0">Fiche contrat</h1>
+
+  <div class="no-print">
+    <button type="button" data-fct-ajouter>Ajouter</button>
+    <button type="button" data-fct-modifier>Modifier</button>
+    <button type="button" data-fct-supprimer>Supprimer</button>
+    <button type="button" data-fct-enregistrer>Enregistrer</button>
+    <button type="button" data-fct-annuler>Annuler</button>
+    <span class="fct-ok" data-fct-msg role="status"></span>
+  </div>
+
+  <div class="bp-tabs" role="tablist">
+    <button type="button" role="tab" data-fct-tab="saisie">Saisie</button>
+    <button type="button" role="tab" class="on" data-fct-tab="liste">Liste <span class="bp-n" data-fct-compte></span></button>
+  </div>
+
+  <div class="bp-grid">
+    <section class="bp-pan" aria-label="Liste des contrats" data-fct-pan="liste">
+      <div class="pf-tablewrap"><table class="pf-table">
+        <thead><tr><th>Numéro</th><th>Désignation</th><th>Tiers</th><th>Type de marché</th><th>Type de passation</th><th>Date de signature</th><th class="r">Montant (MGA)</th><th>Statut</th></tr></thead>
+        <tbody data-fct-liste></tbody>
+      </table></div>
+    </section>
+
+    <section class="bp-pan" aria-label="Saisie d'un contrat" data-fct-pan="saisie" hidden>
+      <div class="fct-card">
+        <h2 class="fct-h"><i class="ti ti-info-circle"></i> Informations générales</h2>
+        <div class="fct-g">
+          <label class="bp-champ s2"><span>Site <b>*</b></span><select class="bp-sel" data-f="site"></select></label>
+          <label class="bp-champ s4"><span>Tiers (compte général) <b>*</b></span><select class="bp-sel" data-f="compteTiers"></select><span class="fct-er" data-er="compteTiers"></span></label>
+          <label class="bp-champ s4"><span>Auxiliaire (Tiers) <b>*</b></span><select class="bp-sel" data-f="tiers" disabled></select><span class="fct-er" data-er="tiers"></span></label>
+          <label class="bp-champ s2"><span>Date non objection</span><input class="bp-in" type="date" data-f="dateNO"></label>
+          <label class="bp-champ s2"><span>Date lancement / signature <b>*</b></span><input class="bp-in" type="date" data-f="dateSign"><span class="fct-er" data-er="dateSign"></span></label>
+          <label class="bp-champ s2"><span>Statut</span><select class="bp-sel" data-f="statut" disabled><option>Actif</option></select></label>
+          <label class="bp-champ s4"><span>Numéro <b>*</b></span><input class="bp-in" data-f="num" maxlength="40"><span class="fct-er" data-er="num"></span></label>
+          <label class="bp-champ s8"><span>Désignation <b>*</b></span><input class="bp-in" data-f="designation" maxlength="200"><span class="fct-er" data-er="designation"></span></label>
+          <label class="bp-champ s6"><span>Type de marché <b>*</b></span><select class="bp-sel" data-f="typeMarche"></select><span class="fct-er" data-er="typeMarche"></span></label>
+          <label class="bp-champ s6"><span>Type de passation <b>*</b></span><select class="bp-sel" data-f="typePassation"></select><span class="fct-er" data-er="typePassation"></span></label>
+        </div>
+      </div>
+
+      <div class="bp-tabs" role="tablist" data-fct-st>
+        <button type="button" role="tab" class="on" data-fct-sub="vent">Ventilation des montants</button>
+        <button type="button" role="tab" data-fct-sub="paie">Modalités de paiement <span class="fct-n" data-fct-npaie>1</span></button>
+        <button type="button" role="tab" data-fct-sub="exec">Exécution</button>
+        <button type="button" role="tab" data-fct-sub="lg" data-fct-lgtab disabled>Lettres de garantie</button>
+      </div>
+
+      <div class="fct-card" data-fct-sp="vent">
+        <div class="fct-g" data-fct-vform></div>
+        <div class="fct-bar"><h3>Liste des ventilations des montants</h3>
+          <div class="fct-ab">
+            <button type="button" class="bp-b" data-fct-v="ajouter"><i class="ti ti-plus"></i> Ajouter</button>
+            <button type="button" class="bp-b pri" data-fct-v="enregistrer">Enregistrer</button>
+            <button type="button" class="bp-b" data-fct-v="annuler">Annuler</button>
+            <button type="button" class="bp-b" data-fct-v="modifier">Modifier</button>
+            <button type="button" class="bp-b" data-fct-v="supprimer">Supprimer</button>
+            <button type="button" class="bp-b" data-fct-v="dupliquer">Dupliquer</button>
+          </div></div>
+        <div class="pf-tablewrap" data-fct-vtab></div>
+        <div class="fct-tot">Montant global estimé du contrat : <b data-fct-vtot>0 MGA</b></div>
+      </div>
+
+      <div class="fct-card" data-fct-sp="paie" hidden>
+        <div class="fct-g">
+          <div class="s8"><span class="bp-lab">Mode de paiement</span>
+            <div class="fct-rad"><label><input type="radio" name="fct-mode" value="comptant" data-fct-mode> Comptant (100 %)</label><label><input type="radio" name="fct-mode" value="echelonne" data-fct-mode> Échelonné (plusieurs échéances)</label></div></div>
+          <label class="bp-champ s2"><span>Exercice</span><select class="bp-sel" data-f="exercice"><option>2026 — 2026</option></select></label>
+          <div class="s2"><span class="bp-lab">Total contrat</span><div><b data-fct-ptot>0,00</b> MGA</div></div>
+          <div class="s12"><span class="fct-al ok" data-fct-alloue></span></div>
+        </div>
+        <div data-fct-ech hidden>
+          <div class="fct-bar"><h3>Échéances</h3><div class="fct-ab"><button type="button" class="bp-b" data-fct-eadd><i class="ti ti-plus"></i> Ajouter une échéance</button></div></div>
+          <div class="pf-tablewrap"><table class="pf-table"><thead><tr><th>N°</th><th>Date d'échéance</th><th class="r">%</th><th class="r">Montant (MGA)</th><th></th></tr></thead><tbody data-fct-etab></tbody></table></div>
+        </div>
+        <label class="bp-champ" style="margin-top:12px"><span>Conditions particulières de règlement</span><textarea class="bp-ta" rows="4" data-f="conditions"></textarea></label>
+      </div>
+
+      <div class="fct-card" data-fct-sp="exec" hidden>
+        <h2 class="fct-h"><i class="ti ti-flag"></i> Jalons et conditions administratives</h2>
+        <div class="fct-g">
+          <label class="bp-champ s3"><span>Mode de paiement prévu</span><select class="bp-sel" data-x="mode"></select></label>
+          <label class="bp-champ s3"><span>Date de l'ordre de service</span><input class="bp-in" type="date" data-x="dateOS"></label>
+          <label class="bp-champ s3"><span>Réception provisoire prévue</span><input class="bp-in" type="date" data-x="rpPrev"></label>
+          <label class="bp-champ s3"><span>Réception provisoire réelle</span><input class="bp-in" type="date" data-x="rpReel"></label>
+          <label class="bp-champ s3"><span>Réception définitive prévue</span><input class="bp-in" type="date" data-x="rdPrev"></label>
+          <label class="bp-champ s3"><span>Réception définitive réelle</span><input class="bp-in" type="date" data-x="rdReel"></label>
+          <label class="bp-champ s6"><span>Référence bailleur</span><input class="bp-in" data-x="refBailleur"></label>
+          <div class="s12"><button type="button" class="bp-b" data-fct-obs><i class="ti ti-message"></i> Observations</button></div>
+          <label class="bp-champ s12" data-fct-obsw hidden><span>Observations</span><textarea class="bp-ta" rows="3" data-x="obs"></textarea></label>
+        </div>
+      </div>
+
+      <div class="fct-card" data-fct-sp="lg" hidden>
+        <div class="fct-g" data-fct-lform>
+          <label class="bp-champ s3"><span>Type de garantie</span><select class="bp-sel" data-l="type"><option>Avance de démarrage</option><option>Bonne exécution</option><option>Retenue de garantie</option></select></label>
+          <label class="bp-champ s3"><span>Banque émettrice</span><input class="bp-in" data-l="banque"></label>
+          <label class="bp-champ s2"><span>N° de la lettre</span><input class="bp-in" data-l="num"></label>
+          <label class="bp-champ s2"><span>Montant (MGA)</span><input class="bp-in r" inputmode="decimal" data-l="montant"></label>
+          <label class="bp-champ s2"><span>Date d'émission</span><input class="bp-in" type="date" data-l="dateEm"></label>
+          <label class="bp-champ s2"><span>Date d'échéance</span><input class="bp-in" type="date" data-l="dateEch"></label>
+          <div class="s2" style="align-self:end"><button type="button" class="bp-b pri" data-fct-ladd>Ajouter la lettre</button></div>
+        </div>
+        <div class="pf-tablewrap" style="margin-top:12px"><table class="pf-table"><thead><tr><th>Type</th><th>Banque</th><th>N°</th><th class="r">Montant (MGA)</th><th>Émission</th><th>Échéance</th><th></th></tr></thead><tbody data-fct-ltab></tbody></table></div>
+      </div>
+    </section>
+  </div>
+</div>
+
+<script>
+(function () {
+  var root = document.querySelector('[data-fct]'); if (!root) return;
+  function q(s) { return root.querySelector(s); } function qa(s) { return [].slice.call(root.querySelectorAll(s)); }
+  function f(n) { return q('[data-f="' + n + '"]'); }
+  function esc(s) { return String(s == null ? '' : s).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;'); }
+  var CLE = 'softcompta.contrats', sel = -1, edit = -1, cur = null, vSel = -1, vEdit = -2, vBrouillon = null, sub = 'vent';
+  var TIERS = [['401000', 'FOURNISSEURS', [['F001', 'FOURNISSEUR A'], ['F002', 'FOURNISSEUR B'], ['F003', 'FOURNISSEUR C']]], ['404000', 'FOURNISSEURS D’IMMOBILISATIONS', [['F101', 'ENTREPRISE DE TRAVAUX 1'], ['F102', 'ENTREPRISE DE TRAVAUX 2']]], ['411000', 'CLIENTS', [['C001', 'CLIENT A']]]];
+  var MARCHES = ['Travaux', 'Fournitures', 'Services courants', 'Prestations intellectuelles'], PASSATIONS = ['Appel d’offres ouvert', 'Appel d’offres restreint', 'Consultation de fournisseurs', 'Gré à gré'], MODES = ['Virement', 'Chèque', 'Espèces', 'Mobile money'];
+  var data = [
+    { num: 'MP-2026-001', designation: 'Fourniture de matériel informatique', site: '01', compteTiers: '401000', tiers: 'F001', dateNO: '2026-02-10', dateSign: '2026-03-02', statut: 'Actif', typeMarche: 'Fournitures', typePassation: 'Appel d’offres ouvert',
+      vent: [{ desc: 'Ordinateurs portables', pcg: '', avenant: false, ana: {}, mt: { MGA: 48000000 } }], mode: 'comptant', ech: [{ date: '', pct: 100 }], conditions: '', exec: { mode: 'Virement' }, lg: [] },
+    { num: 'MP-2026-002', designation: 'Réhabilitation du bâtiment annexe', site: '01', compteTiers: '404000', tiers: 'F101', dateNO: '', dateSign: '2026-05-18', statut: 'Actif', typeMarche: 'Travaux', typePassation: 'Appel d’offres restreint',
+      vent: [{ desc: 'Lot 1 — Gros œuvre', pcg: '', avenant: false, ana: {}, mt: { MGA: 120000000 } }, { desc: 'Lot 2 — Finitions', pcg: '', avenant: false, ana: {}, mt: { MGA: 45000000 } }], mode: 'echelonne', ech: [{ date: '2026-06-30', pct: 40 }, { date: '2026-09-30', pct: 40 }, { date: '2026-12-15', pct: 20 }], conditions: '', exec: { mode: 'Virement' }, lg: [] }
+  ];
+  try { var sv = JSON.parse(localStorage.getItem(CLE) || 'null'); if (Array.isArray(sv)) data = sv; } catch (e) {}
+  function nb(v) { return Number(v || 0).toLocaleString('fr-FR', { minimumFractionDigits: 2, maximumFractionDigits: 2 }); }
+  function date(d) { return d ? d.split('-').reverse().join('/') : ''; }
+  function msg(t) { q('[data-fct-msg]').textContent = t || ''; }
+  function effacer() { qa('.fct-er').forEach(function (e) { e.classList.remove('show'); e.textContent = ''; }); qa('.err').forEach(function (e) { e.classList.remove('err'); }); }
+  function err(n, m) { var e = q('[data-er="' + n + '"]'); if (e) { e.textContent = m; e.classList.add('show'); } var c = f(n); if (c) c.classList.add('err'); }
+  function maj(s) { if (s && s.__combo && s.__combo.maj) s.__combo.maj(); }
+  function publier() { window.CONTRATS = data; try { localStorage.setItem(CLE, JSON.stringify(data)); } catch (e) {} window.dispatchEvent(new Event('contrats-changed')); }
+  function opts(l, v, vide) { return (vide ? '<option value="">' + vide + '</option>' : '') + l.map(function (x) { var c = Array.isArray(x) ? x[0] : x, t = Array.isArray(x) ? x[1] : x; return '<option value="' + esc(c) + '"' + (c === v ? ' selected' : '') + '>' + esc(t) + '</option>'; }).join(''); }
+
+  // listes de choix
+  function sites() { var l = ((window.PLANS_REF || {}).sites || []).filter(function (x) { return x[0] !== '00'; }).map(function (x) { return [x[0], x[1]]; }); return l.length ? l : [['01', 'Siège']]; }
+  function devises() { var d = (window.DEVISES || []).filter(function (x) { return x.actif !== false; }).map(function (x) { return x.code; }); if (d.indexOf('MGA') < 0) d.unshift('MGA'); else d = ['MGA'].concat(d.filter(function (c) { return c !== 'MGA'; })); return d.length > 1 ? d : ['MGA', 'EUR', 'USD']; }
+  function comptesPCG() { var pc = window.PLAN_COMPTABLE || [], l = pc.filter(function (r) { return /^[26]/.test(r.code) && !pc.some(function (x) { return x.parent === r.code; }); }).map(function (r) { return [r.code, r.code + ' — ' + r.libelle]; }); return l.length ? l : [['601000', '601000 — ACHATS']]; }
+  var REFPLAN = { PLAN1: 'activite', PLAN2: 'budget', PLAN4: 'geo' };
+  function plansAna() {
+    var act = window.PLANS_ACTIFS ? window.PLANS_ACTIFS() : ['PC', 'PLAN1', 'PLAN2', 'PLAN3', 'PLAN4'];
+    return act.filter(function (c) { return c !== 'PC'; }).map(function (c) {
+      var cfg = (window.PLANS_CFG || []).filter(function (p) { return p.code === c; })[0] || {}, L = window.PLANS_LIGNES && window.PLANS_LIGNES[c], rows;
+      if (L && L.rows && L.rows.length) rows = L.rows.filter(function (x) { return x.actif !== false; }).map(function (x) { return [x.code, x.code + ' — ' + x.libelle]; });
+      else rows = ((window.PLANS_REF || {})[REFPLAN[c]] || []).map(function (x) { return [x[0], x[0] + ' — ' + x[1]]; });
+      return { code: c, lib: cfg.abrev || cfg.libelle || c, rows: rows };
+    });
+  }
+  function tiersDe(c) { var t = TIERS.filter(function (x) { return x[0] === c; })[0]; return t ? t[2] : []; }
+  function nomTiers(c) { var r = ''; TIERS.forEach(function (t) { t[2].forEach(function (x) { if (x[0] === c) r = x[1]; }); }); return r; }
+
+  function vide() { return { num: '', designation: '', site: sites()[0][0], compteTiers: '', tiers: '', dateNO: '', dateSign: '', statut: 'Actif', typeMarche: '', typePassation: '', vent: [], mode: 'comptant', ech: [{ date: '', pct: 100 }], conditions: '', exec: { mode: '' }, lg: [] }; }
+  function montant(c) { return (c.vent || []).reduce(function (a, v) { return a + (Number((v.mt || {}).MGA) || 0); }, 0); }
+
+  // ---------- onglets principaux
+  function tab(n) {
+    qa('[data-fct-tab]').forEach(function (b) { b.classList.toggle('on', b.dataset.fctTab === n); });
+    qa('[data-fct-pan]').forEach(function (p) { p.hidden = p.dataset.fctPan !== n; });
+    majBoutons();
+  }
+  function majBoutons() {
+    var saisie = !q('[data-fct-pan="saisie"]').hidden, a = q('[data-fct-ajouter]'), m = q('[data-fct-modifier]'), s = q('[data-fct-supprimer]'), e = q('[data-fct-enregistrer]'), n = q('[data-fct-annuler]');
+    a.disabled = saisie; m.disabled = saisie || sel < 0; s.disabled = saisie || sel < 0; e.disabled = !saisie; n.disabled = !saisie;
+  }
+  qa('[data-fct-tab]').forEach(function (b) { b.addEventListener('click', function () { if (b.dataset.fctTab === 'saisie' && !cur) { cur = vide(); edit = -1; charger(); } tab(b.dataset.fctTab); }); });
+
+  // ---------- liste
+  function liste() {
+    q('[data-fct-liste]').innerHTML = data.length ? data.map(function (c, i) {
+      return '<tr class="fct-row' + (i === sel ? ' fct-sel' : '') + '" data-i="' + i + '"><td>' + esc(c.num) + '</td><td>' + esc(c.designation) + '</td><td>' + esc(nomTiers(c.tiers) || c.tiers) + '</td><td>' + esc(c.typeMarche) + '</td><td>' + esc(c.typePassation) + '</td><td>' + date(c.dateSign) + '</td><td class="r">' + nb(montant(c)) + '</td><td>' + esc(c.statut) + '</td></tr>';
+    }).join('') : '<tr><td colspan="8" class="fct-vide">Aucun enregistrement trouvé</td></tr>';
+    q('[data-fct-compte]').textContent = data.length;
+    majBoutons();
+  }
+  q('[data-fct-liste]').addEventListener('click', function (e) { var tr = e.target.closest('tr[data-i]'); if (!tr) return; sel = +tr.dataset.i; liste(); });
+  q('[data-fct-liste]').addEventListener('dblclick', function (e) { var tr = e.target.closest('tr[data-i]'); if (!tr) return; sel = +tr.dataset.i; modifier(); });
+
+  // ---------- saisie : informations générales
+  function listes() {
+    f('site').innerHTML = opts(sites(), cur.site); f('compteTiers').innerHTML = opts(TIERS.map(function (t) { return [t[0], t[0] + ' — ' + t[1]]; }), cur.compteTiers, '— Compte général tiers —');
+    majAux();
+    f('typeMarche').innerHTML = opts(MARCHES, cur.typeMarche, 'Sélectionner'); f('typePassation').innerHTML = opts(PASSATIONS, cur.typePassation, 'Sélectionner');
+    q('[data-x="mode"]').innerHTML = opts(MODES, (cur.exec || {}).mode, 'Sélectionner');
+    ['site', 'compteTiers', 'tiers', 'typeMarche', 'typePassation'].forEach(function (n) { maj(f(n)); });
+  }
+  function majAux() { var a = f('tiers'), l = tiersDe(cur.compteTiers); a.disabled = !cur.compteTiers; a.innerHTML = opts(l, cur.tiers, cur.compteTiers ? '— Choisir —' : '— Choisir d’abord le tiers —'); maj(a); }
+  function charger() {
+    effacer(); msg('');
+    listes();
+    ['num', 'designation', 'dateNO', 'dateSign', 'conditions'].forEach(function (n) { f(n).value = cur[n] || ''; });
+    var x = cur.exec || (cur.exec = {}); qa('[data-x]').forEach(function (i) { if (i.tagName !== 'SELECT') i.value = x[i.dataset.x] || ''; });
+    q('[data-fct-obsw]').hidden = !x.obs;
+    vEdit = -2; vSel = -1; majVent(); majPaie(); majLG(); majLGtab();
+  }
+  root.addEventListener('input', function (e) {
+    var t = e.target; if (!cur) return;
+    if (t.dataset.f && ['num', 'designation', 'dateNO', 'dateSign', 'conditions'].indexOf(t.dataset.f) >= 0) { cur[t.dataset.f] = t.value; t.classList.remove('err'); if (t.dataset.f === 'num' || t.dataset.f === 'designation') majLGtab(); }
+    else if (t.dataset.x) { (cur.exec || (cur.exec = {}))[t.dataset.x] = t.value; }
+  });
+  root.addEventListener('change', function (e) {
+    var t = e.target; if (!cur) return;
+    if (t.dataset.f === 'compteTiers') { cur.compteTiers = t.value; cur.tiers = ''; majAux(); }
+    else if (t.dataset.f === 'tiers' || t.dataset.f === 'site' || t.dataset.f === 'typeMarche' || t.dataset.f === 'typePassation') { cur[t.dataset.f] = t.value; t.classList.remove('err'); }
+    else if (t.dataset.x === 'mode') (cur.exec || (cur.exec = {})).mode = t.value;
+    else if (t.dataset.fctMode !== undefined) { cur.mode = t.value; if (cur.mode === 'comptant') cur.ech = [{ date: '', pct: 100 }]; else if (cur.ech.length < 2) cur.ech = [{ date: '', pct: 50 }, { date: '', pct: 50 }]; majPaie(); }
+  });
+  function majLGtab() { var b = q('[data-fct-lgtab]'); if (!b) return; var ok = !!(cur && String(cur.num || '').trim() && String(cur.designation || '').trim()); b.disabled = !ok; if (!ok && sub === 'lg') sous('vent'); }
+
+  // ---------- sous-onglets
+  function sous(n) {
+    sub = n;
+    qa('[data-fct-sub]').forEach(function (b) { b.classList.toggle('on', b.dataset.fctSub === n); });
+    qa('[data-fct-sp]').forEach(function (p) { p.hidden = p.dataset.fctSp !== n; });
+  }
+  qa('[data-fct-sub]').forEach(function (b) { b.addEventListener('click', function () { if (!b.disabled) sous(b.dataset.fctSub); }); });
+
+  // ---------- ventilation des montants
+  function formVent(v, actif) {
+    var dv = devises(), pl = plansAna(), dis = actif ? '' : ' disabled';
+    var h = '<label class="bp-champ s2"><span>Année</span><select class="bp-sel" disabled><option>2026 — 2026</option></select></label>' +
+      '<label class="bp-champ s6"><span>Description <b>*</b></span><input class="bp-in" data-v="desc" value="' + esc(v.desc) + '"' + dis + '><span class="fct-er" data-er="vdesc"></span></label>' +
+      '<label class="bp-champ s3"><span>PCG <b>*</b></span><select class="bp-sel" data-v="pcg"' + dis + '>' + opts(comptesPCG(), v.pcg, 'Compte…') + '</select><span class="fct-er" data-er="vpcg"></span></label>' +
+      '<label class="bp-chk s1" style="align-self:end;grid-column:span 1"><label><input type="checkbox" data-v="avenant"' + (v.avenant ? ' checked' : '') + dis + '> Avenant</label></label>';
+    pl.forEach(function (p) { h += '<label class="bp-champ s3"><span>' + esc(p.lib) + '</span><select class="bp-sel" data-va="' + p.code + '"' + dis + '>' + opts(p.rows, (v.ana || {})[p.code], p.lib + '…') + '</select></label>'; });
+    h += '<div class="fct-dev s12" style="grid-column:1/-1">' + dv.map(function (c) { return '<label class="bp-champ"><span>' + c + (c === 'MGA' ? ' <b>*</b>' : '') + '</span><input class="bp-in r" inputmode="decimal" data-vm="' + c + '" value="' + ((v.mt || {})[c] ? esc((v.mt || {})[c]) : '') + '"' + dis + '>' + (c === 'MGA' ? '<small style="color:#5B606D">Monnaie locale</small>' : '<small>Aucun cours en vigueur</small>') + '</label>'; }).join('') +
+      '<button type="button" class="bp-b" data-fct-v="forex" style="align-self:center"' + dis + '><i class="ti ti-arrows-exchange"></i> Forex</button></div><span class="fct-er s12" data-er="vmga"></span>';
+    return h;
+  }
+  function majVent() {
+    var actif = vEdit !== -2, v = actif ? vBrouillon : { desc: '', pcg: '', avenant: false, ana: {}, mt: {} };
+    var fv = q('[data-fct-vform]'); fv.innerHTML = formVent(v, actif);
+    qa('[data-fct-vform] select').forEach(maj);
+    var dv = devises(), pl = plansAna(), L = cur.vent || [];
+    q('[data-fct-vtab]').innerHTML = '<table class="pf-table"><thead><tr><th>N°</th><th>Description</th>' + pl.map(function (p) { return '<th>' + esc(p.lib) + '</th>'; }).join('') + dv.map(function (c) { return '<th class="r">' + c + '</th>'; }).join('') + '<th class="r">Initial</th><th class="r">Total</th></tr></thead><tbody>' +
+      (L.length ? L.map(function (r, i) { var m = Number((r.mt || {}).MGA) || 0; return '<tr class="fct-row' + (i === vSel ? ' fct-sel' : '') + '" data-vi="' + i + '"><td>' + (i + 1) + '</td><td>' + esc(r.desc) + (r.avenant ? ' <i>(avenant)</i>' : '') + '</td>' + pl.map(function (p) { return '<td>' + esc((r.ana || {})[p.code] || '') + '</td>'; }).join('') + dv.map(function (c) { return '<td class="r">' + ((r.mt || {})[c] ? nb((r.mt || {})[c]) : '') + '</td>'; }).join('') + '<td class="r">' + (r.avenant ? '' : nb(m)) + '</td><td class="r">' + nb(m) + '</td></tr>'; }).join('') : '<tr><td colspan="' + (4 + pl.length + dv.length) + '" class="fct-vide">Aucune ventilation saisie pour le moment.</td></tr>') + '</tbody></table>';
+    q('[data-fct-vtot]').textContent = nb(montant(cur)).replace(/,00$/, '') + ' MGA';
+    var b = function (k) { return q('[data-fct-v="' + k + '"]'); };
+    b('ajouter').disabled = actif; b('enregistrer').disabled = !actif; b('annuler').disabled = !actif; b('modifier').disabled = actif || vSel < 0; b('supprimer').disabled = actif || vSel < 0; b('dupliquer').disabled = actif || vSel < 0;
+    majPaie();
+  }
+  function lireVent() {
+    var v = vBrouillon; v.desc = q('[data-v="desc"]').value; v.pcg = q('[data-v="pcg"]').value; v.avenant = q('[data-v="avenant"]').checked;
+    v.ana = {}; qa('[data-va]').forEach(function (s) { if (s.value) v.ana[s.dataset.va] = s.value; });
+    v.mt = {}; qa('[data-vm]').forEach(function (i) { var n = parseFloat(String(i.value).replace(/\s/g, '').replace(',', '.')); if (!isNaN(n) && n) v.mt[i.dataset.vm] = n; });
+  }
+  q('[data-fct-sp="vent"]').addEventListener('click', function (e) {
+    var tr = e.target.closest('tr[data-vi]'); if (tr && vEdit === -2) { vSel = +tr.dataset.vi; majVent(); return; }
+    var b = e.target.closest('[data-fct-v]'); if (!b || b.disabled) return; var k = b.dataset.fctV;
+    if (k === 'ajouter') { vBrouillon = { desc: '', pcg: '', avenant: false, ana: {}, mt: {} }; vEdit = -1; majVent(); }
+    else if (k === 'modifier') { vBrouillon = JSON.parse(JSON.stringify(cur.vent[vSel])); vEdit = vSel; majVent(); }
+    else if (k === 'dupliquer') { var c = JSON.parse(JSON.stringify(cur.vent[vSel])); c.desc += ' (copie)'; cur.vent.splice(vSel + 1, 0, c); vSel = vSel + 1; majVent(); }
+    else if (k === 'supprimer') { cur.vent.splice(vSel, 1); vSel = -1; majVent(); }
+    else if (k === 'annuler') { vEdit = -2; vBrouillon = null; effacer(); majVent(); }
+    else if (k === 'forex') { msg('Aucun cours en vigueur : conversion impossible.'); }
+    else if (k === 'enregistrer') {
+      lireVent(); effacer(); var ok = true;
+      if (!String(vBrouillon.desc).trim()) { err('vdesc', 'La description est obligatoire.'); q('[data-v="desc"]').classList.add('err'); ok = false; }
+      if (!vBrouillon.pcg) { err('vpcg', 'Le compte PCG est obligatoire.'); q('[data-v="pcg"]').classList.add('err'); ok = false; }
+      if (!vBrouillon.mt.MGA) { var e2 = q('[data-er="vmga"]'); e2.textContent = 'Le montant en MGA est obligatoire.'; e2.classList.add('show'); ok = false; }
+      if (!ok) return;
+      if (vEdit === -1) cur.vent.push(vBrouillon); else cur.vent[vEdit] = vBrouillon;
+      vEdit = -2; vBrouillon = null; vSel = -1; msg('Ventilation enregistrée.'); majVent();
+    }
+  });
+
+  // ---------- modalités de paiement
+  function majPaie() {
+    var tot = montant(cur), E = cur.ech || [], som = E.reduce(function (a, x) { return a + (Number(x.pct) || 0); }, 0);
+    qa('[data-fct-mode]').forEach(function (r) { r.checked = r.value === cur.mode; });
+    q('[data-fct-ptot]').textContent = nb(tot);
+    q('[data-fct-npaie]').textContent = E.length;
+    var al = q('[data-fct-alloue]'); al.textContent = 'Montant alloué : ' + nb(tot * som / 100) + ' MGA (' + nb(som) + ' %)'; al.className = 'fct-al ' + (Math.abs(som - 100) < 0.005 ? 'ok' : 'ko');
+    q('[data-fct-ech]').hidden = cur.mode !== 'echelonne';
+    q('[data-fct-etab]').innerHTML = E.map(function (x, i) { return '<tr><td>' + (i + 1) + '</td><td><input class="bp-in" type="date" data-ed="' + i + '" value="' + esc(x.date) + '"></td><td class="r"><input class="bp-in r" inputmode="decimal" style="width:90px" data-ep="' + i + '" value="' + esc(x.pct) + '"></td><td class="r">' + nb(tot * (Number(x.pct) || 0) / 100) + '</td><td><button type="button" class="fct-x" data-edel="' + i + '" title="Supprimer l’échéance" aria-label="Supprimer l’échéance">&times;</button></td></tr>'; }).join('');
+  }
+  q('[data-fct-sp="paie"]').addEventListener('input', function (e) {
+    var t = e.target;
+    if (t.dataset.ed !== undefined) cur.ech[+t.dataset.ed].date = t.value;
+    else if (t.dataset.ep !== undefined) { cur.ech[+t.dataset.ep].pct = parseFloat(String(t.value).replace(',', '.')) || 0; var tot = montant(cur), som = cur.ech.reduce(function (a, x) { return a + (Number(x.pct) || 0); }, 0), al = q('[data-fct-alloue]'); al.textContent = 'Montant alloué : ' + nb(tot * som / 100) + ' MGA (' + nb(som) + ' %)'; al.className = 'fct-al ' + (Math.abs(som - 100) < 0.005 ? 'ok' : 'ko'); t.closest('tr').children[3].textContent = nb(tot * cur.ech[+t.dataset.ep].pct / 100); }
+  });
+  q('[data-fct-sp="paie"]').addEventListener('click', function (e) {
+    if (e.target.closest('[data-fct-eadd]')) { cur.ech.push({ date: '', pct: 0 }); majPaie(); return; }
+    var d = e.target.closest('[data-edel]'); if (d && cur.ech.length > 1) { cur.ech.splice(+d.dataset.edel, 1); majPaie(); }
+  });
+
+  // ---------- exécution
+  q('[data-fct-obs]').addEventListener('click', function () { var w = q('[data-fct-obsw]'); w.hidden = !w.hidden; if (!w.hidden) q('[data-x="obs"]').focus(); });
+
+  // ---------- lettres de garantie
+  function majLG() {
+    var L = cur.lg || [];
+    q('[data-fct-ltab]').innerHTML = L.length ? L.map(function (x, i) { return '<tr><td>' + esc(x.type) + '</td><td>' + esc(x.banque) + '</td><td>' + esc(x.num) + '</td><td class="r">' + nb(x.montant) + '</td><td>' + date(x.dateEm) + '</td><td>' + date(x.dateEch) + '</td><td><button type="button" class="fct-x" data-ldel="' + i + '" title="Supprimer la lettre" aria-label="Supprimer la lettre">&times;</button></td></tr>'; }).join('') : '<tr><td colspan="7" class="fct-vide">Aucun enregistrement trouvé</td></tr>';
+  }
+  q('[data-fct-sp="lg"]').addEventListener('click', function (e) {
+    var d = e.target.closest('[data-ldel]'); if (d) { cur.lg.splice(+d.dataset.ldel, 1); majLG(); return; }
+    if (!e.target.closest('[data-fct-ladd]')) return;
+    var x = {}; qa('[data-l]').forEach(function (i) { x[i.dataset.l] = i.value; });
+    x.montant = parseFloat(String(x.montant).replace(/\s/g, '').replace(',', '.')) || 0;
+    if (!x.num && !x.montant) { msg('Renseignez au moins le numéro ou le montant de la lettre.'); return; }
+    (cur.lg || (cur.lg = [])).push(x); qa('[data-l]').forEach(function (i) { if (i.tagName !== 'SELECT') i.value = ''; }); msg('Lettre de garantie ajoutée.'); majLG();
+  });
+
+  // ---------- actions de page
+  function ajouter() { cur = vide(); edit = -1; sous('vent'); charger(); tab('saisie'); }
+  function modifier() { if (sel < 0) return; cur = JSON.parse(JSON.stringify(data[sel])); edit = sel; sous('vent'); charger(); tab('saisie'); }
+  function supprimer() { if (sel < 0) return; if (!window.confirm('Supprimer le contrat « ' + data[sel].num + ' » ?')) return; data.splice(sel, 1); sel = -1; publier(); liste(); msg('Contrat supprimé.'); }
+  function enregistrer() {
+    effacer(); var ok = true;
+    if (!String(cur.num).trim()) { err('num', 'Le numéro est obligatoire.'); ok = false; }
+    else if (data.some(function (c, i) { return i !== edit && c.num.toLowerCase() === cur.num.trim().toLowerCase(); })) { err('num', 'Ce numéro de contrat existe déjà.'); ok = false; }
+    if (!String(cur.designation).trim()) { err('designation', 'La désignation est obligatoire.'); ok = false; }
+    if (!cur.compteTiers) { err('compteTiers', 'Le compte général tiers est obligatoire.'); ok = false; }
+    else if (!cur.tiers) { err('tiers', 'L’auxiliaire est obligatoire.'); ok = false; }
+    if (!cur.dateSign) { err('dateSign', 'La date de lancement / signature est obligatoire.'); ok = false; }
+    if (!cur.typeMarche) { err('typeMarche', 'Le type de marché est obligatoire.'); ok = false; }
+    if (!cur.typePassation) { err('typePassation', 'Le type de passation est obligatoire.'); ok = false; }
+    if (!ok) return;
+    cur.num = cur.num.trim(); cur.designation = cur.designation.trim();
+    if (edit < 0) { data.push(cur); sel = data.length - 1; } else { data[edit] = cur; sel = edit; }
+    publier(); cur = null; edit = -1; liste(); tab('liste'); msg('Contrat enregistré.');
+  }
+  function annuler() { cur = null; edit = -1; effacer(); tab('liste'); msg(''); }
+  q('[data-fct-ajouter]').addEventListener('click', ajouter); q('[data-fct-modifier]').addEventListener('click', modifier); q('[data-fct-supprimer]').addEventListener('click', supprimer);
+  q('[data-fct-enregistrer]').addEventListener('click', enregistrer); q('[data-fct-annuler]').addEventListener('click', annuler);
+
+  publier(); liste(); tab('liste');
+})();
+</script>
