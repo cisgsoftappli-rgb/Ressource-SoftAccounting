@@ -394,6 +394,17 @@
     window.dispatchEvent(new Event('fiches-immobilisation-changed'));
   }
 
+  // ---------- API pour l'écran « Réassignation » (Immobilisations › Saisies) ----------
+  // liste() : copie des fiches ; reaffecter(num, { site, empl, resp, ana }) : applique une nouvelle affectation (refusé pour une fiche cédée ou pendant une saisie).
+  window.FICHES_API = {
+    liste: function () { return data.map(function (r) { return { num: r.num, desig: r.desig, compte: r.compte, site: r.site, dacq: r.dacq, empl: r.empl, resp: r.resp, qte: r.qte, pu: r.pu, famille: r.famille, ana: JSON.parse(JSON.stringify(r.ana || {})), cede: !!r.cede, genere: !!r.genere }; }); },
+    reaffecter: function (num, v) {
+      var r = data.filter(function (x) { return x.num === num; })[0]; if (!r || r.cede || mode !== 'consultation') return false;
+      r.site = v.site; r.empl = v.empl; r.resp = v.resp; r.ana = JSON.parse(JSON.stringify(v.ana || {}));
+      liste(); if (sel >= 0 && data[sel] === r) form(r); etat(); publier(); return true;
+    }
+  };
+
   // ---------- génération automatique de l'écriture ----------
   function journalAchats() { return (window.JOURNAUX_PLAN || []).filter(function (j) { return j.actif !== false && (j.type === 'Achat' || j.nature === 'Achat'); })[0] || null; }
   function generer() {
