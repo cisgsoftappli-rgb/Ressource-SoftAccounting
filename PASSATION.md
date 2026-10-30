@@ -536,3 +536,6 @@ A nouveau : colonnes montants selon les monnaies de Administration de lentite (M
 - Situation : onglet Ecritures rapprochees (lignes du releve pointees, totaux). patch_sit_rapp.cjs. Non pousse.
 - PUSH 3bfdd68 : petite caisse (types, saisie, generation), situation rapprochement + masque impression. Variante anonymisee.
 - Archive des sources pour le binome : sources_softaccounting.zip (make_sources_zip.cjs), 2,6 Mo, verifiee : build identique. Non anonymisee, a ne pas publier.
+- Depot git local des sources cree dans C:\Artefact (.gitignore, README.md, 2 commits) ; en attente du depot GitHub PRIVE (url) pour pousser. deploy/ ignore.
+- PUSH sources : https://github.com/cisgsoftappli-rgb/Ressource-SoftAccounting (main, 14ff422). Depot prive (a verifier).
+- Depot sources laisse PUBLIC sur decision de l'utilisateur (donnees non anonymisees dans les sources). Ne pas y ajouter de documents clients.
