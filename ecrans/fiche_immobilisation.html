@@ -1,0 +1,389 @@
+<!--
+  Écran « Liste d'immobilisations » (Immobilisations › Saisies › Liste d'immobilisations) — saisie manuelle d'une fiche d'immobilisation.
+  Onglets de page Saisie / Liste ; la fiche a deux onglets :
+  - « Général » : informations générales (année, site, référence facture / pièce, désignation, compte général, quantité, prix unitaire, valeur d'acquisition,
+    dates, montants dans les devises actives d'après les cours) et informations complémentaires (numéro d'identification, état, famille, emplacement, responsable) ;
+  - « Écritures » : imputations comptables = Tiers (fournisseur collectif + compte auxiliaire) et Ventilation analytique (un choix par plan activé ; plans non activés grisés),
+    puis bloc « Écriture comptable » avec le bouton « Générer l'écriture comptable ».
+  Bouton « Générer écriture » (barre d'actions, et bouton du bloc) : génère automatiquement l'écriture comptable de la fiche (débit du compte général, crédit du compte collectif
+  fournisseur avec son compte auxiliaire, imputations analytiques portées par la ligne de débit, journal d'achats, date de pièce = date d'acquisition) à condition que la fiche soit
+  enregistrée et que l'onglet Écritures soit renseigné (fournisseur collectif et compte auxiliaire). La fiche passe à « Écriture générée » (n° de pièce selon la numérotation du journal)
+  et n'est plus modifiable. Données en mémoire, vides au départ.
+  Liens : window.EXERCICES_API, window.PLANS_REF (sites, tiers), window.PLAN_COMPTABLE, window.FAMILLES_IMMOBILISATION, window.LIEUX_AFFECTATION, window.COLLABORATEURS_RESPONSABLES,
+  window.DEVISES / window.COURS_API, window.PLANS_ACTIFS / PLANS_CFG / PLANS_LIGNES, window.JOURNAUX_PLAN / JOURNAUX_NUMERO.
+  Exposé : window.FICHES_IMMOBILISATION et window.ECRITURES_IMMOBILISATIONS (événements « fiches-immobilisation-changed », « ecritures-immobilisation-generees »).
+  Styles bp-* de « Paramétrage du bilan ». Pas de fonction « $$ » (build.cjs).
+-->
+<style>
+.fim-badge{display:inline-flex;align-items:center;padding:2px 10px;border:1px solid;border-radius:6px;font-size:12px;font-weight:600;white-space:nowrap}
+.fim-badge.on{background:#ECFDF5;border-color:#A7F3D0;color:#047857}.fim-badge.off{background:#F5F7F9;border-color:#D6D9E0;color:#5B606D}
+.fim-code{font-family:ui-monospace,Consolas,monospace;font-weight:600}
+.fim-help{font-size:12px;color:#5B606D}
+.fim-er{display:none;font-size:12px;color:#B63132}.fim-er.show{display:block}
+.bp-in.err,.bp-sel.err{border-color:#B63132}
+.fim-card{border:1px solid #D6D9E0;border-radius:12px;padding:16px;background:#fff;margin-top:12px}
+.fim-card:first-child{margin-top:0}
+.fim-card h3{margin:0 0 12px;font-size:14px;font-weight:600;color:#18244F}
+.fim-card h4{margin:16px 0 8px;font-size:12px;font-weight:600;color:#2E427B;text-transform:uppercase;letter-spacing:.04em}
+.fim-g4{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:12px}
+.fim-g5{display:grid;grid-template-columns:repeat(5,minmax(0,1fr));gap:12px}
+.fim-g2{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:12px}
+.fim-sub{display:flex;gap:8px;margin:0 0 12px}
+.fim-sub button{padding:8px 16px;min-height:36px;border:1px solid #D6D9E0;border-radius:8px;background:#fff;color:#18244F;font-weight:600;cursor:pointer}
+.fim-sub button.on{background:#2E427B;border-color:#2E427B;color:#fff}
+.fim-ro{background:#F5F7F9!important;color:#5B606D}
+.fim-info{display:flex;gap:8px;align-items:flex-start;padding:10px 12px;border:1px solid #D6D9E0;background:#F4F7FE;border-radius:8px;color:#18244F;font-size:13px}
+.fim-gen{display:flex;gap:12px;align-items:center;flex-wrap:wrap;margin-top:12px}
+.fim-lock{margin:0 0 12px;padding:8px 12px;border:1px solid #A7F3D0;background:#ECFDF5;border-radius:8px;color:#047857;font-size:13px}
+[data-fim] [hidden]{display:none!important}
+[data-fim] .bp-champ>span:first-child{text-transform:uppercase;letter-spacing:.04em;font-size:12px;font-weight:600}
+@media (max-width:1100px){.fim-g4,.fim-g5{grid-template-columns:repeat(2,minmax(0,1fr))}}
+</style>
+
+<div class="bp-root" data-fim>
+  <h1 style="position:absolute;width:1px;height:1px;overflow:hidden;clip-path:inset(50%);margin:0">Liste d'immobilisations</h1>
+
+  <div class="no-print" data-fim-actions>
+    <button type="button" data-fim-ajouter>Ajouter</button>
+    <button type="button" data-fim-modifier>Modifier</button>
+    <button type="button" data-fim-supprimer>Supprimer</button>
+    <button type="button" data-fim-enregistrer>Enregistrer</button>
+    <button type="button" data-fim-annuler>Annuler</button>
+    <button type="button" data-fim-generer>Générer écriture</button>
+    <button type="button" data-fim-imprimer>Imprimer</button>
+    <button type="button" data-fim-pdf>PDF</button>
+    <button type="button" data-fim-xlsx>Excel (XLSX)</button>
+  </div>
+
+  <p class="fim-help" style="margin:0 0 12px">Créer manuellement une fiche pour enregistrer un bien qui n'a pas été généré automatiquement depuis la comptabilité.</p>
+
+  <div class="bp-tabs" role="tablist">
+    <button type="button" role="tab" class="on" data-fim-tab="saisie">Saisie</button>
+    <button type="button" role="tab" data-fim-tab="liste">Liste <span class="bp-n" data-fim-compte></span></button>
+  </div>
+
+  <div class="bp-grid">
+    <section class="bp-pan" aria-label="Liste des fiches d'immobilisation" data-fim-pan="liste" hidden>
+      <h2>Fiches d'immobilisation <small>Double-clic ou « Modifier » pour ouvrir la fiche en saisie</small></h2>
+      <div style="overflow:auto;max-height:560px">
+        <table class="bp-tb" style="min-width:900px"><thead>
+          <tr><th>N° d'identification</th><th>Désignation du bien</th><th>Famille</th><th>Emplacement</th><th>Date d'acquisition</th><th class="r">Valeur d'acquisition</th><th>Statut</th></tr>
+          <tr class="flt">
+            <th><input class="bp-in" data-fc="0" aria-label="Filtrer N°"></th>
+            <th><input class="bp-in" data-fc="1" aria-label="Filtrer Désignation"></th>
+            <th><input class="bp-in" data-fc="2" aria-label="Filtrer Famille"></th>
+            <th><input class="bp-in" data-fc="3" aria-label="Filtrer Emplacement"></th>
+            <th><input class="bp-in" data-fc="4" aria-label="Filtrer Date"></th>
+            <th><input class="bp-in" data-fc="5" aria-label="Filtrer Valeur"></th>
+            <th><select class="bp-sel" data-fc="6" aria-label="Filtrer Statut"><option value=""></option><option value="brouillon">Brouillon</option><option value="généré">Écriture générée</option></select></th>
+          </tr>
+        </thead><tbody data-fim-lignes></tbody></table>
+      </div>
+      <div class="bp-vide" data-fim-vide hidden>Aucune fiche d'immobilisation. Utilisez « Ajouter » pour saisir la première.</div>
+    </section>
+
+    <section class="bp-pan" aria-label="Saisie d'une fiche d'immobilisation" data-fim-pan="saisie">
+      <div class="fim-lock" data-fim-verrou hidden></div>
+      <div class="fim-sub" role="tablist">
+        <button type="button" role="tab" class="on" data-fim-stab="general">Général</button>
+        <button type="button" role="tab" data-fim-stab="ecritures">Écritures</button>
+      </div>
+      <form data-fim-form onsubmit="return false" novalidate>
+        <div data-fim-span="general">
+          <div class="fim-card">
+            <h3>Informations générales</h3>
+            <div class="fim-g4">
+              <label class="bp-champ"><span>Année <b>*</b></span><select class="bp-sel" data-f="annee"></select><span class="fim-er" data-er="annee"></span></label>
+              <label class="bp-champ"><span>Site <b>*</b></span><select class="bp-sel" data-f="site"></select><span class="fim-er" data-er="site"></span></label>
+              <label class="bp-champ"><span>Référence facture / pièce <b>*</b></span><input class="bp-in" data-f="ref" maxlength="40" autocomplete="off" placeholder="FAC-2026-0231"><span class="fim-er" data-er="ref"></span></label>
+              <label class="bp-champ"><span>Désignation du bien <b>*</b></span><input class="bp-in" data-f="desig" maxlength="100" autocomplete="off" placeholder="Ordinateur portable"><span class="fim-er" data-er="desig"></span></label>
+              <label class="bp-champ"><span>Compte général <b>*</b></span><select class="bp-sel" data-f="compte"></select><span class="fim-er" data-er="compte"></span></label>
+              <label class="bp-champ"><span>Quantité <b>*</b></span><input class="bp-in" type="number" min="1" step="1" data-f="qte" value="1"><span class="fim-er" data-er="qte"></span></label>
+              <label class="bp-champ"><span>Prix unitaire <b>*</b></span><input class="bp-in" type="number" min="0" step="0.01" data-f="pu" placeholder="0"><span class="fim-er" data-er="pu"></span></label>
+              <label class="bp-champ"><span>Valeur d'acquisition</span><input class="bp-in fim-ro" data-f="val" readonly tabindex="-1"></label>
+              <label class="bp-champ"><span>Date d'acquisition <b>*</b></span><input class="bp-in" type="date" data-f="dacq"><span class="fim-er" data-er="dacq"></span></label>
+              <label class="bp-champ"><span>Date de mise en service <b>*</b></span><input class="bp-in" type="date" data-f="dms"><span class="fim-er" data-er="dms"></span></label>
+            </div>
+            <div class="fim-g4" data-fim-devs style="margin-top:12px"></div>
+          </div>
+
+          <div class="fim-card">
+            <h3>Informations complémentaires</h3>
+            <div class="fim-g5">
+              <label class="bp-champ"><span>Numéro d'identification <b>*</b></span><input class="bp-in fim-code" data-f="num" maxlength="24" autocomplete="off" placeholder="IMM-2026-001"><span class="fim-er" data-er="num"></span></label>
+              <label class="bp-champ"><span>État du bien <b>*</b></span><select class="bp-sel" data-f="etat"><option value="">— Sélectionner —</option><option>Neuf</option><option>Bon</option><option>Moyen</option><option>Mauvais</option><option>Hors service</option></select><span class="fim-er" data-er="etat"></span></label>
+              <label class="bp-champ"><span>Famille d'immobilisation</span><select class="bp-sel" data-f="famille"></select></label>
+              <label class="bp-champ"><span>Emplacement <b>*</b></span><select class="bp-sel" data-f="empl"></select><span class="fim-er" data-er="empl"></span></label>
+              <label class="bp-champ"><span>Responsable <b>*</b></span><select class="bp-sel" data-f="resp"></select><span class="fim-er" data-er="resp"></span></label>
+            </div>
+            <p class="fim-help" data-fim-aide style="margin:8px 0 0"></p>
+          </div>
+        </div>
+
+        <div data-fim-span="ecritures" hidden>
+          <div class="fim-card">
+            <h3>Imputations comptables</h3>
+            <h4>Tiers</h4>
+            <div class="fim-g2">
+              <label class="bp-champ"><span>Fournisseur collectif <b>*</b></span><select class="bp-sel" data-f="coll"></select><span class="fim-er" data-er="coll"></span></label>
+              <label class="bp-champ"><span>Compte auxiliaire <b>*</b></span><select class="bp-sel" data-f="aux"></select><span class="fim-er" data-er="aux"></span></label>
+            </div>
+            <h4>Ventilation analytique</h4>
+            <div class="fim-g5" data-fim-ana></div>
+          </div>
+
+          <div class="fim-card">
+            <h3>Écriture comptable</h3>
+            <div class="fim-info"><i class="ti ti-info-circle" aria-hidden="true"></i><span>Le paramétrage du générateur d'immobilisations est recontrôlé côté service lors de la comptabilisation — les imputations ci-dessus servent de base à la génération automatique de l'écriture.</span></div>
+            <div class="fim-gen no-print">
+              <button type="button" class="bp-btn" data-fim-gen2><i class="ti ti-wand" aria-hidden="true"></i> Générer l'écriture comptable</button>
+              <span class="fim-help" data-fim-gen-aide>Enregistrez la fiche avant d'exécuter la génération.</span>
+            </div>
+          </div>
+        </div>
+      </form>
+    </section>
+  </div>
+  <div class="bp-toast" role="status" hidden data-fim-toast></div>
+</div>
+
+<script>
+(function () {
+  var root = document.querySelector('[data-fim]'); if (!root) return;
+  function q(s) { return root.querySelector(s); } function qa(s) { return [].slice.call(root.querySelectorAll(s)); }
+  var data = [], sel = -1, mode = 'consultation', nextId = 1, genere = [];
+  var SIMPLES = ['annee', 'site', 'ref', 'desig', 'compte', 'qte', 'pu', 'dacq', 'dms', 'num', 'etat', 'famille', 'empl', 'resp', 'coll', 'aux'];
+  var LISTES = ['annee', 'site', 'compte', 'famille', 'empl', 'resp', 'coll', 'aux'];
+  var ERR = ['annee', 'site', 'ref', 'desig', 'compte', 'qte', 'pu', 'dacq', 'dms', 'num', 'etat', 'empl', 'resp', 'coll', 'aux'];
+  var REFPLAN = { PLAN1: 'activite', PLAN2: 'budget', PLAN4: 'geo' };
+  function esc(s) { return String(s == null ? '' : s).replace(/[&<>"]/g, function (c) { return { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c]; }); }
+  function f(k) { return q('[data-f=' + k + ']'); }
+  function toast(m) { var t = q('[data-fim-toast]'); t.textContent = m; t.hidden = false; clearTimeout(toast.t); toast.t = setTimeout(function () { t.hidden = true; }, 3600); }
+  function err(k, m) { var e = q('[data-er="' + k + '"]'); if (e) { e.textContent = m || ''; e.classList.toggle('show', !!m); } var x = f(k); if (x) x.classList.toggle('err', !!m); }
+  function effacer() { ERR.forEach(function (k) { err(k); }); }
+  function nb(n) { return (Math.round((+n || 0) * 100) / 100).toLocaleString('fr-FR', { maximumFractionDigits: 2 }); }
+  function dFR(iso) { return iso ? iso.split('-').reverse().join('/') : ''; }
+  function iso(fr) { var m = /^(\d\d)\/(\d\d)\/(\d{4})$/.exec(fr || ''); return m ? m[3] + '-' + m[2] + '-' + m[1] : ''; }
+  function locale() { return 'MGA'; }
+  function devisesEtrangeres() { return (window.DEVISES || []).filter(function (d) { return d.code !== locale() && d.actif !== false; }); }
+
+  // ---------- listes de choix (alimentées par les autres écrans) ----------
+  function optsListe(k, L, v, vide) {
+    var s = f(k), cur = v != null ? v : s.value;
+    s.innerHTML = '<option value="">' + vide + '</option>' + L.map(function (r) { return '<option value="' + esc(r[0]) + '">' + esc(r[0] + ' — ' + r[1]) + '</option>'; }).join('') +
+      (cur && !L.some(function (r) { return r[0] === cur; }) ? '<option value="' + esc(cur) + '">' + esc(cur) + '</option>' : '');
+    s.value = cur || '';
+  }
+  function comptesDetail() {
+    var pc = window.PLAN_COMPTABLE || [], par = {}; pc.forEach(function (r) { if (r.parent) par[r.parent] = 1; });
+    var det = pc.filter(function (r) { return !par[r.code]; }); return det.length ? det : pc;
+  }
+  function libCompte(c) { var r = (window.PLAN_COMPTABLE || []).filter(function (x) { return x.code === c; })[0]; return r ? r.libelle : ''; }
+  function collectifs() {
+    var T = (window.PLANS_REF || {}).tiers || [], vu = {}, L = [];
+    T.forEach(function (r) { if (r[2] && /^40/.test(r[2]) && !vu[r[2]]) { vu[r[2]] = 1; L.push([r[2], libCompte(r[2]) || 'Fournisseurs']); } });
+    return L.sort(function (a, b) { return a[0] < b[0] ? -1 : 1; });
+  }
+  function auxiliaires(coll) { return coll ? ((window.PLANS_REF || {}).tiers || []).filter(function (r) { return r[2] === coll; }).map(function (r) { return [r[0], r[1]]; }) : []; }
+  function exercices(v) {
+    var L = (window.EXERCICES_API ? window.EXERCICES_API.liste() : []).filter(function (r) { return !r.cloture || r.annee === v; }), def = '';
+    L.forEach(function (r) { if (r.cours) def = r.annee; });
+    f('annee').innerHTML = '<option value="">— Sélectionner —</option>' + L.map(function (r) { return '<option value="' + esc(r.annee) + '">' + esc(r.annee + (r.cours ? ' (en cours)' : '')) + '</option>'; }).join('');
+    return def;
+  }
+  // ventilation analytique : un choix par plan (Plan 1 à Plan 10) ; les plans non activés sont grisés
+  function plansVent() {
+    var act = window.PLANS_ACTIFS ? window.PLANS_ACTIFS() : ['PC', 'PLAN1', 'PLAN2', 'PLAN3', 'PLAN4'], out = [];
+    for (var i = 1; i <= 10; i++) {
+      var c = 'PLAN' + i, cfg = (window.PLANS_CFG || []).filter(function (p) { return p.code === c; })[0] || {}, L = window.PLANS_LIGNES && window.PLANS_LIGNES[c], rows = [];
+      if (L && L.rows && L.rows.length) rows = L.rows.filter(function (x) { return x.actif !== false; }).map(function (x) { return [x.code, x.libelle]; });
+      else rows = ((window.PLANS_REF || {})[REFPLAN[c]] || []);
+      out.push({ code: c, n: i, lib: cfg.abrev || cfg.libelle || 'Plan ' + i, actif: act.indexOf(c) >= 0, rows: rows });
+    }
+    return out;
+  }
+  function renderAna(vals) {
+    vals = vals || {};
+    q('[data-fim-ana]').innerHTML = plansVent().map(function (p) {
+      return '<label class="bp-champ"><span>' + esc(p.lib) + '</span><select class="bp-sel" data-ana="' + p.code + '"' + (p.actif ? '' : ' disabled') + '><option value="">' + (p.actif ? 'Plan ' + p.n + '…' : 'Non activé') + '</option>' +
+        (p.actif ? p.rows.map(function (r) { return '<option value="' + esc(r[0]) + '">' + esc(r[0] + ' — ' + r[1]) + '</option>'; }).join('') : '') + '</select></label>';
+    }).join('');
+    qa('[data-ana]').forEach(function (s) { if (vals[s.dataset.ana]) { s.value = vals[s.dataset.ana]; } });
+  }
+  function lireAna() { var o = {}; qa('[data-ana]').forEach(function (s) { if (s.value) o[s.dataset.ana] = s.value; }); return o; }
+  function listes(r) {
+    r = r || {};
+    var def = exercices(r.annee); if (!r.annee && def) r.annee = def; f('annee').value = r.annee || '';
+    optsListe('site', ((window.PLANS_REF || {}).sites || []).map(function (s) { return [s[0], s[1]]; }), r.site, '— Choisir le site —');
+    var det = comptesDetail(), cl2 = det.filter(function (c) { return /^2/.test(c.code); });
+    optsListe('compte', (cl2.length ? cl2 : det).map(function (c) { return [c.code, c.libelle]; }), r.compte, '— Compte d’immobilisation —');
+    optsListe('famille', (window.FAMILLES_IMMOBILISATION || []).map(function (x) { return [x.code, x.libelle]; }), r.famille, '— Sélectionner —');
+    optsListe('empl', (window.LIEUX_AFFECTATION || []).map(function (x) { return [x.code, x.libelle]; }), r.empl, '— Sélectionner —');
+    optsListe('resp', (window.COLLABORATEURS_RESPONSABLES || []).map(function (x) { return [x.code, x.libelle]; }), r.resp, '— Sélectionner —');
+    optsListe('coll', collectifs(), r.coll, '- Fournisseur collectif -');
+    optsListe('aux', auxiliaires(r.coll), r.aux, '- Compte auxiliaire -');
+    renderAna(r.ana);
+    var manque = [];
+    if (!(window.FAMILLES_IMMOBILISATION || []).length) manque.push('famille d’immobilisation');
+    if (!(window.LIEUX_AFFECTATION || []).length) manque.push('lieu d’affectation');
+    if (!(window.COLLABORATEURS_RESPONSABLES || []).length) manque.push('collaborateur responsable');
+    q('[data-fim-aide]').textContent = manque.length ? 'Aucun(e) ' + manque.join(', ') + ' actif(ve) : créez-les dans Immobilisations › Paramétrages pour les proposer ici.' : '';
+  }
+  f('coll').addEventListener('change', function () { optsListe('aux', auxiliaires(f('coll').value), '', '- Compte auxiliaire -'); err('coll'); err('aux'); });
+
+  // ---------- calculs ----------
+  function valeur() { return Math.round((+f('qte').value || 0) * (+f('pu').value || 0) * 100) / 100; }
+  function majValeur() { f('val').value = nb(valeur()) + ' ' + locale(); majDevises(); }
+  function majDevises() {
+    var D = devisesEtrangeres(), pu = +f('pu').value || 0, q0 = +f('qte').value || 0, d = f('dacq').value || '';
+    q('[data-fim-devs]').innerHTML = D.map(function (dv) {
+      var p = window.COURS_API ? window.COURS_API.taux(dv.code, d) : null, ok = p && p > 0;
+      return '<label class="bp-champ"><span>Prix unitaire (' + esc(dv.code) + ')</span><input class="bp-in fim-ro" readonly tabindex="-1" value="' + (ok ? nb(pu / p) : '—') + '"></label>' +
+        '<label class="bp-champ"><span>Montant (' + esc(dv.code) + ')</span><input class="bp-in fim-ro" readonly tabindex="-1" value="' + (ok ? nb(pu * q0 / p) : '—') + '"></label>';
+    }).join('');
+  }
+  ['qte', 'pu', 'dacq'].forEach(function (k) { f(k).addEventListener('input', majValeur); f(k).addEventListener('change', majValeur); });
+  window.addEventListener('devises-changed', majDevises);
+  f('famille').addEventListener('change', function () {
+    var fam = (window.FAMILLES_IMMOBILISATION || []).filter(function (x) { return x.code === f('famille').value; })[0];
+    if (fam && !f('compte').value) { if (![].some.call(f('compte').options, function (o) { return o.value === fam.compte; })) { var o = document.createElement('option'); o.value = fam.compte; o.textContent = fam.compte; f('compte').appendChild(o); } f('compte').value = fam.compte; }
+  });
+  f('num').addEventListener('input', function () { this.value = this.value.toUpperCase().replace(/[^A-Z0-9-]/g, ''); });
+  function proposerNum() { var a = f('annee').value || String(new Date().getFullYear()); var n = data.length + 1, c; do { c = 'IMM-' + a + '-' + ('000' + n).slice(-3); n++; } while (data.some(function (r) { return r.num === c; })); return c; }
+
+  // ---------- liste ----------
+  function famLib(r) { return r.famille || '—'; }
+  function filtrer() {
+    var F = []; qa('[data-fc]').forEach(function (e) { F[+e.dataset.fc] = e.value.trim().toLowerCase(); });
+    qa('[data-fim-lignes] tr').forEach(function (tr) { tr.hidden = F.some(function (v, k) { if (!v) return false; var td = tr.children[k]; var t = (td.dataset.v || td.textContent).toLowerCase(); return t.indexOf(v) < 0; }); });
+  }
+  qa('[data-fc]').forEach(function (e) { e.addEventListener('input', filtrer); e.addEventListener('change', filtrer); });
+  function liste() {
+    q('[data-fim-compte]').textContent = data.length ? data.length : '';
+    q('[data-fim-vide]').hidden = data.length > 0;
+    q('[data-fim-lignes]').innerHTML = data.map(function (r, i) {
+      return '<tr data-i="' + i + '"' + (i === sel ? ' class="sel"' : '') + '><td><span class="fim-code">' + esc(r.num) + '</span></td><td>' + esc(r.desig) + '</td><td>' + esc(famLib(r)) + '</td><td>' + esc(r.empl) + '</td><td>' + esc(dFR(r.dacq)) + '</td>' +
+        '<td class="r">' + nb(r.qte * r.pu) + '</td><td class="c" data-v="' + (r.genere ? 'généré' : 'brouillon') + '"><span class="fim-badge ' + (r.genere ? 'on' : 'off') + '">' + (r.genere ? 'Écriture générée' : 'Brouillon') + '</span></td></tr>';
+    }).join(''); filtrer();
+  }
+
+  // ---------- formulaire ----------
+  function form(r) {
+    r = r || { annee: '', site: '', ref: '', desig: '', compte: '', qte: 1, pu: '', dacq: '', dms: '', num: '', etat: '', famille: '', empl: '', resp: '', coll: '', aux: '', ana: {} };
+    listes(r);
+    SIMPLES.forEach(function (k) { if (LISTES.indexOf(k) < 0) f(k).value = r[k] == null ? '' : r[k]; });
+    effacer(); majValeur();
+    var v = q('[data-fim-verrou]');
+    v.hidden = !(r.genere); v.textContent = r.genere ? 'Écriture générée sous le n° de pièce ' + r.e_piece + ' (journal ' + r.e_journal + ') : la fiche n’est plus modifiable.' : '';
+  }
+  function etat() {
+    var ed = mode !== 'consultation', cur = sel >= 0 ? data[sel] : null, gen = !!(cur && cur.genere);
+    qa('[data-fim-form] input,[data-fim-form] select').forEach(function (e) { e.disabled = !ed; });
+    qa('[data-fim-form] .fim-ro').forEach(function (e) { e.disabled = false; });
+    var act = window.PLANS_ACTIFS ? window.PLANS_ACTIFS() : [];
+    qa('[data-ana]').forEach(function (s) { if (act.indexOf(s.dataset.ana) < 0) s.disabled = true; });
+    f('aux').disabled = !ed || !f('coll').value;
+    var a = q('[data-fim-actions]'), peutGen = !ed && !!cur && !gen;
+    a.querySelector('[data-fim-ajouter]').disabled = ed; a.querySelector('[data-fim-modifier]').disabled = ed || sel < 0 || gen; a.querySelector('[data-fim-supprimer]').disabled = ed || sel < 0 || gen;
+    a.querySelector('[data-fim-enregistrer]').disabled = !ed; a.querySelector('[data-fim-annuler]').disabled = !ed;
+    a.querySelector('[data-fim-generer]').disabled = !peutGen;
+    q('[data-fim-gen2]').disabled = !peutGen;
+    q('[data-fim-gen-aide]').textContent = gen ? 'Écriture déjà générée (n° ' + cur.e_piece + ').' : (peutGen ? 'Prête : la génération utilise la fiche et les imputations ci-dessus.' : 'Enregistrez la fiche avant d’exécuter la génération.');
+    ['imprimer', 'pdf', 'xlsx'].forEach(function (k) { a.querySelector('[data-fim-' + k + ']').disabled = !data.length; });
+  }
+  function onglet(n) { qa('[data-fim-pan]').forEach(function (p) { p.hidden = p.dataset.fimPan !== n; }); qa('[data-fim-tab]').forEach(function (t) { var on = t.dataset.fimTab === n; t.classList.toggle('on', on); t.setAttribute('aria-selected', on); }); }
+  function songlet(n) { qa('[data-fim-span]').forEach(function (p) { p.hidden = p.dataset.fimSpan !== n; }); qa('[data-fim-stab]').forEach(function (t) { var on = t.dataset.fimStab === n; t.classList.toggle('on', on); t.setAttribute('aria-selected', on); }); }
+  qa('[data-fim-tab]').forEach(function (t) { t.addEventListener('click', function () { onglet(t.dataset.fimTab); }); });
+  qa('[data-fim-stab]').forEach(function (t) { t.addEventListener('click', function () { songlet(t.dataset.fimStab); }); });
+  function choisir(i) { if (mode !== 'consultation') return; sel = i; liste(); form(data[i]); etat(); }
+  var tb = q('[data-fim-lignes]');
+  tb.addEventListener('click', function (e) { var tr = e.target.closest('tr[data-i]'); if (tr) choisir(+tr.dataset.i); });
+  tb.addEventListener('dblclick', function (e) { var tr = e.target.closest('tr[data-i]'); if (tr) { choisir(+tr.dataset.i); onglet('saisie'); songlet('general'); } });
+
+  function lire() {
+    var r = {}; SIMPLES.forEach(function (k) { r[k] = f(k).value.trim(); });
+    r.qte = r.qte === '' ? '' : +r.qte; r.pu = r.pu === '' ? '' : +r.pu; r.ana = lireAna();
+    return r;
+  }
+  function enregistrer() {
+    var r = lire(), ok = true, ancien = mode === 'edition' ? data[sel].num : null;
+    effacer();
+    function exige(k, m) { if (!r[k] && r[k] !== 0) { err(k, m); ok = false; } }
+    exige('annee', 'L’année est obligatoire.'); exige('site', 'Le site est obligatoire.'); exige('ref', 'La référence facture / pièce est obligatoire.'); exige('desig', 'La désignation du bien est obligatoire.');
+    exige('compte', 'Le compte général est obligatoire.'); exige('dacq', 'La date d’acquisition est obligatoire.'); exige('dms', 'La date de mise en service est obligatoire.');
+    exige('num', 'Le numéro d’identification est obligatoire.'); exige('etat', 'L’état du bien est obligatoire.'); exige('empl', 'L’emplacement est obligatoire.'); exige('resp', 'Le responsable est obligatoire.');
+    if (!(r.qte >= 1 && r.qte === Math.floor(r.qte))) { err('qte', 'La quantité est un entier supérieur ou égal à 1.'); ok = false; }
+    if (!(r.pu >= 0) || r.pu === '') { err('pu', 'Le prix unitaire est obligatoire (0 ou plus).'); ok = false; }
+    if (r.num && data.some(function (x) { return x.num === r.num && x.num !== ancien; })) { err('num', 'Ce numéro d’identification existe déjà.'); ok = false; }
+    if (r.dacq && r.dms && r.dms < r.dacq) { err('dms', 'La mise en service ne peut pas précéder l’acquisition.'); ok = false; }
+    var ex = (window.EXERCICES_API ? window.EXERCICES_API.liste() : []).filter(function (x) { return x.annee === r.annee; })[0];
+    if (ex && r.dacq && iso(ex.debut) && (r.dacq < iso(ex.debut) || r.dacq > iso(ex.fin))) { err('dacq', 'La date d’acquisition doit être dans l’exercice ' + r.annee + ' (' + ex.debut + ' – ' + ex.fin + ').'); ok = false; }
+    if (!ok) { songlet('general'); return; }
+    r.id = mode === 'creation' ? nextId++ : data[sel].id; r.genere = false;
+    if (mode === 'creation') { data.push(r); sel = data.length - 1; } else data[sel] = r;
+    mode = 'consultation'; liste(); form(data[sel]); etat(); onglet('liste'); publier(); toast(ancien ? 'Fiche modifiée.' : 'Fiche enregistrée.');
+  }
+  function publier() {
+    window.FICHES_IMMOBILISATION = data.map(function (r) { return { num: r.num, designation: r.desig, famille: r.famille, emplacement: r.empl, responsable: r.resp, compte: r.compte, valeur: r.qte * r.pu, dateAcquisition: r.dacq, statut: r.genere ? 'Écriture générée' : 'Brouillon' }; });
+    window.dispatchEvent(new Event('fiches-immobilisation-changed'));
+  }
+
+  // ---------- génération automatique de l'écriture ----------
+  function journalAchats() { return (window.JOURNAUX_PLAN || []).filter(function (j) { return j.actif !== false && (j.type === 'Achat' || j.nature === 'Achat'); })[0] || null; }
+  function generer() {
+    var r = data[sel]; if (!r || r.genere || mode !== 'consultation') return;
+    var manque = []; if (!r.coll) manque.push('le fournisseur collectif'); if (!r.aux) manque.push('le compte auxiliaire');
+    if (manque.length) { onglet('saisie'); songlet('ecritures'); toast('Onglet Écritures non renseigné : il manque ' + manque.join(' et ') + '. Cliquez sur « Modifier », complétez les imputations puis enregistrez la fiche.'); return; }
+    var v = Math.round(r.qte * r.pu * 100) / 100; if (!(v > 0)) { toast('La valeur d’acquisition est nulle : aucune écriture à générer.'); return; }
+    var pj = journalAchats(); if (!pj) { toast('Aucun journal d’achats actif : créez-en un dans Gestion des plans › Saisie des plans › Journaux.'); return; }
+    var piece = pj.auto && window.JOURNAUX_NUMERO ? window.JOURNAUX_NUMERO(pj, (+pj.dernier || 0) + 1) : r.num;
+    if (genere.some(function (g) { return g.journal === pj.code && g.piece === piece; })) { toast('Le n° de pièce ' + piece + ' existe déjà dans le journal ' + pj.code + '.'); return; }
+    var ana = Object.keys(r.ana || {}).map(function (k) { return k + ' ' + r.ana[k]; }).join(', ');
+    var lib = 'Acquisition ' + r.desig + ' — ' + r.ref;
+    if (!window.confirm('Générer l’écriture de la fiche « ' + r.num + ' » dans le journal ' + pj.code + ' (pièce ' + piece + ') ?\nDébit ' + r.compte + ' : ' + nb(v) + (ana ? ' (' + ana + ')' : '') + '\nCrédit ' + r.coll + ' / ' + r.aux + ' : ' + nb(v) + '\nLa fiche ne sera plus modifiable.')) return;
+    if (pj.auto) { pj.dernier = (+pj.dernier || 0) + 1; window.dispatchEvent(new Event('journaux-changed')); }
+    r.e_piece = piece; r.e_journal = pj.code; r.genere = true;
+    genere.push({ fiche: r.num, journal: pj.code, date: r.dacq, piece: piece, libelle: lib, total: v, lignes: [
+      { compte: r.compte, libelle: lib, debit: v, credit: 0, imputations: r.ana || {} },
+      { compte: r.coll, auxiliaire: r.aux, libelle: lib, debit: 0, credit: v }] });
+    window.ECRITURES_IMMOBILISATIONS = genere.slice(); window.dispatchEvent(new Event('ecritures-immobilisation-generees'));
+    liste(); form(r); etat(); publier(); toast('Écriture n° ' + piece + ' générée (journal ' + pj.code + ', ' + nb(v) + ').');
+  }
+
+  // ---------- exports ----------
+  function table() {
+    var L = data.filter(function (m, i) { var tr = tb.children[i]; return !tr || !tr.hidden; });
+    return { tete: ['N° d’identification', 'Désignation du bien', 'Famille', 'Emplacement', 'Date d’acquisition', 'Valeur d’acquisition', 'Statut'], lignes: L.map(function (r) { return [r.num, r.desig, famLib(r), r.empl, dFR(r.dacq), nb(r.qte * r.pu), r.genere ? 'Écriture générée' : 'Brouillon']; }) };
+  }
+  function exporter(k) {
+    var X = window.EXPORT_TABLEAU, t = table(); if (!X) { toast('Module d’export indisponible.'); return; } if (!t.lignes.length) { toast('Rien à exporter.'); return; }
+    if (k === 'pdf') X.pdf('liste_immobilisations.pdf', 'Liste d’immobilisations', t.lignes.length + ' ligne(s)', t.tete, t.lignes); else X.xlsx('liste_immobilisations.xlsx', 'Liste d’immobilisations', t.tete, t.lignes);
+    toast('Export ' + (k === 'pdf' ? 'PDF' : 'Excel (XLSX)') + ' généré : ' + t.lignes.length + ' ligne(s).');
+  }
+  function imprimer() {
+    var t = table(), w = window.open('', '_blank'); if (!w) { toast('Autorisez les fenêtres pop-up pour imprimer.'); return; }
+    w.document.write('<!doctype html><meta charset="utf-8"><title>Liste d’immobilisations</title><style>body{font:13px system-ui,sans-serif;color:#0B1332;margin:24px}h1{font-size:18px}table{border-collapse:collapse;width:100%}th{background:#2E427B;color:#fff;text-align:left;padding:8px 10px;font-size:11px;text-transform:uppercase;-webkit-print-color-adjust:exact;print-color-adjust:exact}td{padding:8px 10px;border-bottom:1px solid #D6D9E0}</style><h1>Liste d’immobilisations</h1><table><thead><tr>' +
+      t.tete.map(function (h) { return '<th>' + esc(h) + '</th>'; }).join('') + '</tr></thead><tbody>' + t.lignes.map(function (r) { return '<tr>' + r.map(function (c) { return '<td>' + esc(c) + '</td>'; }).join('') + '</tr>'; }).join('') + '</tbody></table>');
+    w.document.close(); w.focus(); setTimeout(function () { w.print(); }, 300);
+  }
+  root.addEventListener('click', function (e) {
+    var b = e.target.closest('button'); if (!b || b.disabled) return;
+    if (b.hasAttribute('data-fim-gen2') || b.hasAttribute('data-fim-generer')) { generer(); return; }
+    if (b.hasAttribute('data-fim-ajouter')) { onglet('saisie'); songlet('general'); mode = 'creation'; sel = -1; liste(); form(null); f('num').value = proposerNum(); etat(); f('ref').focus(); return; }
+    if (b.hasAttribute('data-fim-modifier')) { onglet('saisie'); mode = 'edition'; etat(); f('desig').focus(); return; }
+    if (b.hasAttribute('data-fim-annuler')) { mode = 'consultation'; liste(); form(sel >= 0 ? data[sel] : null); etat(); return; }
+    if (b.hasAttribute('data-fim-enregistrer')) { enregistrer(); return; }
+    if (b.hasAttribute('data-fim-supprimer')) {
+      var r = data[sel]; if (!r || r.genere) return;
+      if (!window.confirm('Supprimer la fiche d’immobilisation « ' + r.num + ' » ? Cette action est définitive.')) return;
+      data.splice(sel, 1); sel = -1; liste(); form(null); etat(); publier(); toast('Fiche supprimée.'); return;
+    }
+    if (b.hasAttribute('data-fim-imprimer')) { imprimer(); return; }
+    if (b.hasAttribute('data-fim-pdf')) { exporter('pdf'); return; }
+    if (b.hasAttribute('data-fim-xlsx')) { exporter('xlsx'); return; }
+  });
+  ['familles-immobilisation-changed', 'lieux-affectation-changed', 'collaborateurs-responsables-changed', 'plans-changed', 'plans-actifs'].forEach(function (ev) { window.addEventListener(ev, function () { if (mode === 'consultation') { form(sel >= 0 ? data[sel] : null); etat(); } }); });
+  window.addEventListener('hashchange', function () { if (mode === 'consultation' && location.hash === '#immolist') { form(sel >= 0 ? data[sel] : null); etat(); } });
+  liste(); form(null); etat(); onglet('liste'); songlet('general'); publier();
+})();
+</script>
