@@ -1,0 +1,29 @@
+<app-personnalisation-entite>
+<!--
+  Administration de l'entité › onglet « Personnalisation » : paramètres propres à l'entité (référentiel comptable, checklist de clôture, gestion des devis programmes,
+  monnaies locale et devises 1 à 3). Les champs sont les mêmes qu'auparavant dans « Informations générales » (scripts ENTITE_OPTIONS dans informations_generales.html).
+  Réutilise les styles ig-* de informations_generales.html.
+-->
+<div class="ig-wrap">
+<p class="ig-intro">Paramètres spécifiques à l'entité : référentiel, options de fonctionnement et monnaies.</p>
+<div class="ig-card"><div class="ig-bd">
+<div class="ig-sec"><span class="ig-t">Comptabilité</span><div class="ig-g">
+<div class="ig-f ig-s4"><label class="ig-l">Référentiel comptable</label><select class="form-input ig-in"><option value="PCG2005" selected>PCG 2005 (Madagascar)</option><option value="SYSCOHADA">SYSCOHADA</option><option value="SYCEBNL">SYCEBNL</option><option value="PCGFR">PCG France</option><option value="IFRS">IFRS</option></select></div>
+<div class="ig-f ig-s4" style="align-self:end"><label class="ig-l" style="display:flex;align-items:center;gap:8px;cursor:pointer;text-transform:none;letter-spacing:0"><input type="checkbox" data-ig-checklist checked style="width:16px;height:16px;accent-color:#2E427B"> Checklist clôture d'exercice</label><span style="display:block;margin-top:4px;font-size:12px;color:#5B606D">Active la checklist des opérations de clôture d'exercice.</span></div>
+<div class="ig-f ig-s4" style="align-self:end"><label class="ig-l" style="display:flex;align-items:center;gap:10px;cursor:pointer;text-transform:none;letter-spacing:0"><span class="ig-sw"><input type="checkbox" role="switch" aria-label="Activer la gestion des devis programmes" data-ig-gestiondp></span> Gestion des devis programmes</label><span style="display:block;margin-top:4px;font-size:12px;color:#5B606D" data-ig-gestiondp-l>Désactivée : le champ DP n'apparaît pas dans la saisie des écritures.</span></div>
+</div></div>
+<div class="ig-sec"><span class="ig-t">Monnaies</span><div class="ig-g">
+<div class="ig-f ig-s3"><label class="ig-l">Monnaie locale</label><select class="form-input ig-in"><option value="">-- Aucune --</option><option value="MGA">MGA — Ariary</option><option value="MUR">MUR — ROUPIE</option><option value="XOF">XOF — FRANC CFA</option></select></div>
+<div class="ig-f ig-s3"><label class="ig-l">Devise 1</label><select class="form-input ig-in"><option value="">-- Aucune --</option><option value="MUR">MUR — ROUPIE</option><option value="USD">USD — Dollar Américain</option><option value="XOF">XOF — FRANC CFA</option></select></div>
+<div class="ig-f ig-s3"><label class="ig-l">Devise 2</label><select class="form-input ig-in"><option value="">-- Aucune --</option><option value="EUR">EUR — Euro</option><option value="MUR">MUR — ROUPIE</option><option value="XOF">XOF — FRANC CFA</option></select></div>
+<div class="ig-f ig-s3"><label class="ig-l">Devise 3</label><select class="form-input ig-in"><option value="">-- Aucune --</option><option value="MUR">MUR — ROUPIE</option><option value="XOF">XOF — FRANC CFA</option></select></div>
+</div></div>
+</div>
+<div class="ig-ft"><button type="button" class="ig-bt">Annuler</button><button type="button" class="ig-bt ig-ok">Enregistrer</button></div>
+</div></div>
+</app-personnalisation-entite>
+<script>(function(){var c=document.querySelector("[data-ig-checklist]");if(!c)return;window.ENTITE_OPTIONS=window.ENTITE_OPTIONS||{checklistCloture:true};try{var sv=localStorage.getItem("softcompta.checklistCloture");if(sv!==null)window.ENTITE_OPTIONS.checklistCloture=sv==="1";}catch(e){}c.checked=!!window.ENTITE_OPTIONS.checklistCloture;c.addEventListener("change",function(){window.ENTITE_OPTIONS.checklistCloture=c.checked;try{localStorage.setItem("softcompta.checklistCloture",c.checked?"1":"0");}catch(e){}window.dispatchEvent(new Event("entite-options-changed"));});})();</script>
+
+<script>(function(){var b=document.querySelector("[data-ig-gestiondp]");if(!b)return;var l=document.querySelector("[data-ig-gestiondp-l]");window.ENTITE_OPTIONS=window.ENTITE_OPTIONS||{checklistCloture:true};try{var sv=localStorage.getItem("softcompta.gestionDP");window.ENTITE_OPTIONS.gestionDP=sv==="1";}catch(e){window.ENTITE_OPTIONS.gestionDP=false;}
+function maj(){var a=!!window.ENTITE_OPTIONS.gestionDP;document.documentElement.classList.toggle("sans-dp",!a);if(!a&&location.hash==="#dp")location.hash="#entite";b.checked=a;l.textContent=a?"Activée : le champ DP est proposé dans la saisie des écritures et les états.":"Désactivée : le champ DP n'apparaît pas dans la saisie des écritures.";}
+b.addEventListener("change",function(){window.ENTITE_OPTIONS.gestionDP=b.checked;try{localStorage.setItem("softcompta.gestionDP",window.ENTITE_OPTIONS.gestionDP?"1":"0");}catch(e){}maj();window.dispatchEvent(new Event("entite-options-changed"));});maj();})();</script>

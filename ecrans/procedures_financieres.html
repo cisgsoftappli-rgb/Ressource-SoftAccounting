@@ -44,9 +44,41 @@
 .pf-ico{width:32px;height:32px;display:inline-flex;align-items:center;justify-content:center;border:1px solid #e5e1d6;border-radius:8px;background:#fff;color:#e0554f;font-size:15px;cursor:pointer}
 .pf-none td{text-align:center;color:#888780}
 .pf-table tbody tr[data-conv]{cursor:pointer}.pf-table tbody tr.pf-sel td{background:#eaf3ff}
+[data-pfs] .pfs-ok{font-size:12px;color:#2E427B;margin-left:8px}
+[data-pfs] .bp-champ>span{text-transform:uppercase;letter-spacing:.02em;font-size:11px}
+[data-pfs] tbody tr{cursor:pointer}[data-pfs] tbody tr.pfs-sel td{background:#E8ECF6}
+[data-pfs] .pfs-ch{display:flex;flex-wrap:wrap;gap:4px}[data-pfs] .pfs-c{border:1px solid #D5DBE5;background:#F5F7F9;color:#353944;border-radius:6px;padding:1px 7px;font-size:11px}
+[data-pfs] .pfs-pill{display:inline-block;border-radius:999px;background:#DFF3E6;color:#1D6B3A;padding:2px 10px;font-size:12px;font-weight:600}
+[data-pfs] .pfs-er{display:none;font-size:12px;color:#B63132}[data-pfs] .pfs-er.show{display:block}
+[data-pfs] .bp-in.err,[data-pfs] .bp-sel.err{border-color:#B63132}
+[data-pfs] .pfs-fm{padding:16px}[data-pfs] .pfs-b{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:12px 16px;padding:12px;border:1px solid #D5DBE5;border-radius:6px;background:#fff}[data-pfs] .pfs-w{grid-column:1/-1}
+@media (max-width:700px){[data-pfs] .pfs-b{grid-template-columns:1fr}}
+[data-pfs] .pfs-ov{position:fixed;inset:0;z-index:2000;display:flex;align-items:center;justify-content:center;padding:16px;background:rgba(11,19,50,.55)}[data-pfs] .pfs-ov[hidden]{display:none}
+[data-pfs] .pfs-md{display:flex;flex-direction:column;width:min(640px,100%);max-height:92vh;background:#fff;border-radius:14px;box-shadow:0 24px 60px rgba(11,19,50,.35);overflow:hidden}
+[data-pfs] .pfs-mh{padding:14px 20px;border-bottom:1px solid #E9EBF0}[data-pfs] .pfs-mh h2{margin:0;font:600 17px var(--font-heading);color:#2E427B}
+[data-pfs] .pfs-mb{padding:14px 20px;overflow:auto;display:grid;gap:12px}
+[data-pfs] .pfs-jr{border:1px solid #D5DBE5;border-radius:8px;background:#fff}[data-pfs] .pfs-jh{display:flex;gap:8px;align-items:center;padding:8px;border-bottom:1px solid #E9EBF0}[data-pfs] .pfs-jh .bp-in{flex:1;min-width:0}
+[data-pfs] .pfs-jh button{height:32px;padding:0 10px;border:1px solid #C5CAD6;border-radius:8px;background:#fff;color:#2E427B;font:600 12px var(--font-sans);cursor:pointer;white-space:nowrap}
+[data-pfs] .pfs-jl{max-height:260px;overflow:auto}
+[data-pfs] .pfs-jt{width:100%;border-collapse:collapse;font-size:13px}
+[data-pfs] .pfs-jt thead th{position:sticky;background:#F5F7F9;text-align:left;font-size:11px;font-weight:700;letter-spacing:.04em;text-transform:uppercase;color:#353944;padding:6px 8px;border-bottom:1px solid #E9EBF0}
+[data-pfs] .pfs-jt thead tr:first-child th{top:0;z-index:2}[data-pfs] .pfs-jt thead tr.pfs-jf th{top:30px;z-index:2;padding:4px 8px}
+[data-pfs] .pfs-jt .bp-in{width:100%;box-sizing:border-box;height:29px;min-height:29px!important;font-size:11px;padding:0 8px}
+[data-pfs] .pfs-jt .pfs-ck{width:40px;text-align:center}
+[data-pfs] .pfs-jt .pfs-ck button{height:29px;width:29px;border:1px solid #C5CAD6;border-radius:6px;background:#fff;color:#2E427B;cursor:pointer;padding:0;min-height:0!important}
+[data-pfs] .pfs-jt tbody td{padding:6px 8px;border-bottom:1px solid #F1F2F5;cursor:pointer}[data-pfs] .pfs-jt tbody td.pfs-ck{text-align:center}[data-pfs] .pfs-jt tbody td.pfs-cd{white-space:nowrap;font-weight:600;color:#0B1332}
+[data-pfs] .pfs-jt tbody tr:hover td{background:#F5F7FB}
+[data-pfs] .pfs-jl input{width:16px;height:16px;min-height:0!important;accent-color:#2E427B}
+[data-pfs] .pfs-mf{display:flex;justify-content:flex-end;gap:8px;padding:12px 20px;border-top:1px solid #E9EBF0}
+[data-pfs] .pfs-mf button{height:36px;padding:0 18px;border:1px solid #C5CAD6;border-radius:8px;background:#fff;color:#353944;font:600 13px var(--font-sans);cursor:pointer}[data-pfs] .pfs-mf button:hover{background:#F5F7F9}[data-pfs] .pfs-mf button.p{background:#2E427B;border-color:#2E427B;color:#fff}[data-pfs] .pfs-mf button.p:hover{background:#243569}
 </style>
 <app-procedures-financieres>
 <div class="pf-page" data-pf-root>
+  <div class="flex items-center gap-1 border-b border-[#edf1f5] mb-4" role="tablist">
+    <button type="button" role="tab" data-pf-main-tab="procedure" data-on="inline-flex items-center gap-1.5 px-4 py-2.5 text-[13px] font-semibold border-b-2 -mb-px transition-colors cursor-pointer border-[#3e97ff] text-[#3e97ff]" data-off="inline-flex items-center gap-1.5 px-4 py-2.5 text-[13px] font-semibold border-b-2 -mb-px transition-colors cursor-pointer border-transparent text-[#888780]" class="inline-flex items-center gap-1.5 px-4 py-2.5 text-[13px] font-semibold border-b-2 -mb-px transition-colors cursor-pointer border-[#3e97ff] text-[#3e97ff]"><i class="text-base ti ti-file-certificate"></i> Procédure</button>
+    <button type="button" role="tab" data-pf-main-tab="selection" data-on="inline-flex items-center gap-1.5 px-4 py-2.5 text-[13px] font-semibold border-b-2 -mb-px transition-colors cursor-pointer border-[#3e97ff] text-[#3e97ff]" data-off="inline-flex items-center gap-1.5 px-4 py-2.5 text-[13px] font-semibold border-b-2 -mb-px transition-colors cursor-pointer border-transparent text-[#888780]" class="inline-flex items-center gap-1.5 px-4 py-2.5 text-[13px] font-semibold border-b-2 -mb-px transition-colors cursor-pointer border-transparent text-[#888780]"><i class="text-base ti ti-filter"></i> Sélection <span class="rounded-full bg-slate-100 px-2 text-xs text-slate-600" data-pf-selcount>1</span></button>
+  </div>
+  <div data-pf-main="procedure">
   <div class="mb-3 flex flex-wrap items-center gap-2 rounded-xl border border-slate-200 bg-white px-4 py-2 shadow-sm">
     <div class="mr-3" title="Association d'une procédure financière et de ses modèles d'états à une convention">
       <h2 class="text-base font-bold text-slate-900">Procédures financières</h2>
@@ -112,6 +144,53 @@
     <tbody data-pf-rows><tr data-conv="CONV-001 — Projet Résilience Rurale" data-mon="USD"><td class="pf-b">CONV-001 — Projet Résilience Rurale</td><td><span class="pf-pill">IDA</span></td><td data-pf-monc>USD</td><td><div class="pf-chips"><span class="pf-chip">Formulaire 2F</span><span class="pf-chip">Formulaire 3F</span><span class="pf-chip">Formulaire 4F</span><span class="pf-chip">EJCD</span><span class="pf-chip">État récapitulatif par catégorie</span></div></td><td><div style="display:flex;justify-content:flex-end"><button type="button" class="pf-ico" data-pf-del aria-label="Supprimer"><i class="ti ti-trash"></i></button></div></td></tr></tbody>
   </table></div>
   <footer class="border-t border-slate-200 bg-slate-50/50 px-5 py-3 text-xs text-slate-500" style="margin-top:12px">Double-cliquez sur une ligne pour la modifier dans l'onglet Saisie.</footer>
+  </div>
+
+  </div>
+
+  <div data-pf-main="selection" style="display:none">
+  <div class="bp-root" data-pfs>
+    <div class="no-print">
+      <button type="button" data-pfs-nouvelle>Nouvelle sélection</button>
+      <button type="button" data-pfs-modifier>Modifier</button>
+      <button type="button" data-pfs-supprimer>Supprimer</button>
+      <button type="button" data-pfs-enregistrer>Enregistrer</button>
+      <button type="button" data-pfs-annuler>Annuler</button>
+      <span class="pfs-ok" data-pfs-msg role="status"></span>
+    </div>
+    <div class="bp-tabs" role="tablist">
+      <button type="button" role="tab" data-pfs-tab="saisie">Saisie</button>
+      <button type="button" role="tab" class="on" data-pfs-tab="liste">Liste <span class="bp-n" data-pfs-n></span></button>
+    </div>
+    <div class="bp-grid">
+      <section class="bp-pan" aria-label="Liste des sélections" data-pfs-pan="liste">
+        <h2>Sélections de mouvements <small>Double-clic ou « Modifier » pour ouvrir la ligne en saisie</small></h2>
+        <div style="overflow:auto">
+          <table class="bp-tb" style="min-width:760px"><thead>
+            <tr><th>N° paramètre</th><th>Description</th><th>Type de dépense</th><th class="c">Journaux</th><th>Centre de saisie</th></tr>
+          </thead><tbody data-pfs-rows></tbody></table>
+        </div>
+        <div class="bp-vide" data-pfs-vide hidden>Aucune sélection : utilisez « Nouvelle sélection ».</div>
+      </section>
+      <section class="bp-pan" aria-label="Saisie d'une sélection" data-pfs-pan="saisie" hidden>
+        <form class="pfs-fm" onsubmit="return false" novalidate>
+          <div class="pfs-b">
+            <label class="bp-champ"><span>N° paramètre <b>*</b></span><input class="bp-in" data-pfs-f="num" maxlength="20" placeholder="Ex : SOE"><span class="pfs-er" data-pfs-er="num"></span></label>
+            <label class="bp-champ"><span>Description <b>*</b></span><input class="bp-in" data-pfs-f="desc" maxlength="80" placeholder="Ex : STATE OF EXPENDITURE"><span class="pfs-er" data-pfs-er="desc"></span></label>
+            <label class="bp-champ"><span>Type de dépense <b>*</b></span><select class="bp-sel" data-pfs-f="type"><option value="">— Sélectionner —</option><option>Décaissement</option><option>Engagement</option><option>Prévision</option></select><span class="pfs-er" data-pfs-er="type"></span></label>
+            <label class="bp-champ"><span>Centre de saisie <b>*</b></span><select class="bp-sel" data-pfs-f="cs"></select><span class="pfs-er" data-pfs-er="cs"></span></label>
+            <div class="bp-champ pfs-w"><span>Journaux <b>*</b> <em data-pfs-nj style="font-style:normal;text-transform:none;color:#5B606D"></em></span>
+              <div class="pfs-jr"><div class="pfs-jl">
+                <table class="pfs-jt" data-no-tf><thead>
+                  <tr><th class="pfs-ck"></th><th>Code</th><th>Libellé</th></tr>
+                  <tr class="pfs-jf"><th class="pfs-ck"><button type="button" data-pfs-tous title="Tout sélectionner" aria-label="Tout sélectionner"><i class="ti ti-checks"></i></button></th><th><input class="bp-in" data-pfs-qc placeholder="Filtrer" aria-label="Filtrer par code"></th><th><input class="bp-in" data-pfs-ql placeholder="Filtrer" aria-label="Filtrer par libellé"></th></tr>
+                </thead><tbody data-pfs-jl></tbody></table></div></div>
+              <span class="pfs-er" data-pfs-er="jnl"></span></div>
+          </div>
+        </form>
+      </section>
+    </div>
+  </div>
   </div>
 </div>
 <script>
@@ -244,4 +323,94 @@
   window.addEventListener('load', refreshMon);
 })();
 </script>
-</app-procedures-financieres>
+<script>
+(function () {
+  var racine = document.currentScript.parentElement, page = racine.querySelector('[data-pf-root]'), root = racine.querySelector('[data-pfs]'); if (!root || !page) return;
+  function q(s) { return root.querySelector(s); } function qa(s) { return [].slice.call(root.querySelectorAll(s)); }
+  function esc(s) { return String(s == null ? '' : s).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;'); }
+  function f(k) { return q('[data-pfs-f="' + k + '"]'); }
+  // onglets principaux
+  function principal(t) {
+    [].forEach.call(page.querySelectorAll('[data-pf-main]'), function (p) { p.style.display = p.getAttribute('data-pf-main') === t ? '' : 'none'; });
+    [].forEach.call(page.querySelectorAll('[data-pf-main-tab]'), function (b) { var on = b.getAttribute('data-pf-main-tab') === t; b.className = b.getAttribute(on ? 'data-on' : 'data-off'); b.setAttribute('aria-selected', on); });
+  }
+  [].forEach.call(page.querySelectorAll('[data-pf-main-tab]'), function (b) { b.addEventListener('click', function () { principal(b.getAttribute('data-pf-main-tab')); }); });
+
+  var CLE = 'softcompta.pfSelections', sel = -1, edit = -1;
+  var SOE_J = ['BFM — Journal Banque BFM', 'BSGA2 — Journal Banque SGM A -MGA', 'CA — Journal Caisse', 'FID — Journal Fonds confiés FID', 'JAVNU — Journal Avance Agence des Nations Unies', 'JPDNU — Journal Paiement Direct Des Nations Unies', 'MISS — Journal mission', 'JPR — Journal Pénalité de retard', 'JPDFR — Journal Paiement Direct Fournisseur', 'FONDS — Journal Avance de Fonds', 'CREDOC — Journal CREDOC', 'BSGB1 — Journal Banque SGM B -USD', 'BSGA1 — Journal Banque SGM A - USD'];
+  var data = [{ num: 'SOE', desc: 'STATE OF EXPENDITURE', type: 'Décaissement', jnl: SOE_J, cs: 'Siège', lie: true }];
+  try { var sv = JSON.parse(localStorage.getItem(CLE) || 'null'); if (Array.isArray(sv)) data = sv; } catch (e) {}
+  function msg(t) { q('[data-pfs-msg]').textContent = t || ''; }
+  function publier() { window.PF_SELECTIONS = data; try { localStorage.setItem(CLE, JSON.stringify(data)); } catch (e) {} var c = page.querySelector('[data-pf-selcount]'); if (c) c.textContent = data.length; window.dispatchEvent(new Event('pf-selections-changed')); }
+  function journaux() {
+    var l = (window.JOURNAUX_PLAN || []).filter(function (j) { return j.actif !== false; }).map(function (j) { return j.code + ' — ' + (j.libelle || j.lib || ''); });
+    SOE_J.forEach(function (x) { if (!l.some(function (y) { return y.split(' — ')[0] === x.split(' — ')[0]; })) l.push(x); });
+    return l;
+  }
+  function centres() { var l = ['Siège']; ((window.PLANS_REF || {}).sites || []).forEach(function (x) { if (x[0] !== '00') l.push(x[1]); }); return l; }
+  function onglet(n) {
+    qa('[data-pfs-tab]').forEach(function (b) { b.classList.toggle('on', b.getAttribute('data-pfs-tab') === n); });
+    qa('[data-pfs-pan]').forEach(function (p) { p.hidden = p.getAttribute('data-pfs-pan') !== n; });
+    qa('[data-pfs-enregistrer],[data-pfs-annuler]').forEach(function (b) { b.disabled = n !== 'saisie'; });
+    qa('[data-pfs-nouvelle],[data-pfs-modifier],[data-pfs-supprimer]').forEach(function (b) { b.disabled = n === 'saisie'; });
+    if (n === 'liste') lister();
+  }
+  function lister() {
+    q('[data-pfs-rows]').innerHTML = data.map(function (r, i) {
+      return '<tr data-i="' + i + '"' + (i === sel ? ' class="pfs-sel"' : '') + '><td><b>' + esc(r.num) + '</b></td><td>' + esc(r.desc) + '</td><td><span class="pfs-pill">' + esc(r.type) + '</span></td><td class="c">' + r.jnl.length + '</td><td>' + esc(r.cs) + '</td></tr>';
+    }).join(''); q('[data-pfs-vide]').hidden = data.length > 0; q('[data-pfs-n]').textContent = '(' + data.length + ')';
+    if (!q('[data-pfs-pan="liste"]').hidden) {
+      var r = data[sel], b = function (k) { return q('[data-pfs-' + k + ']'); }, fige = sel < 0 || !!(r && r.lie);
+      b('modifier').disabled = fige; b('supprimer').disabled = fige;
+      b('modifier').title = b('supprimer').title = r && r.lie ? 'Ce paramétrage ne peut être ni modifié ni supprimé car il est déjà rattaché à une demande.' : '';
+    }
+  }
+  function effacer() { qa('.pfs-er').forEach(function (e) { e.classList.remove('show'); e.textContent = ''; }); qa('.err').forEach(function (e) { e.classList.remove('err'); }); }
+  function err(k, m, ch) { var e = q('[data-pfs-er="' + k + '"]'); e.textContent = m; e.classList.add('show'); if (ch) ch.classList.add('err'); }
+  var coches = [];
+  function cases() {
+    var h = '', qc = q('[data-pfs-qc]').value.toLowerCase(), ql = q('[data-pfs-ql]').value.toLowerCase();
+    journaux().forEach(function (j) {
+      var p = j.split(' — '), code = p.shift(), lib = p.join(' — ');
+      if ((qc && code.toLowerCase().indexOf(qc) < 0) || (ql && lib.toLowerCase().indexOf(ql) < 0)) return;
+      h += '<tr><td class="pfs-ck"><input type="checkbox" value="' + esc(j) + '"' + (coches.indexOf(j) >= 0 ? ' checked' : '') + ' aria-label="Sélectionner ' + esc(code) + '"></td><td class="pfs-cd">' + esc(code) + '</td><td>' + esc(lib) + '</td></tr>';
+    });
+    q('[data-pfs-jl]').innerHTML = h || '<tr><td colspan="3" style="padding:10px;font-size:12px;color:#5B606D">Aucun journal.</td></tr>';
+    q('[data-pfs-nj]').textContent = coches.length ? '(' + coches.length + ' sélectionné' + (coches.length > 1 ? 's' : '') + ')' : '';
+  }
+  function lire() { qa('[data-pfs-jl] input').forEach(function (c) { var i = coches.indexOf(c.value); if (c.checked && i < 0) coches.push(c.value); if (!c.checked && i >= 0) coches.splice(i, 1); }); q('[data-pfs-nj]').textContent = coches.length ? '(' + coches.length + ' sélectionné' + (coches.length > 1 ? 's' : '') + ')' : ''; }
+  function ouvrir(i) {
+    edit = i; effacer(); var r = i >= 0 ? data[i] : { num: '', desc: '', type: '', jnl: [], cs: '' };
+    f('num').value = r.num; f('desc').value = r.desc; f('type').value = r.type;
+    var cs = f('cs'); cs.innerHTML = '<option value="">— Sélectionner —</option>' + centres().map(function (c) { return '<option>' + esc(c) + '</option>'; }).join(''); if (r.cs && centres().indexOf(r.cs) < 0) cs.insertAdjacentHTML('beforeend', '<option>' + esc(r.cs) + '</option>'); cs.value = r.cs;
+    coches = r.jnl.slice(); q('[data-pfs-qc]').value = ''; q('[data-pfs-ql]').value = ''; cases(); onglet('saisie'); f('num').focus();
+  }
+  q('[data-pfs-tab="saisie"]').addEventListener('click', function () { if (q('[data-pfs-pan="saisie"]').hidden) ouvrir(sel >= 0 && !data[sel].lie ? sel : -1); });
+  q('[data-pfs-tab="liste"]').addEventListener('click', function () { onglet('liste'); });
+  q('[data-pfs-nouvelle]').addEventListener('click', function () { msg(); ouvrir(-1); });
+  q('[data-pfs-modifier]').addEventListener('click', function () { if (sel < 0) { msg('Sélectionnez une sélection dans la liste.'); return; } msg(); ouvrir(sel); });
+  q('[data-pfs-supprimer]').addEventListener('click', function () {
+    if (sel < 0) return; if (!window.confirm('Supprimer la sélection ' + data[sel].num + ' ?')) return;
+    data.splice(sel, 1); sel = -1; publier(); lister(); msg('Sélection supprimée.');
+  });
+  q('[data-pfs-rows]').addEventListener('click', function (e) { var tr = e.target.closest('tr[data-i]'); if (!tr) return; sel = +tr.dataset.i; qa('[data-pfs-rows] tr').forEach(function (r) { r.classList.toggle('pfs-sel', r === tr); }); msg(); lister(); });
+  q('[data-pfs-rows]').addEventListener('dblclick', function (e) { var tr = e.target.closest('tr[data-i]'); if (tr && !data[+tr.dataset.i].lie) { sel = +tr.dataset.i; ouvrir(sel); } });
+  q('[data-pfs-annuler]').addEventListener('click', function () { msg(); onglet('liste'); });
+  ['[data-pfs-qc]', '[data-pfs-ql]'].forEach(function (x) { q(x).addEventListener('input', function () { lire(); cases(); }); });
+  q('[data-pfs-jl]').addEventListener('click', function (e) { var td = e.target.closest('td'); if (!td || e.target.tagName === 'INPUT') return; var c = td.parentElement.querySelector('input'); if (c) { c.checked = !c.checked; lire(); } });
+  q('[data-pfs-jl]').addEventListener('change', lire);
+  q('[data-pfs-tous]').addEventListener('click', function () { lire(); var vis = qa('[data-pfs-jl] input'), tout = vis.every(function (c) { return c.checked; }); vis.forEach(function (c) { c.checked = !tout; }); lire(); this.title = tout ? 'Tout sélectionner' : 'Tout désélectionner'; });
+  q('[data-pfs-enregistrer]').addEventListener('click', function () {
+    effacer(); lire(); var ok = true, r = { num: f('num').value.trim(), desc: f('desc').value.trim(), type: f('type').value, jnl: coches.slice(), cs: f('cs').value };
+    if (!r.num) { err('num', 'Le n° de paramètre est obligatoire.', f('num')); ok = false; } else if (data.some(function (x, i) { return i !== edit && x.num.toLowerCase() === r.num.toLowerCase(); })) { err('num', 'Ce n° de paramètre existe déjà.', f('num')); ok = false; }
+    if (!r.desc) { err('desc', 'La description est obligatoire.', f('desc')); ok = false; }
+    if (!r.type) { err('type', 'Le type de dépense est obligatoire.', f('type')); ok = false; }
+    if (!r.jnl.length) { err('jnl', 'Choisissez au moins un journal.'); ok = false; }
+    if (!r.cs) { err('cs', 'Le centre de saisie est obligatoire.', f('cs')); ok = false; }
+    if (!ok) return;
+    if (edit >= 0) data[edit] = r; else { data.push(r); edit = data.length - 1; }
+    sel = edit; publier(); msg('Sélection enregistrée.'); onglet('liste');
+  });
+  publier(); onglet('liste');
+})();
+</script>

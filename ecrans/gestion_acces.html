@@ -117,7 +117,7 @@
       N('Administration', 'ti-shield', [N('Utilisateurs', 'ti-users', 0, { ops: CRUD }), N('Gestion des accès', 'ti-shield-check'), N('Paramétrage des traces', 'ti-list-details'), N('Journal de traces', 'ti-history', 0, { ops: EDIT }), N('Nettoyages', 'ti-eraser', 0, { ops: ['voir', 'suppr'] }), N('Alertes', 'ti-bell', 0, { ops: CRUD })], { ops: ALL }),
       N('Paramètres généraux', 'ti-settings', [N('Pays', 'ti-world', 0, { ops: CRUD }), N('Devise', 'ti-coin', 0, { ops: CRUD }), N('Unités', 'ti-ruler', 0, { ops: CRUD }), N('Administration de l’entité', 'ti-building', 0, { ops: ['voir', 'modif'] }), N('Fonctions', 'ti-id-badge', 0, { ops: CRUD }), N('Signataires', 'ti-signature', 0, { ops: CRUD }), N('Liste des banques', 'ti-building-bank', 0, { ops: CRUD })], { ops: ALL }),
       N('Paramètres comptables', 'ti-layers-intersect', [N('Exercices comptables', 'ti-calendar', 0, { ops: CRUD }), N('Configuration des plans', 'ti-sitemap', 0, { ops: ['voir', 'modif'] }), N('Saisie des plans', 'ti-edit', 0, { ops: CRUD.concat('imp') }), N('Mode de règlement', 'ti-credit-card', 0, { ops: CRUD })], { ops: ALL }),
-      N('Paramètres financiers', 'ti-cash-banknote', [N('Devis programme', 'ti-file-spreadsheet', 0, { ops: CRUD.concat('imp') }), N('Gestion des sélections', 'ti-list-check', 0, { ops: CRUD }), N('Procédures financières', 'ti-route', 0, { ops: CRUD })], { ops: ALL, off: 1 })
+      N('Paramètres financiers', 'ti-cash-banknote', [N('Devis programme', 'ti-file-spreadsheet', 0, { ops: CRUD.concat('imp') }), N('Procédures financières', 'ti-route', 0, { ops: CRUD })], { ops: ALL, off: 1 })
     ], { ops: [], open: 1 }),
     N('Comptabilité générale', 'ti-books', [
       N('Comptabilité générale', 'ti-books', [N('Compte de tiers', 'ti-address-book', 0, { ops: CRUD.concat('imp') }), N('Saisie d’écritures', 'ti-edit', 0, { ops: CRUD.concat(['valid', 'imp']) })], { ops: ALL }),
@@ -137,7 +137,7 @@
     N('Comptabilité Projets & Bailleurs', 'ti-briefcase', [
       N('Saisie PAD', 'ti-edit', 0, { ops: CRUD }),
       N('Gestion des demandes de remboursement', 'ti-files', [
-        N('Paramétrages', 'ti-settings', [N('Gestion des sélections', 'ti-list-check', 0, { ops: CRUD }), N('Modèle récapitulatif', 'ti-template', 0, { ops: CRUD }), N('Modèle SOE', 'ti-template', 0, { ops: CRUD })], { ops: ALL }),
+        N('Paramétrages', 'ti-settings', [N('Modèle récapitulatif', 'ti-template', 0, { ops: CRUD }), N('Modèle SOE', 'ti-template', 0, { ops: CRUD })], { ops: ALL }),
         N('Saisie', 'ti-edit', [N('État de dépense', 'ti-receipt', 0, { ops: ['voir', 'modif', 'valid', 'annul', 'impr', 'xls', 'pdf'] })], { ops: ALL }),
         N('Traitement', 'ti-player-play', [N('Régularisation de la demande', 'ti-checklist', 0, { ops: ['voir', 'modif', 'valid', 'annul'] }), N('Appendice 4 — EJCD', 'ti-file-text', 0, { ops: EDIT })], { ops: ALL })
       ], { ops: ALL }),

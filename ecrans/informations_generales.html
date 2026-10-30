@@ -40,18 +40,8 @@
 <div class="ig-f ig-s4"><label class="ig-l">STAT</label><input type="text" class="form-input ig-in mono"></div>
 <div class="ig-f ig-s4"><label class="ig-l">RCS</label><input type="text" class="form-input ig-in mono"></div>
 </div></div>
-<div class="ig-sec"><span class="ig-t">Comptabilité</span><div class="ig-g">
-<div class="ig-f ig-s4"><label class="ig-l">Référentiel comptable</label><select class="form-input ig-in"><option value="PCG2005" selected>PCG 2005 (Madagascar)</option><option value="SYSCOHADA">SYSCOHADA</option><option value="SYCEBNL">SYCEBNL</option><option value="PCGFR">PCG France</option><option value="IFRS">IFRS</option></select></div>
-<div class="ig-f ig-s4" style="align-self:end"><label class="ig-l" style="display:flex;align-items:center;gap:8px;cursor:pointer;text-transform:none;letter-spacing:0"><input type="checkbox" data-ig-checklist checked style="width:16px;height:16px;accent-color:#2E427B"> Checklist clôture d'exercice</label><span style="display:block;margin-top:4px;font-size:12px;color:#5B606D">Active la checklist des opérations de clôture d'exercice.</span></div>
-</div></div>
-<div class="ig-sec"><span class="ig-t">Monnaies</span><div class="ig-g">
-<div class="ig-f ig-s3"><label class="ig-l">Monnaie locale</label><select class="form-input ig-in"><option value="">-- Aucune --</option><option value="MGA">MGA — Ariary</option><option value="MUR">MUR — ROUPIE</option><option value="XOF">XOF — FRANC CFA</option></select></div>
-<div class="ig-f ig-s3"><label class="ig-l">Devise 1</label><select class="form-input ig-in"><option value="">-- Aucune --</option><option value="MUR">MUR — ROUPIE</option><option value="USD">USD — Dollar Américain</option><option value="XOF">XOF — FRANC CFA</option></select></div>
-<div class="ig-f ig-s3"><label class="ig-l">Devise 2</label><select class="form-input ig-in"><option value="">-- Aucune --</option><option value="EUR">EUR — Euro</option><option value="MUR">MUR — ROUPIE</option><option value="XOF">XOF — FRANC CFA</option></select></div>
-<div class="ig-f ig-s3"><label class="ig-l">Devise 3</label><select class="form-input ig-in"><option value="">-- Aucune --</option><option value="MUR">MUR — ROUPIE</option><option value="XOF">XOF — FRANC CFA</option></select></div>
-</div></div>
 </div>
 <div class="ig-ft"><button type="button" class="ig-bt">Annuler</button><button type="button" class="ig-bt ig-ok">Enregistrer</button></div>
 </div></div>
 </app-informations-generales>
-<script>(function(){var c=document.querySelector("[data-ig-checklist]");if(!c)return;window.ENTITE_OPTIONS=window.ENTITE_OPTIONS||{checklistCloture:true};try{var sv=localStorage.getItem("softcompta.checklistCloture");if(sv!==null)window.ENTITE_OPTIONS.checklistCloture=sv==="1";}catch(e){}c.checked=!!window.ENTITE_OPTIONS.checklistCloture;c.addEventListener("change",function(){window.ENTITE_OPTIONS.checklistCloture=c.checked;try{localStorage.setItem("softcompta.checklistCloture",c.checked?"1":"0");}catch(e){}window.dispatchEvent(new Event("entite-options-changed"));});})();</script>
+<style>.ig-sw{position:relative;display:inline-block;width:36px;height:20px;line-height:0;vertical-align:middle;flex:none}.ig-sw input{-webkit-appearance:none;appearance:none;display:block;position:relative;margin:0;padding:0;width:36px;height:20px;min-height:0!important;border:0;border-radius:999px;background:#c9ced8;box-shadow:none;outline:0;opacity:1;cursor:pointer;transition:background .15s}.ig-sw input::after{content:"";position:absolute;top:2px;left:2px;width:16px;height:16px;border-radius:50%;background:#fff;box-shadow:none;transition:left .15s}.ig-sw input:checked{background:#10b981}.ig-sw input:checked::after{left:18px}.ig-sw input:focus-visible{box-shadow:0 0 0 2px #fff,0 0 0 4px #2E427B}html.sans-dp [data-nav="dp"]{display:none!important}.ig-switch:focus-visible{outline:2px solid #3b82f6;outline-offset:2px}</style>

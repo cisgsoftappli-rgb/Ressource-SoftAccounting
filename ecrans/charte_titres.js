@@ -6,7 +6,7 @@
     var cur = [].slice.call(document.querySelectorAll('.soft-breadcrumb-current')).filter(visible)[0];
     var parent = cur && cur.closest('nav,ol,div') && (function () { var it = [].slice.call(cur.closest('nav,ol,div').querySelectorAll('.soft-breadcrumb-link,.soft-breadcrumb-current')).filter(visible); var i = it.indexOf(cur); return i > 0 ? it[i - 1] : null; })();
     document.querySelectorAll('[data-screen]').forEach(function (s) {
-      if (!visible(s) || s.querySelector('h1,[role="heading"][aria-level="1"]')) return;
+      if (!visible(s) || s.querySelector('[data-sans-titre],h1,[role="heading"][aria-level="1"]')) return;
       var h = [].slice.call(s.querySelectorAll('h2,.dd-title')).filter(visible)[0];
       if (h && parseFloat(getComputedStyle(h).fontSize) >= 15) { h.setAttribute('role', 'heading'); h.setAttribute('aria-level', '1'); return; }
       var t = cur && cur.textContent.trim(); if (!t) return;

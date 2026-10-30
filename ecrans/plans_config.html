@@ -1,7 +1,7 @@
 <!--
   Écran « Configuration des plans » (Paramétrages › Gestion des plans › Configuration des plans) — onglets Saisie / Liste. Pas d'ajout ni de suppression de plan : on modifie seulement les plans existants. Les niveaux ont aussi leurs onglets Saisie / Liste avec des icônes d'action.
   Liste : Code, Libellé du plan, Abréviation, Nombre de niveaux (l'abréviation est celle affichée dans les autres modules). Saisie : Code (non modifiable en modification), Libellé, Abréviation du plan,
-  puis les niveaux du plan (Niveau automatique, Libellé du niveau, Format de codification : Numérique / Alphabétique / Alphanumérique).
+  puis les niveaux du plan (Niveau automatique, Libellé du niveau, Format de codification : Numérique / Alphabétique / Alphanumérique ; pour le plan financier (PLAN3) : Type de niveau CONVENTION ou CATEGORIE, un seul niveau par type).
   Remplace la reprise de capture. Données en mémoire. Plans de la maquette : plan comptable, Activité, Budget, Géo, Financier, Plan 5 à Plan 10.
   Chaque niveau porte aussi un nombre de caractères (1 à 20).
   S'appuie sur les styles bp-* de l'écran « Paramétrage du bilan » (présents dans la page). Ne pas nommer de fonction « $$ » (build.cjs).
@@ -78,10 +78,11 @@
             <label class="bp-champ"><span>Libellé du niveau <b>*</b></span><input class="bp-in" data-nf="libelle" maxlength="40" autocomplete="off"><span class="pc-er" data-er="nlibelle"></span></label>
             <label class="bp-champ"><span>Format de codification</span><select class="bp-sel" data-nf="format"><option>Numérique</option><option>Alphabétique</option><option>Alphanumérique</option></select></label>
             <label class="bp-champ"><span>Nombre de caractères <b>*</b></span><input class="bp-in" data-nf="car" type="number" min="1" max="20" step="1"><span class="pc-er" data-er="ncar"></span></label>
+            <label class="bp-champ" data-pc-ntype hidden><span>Type de niveau</span><select class="bp-sel" data-nf="type"><option value="">— Aucun —</option><option value="CONVENTION">CONVENTION</option><option value="CATEGORIE">CATEGORIE</option></select><span class="pc-er" data-er="ntype"></span></label>
           </div>
         </div>
         <div data-pc-npan="liste" style="margin-top:12px" hidden>
-          <div style="overflow:auto"><table class="bp-tb pc-niv"><thead><tr><th class="c">Niveau</th><th>Libellé du niveau</th><th>Format de codification</th><th class="c">Nombre de caractères</th></tr></thead><tbody data-pc-niveaux></tbody></table></div>
+          <div style="overflow:auto"><table class="bp-tb pc-niv"><thead><tr><th class="c">Niveau</th><th>Libellé du niveau</th><th>Format de codification</th><th class="c">Nombre de caractères</th><th data-pc-typecol hidden>Type de niveau</th></tr></thead><tbody data-pc-niveaux></tbody></table></div>
         </div>
         <span class="pc-er" data-er="niveaux"></span>
       </form>
@@ -101,7 +102,7 @@
     { code: 'PC', libelle: 'Plan comptable', abrev: 'PC', niveaux: [nv('Classe', 'Numérique', 1), nv('Sous-classe', 'Numérique', 1), nv('Compte', 'Numérique', 1), nv('Sous-compte', 'Numérique', 3)] },
     { code: 'PLAN1', libelle: 'Activité', abrev: 'ACT', niveaux: [nv('Composante', 'Numérique', 1), nv('Sous-composante', 'Numérique', 1), nv('Activité', 'Numérique', 2), nv('Sous-activité', 'Numérique', 2)] },
     { code: 'PLAN2', libelle: 'Budget', abrev: 'BUD', niveaux: [nv('Catégorie', 'Numérique', 2), nv('Sous-catégorie', 'Numérique', 1), nv('Nature', 'Numérique', 1), nv('Ligne budgétaire', 'Numérique', 1)] },
-    { code: 'PLAN3', libelle: 'Financier', abrev: 'FIN', niveaux: [nv('Source de financement', 'Numérique'), nv('Catégorie', 'Alphanumérique')] },
+    { code: 'PLAN3', libelle: 'Financier', abrev: 'FIN', niveaux: [Object.assign(nv('Source de financement', 'Numérique'), { type: 'CONVENTION' }), Object.assign(nv('Catégorie', 'Alphanumérique'), { type: 'CATEGORIE' })] },
     { code: 'PLAN4', libelle: 'Géographique', abrev: 'GEO', niveaux: [nv('Groupe', 'Alphanumérique', 4), nv('AGMO', 'Alphanumérique', 3)] }
   ];
   for (var n = 5; n <= 10; n++) data.push({ code: 'PLAN' + n, libelle: 'Plan ' + n, abrev: '', niveaux: [nv('Niveau 1', 'Alphanumérique'), nv('Niveau 2', 'Alphanumérique')] });
@@ -126,22 +127,24 @@
       return '<tr data-i="' + i + '"' + (i === sel ? ' class="sel"' : '') + '><td>' + esc(r.code) + '</td><td>' + esc(r.libelle) + '</td><td>' + (r.abrev ? esc(r.abrev) : '—') + '</td><td class="c">' + r.niveaux.length + '</td></tr>';
     }).join(''); filtrer();
   }
+  function financier() { return sel >= 0 && data[sel] && data[sel].code === 'PLAN3'; }   // seul le plan financier distingue CONVENTION / CATEGORIE
   function niveaux() {
     q('[data-pc-ncompte]').textContent = niv.length ? niv.length : '';
     q('[data-pc-niveaux]').innerHTML = niv.map(function (l, i) {
-      return '<tr data-n="' + i + '"' + (i === nsel ? ' class="sel"' : '') + '><td class="c">' + (i + 1) + '</td><td>' + esc(l.libelle) + '</td><td>' + esc(l.format) + '</td><td class="c">' + esc(l.car) + '</td></tr>';
+      return '<tr data-n="' + i + '"' + (i === nsel ? ' class="sel"' : '') + '><td class="c">' + (i + 1) + '</td><td>' + esc(l.libelle) + '</td><td>' + esc(l.format) + '</td><td class="c">' + esc(l.car) + '</td>' + (financier() ? '<td>' + esc(l.type || '') + '</td>' : '') + '</tr>';
     }).join('');
+    q('[data-pc-typecol]').hidden = !financier(); q('[data-pc-ntype]').hidden = !financier();
   }
   function formNiveau() {
-    var l = nsel >= 0 ? niv[nsel] : (nmode === 'ajout' ? { libelle: '', format: 'Numérique', car: 2 } : null);
+    var l = nsel >= 0 ? niv[nsel] : (nmode === 'ajout' ? { libelle: '', format: 'Numérique', car: 2, type: '' } : null);
     q('[data-nf=niveau]').value = nmode === 'ajout' ? niv.length + 1 : (nsel >= 0 ? nsel + 1 : '');
-    q('[data-nf=libelle]').value = l ? l.libelle : ''; q('[data-nf=format]').value = l ? l.format : 'Numérique'; q('[data-nf=car]').value = l ? l.car : '';
-    err('nlibelle'); err('ncar');
+    q('[data-nf=libelle]').value = l ? l.libelle : ''; q('[data-nf=format]').value = l ? l.format : 'Numérique'; q('[data-nf=car]').value = l ? l.car : ''; q('[data-nf=type]').value = l && l.type ? l.type : '';
+    q('[data-pc-ntype]').hidden = !financier(); err('nlibelle'); err('ncar'); err('ntype');
   }
   function form(r) {
     r = r || { code: '', libelle: '', abrev: '', niveaux: [] };
     q('[data-f=code]').value = r.code; q('[data-f=libelle]').value = r.libelle; q('[data-f=abrev]').value = r.abrev;
-    niv = r.niveaux.map(function (l) { return { libelle: l.libelle, format: l.format, car: l.car }; }); nsel = -1; nmode = 'aucun';
+    niv = r.niveaux.map(function (l) { return { libelle: l.libelle, format: l.format, car: l.car, type: l.type || '' }; }); nsel = -1; nmode = 'aucun';
     err('libelle'); err('abrev'); err('niveaux'); niveaux(); formNiveau();
   }
   function etat() {
@@ -170,11 +173,13 @@
 
   function validerNiveau() {
     var l = q('[data-nf=libelle]').value.trim(), c = +q('[data-nf=car]').value, ok = true;
-    err('nlibelle'); err('ncar');
+    err('nlibelle'); err('ncar'); err('ntype');
+    var ty = financier() ? q('[data-nf=type]').value : '';
+    if (ty && niv.some(function (x, i) { return x.type === ty && !(nmode === 'edition' && i === nsel); })) { err('ntype', 'Le type « ' + ty + ' » est déjà affecté à un autre niveau du plan.'); ok = false; }
     if (!l) { err('nlibelle', 'Le libellé du niveau est obligatoire.'); ok = false; }
     if (!(c >= 1 && c <= 20 && c === Math.floor(c))) { err('ncar', 'Entier de 1 à 20.'); ok = false; }
     if (!ok) return;
-    var rec = { libelle: l, format: q('[data-nf=format]').value, car: c };
+    var rec = { libelle: l, format: q('[data-nf=format]').value, car: c }; if (financier()) rec.type = ty;
     var ajout = nmode === 'ajout';
     if (ajout) { niv.push(rec); nsel = niv.length - 1; } else niv[nsel] = rec;
     toast('Niveau ' + (nsel + 1) + (ajout ? ' ajouté.' : ' modifié.'));
@@ -189,7 +194,7 @@
     if (nmode !== 'aucun') { err('niveaux', 'Validez ou annulez le niveau en cours de saisie.'); ok = false; }
     if (!niv.length) { err('niveaux', 'Un plan doit comporter au moins un niveau.'); ok = false; }
     if (!ok) return;
-    data[sel] = { code: data[sel].code, libelle: l, abrev: ab.toUpperCase(), niveaux: niv.map(function (x) { return { libelle: x.libelle, format: x.format, car: x.car }; }) };
+    data[sel] = { code: data[sel].code, libelle: l, abrev: ab.toUpperCase(), niveaux: niv.map(function (x) { return { libelle: x.libelle, format: x.format, car: x.car, type: x.type || '' }; }) };
     mode = 'consultation'; liste(); form(data[sel]); etat(); onglet('liste'); toast('Plan modifié.'); diffuser();
   }
   root.addEventListener('click', function (e) {

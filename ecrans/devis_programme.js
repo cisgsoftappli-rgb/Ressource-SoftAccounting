@@ -153,20 +153,22 @@
     renderList();
   }
 
-  // Interrupteur d'activation
-  var sw = $('[data-dp-switch]');
-  sw.addEventListener('click', function () {
-    actif = !actif;
+  // Activation : réglage « Gestion des devis programmes » de l'Administration de l'entité (désactivée par défaut)
+  function optionActive() {
+    var o = window.ENTITE_OPTIONS;
+    if (o && typeof o.gestionDP === 'boolean') return o.gestionDP;
+    try { return localStorage.getItem('softcompta.gestionDP') === '1'; } catch (er) { return false; }
+  }
+  function appliquerActif() {
+    actif = optionActive();
     if (!actif && mode !== 'consultation') mode = 'consultation';
-    sw.setAttribute('aria-checked', actif);
     $('[data-dp-switch-label]').textContent = actif ? 'Activée' : 'Désactivée';
     $('[data-dp-off-notice]').style.display = actif ? 'none' : '';
     root.classList.toggle('dp-off', !actif);
     refresh();
-  });
-
-  // Par défaut la gestion des DP est désactivée (non utilisée pour l'instant)
-  sw.click();
+  }
+  window.addEventListener('entite-options-changed', appliquerActif);
+  appliquerActif();
 
   $$('[data-dp-tab]').forEach(function (b) { b.addEventListener('click', function () { showTab(b.dataset.dpTab); }); });
   $('[data-dp-search]').addEventListener('input', renderList);

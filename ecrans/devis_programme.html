@@ -34,32 +34,27 @@
 @media (max-width:700px){.dp-grid{grid-template-columns:1fr}.dp-grid > .dp-full{grid-column:auto}.dp-grid > .dp-au{text-align:left}.dp-stack{grid-template-columns:1fr!important}}
 </style>
 <app-devis-programme>
-<div class="w-full text-slate-800" data-dp-root>
+<div class="w-full text-slate-800" data-dp-root data-sans-titre>
 
   <!-- En-tête : activation des devis programmes -->
-  <div class="mb-3 flex flex-wrap items-center gap-2 rounded-xl border border-slate-200 bg-white px-4 py-2 shadow-sm">
-    <div class="mr-3" title="Paramétrage des devis programmes (DP) rattachés aux conventions du projet">
-      <h2 class="text-base font-bold text-slate-900">Devis programme</h2>
-      <p class="text-xs text-slate-500">Projet <b data-dp-projet>COMPTA HASINA</b></p>
-    </div>
+  <div class="flex flex-wrap items-center gap-2" style="margin:0">
     <button type="button" data-dp-action="ajouter" class="inline-flex items-center gap-2 rounded-lg border-0 bg-blue-600 px-4 py-2 text-sm font-bold text-white transition hover:bg-blue-700 disabled:cursor-not-allowed disabled:opacity-50"><i class="ti ti-plus"></i> Ajouter</button>
     <button type="button" data-dp-action="modifier" class="inline-flex items-center gap-2 rounded-lg border border-slate-300 bg-white px-4 py-2 text-sm font-semibold transition hover:bg-slate-50 disabled:cursor-not-allowed disabled:opacity-50"><i class="ti ti-pencil"></i> Modifier</button>
     <button type="button" data-dp-action="supprimer" class="inline-flex items-center gap-2 rounded-lg border border-red-200 bg-white px-4 py-2 text-sm font-semibold text-red-600 transition hover:bg-red-50 disabled:cursor-not-allowed disabled:opacity-50"><i class="ti ti-trash"></i> Supprimer</button>
     <button type="button" data-dp-action="enregistrer" class="inline-flex items-center gap-2 rounded-lg border-0 bg-emerald-600 px-4 py-2 text-sm font-semibold text-white transition hover:bg-emerald-700 disabled:cursor-not-allowed disabled:opacity-50"><i class="ti ti-device-floppy"></i> Enregistrer</button>
     <button type="button" data-dp-action="annuler" class="inline-flex items-center gap-2 rounded-lg border border-slate-300 bg-white px-4 py-2 text-sm font-semibold transition hover:bg-slate-50 disabled:cursor-not-allowed disabled:opacity-50"><i class="ti ti-x"></i> Annuler</button>
     <span class="flex-1"></span>
-    <span class="w-fit rounded-full px-3 py-1 text-xs font-semibold bg-slate-100 text-slate-600" data-dp-mode>Consultation</span>
-    <div class="flex items-center gap-3 rounded-lg border border-slate-200 bg-slate-50 px-3 py-1.5">
+    <span class="w-fit rounded-full px-3 py-1 text-xs font-semibold bg-slate-100 text-slate-600" data-dp-mode style="display:none">Consultation</span>
+    <div class="flex items-center gap-3 rounded-lg border border-slate-200 bg-slate-50 px-3 py-1.5" style="display:none">
       <div class="text-right">
         <p class="text-sm font-semibold text-slate-700">Gestion des DP</p>
-        <p class="text-xs text-slate-500" data-dp-switch-label>Activée</p>
+        <p class="text-xs text-slate-500" data-dp-switch-label>Désactivée</p>
       </div>
-      <button type="button" role="switch" aria-checked="true" aria-label="Activer la gestion des devis programmes" class="dp-switch" data-dp-switch></button>
     </div>
   </div>
 
   <div class="mb-4 rounded-lg border border-amber-200 bg-amber-50 px-4 py-3 text-sm text-amber-800" data-dp-off-notice style="display:none">
-    <i class="ti ti-alert-triangle"></i> La gestion des devis programmes est désactivée pour ce projet : la saisie et la liste sont en lecture seule.
+    <i class="ti ti-alert-triangle"></i> La gestion des devis programmes est désactivée (Administration de l'entité › Informations générales) : la saisie et la liste sont en lecture seule.
   </div>
 
   <div class="dp-body">
