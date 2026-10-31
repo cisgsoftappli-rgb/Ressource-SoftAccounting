@@ -556,7 +556,8 @@ const script = `<script>
   function procCourante() { var a = procsActives(); return a.indexOf(window.__proc) >= 0 ? window.__proc : (a[0] || 'IDA'); }
   function grp(e) { var g = GROUP[e]; return ['drf-param', 'drf-saisie', 'drf-trait', 'drf-suivi', 'drf-rfi'].indexOf(g) >= 0 ? g + '-' + procCourante() : g; }
   function par(g) { var k = ['drf-param-', 'drf-saisie-', 'drf-trait-', 'drf-suivi-', 'drf-rfi-'].filter(function (x) { return g && g.indexOf(x) === 0; })[0]; return k ? 'drf-' + g.slice(k.length) : PARENT[g]; }
-  document.addEventListener('click', function (e) { var a = e.target.closest && e.target.closest('[data-proc]'); if (a) window.__proc = a.dataset.proc; }, true);
+  try { window.__proc = sessionStorage.getItem('softcompta.proc') || window.__proc; } catch (x) {}
+  document.addEventListener('click', function (e) { var a = e.target.closest && e.target.closest('[data-proc]'); if (a) { window.__proc = a.dataset.proc; try { sessionStorage.setItem('softcompta.proc', a.dataset.proc); } catch (x) {} } }, true);
   window.addEventListener('entite-options-changed', function () { route(); });
   var premier = true;
   function route() {
@@ -573,8 +574,10 @@ const script = `<script>
       var b = sb.querySelector('button'); if (b) b.classList.toggle('sidebar-active', on);
     });
     // à l'ouverture de la maquette, tous les groupes du menu sont repliés ; ensuite la navigation ouvre le groupe de l'écran
-    if (premier) { $$('[data-group-toggle]').forEach(function (sb) { setGroup(sb.dataset.groupToggle, false); }); premier = false; }
-    else { var g = grp(eff); if (par(g)) setGroup(par(g), true); setGroup(g, true); }
+    // à l'ouverture (ou à l'actualisation) le menu se déploie suivant le fil d'Ariane de l'écran affiché ; sans écran choisi (accueil), tous les groupes sont repliés
+    if (premier) { $$('[data-group-toggle]').forEach(function (sb) { setGroup(sb.dataset.groupToggle, false); }); }
+    if (!premier || location.hash.length > 1) { var g = grp(eff); if (par(g)) setGroup(par(g), true); setGroup(g, true); }
+    premier = false;
     showLevel(eff === 'dashboard' || eff === 'tchat' ? 'root' : moduleOf(eff));
     window.__moduleCourant = moduleOf(eff);
     $$('[data-module]').forEach(function (m) { m.classList.toggle('sidebar-active', m.dataset.module === moduleOf(eff)); });
@@ -624,7 +627,7 @@ const _du = (f) => 'data:image/png;base64,' + fs.readFileSync(f).toString('base6
 const masqueJs = 'window.__MASQUE={logo:' + JSON.stringify(_du('ecrans/masque/logo.png')) + ',qr:' + JSON.stringify(_du('ecrans/masque/qr.png')) + ',pied:' + JSON.stringify(_du('ecrans/masque/pied.png')) + '};' + String.fromCharCode(10) + read('ecrans/masque/masque.js');
 out = out.replace(/(<a aria-label="Tchat"[^>]*?)href="#"/, (m, d) => d + 'href="#tchat" data-nav="tchat"');
 out = out.replace(/<body[^>]*>/, (m) => m + '<script>' + read('ecrans/panneau_proprietes.js') + '</script>');
-out = out.replace('</body>', () => '<script>' + masqueJs + '</script>' + script + '<script>\n' + dpJs + '</script><script>\n' + exercicesJs + '</script><script>' + String.fromCharCode(10) + tiersJs + '</script><script>' + String.fromCharCode(10) + read('ecrans/plans_pc.js') + '</script><script>' + String.fromCharCode(10) + ecrituresJs + '</script><script>' + String.fromCharCode(10) + balanceJs + '</script><script>' + String.fromCharCode(10) + balanceAnaJs + '</script><script>' + String.fromCharCode(10) + balanceAuxJs + '</script><script>' + String.fromCharCode(10) + glgJs + '</script><script>' + String.fromCharCode(10) + read('ecrans/etats_modale.js') + '</script><script>' + String.fromCharCode(10) + read('ecrans/etats_boutons.js') + '</script><script>' + String.fromCharCode(10) + read('ecrans/charte_titres.js') + '</script><script>' + String.fromCharCode(10) + read('ecrans/combo_plans.js') + '</script><script>' + String.fromCharCode(10) + read('ecrans/barre_actions.js') + String.fromCharCode(10) + read('ecrans/import_assistant.js') + String.fromCharCode(10) + read('ecrans/modale_alerte.js') + String.fromCharCode(10) + read('ecrans/epayment.js') + String.fromCharCode(10) + read('ecrans/produits.js') + String.fromCharCode(10) + read('ecrans/assistant_aide.js') + String.fromCharCode(10) + read('ecrans/assistant.js') + String.fromCharCode(10) + read('ecrans/tableaux.js') + String.fromCharCode(10) + read('ecrans/pagination.js') + String.fromCharCode(10) + read('ecrans/popup_modal.js') + '</script></body>');
+out = out.replace('</body>', () => '<script>' + masqueJs + '</script>' + script + '<script>\n' + dpJs + '</script><script>\n' + exercicesJs + '</script><script>' + String.fromCharCode(10) + tiersJs + '</script><script>' + String.fromCharCode(10) + read('ecrans/plans_pc.js') + '</script><script>' + String.fromCharCode(10) + ecrituresJs + '</script><script>' + String.fromCharCode(10) + balanceJs + '</script><script>' + String.fromCharCode(10) + balanceAnaJs + '</script><script>' + String.fromCharCode(10) + balanceAuxJs + '</script><script>' + String.fromCharCode(10) + glgJs + '</script><script>' + String.fromCharCode(10) + read('ecrans/etats_modale.js') + '</script><script>' + String.fromCharCode(10) + read('ecrans/etats_boutons.js') + '</script><script>' + String.fromCharCode(10) + read('ecrans/charte_titres.js') + '</script><script>' + String.fromCharCode(10) + read('ecrans/combo_plans.js') + '</script><script>' + String.fromCharCode(10) + read('ecrans/barre_actions.js') + String.fromCharCode(10) + read('ecrans/import_assistant.js') + String.fromCharCode(10) + read('ecrans/modale_alerte.js') + String.fromCharCode(10) + read('ecrans/epayment.js') + String.fromCharCode(10) + read('ecrans/produits.js') + String.fromCharCode(10) + read('ecrans/assistant_aide.js') + String.fromCharCode(10) + read('ecrans/assistant_recherche.js') + String.fromCharCode(10) + read('ecrans/assistant.js') + String.fromCharCode(10) + read('ecrans/tableaux.js') + String.fromCharCode(10) + read('ecrans/pagination.js') + String.fromCharCode(10) + read('ecrans/popup_modal.js') + '</script></body>');
 
 
 // 7. Charte graphique Softwell v1.0 : teintes de marque -> marine, polices Outfit + Inter, couche de thème
