@@ -93,6 +93,7 @@
 .dn-wrap .bp-tb tbody tr.sel td{background:#E3EBFE}.dn-wrap .bp-tb tbody tr.t-titre td:nth-child(2){font-weight:700}
 .dn-wrap .bp-tb input[type=checkbox]{pointer-events:none}
 .dn-er{font-size:12px;color:#B63132}
+.dn-srcs{display:grid;gap:10px;margin-bottom:12px}.dn-rubl{display:grid;gap:6px;padding:10px 12px;border:1px solid #D6D9E0;border-radius:8px;background:#F5F7F9}.dn-rubl small{color:#5B606D;margin-left:4px}
 .dn-rub{display:grid;gap:6px;padding:10px 12px;border:1px solid #D6D9E0;border-radius:8px;background:#F5F7F9;font-size:12px;color:#353944}.dn-rub small{color:#5B606D}.dn-rubb{display:flex;gap:8px;flex-wrap:wrap;margin-top:4px}
 .dn-bt .dn-act{display:flex;align-items:center;gap:8px;margin-left:auto;flex-wrap:wrap;justify-content:flex-end}.dn-ok{font-size:12px;color:#2E427B}.dn-bt .bp-chk{display:flex}
 .dn-ax{display:grid;grid-template-columns:190px minmax(0,1fr);border:1px solid #D6D9E0;border-radius:8px;overflow:hidden;background:#fff;min-height:260px}
@@ -435,9 +436,11 @@
   var SENS = ['D', 'C', 'C-D', 'D-C', 'Solde D', 'Solde C'], MOUV = ['Tous', 'Journal OD', 'Journal de trésorerie'], TYP = ['Mouvement', "Solde d'ouverture", 'Solde de clôture'];
   var AXES = [['COMPTE_GENERAL', 'Compte général'], ['CATEGORIE', 'Catégorie (financement)'], ['TIERS', 'Tiers'], ['JOURNAL', 'Journal'], ['COMPTE_TIERS', 'Compte (classe 4) + Tiers'], ['CENTRE_SAISIE', 'Centre de saisie']].concat([1, 2, 3, 4, 5, 6, 7, 8, 9, 10].map(function (n) { return ['PLAN' + n, 'Plan ' + n]; }));
   var VALS = { COMPTE_GENERAL: Object.keys(ACC).sort(), JOURNAL: ['AC', 'BFM', 'BMOIUSD', 'BQ', 'OD', 'VT'], CENTRE_SAISIE: ['Siège'] };
-  var PERS = [['periode_edition', "Période d'édition (par défaut)"], ['annee_edition', "Année d'édition"], ['decalage_unite', 'Décalage par unité (période relative)'], ['cumulatif', 'Cumulatif'], ['fourchette_mois', 'Fourchette de mois relative'], ['periode_fixe', 'Période fixe']];
+  var PERS = [['periode_edition', 'N — période d’édition (par défaut)'], ['n1', 'N-1'], ['n2', 'N-2'], ['n3', 'N-3'], ['n4', 'N-4'], ['n5', 'N-5'], ['annee_edition', "Année d'édition"], ['decalage_unite', 'Décalage par unité (période relative)'], ['cumulatif', 'Cumulatif'], ['fourchette_mois', 'Fourchette de mois relative'], ['periode_fixe', 'Période fixe']];
+  /* paramètres d'édition communs à tous les concepteurs : budget 1 / 2, monnaie 1 / 2 (choisis à l'édition), périodes N, N-1… */
+  var MONS = [['locale', 'Monnaie 1'], ['devise1', 'Monnaie 2']], BUDS = [['1', 'Budget 1'], ['2', 'Budget 2']];
   var FMTS = ['Général', '#,##0', '#,##0.00', '0.00%', '# ##0,00 "MGA"'];
-  var PERLAB = { periode_edition: "Période d'édition", annee_edition: "Année d'édition", decalage_unite: 'Décalage par unité', cumulatif: 'Cumulatif', fourchette_mois: 'Fourchette de mois relative', periode_fixe: 'Période fixe' };
+  var PERLAB = { periode_edition: 'N (période d’édition)', n1: 'N-1', n2: 'N-2', n3: 'N-3', n4: 'N-4', n5: 'N-5', annee_edition: "Année d'édition", decalage_unite: 'Décalage par unité', cumulatif: 'Cumulatif', fourchette_mois: 'Fourchette de mois relative', periode_fixe: 'Période fixe' };
 
   function newSolde() { return { tbl: 'Comptabilité générale', sens: 'D', mouv: 'Tous', typ: 'Mouvement', axes: [{ axe: 'COMPTE_GENERAL', ranges: [{ a: '', b: '', s: '' }] }], per: 'periode_edition', unit: 'mois', shift: -1, m1: 1, m2: 12, d1: '', d2: '', fmt: 'Général', monnaie: 'locale' }; }
   function mkTable(name) { return { name: name, x: 0, y: 0, w: 300, h: 56, rows: 2, cols: 2, colW: [null, null], rowH: [null, null], cells: {} }; }
@@ -484,10 +487,13 @@
     fonds_fida: ['Fonds reçus FIDA', 'II – Sources et utilisations'], autres_fonds: ['Autres fonds reçus', 'II – Sources et utilisations'], paiements_directs: ['Paiements directs', 'II – Sources et utilisations'],
     avances_cumulees: ['Avances cumulées du FIDA', 'III – Activité du compte désigné'], depenses_justifiees: ['Dépenses cumulées justifiées', 'III – Activité du compte désigné'], ajustements: ['Ajustements cumulés', 'III – Activité du compte désigné'] };
   function rubKeys(cl) { return [].concat(cl && cl.rub ? cl.rub : []); }
+  function srcCpt(cl) { return cl.srcCpt || (cl.rub && !cl.delie ? 'param' : 'saisie'); }
+  function srcCat(cl) { return cl.srcCat || (cl.rubCat ? 'param' : 'saisie'); }
   function rubOk(cl) {
-    if (!cl.rub || cl.delie) return true;
     var cv = window.__rfiConvEff || '01';
-    return rubKeys(cl).some(function (k) { return window.RFI_COMPTES && String(window.RFI_COMPTES(cv, k) || '').trim(); });
+    if (srcCpt(cl) === 'param' && !rubKeys(cl).some(function (k) { return window.RFI_COMPTES && String(window.RFI_COMPTES(cv, k) || '').trim(); })) return false;
+    if (srcCat(cl) === 'param') { var ct = window.RFI_CATEGORIES ? window.RFI_CATEGORIES(cv) : []; if (!ct.some(function (c) { return String(c.code) === String(cl.rubCat); })) return false; }
+    return true;
   }
   function soldeVal(cl) {
     if (!rubOk(cl)) return 0;
@@ -672,8 +678,24 @@
     return '<div class="bp-champ"><span>Comptes</span><div class="dn-rub"><b>Paramètre RFI : ' + esc(labs.join(' + ')) + '</b><small>Convention ' + esc(cv) + ' — ' + esc(cp.join(' ; ') || 'aucun compte renseigné') + '</small>' +
       '<div class="dn-rubb"><button type="button" class="bp-b" data-dn-rubparam>Ouvrir Paramètres RFI</button><button type="button" class="bp-b" data-dn-delie>Saisir des comptes propres</button></div></div></div>';
   }
+  /* fonctions propres au module : « rfi » (Projets & Bailleurs › FIDA › États RFI) ou « commun » (déclaration fiscale, récapitulatifs…) */
+  function modRfi() { var m = window.__mfDesigner || {}; return window.__designerFrom === 'rfimodeles' || /^RFI_/.test(String(m.code || '')); }
+  function srcZone(cl) {
+    if (!modRfi()) return '';
+    var cv = window.__rfiConvEff || '01', sc = srcCpt(cl), st = srcCat(cl), ks = rubKeys(cl), h = '<div class="dn-srcs">';
+    h += '<label class="bp-champ"><span>Source des comptes</span><select class="bp-sel" data-dn-src="cpt">' + selOpts([['saisie', 'Fourchettes de comptes saisies'], ['param', 'Rubrique paramétrée (Paramètres RFI)']], sc) + '</select></label>';
+    if (sc === 'param') h += '<div class="dn-rubl">' + Object.keys(RFI_RUB).map(function (k) { var cp = window.RFI_COMPTES ? String(window.RFI_COMPTES(cv, k) || '') : ''; return '<label class="pp-chk"><input type="checkbox" data-dn-rubk="' + k + '"' + (ks.indexOf(k) >= 0 ? ' checked' : '') + '> ' + esc(RFI_RUB[k][0]) + ' <small>' + esc(cp || 'aucun compte') + '</small></label>'; }).join('') + '</div>';
+    h += '<label class="bp-champ"><span>Source des catégories</span><select class="bp-sel" data-dn-src="cat">' + selOpts([['saisie', 'Fourchettes de catégories saisies'], ['param', 'Catégorie RFI paramétrée (Paramètres RFI)']], st) + '</select></label>';
+    if (st === 'param') { var L = window.RFI_CATS_LIST ? window.RFI_CATS_LIST() : []; h += '<label class="bp-champ"><span>Catégorie RFI</span><select class="bp-sel" data-dn-rubcat>' + selOpts([['', '— Choisir —']].concat(L.map(function (c) { return [String(c.code), c.code + ' — ' + c.libelle]; })), String(cl.rubCat || '')) + '</select></label>'; }
+    if (sc === 'param' || st === 'param') h += '<div class="dn-rubb"><button type="button" class="bp-b" data-dn-rubparam>Ouvrir Paramètres RFI</button></div>';
+    return h + '</div>';
+  }
   function axesZone(cl) {
-    if (cl.rub && !cl.delie) return rubInfo(cl);
+    var h0 = srcZone(cl);
+    if (modRfi() && srcCpt(cl) === 'param' && srcCat(cl) === 'param') return h0;
+    return h0 + axesUI(cl);
+  }
+  function axesUI(cl) {
     var key = ai + ':' + anchor.r + ',' + anchor.c; if (axSnap.key !== key) { axSnap = { key: key, json: JSON.stringify(cl.axes) }; dnAxe = ''; }
     var dispo = axesDispo(cl), codes = dispo.map(function (x) { return x[0]; });
     if (codes.indexOf(dnAxe) < 0) { var pr = cl.axes.filter(function (x) { return x.ranges.some(function (r) { return r.a || r.b; }); })[0]; dnAxe = pr && codes.indexOf(pr.axe) >= 0 ? pr.axe : codes[0]; }
@@ -692,7 +714,8 @@
     var h = '<div class="bp-sect"><div class="hd"><strong>Données comptables</strong></div>';
     h += '<label class="bp-champ"><span>Table de données</span><select class="bp-sel" data-dg-k="tbl">' + selOpts(TABLES, cl.tbl) + '</select></label>';
     h += axesZone(cl);
-    h += '<label class="bp-champ"><span>Périodicité</span><select class="bp-sel" data-dg-k="per">' + selOpts(PERS, cl.per) + '</select></label>';
+    if (cl.tbl === 'Budget') h += '<label class="bp-champ"><span>Budget (choisi à l’édition)</span><select class="bp-sel" data-dg-k="bud">' + selOpts(BUDS, String(cl.bud || '1')) + '</select></label>';
+    h += '<label class="bp-champ"><span>Période (définie à l’édition)</span><select class="bp-sel" data-dg-k="per">' + selOpts(PERS, cl.per) + '</select></label>';
     if (cl.per === 'decalage_unite') h += '<div class="dn-r3"><label class="bp-champ"><span>Unité</span><select class="bp-sel" data-dg-k="unit">' + selOpts(['jour', 'mois', 'trimestre', 'année'], cl.unit) + '</select></label><label class="bp-champ"><span>Décalage</span><input class="bp-in" type="number" data-dg-k="shift" value="' + cl.shift + '"></label></div>';
     if (cl.per === 'fourchette_mois') h += '<div class="dn-r3"><label class="bp-champ"><span>Mois début</span><input class="bp-in" type="number" min="1" max="12" data-dg-k="m1" value="' + cl.m1 + '"></label><label class="bp-champ"><span>Mois fin</span><input class="bp-in" type="number" min="1" max="12" data-dg-k="m2" value="' + cl.m2 + '"></label></div>';
     if (cl.per === 'periode_fixe') h += '<div class="dn-r3"><label class="bp-champ"><span>Du</span><input class="bp-in" type="date" data-dg-k="d1" value="' + attr(cl.d1) + '"></label><label class="bp-champ"><span>Au</span><input class="bp-in" type="date" data-dg-k="d2" value="' + attr(cl.d2) + '"></label></div>';
@@ -717,7 +740,7 @@
     if (sol) h += soldeZone(cl);
     if (nat === 'formule' || nat === 'regroupement') h += '<label class="bp-champ"><span>Formule</span><input class="bp-in" data-dg-k="formula" value="' + attr(cl.formula || '') + '"></label>';
     if (nat === 'constante') h += '<div class="dn-2"><label class="bp-champ"><span>Valeur</span><input class="bp-in" data-dg-k="value" value="' + attr(cl.value == null ? '' : cl.value) + '"></label><label class="bp-champ"><span>Variable d’édition</span><select class="bp-sel" data-dg-cvar><option value="">— Valeur fixe —</option>' + selOpts(EDITVARS, cl.value) + '</select></label></div>';
-    if (nat && nat !== 'titre') h += '<div class="dn-r3" style="grid-template-columns:repeat(2,minmax(0,1fr))"><label class="bp-champ"><span>Format d’affichage</span><select class="bp-sel" data-dg-k="fmt">' + selOpts(fmtOpts(cl.fmt), cl.fmt || 'Général') + '</select></label><label class="bp-champ"><span>Monnaie cible</span><select class="bp-sel" data-dg-k="monnaie">' + selOpts([['locale', 'Monnaie locale'], ['devise1', 'Devise 1'], ['devise2', 'Devise 2'], ['devise3', 'Devise 3']], cl.monnaie || 'locale') + '</select></label></div>';
+    if (nat && nat !== 'titre') h += '<div class="dn-r3" style="grid-template-columns:repeat(2,minmax(0,1fr))"><label class="bp-champ"><span>Format d’affichage</span><select class="bp-sel" data-dg-k="fmt">' + selOpts(fmtOpts(cl.fmt), cl.fmt || 'Général') + '</select></label><label class="bp-champ"><span>Monnaie cible</span><select class="bp-sel" data-dg-k="monnaie">' + selOpts(MONS, cl.monnaie === 'devise1' ? 'devise1' : 'locale') + '</select></label></div>';
     h += '</form>';
     dnEd.innerHTML = h;
   }
@@ -769,7 +792,6 @@
       axSnap.json = JSON.stringify(cl.axes); renderLeft(); renderDnEd(); dnMsg('Fourchettes enregistrées.'); return;
     }
     if (e.target.closest('[data-dn-rubparam]')) { location.hash = '#rfiparam'; return; }
-    if (e.target.closest('[data-dn-delie]')) { cl = ensure(t, anchor.r, anchor.c); cl.delie = true; renderLeft(); renderDnEd(); return; }
     if (e.target.closest('[data-dn-axundo]')) { cl = ensure(t, anchor.r, anchor.c); try { cl.axes = JSON.parse(axSnap.json); } catch (er) {} renderLeft(); renderDnEd(); return; }
     if (e.target.closest('[data-dg-axadd],[data-dg-axdel],[data-dg-rgadd],[data-dg-rgdel]')) onClick(e);
   }
@@ -797,6 +819,9 @@
       aller(r, c); return;
     }
     if (el.matches('[data-dn-nat]')) { convertir(t, el.value); renderLeft(); renderProps(); return; }
+    if (el.matches('[data-dn-src]')) { cl = ensure(t, anchor.r, anchor.c); if (el.dataset.dnSrc === 'cpt') { cl.srcCpt = el.value; cl.delie = el.value !== 'param'; if (el.value === 'param' && !cl.rub) cl.rub = []; } else { cl.srcCat = el.value; if (el.value === 'param' && cl.rubCat == null) cl.rubCat = ''; } renderLeft(); renderDnEd(); return; }
+    if (el.matches('[data-dn-rubk]')) { cl = ensure(t, anchor.r, anchor.c); var ks = rubKeys(cl).slice(), k0 = el.dataset.dnRubk, i0 = ks.indexOf(k0); if (el.checked && i0 < 0) ks.push(k0); else if (!el.checked && i0 >= 0) ks.splice(i0, 1); cl.rub = ks; cl.delie = false; renderLeft(); renderDnEd(); return; }
+    if (el.matches('[data-dn-rubcat]')) { cl = ensure(t, anchor.r, anchor.c); cl.rubCat = el.value; renderLeft(); renderDnEd(); return; }
     if (el.matches('[data-dn-lib]')) { setLibelle(t, anchor.r, anchor.c, el.value); renderLeft(); return; }
     if (el.matches('[data-dn-c]')) {
       cl = ensure(t, anchor.r, anchor.c); var k = el.dataset.dnC; cl[k] = el.checked ? 1 : 0;
@@ -838,7 +863,8 @@
             return '<div class="dg-rg"><span class="dg-rl">Fourchette ' + (ri + 1) + '</span><select class="dg-in" data-dg-rg="' + ai2 + ',' + ri + ',a"><option value="">Choisir…</option>' + selOpts(vals, rg.a) + '</select><select class="dg-in" data-dg-rg="' + ai2 + ',' + ri + ',b"><option value="">Choisir…</option>' + selOpts(vals, rg.b) + '</select><select class="dg-in" title="Sens" data-dg-rg="' + ai2 + ',' + ri + ',s"><option value="">S</option>' + selOpts(['C', 'D', 'S'], rg.s) + '</select><button type="button" class="dg-sq" data-dg-rgdel="' + ai2 + ',' + ri + '"' + (ax.ranges.length < 2 ? ' disabled' : '') + ' title="Supprimer cette fourchette">🗑</button></div>';
           }).join('') + (vals.length ? '' : '<span class="dg-rs">Aucune valeur disponible pour cet axe.</span>') + '<button type="button" class="dg-btn sm" data-dg-rgadd="' + ai2 + '">Ajouter une fourchette</button></div>';
       }).join('') + '<button type="button" class="dg-btn" data-dg-axadd>+ Ajouter un axe</button><p class="dg-hint">Les axes et fourchettes sont fournis par le serveur selon la table de données. Chaque axe porte ses propres fourchettes ; le croisement des axes est évalué côté backend.</p></div>';
-      h += '<div class="dg-f"><label class="dg-lab">📅 Périodicité</label><select class="dg-in" data-dg-k="per">' + selOpts(PERS, cl.per) + '</select>';
+      if (cl.tbl === 'Budget') h += '<div class="dg-f"><label class="dg-lab">Budget (choisi à l’édition)</label><select class="dg-in" data-dg-k="bud">' + selOpts(BUDS, String(cl.bud || '1')) + '</select></div>';
+      h += '<div class="dg-f"><label class="dg-lab">📅 Période (définie à l’édition)</label><select class="dg-in" data-dg-k="per">' + selOpts(PERS, cl.per) + '</select>';
       if (cl.per === 'decalage_unite') h += '<div class="dg-r2"><div><label class="dg-lab">Unité</label><select class="dg-in" data-dg-k="unit">' + selOpts(['jour', 'mois', 'trimestre', 'année'], cl.unit) + '</select></div><div><label class="dg-lab">Décalage</label><input class="dg-in" type="number" data-dg-k="shift" value="' + cl.shift + '"></div></div>';
       if (cl.per === 'fourchette_mois') h += '<div class="dg-r2"><div><label class="dg-lab">Mois début</label><input class="dg-in" type="number" min="1" max="12" data-dg-k="m1" value="' + cl.m1 + '"></div><div><label class="dg-lab">Mois fin</label><input class="dg-in" type="number" min="1" max="12" data-dg-k="m2" value="' + cl.m2 + '"></div></div>';
       if (cl.per === 'periode_fixe') h += '<div class="dg-r2"><div><label class="dg-lab">Du</label><input class="dg-in" type="date" data-dg-k="d1" value="' + attr(cl.d1) + '"></div><div><label class="dg-lab">Au</label><input class="dg-in" type="date" data-dg-k="d2" value="' + attr(cl.d2) + '"></div></div>';
@@ -847,7 +873,7 @@
     }
     if (ty !== 'texte') {
       h += '<div class="dg-f"><label class="dg-lab">Format d’affichage</label><select class="dg-in" data-dg-k="fmt">' + selOpts(fmtOpts(cl.fmt), cl.fmt || 'Général') + '</select></div>';
-      h += '<div class="dg-f"><label class="dg-lab">Monnaie cible</label><select class="dg-in" data-dg-k="monnaie">' + selOpts([['locale', 'Monnaie locale (Devise tenue de compte / Monnaie 1)'], ['devise1', 'Devise 1'], ['devise2', 'Devise 2'], ['devise3', 'Devise 3']], cl.monnaie || 'locale') + '</select></div>';
+      h += '<div class="dg-f"><label class="dg-lab">Monnaie cible</label><select class="dg-in" data-dg-k="monnaie">' + selOpts(MONS, cl.monnaie === 'devise1' ? 'devise1' : 'locale') + '</select></div>';
     }
     var content = h.slice(cut1), dc = anchor.c, dr = anchor.r;
     h = '<h4 class="dg-pt">Mise en forme — cellule ' + (multi ? addr(Math.min(sel.r1, sel.r2), Math.min(sel.c1, sel.c2)) + ':' + addr(Math.max(sel.r1, sel.r2), Math.max(sel.c1, sel.c2)) : addr(anchor.r, anchor.c)) + '</h4>' + rubBox() +
@@ -1049,7 +1075,8 @@
     var convs = L.filter(function (r) { return typ(r) === 'CONVENTION' && r.actif !== false; }), conv = convs.filter(function (r) { return r.code === window.__rfiConv; })[0] || convs.filter(function (r) { return /fida/i.test(r.extra || ''); })[0] || convs[0] || { code: '01', libelle: 'Prêt FIDA' };
     var cats = []; (function desc(p) { L.filter(function (r) { return r.parent === p && r.actif !== false; }).forEach(function (r) { if (typ(r) === 'CATEGORIE') cats.push(r); desc(r.code); }); })(conv.code);
     var P1 = (window.PLANS_LIGNES && window.PLANS_LIGNES.PLAN1 && window.PLANS_LIGNES.PLAN1.rows) || [], comps = P1.filter(function (r) { return !r.parent && r.actif !== false; });
-    var PRM = (window.RFI_PARAM || {})[conv.code]; if (PRM && PRM.categories) cats = cats.filter(function (c) { return PRM.categories[c.code] !== false; });
+    window.__rfiRub = {}; var CR = window.RFI_CATEGORIES ? window.RFI_CATEGORIES(conv.code) : [];
+    if (CR.length) cats = CR.map(function (c) { window.__rfiRub[c.code] = c; return { code: c.code, libelle: c.libelle, ranges: c.ranges, comptes: c.comptes }; });
     if (!cats.length) cats = [{ code: '01', libelle: 'Catégorie 1' }, { code: '02', libelle: 'Catégorie 2' }];
     if (!comps.length) comps = [{ code: '1', libelle: 'Composante 1' }, { code: '2', libelle: 'Composante 2' }];
     window.__rfiConvEff = conv.code;
@@ -1077,11 +1104,14 @@
     function put(rr, c, o) { t.cells[rr + ',' + c] = o; }
     function txt(rr, c, text, st) { put(rr, c, Object.assign({ type: 'texte', text: text, fs: 11 }, st || {})); }
     function head(text, bold) { txt(r, 0, text, { cs: n, b: bold ? 1 : 0, fs: bold ? 13 : 11, bc: '#ffffff', bw: 0 }); r++; }
-    function sol(demo, tbl, axe, c0, per, ex, bold) { return Object.assign({ type: 'solde' }, newSolde(), { tbl: tbl, sens: 'D', mouv: 'Tous', typ: 'Mouvement', axes: [{ axe: axe, ranges: [{ a: c0, b: c0, s: '' }] }], per: per || 'periode_edition', fmt: '#,##0.00', al: 'right', fs: 11, demo: demo, b: bold ? 1 : 0 }, ex || {}); }
+    function catAxes(rb) { var ax = [{ axe: 'CATEGORIE', ranges: rb.ranges && rb.ranges.length ? JSON.parse(JSON.stringify(rb.ranges)) : [{ a: rb.code, b: rb.code, s: '' }] }]; if (rb.comptes && rb.comptes.length) ax.push({ axe: 'COMPTE_GENERAL', ranges: JSON.parse(JSON.stringify(rb.comptes)) }); return ax; }
+    function rubCatOf(axe, c0) { return axe === 'CATEGORIE' && (window.__rfiRub || {})[c0] ? c0 : undefined; }
+    function axesDe(axe, c0) { var rb = axe === 'CATEGORIE' && (window.__rfiRub || {})[c0]; return rb ? catAxes(rb) : [{ axe: axe, ranges: [{ a: c0, b: c0, s: '' }] }]; }
+    function sol(demo, tbl, axe, c0, per, ex, bold) { return Object.assign({ type: 'solde' }, newSolde(), { tbl: tbl, sens: 'D', mouv: 'Tous', typ: 'Mouvement', axes: axesDe(axe, c0), rubCat: rubCatOf(axe, c0), per: per || 'periode_edition', fmt: '#,##0.00', al: 'right', fs: 11, demo: demo, b: bold ? 1 : 0 }, ex || {}); }
     function frm(f, st) { return Object.assign({ type: 'formule', formula: f, fmt: '#,##0.00', monnaie: 'locale', al: 'right', fs: 11 }, st || {}); }
     function ref(c, rr) { return colL(c) + (rr + 1); }
     function colHead(labels, rr) { labels.forEach(function (x, c) { txt(rr, c, x, { b: 1, al: 'center', bg: NAVY, col: '#ffffff', bc: '#ffffff', va: 'middle', fs: 10 }); }); }
-    function nomCat(o, i) { return ('0' + (i + 1)).slice(-2) + '  CATEGORIE - ' + String(o.r.libelle).toUpperCase(); }
+    function nomCat(o, i) { return ('0' + (parseInt(o.r.code, 10) || (i + 1))).slice(-2) + '  CATEGORIE - ' + String(o.r.libelle).toUpperCase(); }
     function nomComp(o, i) { return (i + 1) + '  COMPOSANTE - ' + String(o.r.libelle).replace(/^Composante \d+\s*[—-]\s*/i, '').toUpperCase(); }
     var axC = 'CATEGORIE', axP = 'PLAN1';
     head(RFI_TIT[code], 1); head('Pays : [Pays]'); head('Intitulé du projet : [Projet]'); head('Présenté dans la monnaie de libellé du compte désigné : [Monnaie compte désigné]');
@@ -1161,7 +1191,7 @@
       var tI = ligne3('I', 'Total des liquidités disponibles et des paiements directs au cours de la période considérée', ['=SUM(' + ref(2, o4) + ':' + ref(2, f3) + ')', '=SUM(' + ref(3, o4) + ':' + ref(3, f3) + ')', '=SUM(' + ref(4, o4) + ':' + ref(4, f3) + ')'], pd, null, null, 1);
       txt(r, 1, 'Utilisations des fonds par catégorie :', { b: 1, i: 1, cs: 4, bc: '#ffffff', bw: 0 }); r++;
       var ca = r;
-      D.cats.forEach(function (o, i) { ligne3('', nomCat(o, i), [o.b + o.c, o.b + o.c, o.cumB + o.cumC], pd, 'Comptabilité générale', 'CATEGORIE'); var rr = r - 1; [2, 3, 4].forEach(function (c, k) { t.cells[rr + ',' + c].axes = [{ axe: 'CATEGORIE', ranges: [{ a: o.r.code, b: o.r.code, s: '' }] }]; }); });
+      D.cats.forEach(function (o, i) { ligne3('', nomCat(o, i), [o.b + o.c, o.b + o.c, o.cumB + o.cumC], pd, 'Comptabilité générale', 'CATEGORIE'); var rr = r - 1; [2, 3, 4].forEach(function (c, k) { t.cells[rr + ',' + c].axes = axesDe('CATEGORIE', o.r.code); t.cells[rr + ',' + c].rubCat = rubCatOf('CATEGORIE', o.r.code); }); });
       ligne3('', 'Catégorie non encore identifiée / avance', [null, null, null], pd);
       var tII = ligne3('II', 'Total des fonds utilisés par catégorie', ['=SUM(' + ref(2, ca) + ':' + ref(2, r - 1) + ')', '=SUM(' + ref(3, ca) + ':' + ref(3, r - 1) + ')', '=SUM(' + ref(4, ca) + ':' + ref(4, r - 1) + ')'], pd, null, null, 1);
       txt(r, 1, 'Utilisations des fonds par composante :', { b: 1, i: 1, cs: 4, bc: '#ffffff', bw: 0 }); r++;
@@ -1242,7 +1272,7 @@
     ['RFI_I', 'RFI_II', 'RFI_III', 'RFI_IV', 'RFI_V', 'RFI_VI'].forEach(function (code) {
       var t = buildRFI(code); Object.keys(t.cells).forEach(function (k) { rubKeys(t.cells[k]).forEach(function (r) { var o = res[r]; if (o && o.rapports.indexOf(code.slice(4)) < 0) o.rapports.push(code.slice(4)); }); });
     });
-    return Object.keys(res).map(function (k) { return res[k]; }).filter(function (o) { return o.rapports.length; });
+    return Object.keys(res).map(function (k) { return res[k]; });
   }
   function presetRFI(code) { var t = buildRFI(code); T = [t]; ai = 0; anchor = { r: 8, c: 1 }; sel = { r1: 8, c1: 1, r2: 8, c2: 1 }; build(); }
   var NATL = { texte: 'Texte', constante: 'Constante', solde: 'Solde de comptes', formule: 'Formule' };
@@ -1259,8 +1289,10 @@
     var det = [], nat = cl.type === 'formule' && cl.regr ? 'Regroupement' : NATL[cl.type] || cl.type;
     if (cl.type === 'solde') {
       det.push(['Table', cl.tbl], ['Sens', cl.sens], ['Type', cl.typ], ['Période', PERLAB[cl.per] + (cl.per === 'decalage_unite' ? ' (' + (cl.shift > 0 ? '+' : '') + cl.shift + ' ' + cl.unit + ')' : '')]);
-      if (cl.rub && !cl.delie) { var ks = rubKeys(cl), cv = window.__rfiConvEff || '01'; det.push(['Comptes', 'Paramètre RFI : ' + ks.map(function (k) { return (RFI_RUB[k] || [k])[0]; }).join(' + ') + ' — ' + (ks.map(function (k) { return window.RFI_COMPTES ? window.RFI_COMPTES(cv, k) : ''; }).filter(Boolean).join(' ; ') || 'non renseigné')]); }
-      else cl.axes.forEach(function (a) { var rg = a.ranges.filter(function (x) { return x.a || x.b; }).map(function (x) { return x.a === x.b ? x.a : x.a + ' → ' + x.b; }).join(' ; '); if (rg) det.push([(AXES.filter(function (x) { return x[0] === a.axe; })[0] || [0, a.axe])[1], rg]); });
+      var cv = window.__rfiConvEff || '01', sc = srcCpt(cl), st = srcCat(cl);
+      if (sc === 'param') { var ks = rubKeys(cl); det.push(['Comptes', 'Rubrique paramétrée : ' + (ks.map(function (k) { return (RFI_RUB[k] || [k])[0]; }).join(' + ') || 'à choisir') + ' — ' + (ks.map(function (k) { return window.RFI_COMPTES ? window.RFI_COMPTES(cv, k) : ''; }).filter(Boolean).join(' ; ') || 'non renseigné')]); }
+      if (st === 'param') { var ct = (window.RFI_CATEGORIES ? window.RFI_CATEGORIES(cv) : []).filter(function (c) { return String(c.code) === String(cl.rubCat); })[0]; det.push(['Catégorie', 'Rubrique paramétrée : ' + (ct ? ct.code + ' — ' + ct.libelle : 'non rattachée à la convention ' + cv)]); }
+      cl.axes.filter(function (a) { return !(a.axe === 'COMPTE_GENERAL' && sc === 'param') && !(a.axe === 'CATEGORIE' && st === 'param'); }).forEach(function (a) { var rg = a.ranges.filter(function (x) { return x.a || x.b; }).map(function (x) { return x.a === x.b ? x.a : x.a + ' → ' + x.b; }).join(' ; '); if (rg) det.push([(AXES.filter(function (x) { return x[0] === a.axe; })[0] || [0, a.axe])[1], rg]); });
     } else if (cl.type === 'formule') det.push(['Formule', cl.formula || '']);
     else if (cl.type === 'constante') det.push(['Valeur saisie', String(cl.value == null ? '' : cl.value)]);
     return { addr: addr(r, c), tbl: t.name, vide: false, libelle: libelleOf(t, r, c, cl), nature: nat, valeur: cl.type === 'texte' ? '' : disp(t, r, c), det: det, titre: cl.type === 'texte' };

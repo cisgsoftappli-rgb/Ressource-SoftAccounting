@@ -1,11 +1,12 @@
 <!--
-  Écran « Procédure FIDA › États RFI › Paramètres RFI » — paramétrage par convention (instrument FIDA du plan financier), synchronisé avec les rubriques des modèles d'état RFI :
-  les lignes de l'onglet « Comptes » sont générées à partir des rubriques des six modèles (window.__ddGrid.rfiRubriques()) : une ligne par paramètre (Compte désigné, Compte d'exploitation,
-  Petite caisse, Compte d'avance, Fonds reçus FIDA, Autres fonds, Paiements directs, Avances cumulées, Dépenses justifiées, Ajustements) avec les rapports qui l'utilisent. Les rubriques des modèles
-  lisent ces comptes (window.RFI_COMPTES(convention, clé)) ; une rubrique sans compte affiche 0 ; « Saisir des comptes propres » dans le designer délie une rubrique.
-  Onglet « Catégories » : catégories du plan financier à faire apparaître sur les états. Le compte d'avance doit être distinct par financement.
-  Données : window.RFI_PARAM = { [convention]: { categories:{code:bool}, comptes:{clé:'fourchettes'} } }, copie localStorage softcompta.rfiParam. Préfixe rp / data-rp.
-  S'appuie sur les styles bp-*. Ne pas nommer de fonction « $$ » (build.cjs).
+  Écran « Procédure FIDA › États RFI › Paramètres RFI » — paramétrage des états RFI, synchronisé avec les rubriques des modèles d'état RFI. Deux onglets :
+  1. Catégories — comme l'écran « Paramètre catégorie » : une catégorie RFI = Code + Libellé (ex. 1 Consultations) et, par convention, les catégories du plan financier qui la composent
+     (fourchette : « 01 - 1 », « 01 - 1 ; 01 - 3 » ou « 01 - 1 à 01 - 3 ») et, en option, une fourchette de comptes (ex. 601000-659999). Les modèles RFI génèrent une ligne par catégorie RFI de la convention éditée ;
+     chaque ligne lit les mouvements des catégories du plan (axe Catégorie) dans la fourchette de comptes indiquée.
+  2. Comptes — une ligne par paramètre lu par les rubriques des modèles (Compte désigné, Compte d'exploitation, Petite caisse, Compte d'avance, Fonds reçus FIDA, Autres fonds, Paiements directs,
+     Avances cumulées, Dépenses justifiées, Ajustements) avec les rapports qui l'utilisent ; fourchettes de comptes par convention. Le compte d'avance doit être distinct par financement.
+  Données : window.RFI_CATS = [ { code, libelle, lignes:[ { conv, cat, comptes } ] } ] (localStorage softcompta.rfiCats) ; window.RFI_PARAM = { [convention]: { comptes:{clé:'fourchettes'} } } (softcompta.rfiParam) ;
+  window.RFI_COMPTES(convention, clé) et window.RFI_CATEGORIES(convention) sont lus par le designer. Préfixe rp / data-rp. S'appuie sur les styles bp-*. Ne pas nommer de fonction « $$ » (build.cjs).
 -->
 <style>
 [data-rp] .rp-card{padding:16px;border:1px solid #E9EBF0;border-radius:12px;background:#fff;margin-bottom:12px}
@@ -13,11 +14,17 @@
 @media (max-width:700px){[data-rp] .rp-g{grid-template-columns:1fr}}
 [data-rp] .rp-ro{min-height:36px;display:flex;align-items:center;padding:0 12px;border:1px solid #D6D9E0;border-radius:8px;background:#F5F7F9;color:#353944;font-size:12px}
 [data-rp] .rp-ok{font-size:12px;color:#2E427B;margin-left:8px}[data-rp] .rp-er{color:#B63132}
-[data-rp] td.c,[data-rp] th.c{width:48px;text-align:center}[data-rp] td.c input{width:16px;height:16px;accent-color:#2E427B}
-[data-rp] .bp-in.err{border-color:#B63132}
+[data-rp] .bp-in.err,[data-rp] .bp-sel.err{border-color:#B63132}
 [data-rp] .rp-vide{padding:22px;text-align:center;color:#747A88;font-size:13px}
 [data-rp] .rp-grp td{background:#F5F7F9;font-weight:700;color:#0B1332}
 [data-rp] .rp-rap{display:inline-flex;gap:4px;flex-wrap:wrap}[data-rp] .rp-rap span{padding:1px 8px;border:1px solid #B7C6F2;border-radius:6px;background:#E3EBFE;color:#243569;font-size:11px;font-weight:600}
+[data-rp] .rp-cat{border:1px solid #E9EBF0;border-radius:12px;background:#fff;margin-bottom:12px}
+[data-rp] .rp-ch{display:grid;grid-template-columns:90px minmax(0,1fr) auto;gap:12px;align-items:end;padding:12px 16px;border-bottom:1px solid #E9EBF0}
+[data-rp] .rp-cl{display:grid;grid-template-columns:minmax(0,1.3fr) minmax(0,1.3fr) minmax(0,1fr) 40px;gap:8px;align-items:center;padding:6px 16px}
+[data-rp] .rp-clh{font-size:12px;font-weight:600;color:#474C58}
+[data-rp] .rp-ib{display:inline-grid;place-items:center;width:36px;height:36px;border:1px solid #D6D9E0;border-radius:8px;background:#fff;color:#2E427B;font-size:16px;cursor:pointer}[data-rp] .rp-ib:hover{background:#E9EBF0}[data-rp] .rp-ib.dng{color:#B63132}
+[data-rp] .rp-bar{display:flex;justify-content:flex-end;margin-bottom:12px}
+[data-rp] .rp-b{display:inline-flex;align-items:center;gap:6px;height:36px;padding:0 14px;border:1px solid #D6D9E0;border-radius:8px;background:#fff;color:#474C58;font:700 12px var(--font-sans);cursor:pointer}[data-rp] .rp-b:hover{background:#E9EBF0}[data-rp] .rp-b.pri{background:#2E427B;border-color:#2E427B;color:#fff}
 </style>
 
 <div class="bp-root" data-rp>
@@ -29,23 +36,26 @@
     <span class="rp-ok" data-rp-msg role="status"></span>
   </div>
 
-  <div class="rp-card">
-    <div class="rp-g">
-      <label class="bp-champ"><span>Convention (instrument FIDA) <b>*</b></span><select class="bp-sel" data-rp-conv></select></label>
-      <div class="bp-champ"><span>Bailleur</span><div class="rp-ro" data-rp-bailleur></div></div>
-    </div>
-  </div>
-
   <div class="bp-tabs" role="tablist">
     <button type="button" role="tab" class="on" data-rp-tab="cat">Catégories</button>
     <button type="button" role="tab" data-rp-tab="cpt">Comptes</button>
   </div>
 
   <div class="bp-grid">
-    <section class="bp-pan" data-rp-pan="cat"><div class="pf-tablewrap"><table class="pf-table" data-no-tf data-no-pg>
-      <thead><tr><th class="c"></th><th>Code</th><th>Catégorie</th></tr></thead><tbody data-rp-cats></tbody></table></div></section>
-    <section class="bp-pan" data-rp-pan="cpt" hidden><div class="pf-tablewrap"><table class="pf-table" data-no-tf data-no-pg>
-      <thead><tr><th>Paramètre</th><th>Rapports</th><th>Comptes (fourchettes)</th></tr></thead><tbody data-rp-cpt></tbody></table></div></section>
+    <section class="bp-pan" data-rp-pan="cat">
+      <div class="rp-bar"><button type="button" class="rp-b pri" data-rp-addcat><i class="ti ti-plus"></i> Ajouter une catégorie</button></div>
+      <div data-rp-cats></div>
+    </section>
+    <section class="bp-pan" data-rp-pan="cpt" hidden>
+      <div class="rp-card">
+        <div class="rp-g">
+          <label class="bp-champ"><span>Convention (instrument FIDA) <b>*</b></span><select class="bp-sel" data-rp-conv></select></label>
+          <div class="bp-champ"><span>Bailleur</span><div class="rp-ro" data-rp-bailleur></div></div>
+        </div>
+      </div>
+      <div class="pf-tablewrap"><table class="pf-table" data-no-tf data-no-pg>
+        <thead><tr><th>Paramètre</th><th>Rapports</th><th>Comptes (fourchettes)</th></tr></thead><tbody data-rp-cpt></tbody></table></div>
+    </section>
   </div>
 </div>
 
@@ -54,23 +64,65 @@
   var root = document.querySelector('[data-rp]'); if (!root) return;
   function q(s) { return root.querySelector(s); } function qa(s) { return [].slice.call(root.querySelectorAll(s)); }
   function esc(s) { return String(s == null ? '' : s).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;'); }
-  var CLE = 'softcompta.rfiParam', data = {}, cur = null;
-  // comptes proposés par défaut (modifiables) pour que les états d'exemple soient renseignés
+  var CLE = 'softcompta.rfiParam', CLEC = 'softcompta.rfiCats', data = {}, cats = null, cur = null;
   var DEFAUT = { compte_designe: '511000', compte_exploitation: '512000-512999', petite_caisse: '531000-531999', compte_avance: '467501', fonds_fida: '471000-471999', autres_fonds: '758000', paiements_directs: '451000-451999', avances_cumulees: '471000-471999', depenses_justifiees: '601000-659999', ajustements: '108100-108199' };
   try { var sv = JSON.parse(localStorage.getItem(CLE) || 'null'); if (sv && typeof sv === 'object' && !Array.isArray(sv)) data = sv; } catch (e) {}
-  function comptes(conv, cle) { var c = (data[conv] || {}).comptes; return c && Object.prototype.hasOwnProperty.call(c, cle) ? c[cle] : DEFAUT[cle] || ''; }
-  window.RFI_COMPTES = comptes;
-  function publier() { window.RFI_PARAM = data; try { localStorage.setItem(CLE, JSON.stringify(data)); } catch (e) {} window.dispatchEvent(new Event('rfi-param-changed')); }
+  try { var sc = JSON.parse(localStorage.getItem(CLEC) || 'null'); if (Array.isArray(sc)) cats = sc; } catch (e) {}
   function maj(s) { if (s && s.__combo && s.__combo.maj) s.__combo.maj(); }
   function msg(t, ko) { var m = q('[data-rp-msg]'); m.textContent = t || ''; m.className = 'rp-ok' + (ko ? ' rp-er' : ''); }
 
+  // ---------- plan financier : conventions et catégories
   function plan() { return (window.PLANS_CFG || []).filter(function (p) { return p.code === 'PLAN3'; })[0] || { niveaux: [] }; }
   function lignes() { var L = window.PLANS_LIGNES && window.PLANS_LIGNES.PLAN3; return (L && L.rows ? L.rows : []).filter(function (r) { return r.actif !== false; }); }
   function prof(r, L) { var d = 0, p = r.parent, g = 0; while (p && g++ < 10) { d++; p = (L.filter(function (x) { return x.code === p; })[0] || {}).parent; } return d; }
   function typ(r, L) { var n = plan().niveaux[prof(r, L)]; return n ? n.type : ''; }
-  function conventions() { var L = lignes(); return L.filter(function (r) { return typ(r, L) === 'CONVENTION' && /fida/i.test(r.extra || ''); }); }
+  function conventions(tout) { var L = lignes(); return L.filter(function (r) { return typ(r, L) === 'CONVENTION' && (tout || /fida/i.test(r.extra || '')); }); }
   function categories(code) { var L = lignes(), res = []; (function d(p) { L.filter(function (r) { return r.parent === p; }).forEach(function (r) { if (typ(r, L) === 'CATEGORIE') res.push(r); d(r.code); }); })(code); return res; }
 
+  // ---------- catégories RFI (par défaut : une catégorie RFI par catégorie du plan de la première convention FIDA)
+  function defautCats() { var c = conventions()[0]; if (!c) return []; return categories(c.code).map(function (x, i) { return { code: String(i + 1), libelle: x.libelle, lignes: [{ conv: c.code, cat: x.code, comptes: '' }] }; }); }
+  function lesCats() { if (cats === null) { var d = defautCats(); if (d.length) cats = d; } return cats || []; }
+  function plage(txt) { return String(txt || '').split(';').map(function (x) { return x.trim(); }).filter(Boolean).map(function (x) { var p = x.split(' à '); return { a: p[0].trim(), b: (p[1] || p[0]).trim(), s: '' }; }); }
+  function plageComptes(txt) { return String(txt || '').split(';').map(function (x) { return x.trim(); }).filter(Boolean).map(function (x) { var p = x.split('-'); return { a: p[0].trim(), b: (p[1] || p[0]).trim(), s: '' }; }); }
+  window.RFI_CATEGORIES = function (conv) {
+    var out = []; (cats === null ? lesCats() : cats).forEach(function (c) {
+      var ls = (c.lignes || []).filter(function (l) { return l.conv === conv && String(l.cat || '').trim(); }); if (!ls.length) return;
+      out.push({ code: c.code, libelle: c.libelle, ranges: [].concat.apply([], ls.map(function (l) { return plage(l.cat); })), comptes: [].concat.apply([], ls.map(function (l) { return plageComptes(l.comptes); })) });
+    });
+    return out;
+  };
+  function comptes(conv, cle) { var c = (data[conv] || {}).comptes; return c && Object.prototype.hasOwnProperty.call(c, cle) ? c[cle] : DEFAUT[cle] || ''; }
+  window.RFI_COMPTES = comptes;
+  window.RFI_CATS_LIST = function () { return (cats === null ? lesCats() : cats).map(function (c) { return { code: c.code, libelle: c.libelle }; }); };
+  function publier() { window.RFI_PARAM = data; try { localStorage.setItem(CLE, JSON.stringify(data)); if (cats !== null) localStorage.setItem(CLEC, JSON.stringify(cats)); } catch (e) {} window.dispatchEvent(new Event('rfi-param-changed')); }
+
+  // ---------- onglet Catégories
+  function convOpts(sel) { return conventions(true).map(function (c) { return '<option value="' + esc(c.code) + '"' + (c.code === sel ? ' selected' : '') + '>' + esc(c.code) + ' — ' + esc(c.libelle) + '</option>'; }).join(''); }
+  function dlCats() { return conventions(true).map(function (c) { return '<datalist id="rp-dl-' + esc(c.code) + '">' + categories(c.code).map(function (x) { return '<option value="' + esc(x.code) + '">' + esc(x.libelle) + '</option>'; }).join('') + '</datalist>'; }).join(''); }
+  function dessinerCats() {
+    var L = cur.cats;
+    q('[data-rp-cats]').innerHTML = dlCats() + (L.length ? L.map(function (c, i) {
+      return '<div class="rp-cat" data-i="' + i + '"><div class="rp-ch"><label class="bp-champ"><span>Code</span><input class="bp-in" value="' + esc(c.code) + '" data-f="code" maxlength="6"></label><label class="bp-champ"><span>Libellé <b>*</b></span><input class="bp-in" value="' + esc(c.libelle) + '" data-f="libelle"></label><button type="button" class="rp-ib dng" data-delcat title="Supprimer la catégorie" aria-label="Supprimer la catégorie"><i class="ti ti-trash"></i></button></div>' +
+        '<div class="rp-cl rp-clh"><span>Convention</span><span>Catégories du plan</span><span>Fourchette de comptes</span><span></span></div>' +
+        (c.lignes || []).map(function (l, j) { return '<div class="rp-cl" data-j="' + j + '"><select class="bp-sel" data-f="conv">' + convOpts(l.conv) + '</select><input class="bp-in" data-f="cat" list="rp-dl-' + esc(l.conv) + '" value="' + esc(l.cat) + '" placeholder="Ex : 01 - 1 ; 01 - 3"><input class="bp-in" data-f="comptes" value="' + esc(l.comptes || '') + '" placeholder="Ex : 601000-659999"><button type="button" class="rp-ib dng" data-delligne title="Supprimer la ligne" aria-label="Supprimer la ligne"><i class="ti ti-x"></i></button></div>'; }).join('') +
+        '<div class="rp-cl"><button type="button" class="rp-ib" data-addligne title="Ajouter un rattachement" aria-label="Ajouter un rattachement"><i class="ti ti-plus"></i></button></div></div>';
+    }).join('') : '<div class="rp-vide">Aucune catégorie : ajoutez-en une.</div>');
+    qa('[data-rp-cats] select').forEach(maj);
+  }
+  q('[data-rp-addcat]').addEventListener('click', function () { var n = cur.cats.reduce(function (a, c) { return Math.max(a, parseInt(c.code, 10) || 0); }, 0) + 1, c = conventions()[0]; cur.cats.push({ code: String(n), libelle: '', lignes: [{ conv: c ? c.code : '', cat: '', comptes: '' }] }); dessinerCats(); });
+  q('[data-rp-cats]').addEventListener('click', function (e) {
+    var b = e.target.closest('.rp-cat'); if (!b) return; var i = +b.dataset.i;
+    if (e.target.closest('[data-delcat]')) { cur.cats.splice(i, 1); dessinerCats(); }
+    else if (e.target.closest('[data-delligne]')) { cur.cats[i].lignes.splice(+e.target.closest('[data-j]').dataset.j, 1); dessinerCats(); }
+    else if (e.target.closest('[data-addligne]')) { var c = conventions(true)[0]; cur.cats[i].lignes.push({ conv: c ? c.code : '', cat: '', comptes: '' }); dessinerCats(); }
+  });
+  function surCat(e) {
+    var f = e.target.closest('[data-f]'), b = e.target.closest('.rp-cat'); if (!f || !b) return; var c = cur.cats[+b.dataset.i], l = e.target.closest('[data-j]');
+    if (l) { var x = c.lignes[+l.dataset.j]; x[f.dataset.f] = f.value; f.classList.remove('err'); if (f.dataset.f === 'conv' && e.type === 'change') dessinerCats(); } else { c[f.dataset.f] = f.value; f.classList.remove('err'); }
+  }
+  q('[data-rp-cats]').addEventListener('input', surCat); q('[data-rp-cats]').addEventListener('change', surCat);
+
+  // ---------- onglet Comptes
   function listes() {
     var C = conventions(), s = q('[data-rp-conv]'), v = s.value;
     s.innerHTML = C.map(function (r) { return '<option value="' + esc(r.code) + '">' + esc(r.code) + ' — ' + esc(r.libelle) + '</option>'; }).join('');
@@ -78,34 +130,39 @@
   }
   function rubriques() { return window.__ddGrid && window.__ddGrid.rfiRubriques ? window.__ddGrid.rfiRubriques() : []; }
   function charge(code) {
-    cur = { code: code, cat: JSON.parse(JSON.stringify((data[code] || {}).categories || {})), cpt: {} };
+    cur = cur || {}; cur.code = code; cur.cats = JSON.parse(JSON.stringify(cats === null ? lesCats() : cats)); cur.cpt = {};
     var r = conventions().filter(function (x) { return x.code === code; })[0]; q('[data-rp-bailleur]').textContent = r ? (r.extra || '') : '';
-    var cats = categories(code);
-    q('[data-rp-cats]').innerHTML = cats.length ? cats.map(function (x) { return '<tr><td class="c"><input type="checkbox" data-cat="' + esc(x.code) + '"' + (cur.cat[x.code] === false ? '' : ' checked') + ' aria-label="Afficher ' + esc(x.libelle) + '"></td><td>' + esc(x.code) + '</td><td>' + esc(x.libelle) + '</td></tr>'; }).join('') : '<tr><td colspan="3" class="rp-vide">Aucune catégorie pour cette convention dans le plan financier.</td></tr>';
     var R = rubriques(), g = '', h = '';
     R.forEach(function (o) {
       cur.cpt[o.key] = comptes(code, o.key);
       if (o.groupe !== g) { g = o.groupe; h += '<tr class="rp-grp"><td colspan="3">' + esc(g) + '</td></tr>'; }
-      h += '<tr><td>' + esc(o.lib) + '</td><td><span class="rp-rap">' + o.rapports.map(function (x) { return '<span>' + x + '</span>'; }).join('') + '</span></td><td><input class="bp-in" data-cle="' + o.key + '" value="' + esc(cur.cpt[o.key]) + '" aria-label="Comptes : ' + esc(o.lib) + '" placeholder="Ex : 511000 ; 512000-512999"></td></tr>';
+      h += '<tr><td>' + esc(o.lib) + '</td><td><span class="rp-rap">' + (o.rapports.length ? o.rapports.map(function (x) { return '<span>' + x + '</span>'; }).join('') : '—') + '</span></td><td><input class="bp-in" data-cle="' + o.key + '" value="' + esc(cur.cpt[o.key]) + '" aria-label="Comptes : ' + esc(o.lib) + '" placeholder="Ex : 511000 ; 512000-512999"></td></tr>';
     });
     q('[data-rp-cpt]').innerHTML = R.length ? h : '<tr><td colspan="3" class="rp-vide">Les rubriques des modèles RFI ne sont pas encore chargées.</td></tr>';
-    msg('');
+    dessinerCats(); msg('');
   }
-  q('[data-rp-conv]').addEventListener('change', function (e) { charge(e.target.value); });
-  q('[data-rp-cats]').addEventListener('change', function (e) { var c = e.target.closest('[data-cat]'); if (c && cur) cur.cat[c.dataset.cat] = c.checked; });
+  q('[data-rp-conv]').addEventListener('change', function (e) { var cc = cur ? cur.cats : null; charge(e.target.value); if (cc) { cur.cats = cc; dessinerCats(); } });
   q('[data-rp-cpt]').addEventListener('input', function (e) { var i = e.target.closest('[data-cle]'); if (i && cur) { cur.cpt[i.dataset.cle] = i.value; i.classList.remove('err'); } });
 
   function tab(n) { qa('[data-rp-tab]').forEach(function (b) { b.classList.toggle('on', b.dataset.rpTab === n); }); qa('[data-rp-pan]').forEach(function (p) { p.hidden = p.dataset.rpPan !== n; }); }
   qa('[data-rp-tab]').forEach(function (b) { b.addEventListener('click', function () { tab(b.dataset.rpTab); }); });
 
   q('[data-rp-enregistrer]').addEventListener('click', function () {
-    if (!cur || !cur.code) { msg('Aucune convention FIDA dans le plan financier.', 1); return; }
-    var av = String(cur.cpt.compte_avance || '').trim();   // le compte d'avance est propre à chaque financement
+    if (!cur) return; var ko = false;
+    // catégories : libellé obligatoire, code unique, au moins une catégorie du plan par rattachement
+    var codes = {}; qa('.rp-cat').forEach(function (b) {
+      var c = cur.cats[+b.dataset.i], ci = b.querySelector('[data-f="code"]'), li = b.querySelector('.rp-ch [data-f="libelle"]');
+      if (!String(c.libelle).trim()) { li.classList.add('err'); ko = true; }
+      if (!String(c.code).trim() || codes[c.code]) { ci.classList.add('err'); ko = true; } codes[c.code] = 1;
+      [].forEach.call(b.querySelectorAll('[data-j]'), function (l) { var x = c.lignes[+l.dataset.j], ii = l.querySelector('[data-f="cat"]'); if (!String(x.cat).trim()) { ii.classList.add('err'); ko = true; } });
+    });
+    if (ko) { tab('cat'); msg('Renseignez le libellé, un code unique et les catégories du plan de chaque rattachement.', 1); return; }
+    var av = String((cur.cpt || {}).compte_avance || '').trim();   // le compte d'avance est propre à chaque financement
     var autre = Object.keys(data).filter(function (k) { return k !== cur.code && av && String(comptes(k, 'compte_avance')).trim() === av; });
     if (autre.length) { var i = q('[data-cle="compte_avance"]'); if (i) i.classList.add('err'); tab('cpt'); msg('Le compte d’avance doit être distinct par financement (déjà utilisé par la convention ' + autre[0] + ').', 1); return; }
-    data[cur.code] = { categories: cur.cat, comptes: cur.cpt }; publier(); msg('Paramètres RFI enregistrés.');
+    cats = cur.cats; data[cur.code] = { comptes: cur.cpt }; publier(); msg('Paramètres RFI enregistrés.');
   });
-  q('[data-rp-annuler]').addEventListener('click', function () { if (cur) charge(cur.code); });
+  q('[data-rp-annuler]').addEventListener('click', function () { if (cur) { charge(cur.code); } });
   window.addEventListener('hashchange', function () { if (location.hash === '#rfiparam') listes(); });
   publier(); listes();
   window.addEventListener('load', function () { setTimeout(listes, 200); }); setTimeout(listes, 900);

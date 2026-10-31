@@ -7,17 +7,18 @@
 <style>
 [data-re]{width:100%;color:#353944;font-size:12px}
 [data-re] .re-ov{position:fixed;inset:0;z-index:50;background:rgba(11,19,50,.5);display:flex;align-items:center;justify-content:center;padding:16px}[data-re] .re-ov[hidden]{display:none}
-[data-re] .re-dlg{width:100%;max-width:640px;max-height:calc(100vh - 32px);display:flex;flex-direction:column;background:#fff;border-radius:12px;box-shadow:0 12px 32px -8px rgba(11,19,50,.3)}
+[data-re] .re-dlg{width:100%;max-width:900px;max-height:calc(100vh - 32px);display:flex;flex-direction:column;background:#fff;border-radius:12px;box-shadow:0 12px 32px -8px rgba(11,19,50,.3)}
 [data-re] .re-dh{display:flex;justify-content:flex-end;padding:8px 12px 0}
 [data-re] .re-x{width:36px;height:36px;border:0;border-radius:8px;background:none;color:#474C58;font-size:16px;cursor:pointer}[data-re] .re-x:hover{background:#E9EBF0}
-[data-re] .re-db{overflow:auto;padding:8px 20px 16px;display:grid;gap:16px}
-[data-re] .re-pan{background:#fff;border:1px solid #E9EBF0;border-radius:12px}[data-re] .re-pan>h2{margin:0;padding:12px 16px;border-bottom:1px solid #E9EBF0;font-family:var(--font-heading);font-size:14px;font-weight:600;color:#0B1332}
-[data-re] .re-g{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:16px;padding:16px}[data-re] .re-g .w{grid-column:1/-1}
-@media (max-width:700px){[data-re] .re-g{grid-template-columns:1fr}}
+[data-re] .re-db{overflow:auto;padding:0 20px 12px;display:grid;gap:12px}
+[data-re] .re-pan{background:#fff;border:1px solid #E9EBF0;border-radius:12px}[data-re] .re-pan>h2{margin:0;padding:8px 16px;border-bottom:1px solid #E9EBF0;font-family:var(--font-heading);font-size:14px;font-weight:600;color:#0B1332}
+[data-re] .re-g{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:10px 16px;padding:12px 16px}[data-re] .re-g .w{grid-column:span 2}
+[data-re] .re-per{display:grid;grid-template-columns:36px minmax(0,1fr) 20px minmax(0,1fr);align-items:center;gap:8px;grid-column:span 2}[data-re] .re-per>b{font-size:12px;color:#474C58}[data-re] .re-per>i{font-style:normal;text-align:center;color:#5B606D}
+@media (max-width:760px){[data-re] .re-g{grid-template-columns:repeat(2,minmax(0,1fr))}}
 [data-re] .re-c{display:flex;flex-direction:column;gap:4px;min-width:0}[data-re] .re-c>span{font-size:12px;font-weight:600;color:#474C58}
-[data-re] .re-in,[data-re] .re-sel{width:100%;box-sizing:border-box;height:36px;border:1px solid #878D9A;border-radius:8px;background:#fff;color:#353944;font:inherit;font-size:12px;padding:0 12px}
+[data-re] .re-in,[data-re] .re-sel{width:100%;box-sizing:border-box;height:32px;border:1px solid #878D9A;border-radius:8px;background:#fff;color:#353944;font:inherit;font-size:12px;padding:0 12px}
 [data-re] .re-in:focus-visible,[data-re] .re-sel:focus-visible,[data-re] .re-b:focus-visible,[data-re] .re-x:focus-visible{outline:3px solid #2E427B;outline-offset:2px}
-[data-re] .re-df{display:flex;justify-content:flex-end;gap:8px;padding:12px 20px;border-top:1px solid #E9EBF0}
+[data-re] .re-df{display:flex;justify-content:flex-end;gap:8px;padding:10px 20px;border-top:1px solid #E9EBF0}
 [data-re] .re-b{display:inline-flex;align-items:center;justify-content:center;gap:6px;height:36px;padding:0 14px;border:1px solid #D6D9E0;border-radius:8px;background:#fff;color:#474C58;font:inherit;font-size:12px;font-weight:700;cursor:pointer}
 [data-re] .re-b:hover{background:#E9EBF0}[data-re] .re-b.pri{background:#2E427B;border-color:#2E427B;color:#fff}[data-re] .re-b.pri:hover{background:#243569}
 [data-re] .re-vide{padding:48px 16px;text-align:center;color:#5B606D;font-size:14px}[data-re] .re-vide[hidden]{display:none}
@@ -44,10 +45,18 @@
           <div class="re-g">
             <label class="re-c w"><span>Convention (instrument FIDA) <b style="color:#B63132">*</b></span><select class="re-sel" data-c="conv"></select></label>
             <label class="re-c w"><span>Rapport <b style="color:#B63132">*</b></span><select class="re-sel" data-c="rapport"></select></label>
-            <label class="re-c"><span>Période du</span><input class="re-in" type="date" data-c="du"></label>
-            <label class="re-c"><span>Au</span><input class="re-in" type="date" data-c="au"></label>
-            <label class="re-c w"><span>Monnaie du compte désigné</span><select class="re-sel" data-c="monnaie"></select></label>
-          </div>
+            <label class="re-c w"><span>Site</span><select class="re-sel" data-c="site"><option>Tous les sites</option><option>Siège</option></select></label>
+            <label class="re-c w" data-regr><span>Plan de regroupement</span><select class="re-sel" data-c="regr"></select></label>
+          </div></section>
+        <section class="re-pan" aria-label="Paramètres d'édition"><h2>Budgets et monnaies</h2>
+          <div class="re-g">
+            <label class="re-c"><span>Budget 1</span><select class="re-sel" data-c="bud1"></select></label>
+            <label class="re-c"><span>Budget 2</span><select class="re-sel" data-c="bud2"></select></label>
+            <label class="re-c"><span>Monnaie 1 (compte désigné)</span><select class="re-sel" data-c="monnaie"></select></label>
+            <label class="re-c"><span>Monnaie 2</span><select class="re-sel" data-c="monnaie2"></select></label>
+          </div></section>
+        <section class="re-pan" aria-label="Périodes"><h2>Périodes</h2>
+          <div class="re-g" data-re-pers></div>
           <div class="re-er" data-re-er role="alert" style="padding:0 16px 12px"></div></section>
       </div>
       <div class="re-df"><button type="button" class="re-b" data-re-reset><i class="ti ti-refresh"></i>Réinitialiser</button><button type="button" class="re-b" data-re-fermer>Annuler</button><button type="button" class="re-b pri" data-re-consulter><i class="ti ti-search"></i>Rechercher</button></div>
@@ -84,25 +93,37 @@
     c('conv').value = C.some(function (x) { return x.code === v; }) ? v : (C[0] || {}).code || '';
     c('rapport').innerHTML = RAPPORTS.map(function (x) { return '<option value="' + x[0] + '">' + esc(x[1]) + '</option>'; }).join(''); c('rapport').value = r || 'RFI_I';
     c('monnaie').innerHTML = devises().map(function (x) { return '<option>' + x + '</option>'; }).join('');
-    ['conv', 'rapport', 'monnaie'].forEach(function (k) { maj(c(k)); });
+    var b1 = c('bud1').value, b2 = c('bud2').value, m2 = c('monnaie2').value;
+    c('bud1').innerHTML = BUDGETS.map(function (x) { return '<option value="' + x[0] + '">' + esc(x[1]) + '</option>'; }).join(''); c('bud1').value = b1 || '1';
+    c('bud2').innerHTML = '<option value=""></option>' + BUDGETS.map(function (x) { return '<option value="' + x[0] + '">' + esc(x[1]) + '</option>'; }).join(''); c('bud2').value = b2 || '';
+    c('monnaie2').innerHTML = '<option></option>' + devises().slice(1).map(function (x) { return '<option>' + x + '</option>'; }).join(''); c('monnaie2').value = m2 || '';
+    var rg = window.REGROUPEMENT && window.REGROUPEMENT(), rv = c('regr').value;
+    c('regr').innerHTML = '<option value="">Tous</option>' + (rg ? rg.elements.map(function (e) { return '<option value="' + esc(e.code) + '">' + esc(e.code + ' — ' + e.libelle) + '</option>'; }).join('') : ''); c('regr').value = rv || '';
+    if (!q('[data-re-pers]').children.length) { q('[data-re-pers]').innerHTML = persHtml(); initDates(); }
+    ['conv', 'rapport', 'monnaie', 'bud1', 'bud2', 'monnaie2'].forEach(function (k) { maj(c(k)); });
   }
+  var BUDGETS = [['1', '1 - BUDGET INITIAL'], ['2', '2 - BUDGET AMENDE'], ['3', '3 - BUDGET FORMATION'], ['4', '4 - Budget RFI']], NP = ['N', 'N - 1', 'N - 2', 'N - 3', 'N - 4', 'N - 5'];
+  function persHtml() { return NP.map(function (n, i) { return '<div class="re-per"><b>' + n.replace(/ /g, '') + '</b><input class="re-in" type="date" data-p="du' + i + '" aria-label="' + n + ' du"><i>au</i><input class="re-in" type="date" data-p="au' + i + '" aria-label="' + n + ' au"></div>'; }).join(''); }
+  function p(n) { return q('[data-p="' + n + '"]'); }
   function ouvrir() { remplir(); ov.hidden = false; c('rapport').focus(); }
   function fermer() { ov.hidden = true; }
   qa('[data-re-fermer]').forEach(function (b) { b.addEventListener('click', fermer); });
   q('[data-re-criteres]').addEventListener('click', ouvrir);
   root.addEventListener('keydown', function (e) { if (e.key === 'Escape' && !ov.hidden) fermer(); });
-  function initDates() { c('du').value = '2026-01-01'; c('au').value = '2026-03-31'; }
+  function initDates() { p('du0').value = '2026-01-01'; p('au0').value = '2026-03-31'; }
+  function dateN(k, n) { var v = p(k + n); return v ? v.value : ''; }
   q('[data-re-reset]').addEventListener('click', function () { initDates(); c('rapport').value = 'RFI_I'; maj(c('rapport')); etat = null; q('[data-re-res]').hidden = true; q('[data-re-vide]').hidden = false; q('[data-re-er]').classList.remove('show'); msg(''); });
 
   function consulter() {
     var er = q('[data-re-er]'); er.classList.remove('show');
     if (!c('conv').value) { er.textContent = 'Aucune convention FIDA dans le plan financier.'; er.classList.add('show'); return; }
-    if (c('du').value && c('au').value && c('du').value > c('au').value) { er.textContent = 'La période est incohérente : la date de début dépasse la date de fin.'; er.classList.add('show'); return; }
+    if (p('du0').value && p('au0').value && p('du0').value > p('au0').value) { er.textContent = 'La période est incohérente : la date de début dépasse la date de fin.'; er.classList.add('show'); return; }
     if (c('monnaie').value !== 'MGA') { er.textContent = 'Aucun cours en vigueur pour ' + c('monnaie').value + ' : l’édition se fait en monnaie locale.'; er.classList.add('show'); return; }
     if (!window.__ddGrid || !window.__ddGrid.rfiHtml) { er.textContent = 'Le moteur des modèles n’est pas chargé.'; er.classList.add('show'); return; }
     var conv = conventions().filter(function (x) { return x.code === c('conv').value; })[0] || {}, code = c('rapport').value;
     window.__rfiConv = conv.code;
-    window.__ejcdCtx = Object.assign({}, window.__ejcdCtx || {}, { 'Période du': dt(c('du').value), 'Période au': dt(c('au').value), 'Instrument FIDA': (conv.libelle || 'Prêt FIDA'), 'Instrument n°': conv.code || '01', 'Monnaie compte désigné': c('monnaie').value, 'Situation au': dt(c('au').value) });
+    window.__edParams = { site: c('site').value, regroupement: c('regr').value, budget1: c('bud1').value, budget2: c('bud2').value, monnaie1: c('monnaie').value, monnaie2: c('monnaie2').value, periodes: NP.map(function (n, i) { return { n: n, du: dateN('du', i), au: dateN('au', i) }; }) };
+    window.__ejcdCtx = Object.assign({}, window.__ejcdCtx || {}, { 'Période du': dt(p('du0').value), 'Période au': dt(p('au0').value), 'Instrument FIDA': (conv.libelle || 'Prêt FIDA'), 'Instrument n°': conv.code || '01', 'Monnaie compte désigné': c('monnaie').value, 'Situation au': dt(p('au0').value) });
     etat = { code: code, nom: (RAPPORTS.filter(function (x) { return x[0] === code; })[0] || [])[1] || code, conv: conv };
     q('[data-re-res]').innerHTML = window.__ddGrid.rfiHtml(code); q('[data-re-res]').hidden = false; q('[data-re-vide]').hidden = true; fermer(); msg('Rapport RFI ' + etat.nom.split(' ')[0] + ' édité.');
   }
@@ -119,6 +140,6 @@
   q('[data-re-pdf]').addEventListener('click', function () { exporter('pdf'); }); q('[data-re-xlsx]').addEventListener('click', function () { exporter('xlsx'); });
   function auto() { if (location.hash === '#rfiedit' && ov.hidden && !etat) setTimeout(ouvrir, 700); }
   window.addEventListener('hashchange', auto);
-  initDates(); auto();
+  q('[data-re-pers]').innerHTML = persHtml(); initDates(); auto();
 })();
 </script>
