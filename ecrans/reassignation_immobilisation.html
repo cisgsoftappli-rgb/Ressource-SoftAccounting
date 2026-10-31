@@ -1,0 +1,354 @@
+<!--
+  Écran « Réassignation » (Immobilisations › Saisies › Réassignation) — changer le site, l'emplacement, le responsable ou la ventilation analytique d'une
+  immobilisation existante. Chaque mouvement est historisé de manière immuable (on ne supprime que le dernier mouvement d'une immobilisation, ce qui rétablit
+  l'affectation précédente). Onglets de page Saisie / Liste :
+  - Liste : date, n° d'identification, libellé, ancien / nouveau site, emplacement, responsable et analytique de chaque mouvement ; bouton « Historique » (détail des
+    mouvements de l'immobilisation sélectionnée, plans analytiques réassignés) ;
+  - Saisie : carte « Sélection de l'immobilisation » (numéro d'identification ou nom, deux listes liées), carte « Ancienne affectation » (lecture seule : fiche, site,
+    emplacement, responsable, valeur d'acquisition, plans analytiques activés et renseignés dans l'onglet Écritures de la fiche, autres monnaies), carte
+    « Nouvelle affectation » (date de réassignation, site, emplacement, responsable, ventilation analytique, motif) et carte « Historique des réassignations ».
+  Boutons dans la barre d'actions (Nouvelle réassignation, Enregistrer, Annuler, Supprimer, Historique, Imprimer, PDF, Excel). Données en mémoire, vides au départ.
+  Liens : window.FICHES_API (fiches de « Liste d'immobilisations », y compris la mise à jour de l'affectation), window.PLANS_REF.sites, LIEUX_AFFECTATION,
+  COLLABORATEURS_RESPONSABLES, PLANS_ACTIFS / PLANS_CFG / PLANS_LIGNES, DEVISES / COURS_API. Exposé : window.REASSIGNATIONS_IMMOBILISATION (événement
+  « reassignations-immobilisation-changed »). Styles bp-* de « Paramétrage du bilan ». Pas de fonction « $$ » (build.cjs).
+-->
+<style>
+.ras-badge{display:inline-flex;align-items:center;padding:2px 10px;border:1px solid #D6D9E0;border-radius:6px;font-size:12px;font-weight:600;background:#F5F7F9;color:#5B606D}
+.ras-code{font-family:ui-monospace,Consolas,monospace;font-weight:600}
+.ras-help{font-size:12px;color:#5B606D}
+.ras-er{display:none;font-size:12px;color:#B63132}.ras-er.show{display:block}
+.bp-in.err,.bp-sel.err{border-color:#B63132}
+.ras-card{border:1px solid #D6D9E0;border-radius:12px;padding:16px;background:#fff;margin-top:12px}
+.ras-card:first-child{margin-top:0}
+.ras-card h3{margin:0 0 12px;font-size:14px;font-weight:600;color:#18244F;display:flex;align-items:center;gap:8px;text-transform:uppercase;letter-spacing:.04em}
+.ras-card h3 small{margin-left:auto;font-size:12px;font-weight:400;text-transform:none;letter-spacing:0;color:#5B606D}
+.ras-g2{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:12px}
+.ras-g4{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:12px}
+.ras-g5{display:grid;grid-template-columns:repeat(5,minmax(0,1fr));gap:12px}
+.ras-ro{display:flex;flex-direction:column;gap:2px}
+.ras-ro span{font-size:12px;font-weight:600;letter-spacing:.04em;text-transform:uppercase;color:#5B606D}
+.ras-ro b{font-weight:600;color:#18244F;min-height:20px}
+.ras-sep{border:0;border-top:1px solid #D6D9E0;margin:12px 0}
+.ras-h4{margin:0 0 8px;font-size:12px;font-weight:600;color:#2E427B;text-transform:uppercase;letter-spacing:.04em}
+.ras-info{display:flex;gap:8px;align-items:flex-start;padding:10px 12px;border:1px solid #FDE68A;background:#FFFBEB;border-radius:8px;color:#78350F;font-size:13px}
+.ras-chg{background:#FFF7ED!important;border-color:#FDBA74!important}
+.ras-det{margin:6px 0 0;padding:8px 12px;background:#F5F7F9;border-radius:8px;font-size:12px;color:#18244F}
+.ras-det div+div{margin-top:2px}
+[data-ras] [hidden]{display:none!important}
+[data-ras] .bp-champ>span:first-child{text-transform:uppercase;letter-spacing:.04em;font-size:12px;font-weight:600}
+@media (max-width:1100px){.ras-g4,.ras-g5{grid-template-columns:repeat(2,minmax(0,1fr))}}
+</style>
+
+<div class="bp-root" data-ras>
+  <h1 style="position:absolute;width:1px;height:1px;overflow:hidden;clip-path:inset(50%);margin:0">Réassignation d'immobilisation</h1>
+
+  <div class="no-print" data-ras-actions>
+    <button type="button" data-ras-nouveau>Nouvelle réassignation</button>
+    <button type="button" data-ras-enregistrer>Enregistrer</button>
+    <button type="button" data-ras-annuler>Annuler</button>
+    <button type="button" data-ras-supprimer>Supprimer</button>
+    <button type="button" data-ras-historique>Historique</button>
+    <button type="button" data-ras-imprimer>Imprimer</button>
+    <button type="button" data-ras-pdf>PDF</button>
+    <button type="button" data-ras-xlsx>Excel (XLSX)</button>
+  </div>
+
+  <p class="ras-help" style="margin:0 0 12px">Changer le site, l'emplacement, le responsable ou la ventilation analytique d'une immobilisation existante. Chaque mouvement est historisé de manière immuable.</p>
+
+  <div class="bp-tabs" role="tablist">
+    <button type="button" role="tab" class="on" data-ras-tab="saisie">Saisie</button>
+    <button type="button" role="tab" data-ras-tab="liste">Liste <span class="bp-n" data-ras-compte></span></button>
+  </div>
+
+  <div class="bp-grid">
+    <section class="bp-pan" aria-label="Liste des réassignations" data-ras-pan="liste" hidden>
+      <h2>Réassignations <small>Clic sur une ligne pour la sélectionner, puis « Historique » pour le détail de l'immobilisation</small></h2>
+      <div style="overflow:auto;max-height:520px">
+        <table class="bp-tb" style="min-width:1100px"><thead>
+          <tr><th>Date</th><th>N° identification</th><th>Libellé</th><th>Anc. site</th><th>Nouv. site</th><th>Anc. emplacement</th><th>Nouv. emplacement</th><th>Anc. resp.</th><th>Nouv. resp.</th><th>Analytique</th></tr>
+          <tr class="flt">
+            <th><input class="bp-in" data-fc="0" aria-label="Filtrer Date"></th>
+            <th><input class="bp-in" data-fc="1" aria-label="Filtrer N°"></th>
+            <th><input class="bp-in" data-fc="2" aria-label="Filtrer Libellé"></th>
+            <th><input class="bp-in" data-fc="3" aria-label="Filtrer Ancien site"></th>
+            <th><input class="bp-in" data-fc="4" aria-label="Filtrer Nouveau site"></th>
+            <th><input class="bp-in" data-fc="5" aria-label="Filtrer Ancien emplacement"></th>
+            <th><input class="bp-in" data-fc="6" aria-label="Filtrer Nouvel emplacement"></th>
+            <th><input class="bp-in" data-fc="7" aria-label="Filtrer Ancien responsable"></th>
+            <th><input class="bp-in" data-fc="8" aria-label="Filtrer Nouveau responsable"></th>
+            <th></th>
+          </tr>
+        </thead><tbody data-ras-lignes></tbody></table>
+      </div>
+      <div class="bp-vide" data-ras-vide hidden>Aucune réassignation enregistrée pour ce projet.</div>
+      <div class="ras-card" data-ras-histo-liste hidden></div>
+    </section>
+
+    <section class="bp-pan" aria-label="Saisie d'une réassignation" data-ras-pan="saisie">
+      <form data-ras-form onsubmit="return false" novalidate>
+        <div class="ras-card">
+          <h3><i class="ti ti-search" aria-hidden="true"></i> Sélection de l'immobilisation</h3>
+          <div class="ras-g2">
+            <label class="bp-champ"><span>Numéro d'identification <b>*</b></span><select class="bp-sel" data-f="s_num"></select><span class="ras-er" data-er="s_num"></span></label>
+            <label class="bp-champ"><span>Nom</span><select class="bp-sel" data-f="s_nom"></select></label>
+          </div>
+          <p class="ras-help" data-ras-aide-sel style="margin:8px 0 0"></p>
+        </div>
+
+        <div class="ras-card">
+          <h3><i class="ti ti-history" aria-hidden="true"></i> Ancienne affectation <small>Lecture seule</small></h3>
+          <div class="ras-g4">
+            <div class="ras-ro"><span>N° identification</span><b data-ras-a="num">—</b></div>
+            <div class="ras-ro"><span>Désignation</span><b data-ras-a="desig">—</b></div>
+            <div class="ras-ro"><span>Compte général</span><b data-ras-a="compte">—</b></div>
+            <div class="ras-ro"><span>Site</span><b data-ras-a="site">—</b></div>
+            <div class="ras-ro"><span>Date d'acquisition</span><b data-ras-a="dacq">—</b></div>
+            <div class="ras-ro"><span>Emplacement</span><b data-ras-a="empl">—</b></div>
+            <div class="ras-ro"><span>Responsable</span><b data-ras-a="resp">—</b></div>
+            <div class="ras-ro"><span>Valeur d'acquisition</span><b data-ras-a="val">—</b></div>
+          </div>
+          <hr class="ras-sep">
+          <div class="ras-h4">Autres monnaies / plans analytiques</div>
+          <div class="ras-g4" data-ras-a-ana></div>
+          <p class="ras-help" style="margin:8px 0 0">Seuls les plans analytiques activés et renseignés dans l'onglet Écritures de la fiche d'immobilisation sont affichés ci-dessus.</p>
+        </div>
+
+        <div class="ras-card">
+          <h3><i class="ti ti-pencil" aria-hidden="true"></i> Nouvelle affectation</h3>
+          <div class="ras-info" data-ras-attente><i class="ti ti-info-circle" aria-hidden="true"></i><span>Sélectionnez une immobilisation dans la carte ci-dessus pour saisir la nouvelle affectation.</span></div>
+          <div data-ras-nouvelle hidden>
+            <div class="ras-g4">
+              <label class="bp-champ"><span>Date de réassignation <b>*</b></span><input class="bp-in" type="date" data-f="date"><span class="ras-er" data-er="date"></span></label>
+              <label class="bp-champ"><span>Nouveau site</span><select class="bp-sel" data-f="site"></select></label>
+              <label class="bp-champ"><span>Nouvel emplacement</span><select class="bp-sel" data-f="empl"></select></label>
+              <label class="bp-champ"><span>Nouveau responsable</span><select class="bp-sel" data-f="resp"></select></label>
+            </div>
+            <div class="ras-h4" style="margin-top:16px">Ventilation analytique</div>
+            <div class="ras-g5" data-ras-ana></div>
+            <label class="bp-champ" style="margin-top:12px"><span>Motif / observations</span><input class="bp-in" data-f="motif" maxlength="200" autocomplete="off" placeholder="Transfert de service, réorganisation…"></label>
+            <span class="ras-er" data-er="chg"></span>
+          </div>
+        </div>
+
+        <div class="ras-card">
+          <h3><i class="ti ti-clock" aria-hidden="true"></i> Historique des réassignations <small>Cliquez sur une ligne pour afficher le détail (plans analytiques réassignés)</small></h3>
+          <div data-ras-histo-saisie><p class="ras-help" style="text-align:center;margin:12px 0">Sélectionnez une immobilisation pour afficher son historique.</p></div>
+        </div>
+      </form>
+    </section>
+  </div>
+  <div class="bp-toast" role="status" hidden data-ras-toast></div>
+</div>
+
+<script>
+(function () {
+  var root = document.querySelector('[data-ras]'); if (!root) return;
+  function q(s) { return root.querySelector(s); } function qa(s) { return [].slice.call(root.querySelectorAll(s)); }
+  var mvts = [], sel = -1, mode = 'consultation', nextId = 1, fiche = null, ouvert = {}, histoOuvert = false;
+  function esc(s) { return String(s == null ? '' : s).replace(/[&<>"]/g, function (c) { return { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c]; }); }
+  function f(k) { return q('[data-f=' + k + ']'); }
+  function toast(m) { var t = q('[data-ras-toast]'); t.textContent = m; t.hidden = false; clearTimeout(toast.t); toast.t = setTimeout(function () { t.hidden = true; }, 3400); }
+  function err(k, m) { var e = q('[data-er="' + k + '"]'); if (e) { e.textContent = m || ''; e.classList.toggle('show', !!m); } var x = f(k); if (x) x.classList.toggle('err', !!m); }
+  function nb(n) { return (Math.round((+n || 0) * 100) / 100).toLocaleString('fr-FR', { maximumFractionDigits: 2 }); }
+  function dFR(iso) { return iso ? iso.split('-').reverse().join('/') : ''; }
+  function fiches() { return window.FICHES_API ? window.FICHES_API.liste() : []; }
+  function ficheDe(num) { return fiches().filter(function (x) { return x.num === num; })[0] || null; }
+  function nomSite(c) { var s = ((window.PLANS_REF || {}).sites || []).filter(function (x) { return x[0] === c; })[0]; return c ? c + (s ? ' — ' + s[1] : '') : '—'; }
+  function nomListe(L, c) { var s = (L || []).filter(function (x) { return x.code === c; })[0]; return c ? c + (s ? ' — ' + s.libelle : '') : '—'; }
+  function lib(c, t) { return c || '—'; }
+
+  // ---------- plans analytiques ----------
+  var REFPLAN = { PLAN1: 'activite', PLAN2: 'budget', PLAN4: 'geo' };
+  function plansVent() {
+    var act = window.PLANS_ACTIFS ? window.PLANS_ACTIFS() : ['PC', 'PLAN1', 'PLAN2', 'PLAN3', 'PLAN4'], out = [];
+    for (var i = 1; i <= 10; i++) {
+      var c = 'PLAN' + i, cfg = (window.PLANS_CFG || []).filter(function (p) { return p.code === c; })[0] || {}, L = window.PLANS_LIGNES && window.PLANS_LIGNES[c], rows;
+      if (L && L.rows && L.rows.length) rows = L.rows.filter(function (x) { return x.actif !== false; }).map(function (x) { return [x.code, x.libelle]; });
+      else rows = ((window.PLANS_REF || {})[REFPLAN[c]] || []);
+      if (act.indexOf(c) >= 0) out.push({ code: c, lib: cfg.abrev || cfg.libelle || 'Plan ' + i, rows: rows });
+    }
+    return out;
+  }
+  function libPlan(c) { var p = plansVent().filter(function (x) { return x.code === c; })[0]; return p ? p.lib : c; }
+  function resumeAna(a) { var k = Object.keys(a || {}); return k.length ? k.map(function (c) { return libPlan(c) + ' ' + a[c]; }).join(', ') : '—'; }
+
+  // ---------- listes de choix ----------
+  function optsListe(k, L, v, vide) {
+    var s = f(k), cur = v != null ? v : s.value;
+    s.innerHTML = '<option value="">' + vide + '</option>' + L.map(function (r) { return '<option value="' + esc(r[0]) + '">' + esc(r[0] + ' — ' + r[1]) + '</option>'; }).join('') +
+      (cur && !L.some(function (r) { return r[0] === cur; }) ? '<option value="' + esc(cur) + '">' + esc(cur) + '</option>' : '');
+    s.value = cur || '';
+  }
+  function selection(num) {
+    var L = fiches().filter(function (x) { return !x.cede; });
+    optsListe('s_num', L.map(function (x) { return [x.num, x.desig]; }), num, 'Rechercher un numéro…');
+    optsListe('s_nom', L.map(function (x) { return [x.desig, x.num]; }), num ? (ficheDe(num) || {}).desig : '', 'Rechercher un nom…');
+    var cedees = fiches().filter(function (x) { return x.cede; }).length;
+    q('[data-ras-aide-sel]').textContent = !fiches().length ? 'Aucune immobilisation : créez une fiche dans Immobilisations › Saisies › Liste d’immobilisations.' : (cedees ? cedees + ' immobilisation(s) cédée(s) ou sortie(s) non proposée(s).' : '');
+  }
+  function listesNouvelle(v) {
+    v = v || {};
+    optsListe('site', ((window.PLANS_REF || {}).sites || []).map(function (s) { return [s[0], s[1]]; }), v.site, '— Conserver / choisir —');
+    optsListe('empl', (window.LIEUX_AFFECTATION || []).map(function (x) { return [x.code, x.libelle]; }), v.empl, '— Conserver / choisir —');
+    optsListe('resp', (window.COLLABORATEURS_RESPONSABLES || []).map(function (x) { return [x.code, x.libelle]; }), v.resp, '— Conserver / choisir —');
+    q('[data-ras-ana]').innerHTML = plansVent().map(function (p) {
+      return '<label class="bp-champ"><span>' + esc(p.lib) + '</span><select class="bp-sel" data-ana="' + p.code + '"><option value="">Plan ' + p.code.slice(4) + '…</option>' + p.rows.map(function (r) { return '<option value="' + esc(r[0]) + '">' + esc(r[0] + ' — ' + r[1]) + '</option>'; }).join('') + '</select></label>';
+    }).join('') || '<span class="ras-help">Aucun plan analytique activé.</span>';
+    qa('[data-ana]').forEach(function (s) { var c = (v.ana || {})[s.dataset.ana]; if (c) { if (![].some.call(s.options, function (o) { return o.value === c; })) { var o = document.createElement('option'); o.value = c; o.textContent = c; s.appendChild(o); } s.value = c; } });
+    marquerChangements();
+  }
+  function lireAna() { var o = {}; qa('[data-ana]').forEach(function (s) { if (s.value) o[s.dataset.ana] = s.value; }); return o; }
+  function marquerChangements() {
+    if (!fiche) return;
+    [['site', fiche.site], ['empl', fiche.empl], ['resp', fiche.resp]].forEach(function (p) { f(p[0]).classList.toggle('ras-chg', f(p[0]).value !== (p[1] || '')); });
+    qa('[data-ana]').forEach(function (s) { s.classList.toggle('ras-chg', s.value !== ((fiche.ana || {})[s.dataset.ana] || '')); });
+  }
+
+  // ---------- ancienne affectation ----------
+  function ancienne(x) {
+    var A = function (k, v) { q('[data-ras-a=' + k + ']').textContent = v == null || v === '' ? '—' : v; };
+    A('num', x && x.num); A('desig', x && x.desig); A('compte', x && x.compte); A('site', x && nomSite(x.site)); A('dacq', x && dFR(x.dacq));
+    A('empl', x && nomListe(window.LIEUX_AFFECTATION, x.empl)); A('resp', x && nomListe(window.COLLABORATEURS_RESPONSABLES, x.resp));
+    A('val', x && nb(x.qte * x.pu) + ' MGA');
+    var blocs = [];
+    if (x) {
+      var D = (window.DEVISES || []).filter(function (d) { return d.code !== 'MGA' && d.actif !== false; });
+      Object.keys(x.ana || {}).forEach(function (c) { blocs.push('<div class="ras-ro"><span>' + esc(libPlan(c)) + '</span><b>' + esc(x.ana[c]) + '</b></div>'); });
+      if (!D.length) blocs.push('<div class="ras-ro"><span>Autres monnaies</span><b>Aucune devise active</b></div>');
+      D.forEach(function (d) { var p = window.COURS_API ? window.COURS_API.taux(d.code, x.dacq) : null; blocs.push('<div class="ras-ro"><span>Valeur (' + esc(d.code) + ')</span><b>' + (p ? nb(x.qte * x.pu / p) : '—') + '</b></div>'); });
+    }
+    q('[data-ras-a-ana]').innerHTML = x ? blocs.join('') : '<div class="ras-ro"><span>Plan géographique</span><b>—</b></div><div class="ras-ro"><span>Autres monnaies</span><b>Aucune devise active</b></div>';
+  }
+  function choisirFiche(num) {
+    fiche = num ? ficheDe(num) : null;
+    selection(num || ''); ancienne(fiche);
+    q('[data-ras-attente]').hidden = !!fiche; q('[data-ras-nouvelle]').hidden = !fiche;
+    if (fiche) { listesNouvelle({ site: fiche.site, empl: fiche.empl, resp: fiche.resp, ana: fiche.ana }); var d = f('date'); if (!d.value) d.value = new Date().toISOString().slice(0, 10); }
+    histoSaisie(); etat();
+  }
+  f('s_num').addEventListener('change', function () { if (mode !== 'creation') return; err('s_num'); choisirFiche(f('s_num').value); });
+  f('s_nom').addEventListener('change', function () {
+    if (mode !== 'creation') return; var d = f('s_nom').value, x = fiches().filter(function (y) { return y.desig === d && !y.cede; })[0]; err('s_num'); choisirFiche(x ? x.num : '');
+  });
+  ['site', 'empl', 'resp'].forEach(function (k) { f(k).addEventListener('change', marquerChangements); });
+  q('[data-ras-ana]').addEventListener('change', marquerChangements);
+
+  // ---------- historique ----------
+  function detailHtml(m) {
+    var L = [];
+    if (m.a.site !== m.n.site) L.push('Site : ' + esc(nomSite(m.a.site)) + ' → ' + esc(nomSite(m.n.site)));
+    if (m.a.empl !== m.n.empl) L.push('Emplacement : ' + esc(m.a.empl || '—') + ' → ' + esc(m.n.empl || '—'));
+    if (m.a.resp !== m.n.resp) L.push('Responsable : ' + esc(m.a.resp || '—') + ' → ' + esc(m.n.resp || '—'));
+    var codes = {}; Object.keys(m.a.ana || {}).concat(Object.keys(m.n.ana || {})).forEach(function (c) { codes[c] = 1; });
+    Object.keys(codes).forEach(function (c) { var o = (m.a.ana || {})[c] || '', n = (m.n.ana || {})[c] || ''; if (o !== n) L.push(esc(libPlan(c)) + ' : ' + esc(o || '—') + ' → ' + esc(n || '—')); });
+    if (m.motif) L.push('Motif : ' + esc(m.motif));
+    return '<div class="ras-det">' + L.map(function (x) { return '<div>' + x + '</div>'; }).join('') + '</div>';
+  }
+  function histoHtml(num) {
+    var H = mvts.filter(function (m) { return m.num === num; }).sort(function (a, b) { return a.date < b.date ? 1 : a.date > b.date ? -1 : b.id - a.id; });
+    if (!H.length) return '<p class="ras-help" style="text-align:center;margin:12px 0">Aucune réassignation enregistrée pour cette immobilisation.</p>';
+    return '<table class="bp-tb"><thead><tr><th>Date</th><th>Site</th><th>Emplacement</th><th>Responsable</th><th>Analytique</th></tr></thead><tbody>' + H.map(function (m) {
+      return '<tr data-ras-h="' + m.id + '" style="cursor:pointer"><td>' + dFR(m.date) + '</td><td>' + esc(m.a.site || '—') + ' → ' + esc(m.n.site || '—') + '</td><td>' + esc(m.a.empl || '—') + ' → ' + esc(m.n.empl || '—') + '</td><td>' + esc(m.a.resp || '—') + ' → ' + esc(m.n.resp || '—') + '</td><td>' + esc(nbAna(m)) + '</td></tr>' + (ouvert[m.id] ? '<tr><td colspan="5">' + detailHtml(m) + '</td></tr>' : '');
+    }).join('') + '</tbody></table>';
+  }
+  function nbAna(m) { var n = 0, codes = {}; Object.keys(m.a.ana || {}).concat(Object.keys(m.n.ana || {})).forEach(function (c) { codes[c] = 1; }); Object.keys(codes).forEach(function (c) { if (((m.a.ana || {})[c] || '') !== ((m.n.ana || {})[c] || '')) n++; }); return n ? n + ' plan(s)' : '—'; }
+  function histoSaisie() { q('[data-ras-histo-saisie]').innerHTML = fiche ? histoHtml(fiche.num) : '<p class="ras-help" style="text-align:center;margin:12px 0">Sélectionnez une immobilisation pour afficher son historique.</p>'; }
+  function histoListe() {
+    var h = q('[data-ras-histo-liste]'), m = sel >= 0 ? mvts[sel] : null;
+    h.hidden = !(histoOuvert && m);
+    if (!h.hidden) h.innerHTML = '<h3><i class="ti ti-clock" aria-hidden="true"></i> Historique de ' + esc(m.num + ' — ' + m.desig) + '</h3>' + histoHtml(m.num);
+  }
+  root.addEventListener('click', function (e) { var tr = e.target.closest('tr[data-ras-h]'); if (!tr) return; ouvert[tr.dataset.rasH] = !ouvert[tr.dataset.rasH]; histoSaisie(); histoListe(); });
+
+  // ---------- liste ----------
+  function filtrer() {
+    var F = []; qa('[data-fc]').forEach(function (e) { F[+e.dataset.fc] = e.value.trim().toLowerCase(); });
+    qa('[data-ras-lignes] tr').forEach(function (tr) { tr.hidden = F.some(function (v, k) { return v && tr.children[k].textContent.toLowerCase().indexOf(v) < 0; }); });
+  }
+  qa('[data-fc]').forEach(function (e) { e.addEventListener('input', filtrer); });
+  function changeTxt(a, n) { return a === n ? '—' : (n || '—'); }
+  function liste() {
+    q('[data-ras-compte]').textContent = mvts.length ? mvts.length : '';
+    q('[data-ras-vide]').hidden = mvts.length > 0;
+    q('[data-ras-lignes]').innerHTML = mvts.map(function (m, i) {
+      return '<tr data-i="' + i + '"' + (i === sel ? ' class="sel"' : '') + '><td>' + dFR(m.date) + '</td><td><span class="ras-code">' + esc(m.num) + '</span></td><td>' + esc(m.desig) + '</td><td>' + esc(m.a.site || '—') + '</td><td>' + esc(changeTxt(m.a.site, m.n.site)) + '</td>' +
+        '<td>' + esc(m.a.empl || '—') + '</td><td>' + esc(changeTxt(m.a.empl, m.n.empl)) + '</td><td>' + esc(m.a.resp || '—') + '</td><td>' + esc(changeTxt(m.a.resp, m.n.resp)) + '</td><td title="' + esc(resumeAna(m.n.ana)) + '">' + esc(nbAna(m)) + '</td></tr>';
+    }).join(''); filtrer();
+  }
+  var tb = q('[data-ras-lignes]');
+  tb.addEventListener('click', function (e) { var tr = e.target.closest('tr[data-i]'); if (!tr || mode !== 'consultation') return; sel = +tr.dataset.i; liste(); histoListe(); etat(); });
+
+  // ---------- onglets, état ----------
+  function onglet(n) { qa('[data-ras-pan]').forEach(function (p) { p.hidden = p.dataset.rasPan !== n; }); qa('[data-ras-tab]').forEach(function (t) { var on = t.dataset.rasTab === n; t.classList.toggle('on', on); t.setAttribute('aria-selected', on); }); }
+  qa('[data-ras-tab]').forEach(function (t) { t.addEventListener('click', function () { onglet(t.dataset.rasTab); }); });
+  function etat() {
+    var ed = mode === 'creation';
+    f('s_num').disabled = !ed; f('s_nom').disabled = !ed;
+    ['date', 'site', 'empl', 'resp', 'motif'].forEach(function (k) { f(k).disabled = !ed || !fiche; });
+    qa('[data-ana]').forEach(function (s) { s.disabled = !ed || !fiche; });
+    var a = q('[data-ras-actions]'), m = sel >= 0 ? mvts[sel] : null;
+    a.querySelector('[data-ras-nouveau]').disabled = ed; a.querySelector('[data-ras-enregistrer]').disabled = !ed || !fiche; a.querySelector('[data-ras-annuler]').disabled = !ed;
+    a.querySelector('[data-ras-supprimer]').disabled = ed || !m; a.querySelector('[data-ras-historique]').disabled = ed || !m;
+    ['imprimer', 'pdf', 'xlsx'].forEach(function (k) { a.querySelector('[data-ras-' + k + ']').disabled = !mvts.length; });
+  }
+  function publier() { window.REASSIGNATIONS_IMMOBILISATION = mvts.map(function (m) { return { date: m.date, num: m.num, designation: m.desig, ancien: m.a, nouveau: m.n, motif: m.motif }; }); window.dispatchEvent(new Event('reassignations-immobilisation-changed')); }
+  function reinit() { fiche = null; selection(''); ancienne(null); q('[data-ras-attente]').hidden = false; q('[data-ras-nouvelle]').hidden = true; f('date').value = ''; f('motif').value = ''; err('s_num'); err('date'); err('chg'); histoSaisie(); }
+
+  function enregistrer() {
+    if (!fiche) return;
+    var cur = ficheDe(fiche.num); if (!cur) { toast('Immobilisation introuvable.'); return; }
+    var n = { site: f('site').value, empl: f('empl').value, resp: f('resp').value, ana: lireAna() }, d = f('date').value, ok = true;
+    err('date'); err('chg');
+    var dernier = mvts.filter(function (m) { return m.num === cur.num; }).reduce(function (x, m) { return m.date > x ? m.date : x; }, '');
+    if (!d) { err('date', 'La date de réassignation est obligatoire.'); ok = false; }
+    else if (cur.dacq && d < cur.dacq) { err('date', 'La réassignation ne peut pas précéder la date d’acquisition (' + dFR(cur.dacq) + ').'); ok = false; }
+    else if (dernier && d < dernier) { err('date', 'Une réassignation plus récente existe déjà (' + dFR(dernier) + ').'); ok = false; }
+    var a = { site: cur.site, empl: cur.empl, resp: cur.resp, ana: cur.ana || {} }, aa = JSON.stringify(a.ana), na = JSON.stringify(n.ana);
+    n.site = n.site || a.site; n.empl = n.empl || a.empl; n.resp = n.resp || a.resp;
+    if (n.site === a.site && n.empl === a.empl && n.resp === a.resp && aa === na) { err('chg', 'Aucun changement : modifiez au moins le site, l’emplacement, le responsable ou une imputation analytique.'); ok = false; }
+    if (!ok) return;
+    if (!window.FICHES_API.reaffecter(cur.num, n)) { toast('La fiche est en cours de modification dans « Liste d’immobilisations » : terminez la saisie puis recommencez.'); return; }
+    mvts.push({ id: nextId++, date: d, num: cur.num, desig: cur.desig, a: a, n: n, motif: f('motif').value.trim() });
+    sel = mvts.length - 1; mode = 'consultation'; reinit(); liste(); histoListe(); etat(); onglet('liste'); publier(); toast('Réassignation enregistrée : ' + cur.num + '.');
+  }
+  function supprimer() {
+    var m = sel >= 0 ? mvts[sel] : null; if (!m) return;
+    var dernier = mvts.filter(function (x) { return x.num === m.num; }).sort(function (x, y) { return x.date < y.date ? 1 : x.date > y.date ? -1 : y.id - x.id; })[0];
+    if (dernier !== m) { toast('Seul le dernier mouvement d’une immobilisation peut être supprimé (l’historique est immuable).'); return; }
+    if (!window.confirm('Supprimer la réassignation du ' + dFR(m.date) + ' de « ' + m.num + ' » ? L’affectation précédente sera rétablie.')) return;
+    if (!window.FICHES_API.reaffecter(m.num, m.a)) { toast('Impossible de rétablir l’affectation : l’immobilisation est cédée ou en cours de modification.'); return; }
+    mvts.splice(sel, 1); sel = -1; liste(); histoListe(); etat(); publier(); toast('Réassignation supprimée : affectation précédente rétablie.');
+  }
+
+  // ---------- exports ----------
+  function table() {
+    var L = mvts.filter(function (m, i) { var tr = tb.children[i]; return !tr || !tr.hidden; });
+    return { tete: ['Date', 'N° identification', 'Libellé', 'Anc. site', 'Nouv. site', 'Anc. emplacement', 'Nouv. emplacement', 'Anc. resp.', 'Nouv. resp.', 'Analytique'], lignes: L.map(function (m) { return [dFR(m.date), m.num, m.desig, m.a.site || '—', changeTxt(m.a.site, m.n.site), m.a.empl || '—', changeTxt(m.a.empl, m.n.empl), m.a.resp || '—', changeTxt(m.a.resp, m.n.resp), resumeAna(m.n.ana)]; }) };
+  }
+  function exporter(k) {
+    var X = window.EXPORT_TABLEAU, t = table(); if (!X) { toast('Module d’export indisponible.'); return; } if (!t.lignes.length) { toast('Rien à exporter.'); return; }
+    if (k === 'pdf') X.pdf('reassignations_immobilisations.pdf', 'Réassignations d’immobilisations', t.lignes.length + ' ligne(s)', t.tete, t.lignes); else X.xlsx('reassignations_immobilisations.xlsx', 'Réassignations d’immobilisations', t.tete, t.lignes);
+    toast('Export ' + (k === 'pdf' ? 'PDF' : 'Excel (XLSX)') + ' généré : ' + t.lignes.length + ' ligne(s).');
+  }
+  function imprimer() {
+    var t = table(), w = window.open('', '_blank'); if (!w) { toast('Autorisez les fenêtres pop-up pour imprimer.'); return; }
+    w.document.write('<!doctype html><meta charset="utf-8"><title>Réassignations d’immobilisations</title><style>body{font:12px system-ui,sans-serif;color:#0B1332;margin:24px}h1{font-size:18px}table{border-collapse:collapse;width:100%}th{background:#2E427B;color:#fff;text-align:left;padding:6px 8px;font-size:10px;text-transform:uppercase;-webkit-print-color-adjust:exact;print-color-adjust:exact}td{padding:6px 8px;border-bottom:1px solid #D6D9E0}</style><h1>Réassignations d’immobilisations</h1><table><thead><tr>' +
+      t.tete.map(function (h) { return '<th>' + esc(h) + '</th>'; }).join('') + '</tr></thead><tbody>' + t.lignes.map(function (r) { return '<tr>' + r.map(function (c) { return '<td>' + esc(c) + '</td>'; }).join('') + '</tr>'; }).join('') + '</tbody></table>');
+    w.document.close(); w.focus(); setTimeout(function () { w.print(); }, 300);
+  }
+  root.addEventListener('click', function (e) {
+    var b = e.target.closest('button'); if (!b || b.disabled) return;
+    if (b.hasAttribute('data-ras-nouveau')) { mode = 'creation'; onglet('saisie'); reinit(); etat(); f('s_num').focus(); return; }
+    if (b.hasAttribute('data-ras-annuler')) { mode = 'consultation'; reinit(); etat(); return; }
+    if (b.hasAttribute('data-ras-enregistrer')) { enregistrer(); return; }
+    if (b.hasAttribute('data-ras-supprimer')) { supprimer(); return; }
+    if (b.hasAttribute('data-ras-historique')) { onglet('liste'); histoOuvert = !histoOuvert; histoListe(); return; }
+    if (b.hasAttribute('data-ras-imprimer')) { imprimer(); return; }
+    if (b.hasAttribute('data-ras-pdf')) { exporter('pdf'); return; }
+    if (b.hasAttribute('data-ras-xlsx')) { exporter('xlsx'); return; }
+  });
+  ['fiches-immobilisation-changed', 'lieux-affectation-changed', 'collaborateurs-responsables-changed', 'plans-actifs', 'plans-changed'].forEach(function (ev) { window.addEventListener(ev, function () { if (mode === 'consultation') { reinit(); } }); });
+  window.addEventListener('hashchange', function () { if (mode === 'consultation' && location.hash === '#reassign') reinit(); });
+  reinit(); liste(); etat(); onglet('liste'); publier();
+})();
+</script>
