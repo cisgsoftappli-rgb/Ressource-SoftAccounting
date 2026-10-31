@@ -51,6 +51,7 @@
 .df-ph p{margin:8px 0 0;font-size:12px;color:#5B606D}
 .df-ptabs{display:flex;gap:6px;margin-top:10px}
 .df-pb{padding:12px 16px 16px;font-size:13px;color:#5B606D}
+.df-pp{padding:14px}
 .df-lab{display:block;margin:10px 0 4px;font-size:12px;font-weight:600;color:#5B606D}
 .df-in{width:100%;border:1px solid #D5DBE5;border-radius:8px;padding:6px 10px;font:inherit;font-size:13px}
 .df-in:disabled{background:#F5F7F9;color:#5B606D}
@@ -159,14 +160,7 @@
       <div data-df-view="apercu" style="display:none;padding:16px"><div class="df-card"><h2>Aperçu live</h2><p style="margin:0;color:#64748b">L'aperçu avec les données réelles n'est pas inclus dans la maquette.</p></div></div>
     </main>
 
-    <aside class="df-panel">
-      <div class="df-ph">
-        <h2>Propriétés</h2>
-        <p data-df-ptitle>Document — Feuille</p>
-        <div class="df-ptabs"><button type="button" class="df-btn" data-df-ptab>Mise en page</button></div>
-      </div>
-      <div class="df-pb" data-df-pbody>Cliquez sur la feuille puis ouvrez l'onglet Mise en page pour configurer le document.</div>
-    </aside>
+    <aside class="df-panel"><div class="df-pp" data-df-pbody></div></aside>
   </div>
 </div>
 <script>
@@ -238,12 +232,13 @@
   function defCols() { return srcCols.length ? srcCols.map(function (c) { return { h: c.n, f: '[' + c.n + ']', w: 10 }; }) : [{ h: 'Colonne 1', f: '[Champ 1]', w: 10 }, { h: 'Colonne 2', f: '[Champ 2]', w: 10 }, { h: 'Colonne 3', f: '[Champ 3]', w: 10 }]; }
   function styleEl(el) {
     var d = el.dataset, s = el.style;
-    s.fontSize = d.fs ? d.fs + 'px' : ''; s.fontWeight = d.b === '1' ? '700' : ''; s.fontStyle = d.i === '1' ? 'italic' : ''; s.textAlign = d.al || ''; s.color = d.col || '';
+    s.fontSize = d.fs ? d.fs + 'px' : ''; s.fontWeight = d.b === '1' ? '700' : ''; s.fontStyle = d.i === '1' ? 'italic' : ''; s.textAlign = d.al || ''; s.color = d.col || ''; s.fontFamily = d.ff || ''; s.textDecoration = d.u === '1' ? 'underline' : '';
+    if (d.va) { s.display = 'flex'; s.alignItems = d.va; s.justifyContent = d.al === 'center' ? 'center' : d.al === 'right' ? 'flex-end' : 'flex-start'; } else { s.display = ''; s.alignItems = ''; s.justifyContent = ''; }
   }
   function draw(el) {
     var t = el.dataset.type, c = el.dataset.content || '';
     if (t === 'texte') el.innerHTML = esc(c);
-    else if (t === 'image') el.innerHTML = esc(c || 'Image');
+    else if (t === 'image') el.innerHTML = el.dataset.src ? '<img src="' + el.dataset.src.replace(/"/g, '&quot;') + '" alt="' + esc(el.dataset.srcNom || c || 'Image') + '" draggable="false" style="width:100%;height:100%;object-fit:' + (el.dataset.fit || 'contain') + ';pointer-events:none">' : esc(c || 'Image');
     else if (t === 'saut') el.innerHTML = esc(c || 'Saut de page');
     else if (t === 'tableau') {
       var cols = JSON.parse(el.dataset.cols || '[]'), tw = cols.reduce(function (a, k) { return a + k.w; }, 0) || 1, part = el.dataset.part || '';
@@ -269,53 +264,96 @@
   }
 
   /* ---------- sélection & propriétés ---------- */
+  /* barre de propriétés commune (ecrans/panneau_proprietes.js) */
+  var docSel = false, pp = null, PRESETS = [['logo', 'Logo SoftAppli'], ['qr', 'QR code'], ['pied', 'Bandeau de pied de page']];
+  function masque(k) { var M = window.__MASQUE || {}; return { logo: M.logo, qr: M.qr, pied: M.pied }[k] || ''; }
   function select(el) {
-    sel = el; selZone = null; qa('.df-el').forEach(function (e) { e.classList.toggle('sel', e === el); });
+    sel = el; selZone = null; docSel = false; qa('.df-el').forEach(function (e) { e.classList.toggle('sel', e === el); });
     q('[data-df-dup]').disabled = q('[data-df-del]').disabled = !el;
-    var t = q('[data-df-ptitle]'), b = q('[data-df-pbody]');
-    if (!el) { t.textContent = 'Document — Feuille'; b.innerHTML = '<p style="margin:0">Cliquez sur un élément pour le modifier, sur une section pour régler ses propriétés, ou sur « Mise en page » pour configurer le document.</p>'; placeHandle(); return; }
-    t.textContent = 'Élément — ' + el.dataset.type + ' (' + el.dataset.zone + ')';
-    var ty = el.dataset.type, hasC = ty === 'texte' || ty === 'image' || ty === 'saut', h = '';
-    h += '<label class="df-lab" style="margin-top:0">Contenu</label><textarea class="df-in" rows="3" data-p="content"' + (hasC ? '' : ' disabled') + '>' + esc(el.dataset.content || '') + '</textarea>';
-    if (ty === 'texte') h += '<label class="df-lab">Insérer un champ</label><select class="df-in" data-p-field><option value="">— Choisir —</option>' + FIELDS.map(function (f) { return '<option>' + esc(f) + '</option>'; }).join('') + '</select>';
-    h += '<div class="df-g2"><div><label class="df-lab">X</label><input class="df-in" type="number" data-p="x"></div><div><label class="df-lab">Y</label><input class="df-in" type="number" data-p="y"></div>' +
-      '<div><label class="df-lab">Largeur</label><input class="df-in" type="number" data-p="w"></div><div><label class="df-lab">Hauteur</label><input class="df-in" type="number" data-p="h"></div></div>';
-    if (ty === 'texte' || ty === 'tableau') {
-      h += '<div class="df-g2"><div><label class="df-lab">Taille</label><input class="df-in" type="number" data-p="fs" value="' + (el.dataset.fs || (ty === 'tableau' ? 9 : 12)) + '"></div>' +
-        '<div><label class="df-lab">Couleur</label><input class="df-in" type="color" data-p="col" value="' + (el.dataset.col || '#0f172a') + '" style="padding:2px;height:30px"></div></div>';
-    }
-    if (ty === 'texte') {
-      h += '<div class="df-g2"><label class="df-chk"><input type="checkbox" data-p="b"' + (el.dataset.b === '1' ? ' checked' : '') + '> Gras</label><label class="df-chk"><input type="checkbox" data-p="i"' + (el.dataset.i === '1' ? ' checked' : '') + '> Italique</label></div>' +
-        '<label class="df-lab">Alignement</label><select class="df-in" data-p="al"><option value="">Gauche</option><option value="center"' + (el.dataset.al === 'center' ? ' selected' : '') + '>Centre</option><option value="right"' + (el.dataset.al === 'right' ? ' selected' : '') + '>Droite</option></select>';
-    }
-    if (ty === 'tableau') h += tablePanel(el);
-    b.innerHTML = h; syncPanel(); placeHandle();
+    if (pp) pp.render(); placeHandle();
   }
   function tablePanel(el) {
     var cols = JSON.parse(el.dataset.cols || '[]'), part = el.dataset.part || '';
-    return '<label class="df-lab">Contenu du tableau</label><select class="df-in" data-p="part"><option value="">En-tête + lignes</option><option value="head"' + (part === 'head' ? ' selected' : '') + '>En-tête seul (répété)</option><option value="row"' + (part === 'row' ? ' selected' : '') + '>Lignes seules (détail)</option></select>' +
-      '<label class="df-lab">Colonnes (' + cols.length + ')</label>' + cols.map(function (c, i) {
+    return '<label class="pp-lab">Contenu du tableau</label><select class="pp-in" data-p="part"><option value="">En-tête + lignes</option><option value="head"' + (part === 'head' ? ' selected' : '') + '>En-tête seul (répété)</option><option value="row"' + (part === 'row' ? ' selected' : '') + '>Lignes seules (détail)</option></select>' +
+      '<label class="pp-lab">Colonnes (' + cols.length + ')</label>' + cols.map(function (c, i) {
         return '<div class="df-col"><input data-ci="' + i + '" data-ck="h" value="' + esc(c.h) + '" title="Titre"><input type="number" data-ci="' + i + '" data-ck="w" value="' + c.w + '" title="Largeur relative"><button type="button" data-c-del="' + i + '" title="Supprimer">✕</button><input data-ci="' + i + '" data-ck="f" value="' + esc(c.f) + '" title="Champ" style="grid-column:1 / -1;color:#0f766e"></div>';
-      }).join('') + '<button type="button" class="df-btn" data-c-add style="margin-top:6px">+ Colonne</button> <button type="button" class="df-btn" data-c-src style="margin-top:6px" title="Reprendre les colonnes de l’onglet Sources">Depuis les sources</button>';
+      }).join('') + '<button type="button" class="pp-btn" data-c-add style="margin-top:6px">+ Colonne</button> <button type="button" class="pp-btn" data-c-src style="margin-top:6px" title="Reprendre les colonnes de l’onglet Sources">Depuis les sources</button>';
   }
-  function syncPanel() {
-    if (!sel) return; var b = q('[data-df-pbody]');
-    [['x', parseInt(sel.style.left)], ['y', parseInt(sel.style.top)], ['w', parseInt(sel.style.width)], ['h', parseInt(sel.style.height) || sel.offsetHeight]].forEach(function (p) { var i = b.querySelector('[data-p="' + p[0] + '"]'); if (i && document.activeElement !== i) i.value = p[1] || ''; });
+  function syncPanel() { if (pp && sel) pp.render(); }
+  function showZone(z) { selZone = z; sel = null; docSel = false; qa('.df-el').forEach(function (e) { e.classList.remove('sel'); }); if (pp) pp.render(); placeHandle(); }
+  function elV(el) {
+    var d = el.dataset, ty = d.type;
+    return { content: d.content || '', x: parseInt(el.style.left) || 0, y: parseInt(el.style.top) || 0, w: parseInt(el.style.width) || 0, h: parseInt(el.style.height) || el.offsetHeight, fs: parseInt(d.fs) || (ty === 'tableau' ? 9 : 12), color: d.col || '#0f172a', bold: d.b === '1', italic: d.i === '1', under: d.u === '1', align: d.al || 'left', valign: d.va || 'flex-start', ff: d.ff || '',
+      fit: d.fit || 'contain', ratio: d.ratio === '1', preset: d.preset || '', srcNom: d.srcNom || '', apercu: d.src || '' };
   }
-  function showZone(z) {
-    selZone = z; var id = z.dataset.dfZone, b = q('[data-df-pbody]'), h = '';
-    q('[data-df-ptitle]').textContent = 'Section — ' + id;
-    h += '<label class="df-lab" style="margin-top:0">Hauteur (px)</label><input class="df-in" type="number" data-z="h" value="' + (parseInt(z.style.minHeight) || 0) + '"' + (id === 'Detail1' ? ' disabled title="Prend la hauteur restante"' : '') + '>';
-    if (id === 'GroupHeader1') h += '<label class="df-lab">Regrouper par</label><select class="df-in" data-z="grp">' + ['Financement › Catégorie', 'Financement', 'Catégorie', 'Aucun'].map(function (o) { return '<option' + (z.dataset.grp === o ? ' selected' : '') + '>' + o + '</option>'; }).join('') + '</select>';
-    if (id === 'GroupHeader1' || id === 'PageHeader1') h += '<label class="df-chk" style="margin-top:8px"><input type="checkbox" data-z="rep"' + (z.dataset.rep === '1' ? ' checked' : '') + '> Répéter à chaque page</label>';
-    if (id === 'GroupHeader1') h += '<label class="df-chk"><input type="checkbox" data-z="sb"' + (z.dataset.sb === '1' ? ' checked' : '') + '> Saut de page avant chaque groupe</label>';
-    if (id === 'GroupFooter1') h += '<label class="df-chk" style="margin-top:8px"><input type="checkbox" data-z="sa"' + (z.dataset.sa === '1' ? ' checked' : '') + '> Saut de page après chaque groupe</label>';
-    if (id === 'Detail1') h += '<label class="df-lab">Trier par</label><input class="df-in" data-z="tri" value="' + esc(z.dataset.tri) + '" placeholder="Ex : N° article">';
-    var note = { ReportHeader1: 'Affiché sur la première page.', PageHeader1: 'Affiché en haut de chaque page.', ReportFooter1: 'Affiché sur la dernière page.', PageFooter1: 'Affiché en bas de chaque page.', Detail1: 'Une ligne par mouvement. Prend la hauteur restante de la page.', GroupFooter1: 'Totaux de fin de groupe.', GroupHeader1: 'Début de chaque groupe (financement / catégorie).' }[id];
-    h += '<p class="df-note">' + note + '</p>';
-    if (id !== 'Detail1') h += '<button type="button" class="df-btn danger" data-z-del style="margin-top:8px">Supprimer la section</button>';
-    b.innerHTML = h;
+  function ppSpec() {
+    var G = window.PP.G;
+    if (sel) {
+      var el = sel, v = elV(el), ty = el.dataset.type, nom = ty + ' (' + el.dataset.zone + ')', sub = 'Élément — ' + nom, key = ty + ':' + elems.indexOf(el);
+      var foot = '<div class="pp-foot"><button type="button" class="pp-btn dng" data-pp-act="suppr"><i class="ti ti-trash"></i> Supprimer</button></div>';
+      if (ty === 'texte') return { key: key, title: 'Propriétés', sub: sub, foot: foot, tabs: [
+        { id: 'cont', label: 'Contenu', fields: [{ k: 'content', t: 'textarea', l: 'Contenu', v: v.content }, { k: 'champ', t: 'select', l: 'Insérer un champ', v: '', opts: [['', '— Choisir —']].concat(FIELDS.map(function (x) { return [x, x]; })) }] },
+        { id: 'forme', label: 'Mise en forme', fields: G.police(v) }, { id: 'pos', label: 'Position', fields: G.position(v) }] };
+      if (ty === 'image') return { key: key, title: 'Propriétés', sub: sub, foot: foot, tabs: [
+        { id: 'src', label: 'Source', fields: G.source(v, PRESETS) }, { id: 'dim', label: 'Dimensionnement', fields: G.dimension(v) }, { id: 'pos', label: 'Position', fields: G.position(v, { sansTaille: true }) }] };
+      if (ty === 'tableau') return { key: key, title: 'Propriétés', sub: sub, foot: foot, tabs: [
+        { id: 'cont', label: 'Contenu', fields: [{ t: 'raw', html: tablePanel(el) }] }, { id: 'forme', label: 'Mise en forme', fields: [{ k: 'fs', t: 'number', l: 'Taille (px)', v: v.fs, half: 1, min: 6, max: 60 }, { k: 'color', t: 'color', l: 'Couleur', v: v.color, half: 1 }] }, { id: 'pos', label: 'Position', fields: G.position(v) }] };
+      if (ty === 'ligne') return { key: key, title: 'Propriétés', sub: sub, foot: foot, tabs: [{ id: 'forme', label: 'Mise en forme', fields: [{ k: 'color', t: 'color', l: 'Couleur', v: v.color }] }, { id: 'pos', label: 'Position', fields: G.position(v, { sansTaille: false }).slice(0, 3) }] };
+      return { key: key, title: 'Propriétés', sub: sub, foot: foot, tabs: [{ id: 'pos', label: 'Position', fields: G.position(v) }] };
+    }
+    if (selZone) {
+      var z = selZone, id = z.dataset.dfZone, F = [{ k: 'zh', t: 'number', l: 'Hauteur (px)', v: parseInt(z.style.minHeight) || 0, min: 10, dis: id === 'Detail1' }];
+      if (id === 'GroupHeader1') F.push({ k: 'grp', t: 'select', l: 'Regrouper par', v: z.dataset.grp || 'Financement › Catégorie', opts: ['Financement › Catégorie', 'Financement', 'Catégorie', 'Aucun'].map(function (o) { return [o, o]; }) });
+      if (id === 'GroupHeader1' || id === 'PageHeader1') F.push({ k: 'rep', t: 'check', l: 'Répéter à chaque page', v: z.dataset.rep === '1' });
+      if (id === 'GroupHeader1') F.push({ k: 'sb', t: 'check', l: 'Saut de page avant chaque groupe', v: z.dataset.sb === '1' });
+      if (id === 'GroupFooter1') F.push({ k: 'sa', t: 'check', l: 'Saut de page après chaque groupe', v: z.dataset.sa === '1' });
+      if (id === 'Detail1') F.push({ k: 'tri', t: 'text', l: 'Trier par', v: z.dataset.tri || '' });
+      return { key: 'zone:' + id, title: 'Propriétés', sub: 'Section — ' + id, tabs: [{ id: 'sec', label: 'Section', fields: F }], foot: id === 'Detail1' ? '' : '<div class="pp-foot"><button type="button" class="pp-btn dng" data-pp-act="zsuppr"><i class="ti ti-trash"></i> Supprimer la section</button></div>' };
+    }
+    if (docSel) return { key: 'doc', title: 'Propriétés', sub: 'Document', tabs: [{ id: 'page', label: 'Page', fields: [
+      { k: 'format', t: 'select', l: 'Format', v: paper, opts: Object.keys(PAPERS).map(function (k) { return [k, k]; }) }, { k: 'orient', t: 'select', l: 'Orientation', v: orient, opts: [['portrait', 'Portrait'], ['landscape', 'Paysage']] },
+      { k: 'mt', t: 'number', l: 'Marge haut (px)', v: mT, half: 1, min: 0 }, { k: 'mb', t: 'number', l: 'Marge bas (px)', v: mB, half: 1, min: 0 }, { k: 'ml', t: 'number', l: 'Marge gauche (px)', v: mL, half: 1, min: 0 }, { k: 'mr', t: 'number', l: 'Marge droite (px)', v: mR, half: 1, min: 0 }] }] };
+    return null;
   }
+  function ppKey(k, val, el, type, nom) {
+    if (!sel && selZone) {
+      var z = selZone, v0 = typeof val === 'boolean' ? (val ? '1' : '0') : val;
+      if (k === 'zh') { z.style.minHeight = Math.max(10, num(val, 40)) + 'px'; fitDetail(); renderSources(); }
+      else if (['grp', 'rep', 'sb', 'sa', 'tri'].indexOf(k) >= 0) { z.dataset[k] = v0; if (k === 'sa' || k === 'sb') window.__soe4F = { sautCat: (qa('[data-df-zone="GroupFooter1"]')[0] || { dataset: {} }).dataset.sa === '1' || (qa('[data-df-zone="GroupHeader1"]')[0] || { dataset: {} }).dataset.sb === '1' }; }
+      return;
+    }
+    if (!sel && docSel) {
+      if (k === 'format' || k === 'orient') { setPaper(k === 'format' ? val : paper, k === 'orient' ? val : orient); }
+      else if (['mt', 'mb', 'ml', 'mr'].indexOf(k) >= 0) { var n = Math.max(0, num(val, 0)); if (k === 'mt') mT = n; else if (k === 'mb') mB = n; else if (k === 'ml') mL = n; else mR = n; }
+      fitDetail(); renderSources(); return;
+    }
+    if (!sel) return; var el0 = sel, d = el0.dataset, rr = false;
+    if (k === 'content') d.content = val;
+    else if (k === 'champ') { if (val) { d.content = (d.content || '') + val; rr = true; } }
+    else if (k === 'x') el0.style.left = Math.max(0, num(val, 0)) + 'px';
+    else if (k === 'y') el0.style.top = Math.max(0, num(val, 0)) + 'px';
+    else if (k === 'w' || k === 'h') {
+      var w0 = parseInt(el0.style.width) || 1, h0 = parseInt(el0.style.height) || el0.offsetHeight || 1, nv = Math.max(k === 'w' ? 10 : 4, num(val, 20));
+      if (d.ratio === '1' && d.type === 'image') { if (k === 'w') { el0.style.width = nv + 'px'; el0.style.height = Math.max(4, Math.round(nv * h0 / w0)) + 'px'; } else { el0.style.height = nv + 'px'; el0.style.width = Math.max(10, Math.round(nv * w0 / h0)) + 'px'; } rr = true; }
+      else el0.style[k === 'w' ? 'width' : 'height'] = nv + 'px';
+    }
+    else if (k === 'fs') d.fs = Math.max(6, num(val, 12));
+    else if (k === 'color') d.col = val;
+    else if (k === 'bold' || k === 'italic' || k === 'under') d[{ bold: 'b', italic: 'i', under: 'u' }[k]] = val ? '1' : '0';
+    else if (k === 'align') d.al = val === 'left' ? '' : val;
+    else if (k === 'valign') d.va = val === 'flex-start' ? '' : val;
+    else if (k === 'ff') d.ff = val;
+    else if (k === 'fit') d.fit = val;
+    else if (k === 'ratio') d.ratio = val ? '1' : '0';
+    else if (k === 'src') { if (val) { d.src = masque(val); d.preset = val; d.srcNom = ''; d.content = (PRESETS.filter(function (p) { return p[0] === val; })[0] || [0, 'Image'])[1]; } rr = true; }
+    else if (k === 'srcfile') { d.src = val; d.srcNom = nom || 'image'; d.preset = ''; d.content = nom || 'Image'; rr = true; }
+    draw(el0); placeHandle(); if (rr && pp) pp.render();
+  }
+  function ppAct(a) {
+    if (a === 'suppr' && sel) { elems = elems.filter(function (x) { return x !== sel; }); sel.remove(); select(null); }
+    else if (a === 'zsuppr' && selZone) removeSection(selZone.dataset.dfZone);
+  }
+  pp = window.PP.mount(q('[data-df-pbody]'), ppSpec, 'data-pp', ppKey, ppAct);
   q('[data-df-pbody]').addEventListener('input', onPanel); q('[data-df-pbody]').addEventListener('change', onPanel);
   function onPanel(e) {
     var t = e.target, el = sel;
@@ -382,8 +420,9 @@
     if (z && tool !== 'select') {
       var r = z.getBoundingClientRect(), zm = ZOOMS[zi];
       var n = add(tool, z, (e.clientX - r.left) / zm, (e.clientY - r.top) / zm); select(n); q('[data-df-tool="select"]').click();
-    } else { select(null); if (z) showZone(z); }
+    } else { select(null); if (z) showZone(z); else if (e.target === page || e.target.classList.contains('df-guide') || e.target.classList.contains('df-sepbar')) { docSel = true; if (pp) pp.render(); } }
   });
+  q('[data-df-view="designer"]').addEventListener('mousedown', function (e) { if (e.target === e.currentTarget || e.target.hasAttribute('data-df-sizer')) { select(null); } });
   q('[data-df-addsec]').addEventListener('change', function (e) {
     var id = e.target.value; e.target.value = ''; if (!id) return;
     if (zone(id)) { showZone(zone(id)); return; }
@@ -391,16 +430,10 @@
   });
   q('[data-df-dup]').addEventListener('click', function () {
     if (!sel) return; var c = add(sel.dataset.type, sel.parentElement, parseInt(sel.style.left) + 16, parseInt(sel.style.top) + 16, sel.dataset.content, parseInt(sel.style.width), parseInt(sel.style.height) || 0);
-    ['cols', 'part', 'fs', 'b', 'i', 'al', 'col'].forEach(function (k) { if (sel.dataset[k] != null) c.dataset[k] = sel.dataset[k]; }); draw(c); select(c);
+    ['cols', 'part', 'fs', 'b', 'i', 'al', 'col', 'u', 'va', 'ff', 'src', 'srcNom', 'fit', 'ratio'].forEach(function (k) { if (sel.dataset[k] != null) c.dataset[k] = sel.dataset[k]; }); draw(c); select(c);
   });
   q('[data-df-del]').addEventListener('click', function () { if (!sel) return; elems = elems.filter(function (x) { return x !== sel; }); sel.remove(); select(null); });
   qa('[data-df-zoom]').forEach(function (b) { b.addEventListener('click', function () { zi = Math.min(ZOOMS.length - 1, Math.max(0, zi + parseInt(b.dataset.dfZoom))); applyZoom(); }); });
-  q('[data-df-ptab]').addEventListener('click', function () {
-    select(null); q('[data-df-ptitle]').textContent = 'Document — Mise en page';
-    q('[data-df-pbody]').innerHTML = '<div class="df-prop"><span>Format</span><span>' + paper + ' ' + (orient === 'landscape' ? 'paysage' : 'portrait') + '</span></div><div class="df-prop"><span>Taille</span><span>' + PW + ' × ' + PH + ' px</span></div>' +
-      '<div class="df-prop"><span>Marges (h / b / g / d)</span><span>' + mT + ' / ' + mB + ' / ' + mL + ' / ' + mR + '</span></div><div class="df-prop"><span>Sections</span><span>' + qa('[data-df-zone]').length + '</span></div>' +
-      '<p class="df-note">Modifiez le format, l’orientation, les marges et les hauteurs de sections dans l’onglet « Mise en page ».</p>';
-  });
 
   /* ---------- onglets Données et Mise en page ---------- */
   var srcTab = 'liste', srcCols = [], TABLES = { DECAISSEMENTS: 'Décaissements', ENGAGEMENTS: 'Engagements', JUSTIFICATIONS: 'Justifications de dépense', ECRITURES: 'Écritures comptables', CONTRATS: 'Contrats et marchés', BUDGET: 'Budget', IMMOBILISATIONS: 'Immobilisations', 'Demande de remboursement': 'Demandes de remboursement', RAPPROCHEMENT: 'Rapprochement bancaire' };

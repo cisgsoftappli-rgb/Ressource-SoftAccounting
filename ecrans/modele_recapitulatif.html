@@ -112,8 +112,8 @@
     if (du) { var src = rowInfo(du.closest('tr')); window.__dupModele({ source: { code: src.code, nom: src.nom }, exists: function (c) { return codes().indexOf(c.toLowerCase()) >= 0; }, onOk: function (c, n) { addDup(src, c, n); } }); return; }
     var b = e.target.closest('[data-rc-del]'); if (b) { b.closest('tr').remove(); refresh(); return; }
     var o = e.target.closest('[data-rc-open]'); if (!o) return;
-    var nom = o.dataset.rcName, base = o.dataset.rcBase || nom, ejcd = /EJCD/i.test(base), rcat = /r.capitulatif par cat/i.test(base), decl = ejcd || rcat || /déclaration/i.test(base);
-    window.__mfDesigner = { code: o.dataset.rcCode || (ejcd ? 'EJCD' : rcat ? 'RECAPCAT' : decl ? 'DECLARATION' : 'SOE'), nom: nom, base: base, def: false }; if (rcat) { window.__mfDesigner.type = 'Récapitulatif'; window.__mfDesigner.src = 'Demande de remboursement'; }
+    var nom = o.dataset.rcName, base = o.dataset.rcBase || nom, ejcd = /EJCD/i.test(base), rcat = /r.capitulatif par cat/i.test(base), rfi = /^RFI ([IV]+) —/.exec(base), decl = ejcd || rcat || !!rfi || /déclaration/i.test(base);
+    window.__mfDesigner = { code: o.dataset.rcCode || (rfi ? 'RFI_' + rfi[1] : ejcd ? 'EJCD' : rcat ? 'RECAPCAT' : decl ? 'DECLARATION' : 'SOE'), nom: nom, base: base, def: false }; if (rcat) { window.__mfDesigner.type = 'Récapitulatif'; window.__mfDesigner.src = 'Demande de remboursement'; }
     window.__designerFrom = 'recap'; location.hash = decl ? 'designer2' : 'designer';
   });
   var RECAP = /EJCD|récapitulatif|déclaration/i;

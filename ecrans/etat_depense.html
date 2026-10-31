@@ -93,7 +93,6 @@
 <app-confection-guidee-etat-depense-drf>
 <div class="ed" data-ed-root>
   <h1 data-ed-h1>Confection guidée d'une demande</h1>
-  <p class="ed-sub" data-ed-sub>Assistant guidé : sélection des mouvements, vérification et modification, puis validation finale de la demande</p>
 
   <div class="ed-banner">
     <div><span class="k">N° état de dépense</span><span class="v" data-ed-ns>001</span></div>
@@ -101,7 +100,6 @@
     <div><span class="k">Période d'édition</span><span class="v" data-ed-ped>01/01/2026 → 20/10/2026</span></div>
   </div>
 
-  <ol class="ed-circ" aria-label="Circuit de la demande"><li data-ed-ci="0">Saisie + rapprochement</li><li data-ed-ci="1">Sélection</li><li data-ed-ci="2">Vérification</li><li data-ed-ci="3">Édition SOE</li><li class="ext" data-ed-ci="4">Envoi à la Banque mondiale</li><li class="ext" data-ed-ci="5">Retour du bailleur</li><li data-ed-ci="6">Confirmation</li><li data-ed-ci="7">Régularisation</li></ol>
   <ol class="ed-steps" aria-label="Étapes de confection">
     <li><button type="button" class="ed-st on" data-ed-step="1"><span class="ed-n">1</span><span class="ed-l">Sélection des écritures</span></button><div class="ed-line"></div></li>
     <li><button type="button" class="ed-st" data-ed-step="2"><span class="ed-n">2</span><span class="ed-l">Vérification &amp; modification</span></button><div class="ed-line"></div></li>
@@ -1228,7 +1226,7 @@
     if (n === 4) recap();
     if (n === 1) draw1();
     circ(n);
-    var tt = TT[n] || TT[1]; q('[data-ed-h1]').textContent = tt[0]; q('[data-ed-sub]').textContent = tt[1];
+    var tt = TT[n] || TT[1]; q('[data-ed-h1]').textContent = tt[0];
     qa('[data-ed-view]').forEach(function (v) { v.style.display = v.dataset.edView == n ? '' : 'none'; });
     qa('[data-ed-step]').forEach(function (b) { var k = +b.dataset.edStep; b.classList.toggle('on', k === n); b.classList.toggle('done', k < n); b.querySelector('.ed-n').textContent = k < n ? '✓' : k; });
   }

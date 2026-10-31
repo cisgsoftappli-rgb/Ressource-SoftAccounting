@@ -1,0 +1,172 @@
+<!--
+  Écran « Comptabilité Projets & Bailleurs › Saisie › Budget de la convention » — onglets Saisie / Liste.
+  La convention n'est pas une fiche à part : c'est une ligne du plan financier au niveau de type CONVENTION (Paramétrages › Gestion des plans › Configuration des plans) ;
+  ses catégories sont les lignes du niveau de type CATEGORIE rattachées à elle (window.PLANS_CFG.PLAN3.niveaux[].type, window.PLANS_LIGNES.PLAN3.rows[].parent).
+  Liste : conventions du plan financier, bailleur, état du budget (À saisir / Saisi), montant initial par devise, budget courant (initial + réallocations).
+  Saisie : choix de la convention, puis tableau Catégories × Devises (monnaie locale et devises actives) avec totaux ; Enregistrer exige au moins un montant.
+  Données : window.BUDGETS_CONV = { [codeConvention]: { lignes: { [codeCategorie]: { [devise]: montant } } } }, copie localStorage softcompta.budgetsConv ;
+  les réallocations (écran à venir) lisent window.REALLOC_CONV = { [codeConvention]: [ { cat, vers, devise, montant } ] } pour le budget courant. Préfixe bc / data-bc.
+  S'appuie sur les styles bp-*. Ne pas nommer de fonction « $$ » (build.cjs).
+-->
+<style>
+[data-bc] .bc-card{padding:16px;border:1px solid #E9EBF0;border-radius:12px;background:#fff;margin-bottom:12px}
+[data-bc] .bc-g{display:grid;grid-template-columns:minmax(0,2fr) minmax(0,1fr);gap:12px 16px}
+@media (max-width:700px){[data-bc] .bc-g{grid-template-columns:1fr}}
+[data-bc] .bc-ro{min-height:36px;display:flex;align-items:center;padding:0 12px;border:1px solid #D6D9E0;border-radius:8px;background:#F5F7F9;color:#353944;font-size:12px}
+[data-bc] .bp-in.err,[data-bc] .bp-sel.err{border-color:#B63132}
+[data-bc] .bc-er{display:none;font-size:12px;color:#B63132;margin-top:8px}[data-bc] .bc-er.show{display:block}
+[data-bc] .bc-ok{font-size:12px;color:#2E427B;margin-left:8px}
+[data-bc] td.r,[data-bc] th.r{text-align:right;font-variant-numeric:tabular-nums;white-space:nowrap}
+[data-bc] tbody tr.bc-row{cursor:pointer}[data-bc] tbody tr.bc-sel td{background:#E8ECF6}
+[data-bc] .bc-grille input{width:100%;min-width:110px;text-align:right}
+[data-bc] tr.bc-tot td{background:#E8ECF6;font-weight:700;color:#243569}
+[data-bc] .bc-vide{padding:22px;text-align:center;color:#747A88;font-size:13px}
+[data-bc] .bc-badge{display:inline-flex;align-items:center;padding:2px 10px;border:1px solid;border-radius:6px;font-size:12px;font-weight:600}[data-bc] .bc-badge.on{background:#ECFDF5;border-color:#A7F3D0;color:#047857}[data-bc] .bc-badge.off{background:#F5F7F9;border-color:#D6D9E0;color:#5B606D}
+</style>
+
+<div class="bp-root" data-bc>
+  <h1 style="position:absolute;width:1px;height:1px;overflow:hidden;clip-path:inset(50%);margin:0">Budget de la convention</h1>
+
+  <div class="no-print">
+    <button type="button" data-bc-ajouter>Ajouter</button>
+    <button type="button" data-bc-modifier>Modifier</button>
+    <button type="button" data-bc-supprimer>Supprimer</button>
+    <button type="button" data-bc-enregistrer>Enregistrer</button>
+    <button type="button" data-bc-annuler>Annuler</button>
+    <span class="bc-ok" data-bc-msg role="status"></span>
+  </div>
+
+  <p class="bc-ok" data-bc-note role="status" hidden style="margin:0 0 8px;font-size:13px"></p>
+
+  <div class="bp-tabs" role="tablist">
+    <button type="button" role="tab" data-bc-tab="saisie">Saisie</button>
+    <button type="button" role="tab" class="on" data-bc-tab="liste">Liste <span class="bp-n" data-bc-compte></span></button>
+  </div>
+
+  <div class="bp-grid">
+    <section class="bp-pan" aria-label="Liste des conventions" data-bc-pan="liste">
+      <div class="pf-tablewrap"><table class="pf-table">
+        <thead><tr><th>Code</th><th>Convention</th><th>Bailleur</th><th>Catégories</th><th class="r">Montant initial</th><th class="r">Budget courant</th><th>Budget</th></tr></thead>
+        <tbody data-bc-liste></tbody>
+      </table></div>
+    </section>
+
+    <section class="bp-pan" aria-label="Saisie du budget" data-bc-pan="saisie" hidden>
+      <div class="bc-card">
+        <div class="bc-g">
+          <label class="bp-champ"><span>Convention <b>*</b></span><select class="bp-sel" data-bc-conv></select><span class="bc-er" data-bc-er="conv"></span></label>
+          <div class="bp-champ"><span>Bailleur</span><div class="bc-ro" data-bc-bailleur></div></div>
+        </div>
+      </div>
+      <div class="pf-tablewrap bc-grille"><table class="pf-table" data-no-tf data-bc-grille></table></div>
+      <div class="bc-er" data-bc-er="montant" role="alert"></div>
+    </section>
+  </div>
+</div>
+
+<script>
+(function () {
+  var root = document.querySelector('[data-bc]'); if (!root) return;
+  function q(s) { return root.querySelector(s); } function qa(s) { return [].slice.call(root.querySelectorAll(s)); }
+  function esc(s) { return String(s == null ? '' : s).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;'); }
+  function nb(v) { return Number(v || 0).toLocaleString('fr-FR', { minimumFractionDigits: 2, maximumFractionDigits: 2 }); }
+  function msg(t) { q('[data-bc-msg]').textContent = t || ''; var n = q('[data-bc-note]'); n.textContent = t || ''; n.hidden = !t; }
+  var CLE = 'softcompta.budgetsConv', data = {}, sel = '', edit = '', cur = null;
+  try { var sv = JSON.parse(localStorage.getItem(CLE) || 'null'); if (sv && typeof sv === 'object' && !Array.isArray(sv)) data = sv; } catch (e) {}
+  function publier() { window.BUDGETS_CONV = data; try { localStorage.setItem(CLE, JSON.stringify(data)); } catch (e) {} window.dispatchEvent(new Event('budgets-conv-changed')); }
+  function maj(s) { if (s && s.__combo && s.__combo.maj) s.__combo.maj(); }
+
+  // ---------- plan financier : conventions et catégories
+  function plan() { return (window.PLANS_CFG || []).filter(function (p) { return p.code === 'PLAN3'; })[0] || { niveaux: [] }; }
+  function lignes() { var L = window.PLANS_LIGNES && window.PLANS_LIGNES.PLAN3; return (L && L.rows ? L.rows : []).filter(function (r) { return r.actif !== false; }); }
+  function profondeur(r, L) { var d = 0, p = r.parent, g = 0; while (p && g++ < 10) { d++; p = (L.filter(function (x) { return x.code === p; })[0] || {}).parent; } return d; }
+  function typeDe(r, L) { var n = plan().niveaux[profondeur(r, L)]; return n ? n.type : ''; }
+  function procedure() { var a = window.PROCEDURES_ACTIVES ? window.PROCEDURES_ACTIVES() : ['IDA']; return a.indexOf(window.__proc) >= 0 ? window.__proc : (a[0] || 'IDA'); }
+  /* le traitement est séparé par procédure : une convention relève de la procédure dont le code est son bailleur (colonne « Bailleur » du plan financier) */
+  function conventions() { var L = lignes(), p = procedure().toLowerCase(); return L.filter(function (r) { return typeDe(r, L) === 'CONVENTION' && String(r.extra || '').trim().toLowerCase() === p; }); }
+  function categories(code) {
+    var L = lignes(), res = [];
+    (function descend(p) { L.filter(function (r) { return r.parent === p; }).forEach(function (r) { if (typeDe(r, L) === 'CATEGORIE') res.push(r); descend(r.code); }); })(code);
+    return res;
+  }
+  function conv(code) { return conventions().filter(function (r) { return r.code === code; })[0]; }
+  function devises() { var d = (window.DEVISES || []).filter(function (x) { return x.actif !== false; }).map(function (x) { return x.code; }); d = ['MGA'].concat(d.filter(function (c) { return c !== 'MGA'; })); return d.length > 1 ? d : ['MGA', 'EUR', 'USD']; }
+  function realloc(code, cat, dev) { var s = 0; ((window.REALLOC_CONV || {})[code] || []).forEach(function (x) { if (x.devise !== dev) return; if (x.cat === cat) s -= Number(x.montant) || 0; if (x.vers === cat) s += Number(x.montant) || 0; }); return s; }
+  function initial(code, dev) { var B = (data[code] || {}).lignes || {}, s = 0; Object.keys(B).forEach(function (k) { s += Number((B[k] || {})[dev]) || 0; }); return s; }
+  function courant(code, dev) { var B = (data[code] || {}).lignes || {}, s = 0; Object.keys(B).forEach(function (k) { s += (Number((B[k] || {})[dev]) || 0) + realloc(code, k, dev); }); return s; }
+  function resume(code, f) { return devises().map(function (d) { var v = f(code, d); return v ? nb(v) + ' ' + d : ''; }).filter(Boolean).join(' · ') || '—'; }
+
+  // ---------- onglets
+  function tab(n) {
+    qa('[data-bc-tab]').forEach(function (b) { b.classList.toggle('on', b.dataset.bcTab === n); });
+    qa('[data-bc-pan]').forEach(function (p) { p.hidden = p.dataset.bcPan !== n; }); etat();
+  }
+  function etat() {
+    var saisie = !q('[data-bc-pan="saisie"]').hidden, a = conv(sel) && true;
+    q('[data-bc-ajouter]').disabled = saisie; q('[data-bc-modifier]').disabled = saisie || !a; q('[data-bc-supprimer]').disabled = saisie || !a || !data[sel];
+    q('[data-bc-enregistrer]').disabled = !saisie; q('[data-bc-annuler]').disabled = !saisie;
+  }
+  qa('[data-bc-tab]').forEach(function (b) { b.addEventListener('click', function () { if (b.dataset.bcTab === 'saisie' && !cur) ouvrir(sel || '', !!(sel && data[sel])); else if (b.dataset.bcTab === 'liste') { cur = null; liste(); tab('liste'); } else tab(b.dataset.bcTab); }); });
+
+  // ---------- liste
+  function liste() {
+    var C = conventions();
+    q('[data-bc-liste]').innerHTML = C.length ? C.map(function (r) {
+      var n = categories(r.code).length, ok = !!data[r.code];
+      return '<tr class="bc-row' + (r.code === sel ? ' bc-sel' : '') + '" data-code="' + esc(r.code) + '"><td>' + esc(r.code) + '</td><td>' + esc(r.libelle) + '</td><td>' + esc(r.extra || '') + '</td><td>' + n + '</td><td class="r">' + esc(ok ? resume(r.code, initial) : '—') + '</td><td class="r">' + esc(ok ? resume(r.code, courant) : '—') + '</td><td><span class="bc-badge ' + (ok ? 'on' : 'off') + '">' + (ok ? 'Saisi' : 'À saisir') + '</span></td></tr>';
+    }).join('') : '<tr><td colspan="7" class="bc-vide">Aucune convention rattachée à la procédure ' + esc(procedure()) + '.</td></tr>';
+    q('[data-bc-compte]').textContent = C.length; etat();
+  }
+  q('[data-bc-liste]').addEventListener('click', function (e) { var tr = e.target.closest('tr[data-code]'); if (!tr) return; sel = tr.dataset.code; liste(); });
+  q('[data-bc-liste]').addEventListener('dblclick', function (e) { var tr = e.target.closest('tr[data-code]'); if (!tr) return; sel = tr.dataset.code; ouvrir(sel, true); });
+
+  // ---------- saisie
+  function ouvrir(code, modif) {
+    var C = conventions(), libres = modif ? C : C.filter(function (r) { return !data[r.code]; });
+    if (!C.length) { msg('Aucune convention rattachée à la procédure ' + procedure() + '.'); return; }
+    if (!libres.length) { msg('Toutes les conventions ont déjà un budget : utilisez Modifier.'); return; }
+    edit = modif ? code : '';
+    var s = q('[data-bc-conv]'); s.innerHTML = '<option value=""></option>' + libres.map(function (r) { return '<option value="' + esc(r.code) + '">' + esc(r.code) + ' — ' + esc(r.libelle) + '</option>'; }).join('');
+    s.value = code && libres.some(function (r) { return r.code === code; }) ? code : ''; s.disabled = !!modif; maj(s);
+    charge(s.value); effacer(); msg(''); tab('saisie');
+  }
+  function charge(code) {
+    cur = { code: code, lignes: JSON.parse(JSON.stringify(((data[code] || {}).lignes) || {})) };
+    var r = conv(code); q('[data-bc-bailleur]').textContent = r ? (r.extra || '—') : ''; grille();
+  }
+  function grille() {
+    var D = devises(), cats = cur.code ? categories(cur.code) : [];
+    var t = q('[data-bc-grille]');
+    if (!cur.code) { t.innerHTML = '<tbody><tr><td class="bc-vide">Choisissez une convention pour saisir son budget.</td></tr></tbody>'; return; }
+    if (!cats.length) { t.innerHTML = '<tbody><tr><td class="bc-vide">Cette convention n’a aucune catégorie dans le plan financier.</td></tr></tbody>'; return; }
+    t.innerHTML = '<thead><tr><th>Catégorie</th>' + D.map(function (d) { return '<th class="r">' + d + '</th>'; }).join('') + '</tr></thead><tbody>' +
+      cats.map(function (c) { return '<tr><td>' + esc(c.code) + ' — ' + esc(c.libelle) + '</td>' + D.map(function (d) { var v = (cur.lignes[c.code] || {})[d]; return '<td><input class="bp-in" inputmode="decimal" data-cat="' + esc(c.code) + '" data-dev="' + d + '" value="' + (v ? esc(String(v).replace('.', ',')) : '') + '" aria-label="' + esc(c.code) + ' ' + d + '"></td>'; }).join('') + '</tr>'; }).join('') +
+      '<tr class="bc-tot"><td>Total de la convention</td>' + D.map(function (d) { return '<td class="r" data-tot="' + d + '">' + nb(tot(d)) + '</td>'; }).join('') + '</tr></tbody>';
+  }
+  function tot(d) { var s = 0; Object.keys(cur.lignes).forEach(function (k) { s += Number((cur.lignes[k] || {})[d]) || 0; }); return s; }
+  q('[data-bc-grille]').addEventListener('input', function (e) {
+    var i = e.target.closest('[data-cat]'); if (!i) return; var n = parseFloat(String(i.value).replace(/\s/g, '').replace(',', '.'));
+    var L = cur.lignes[i.dataset.cat] || (cur.lignes[i.dataset.cat] = {}); if (isNaN(n) || n === 0) delete L[i.dataset.dev]; else L[i.dataset.dev] = n;
+    i.classList.remove('err'); var c = q('[data-tot="' + i.dataset.dev + '"]'); if (c) c.textContent = nb(tot(i.dataset.dev));
+  });
+  q('[data-bc-conv]').addEventListener('change', function (e) { charge(e.target.value); e.target.classList.remove('err'); });
+  function effacer() { qa('.bc-er').forEach(function (x) { x.classList.remove('show'); x.textContent = ''; }); qa('.err').forEach(function (x) { x.classList.remove('err'); }); }
+  function err(k, m) { var e = q('[data-bc-er="' + k + '"]'); e.textContent = m; e.classList.add('show'); }
+
+  // ---------- actions
+  q('[data-bc-ajouter]').addEventListener('click', function () { cur = null; ouvrir('', false); });
+  q('[data-bc-modifier]').addEventListener('click', function () { if (!conv(sel)) return; cur = null; ouvrir(sel, true); });
+  q('[data-bc-supprimer]').addEventListener('click', function () { if (!data[sel]) return; if (!window.confirm('Supprimer le budget de la convention « ' + sel + ' » ?')) return; delete data[sel]; publier(); liste(); msg('Budget supprimé.'); });
+  q('[data-bc-annuler]').addEventListener('click', function () { cur = null; effacer(); liste(); tab('liste'); msg(''); });
+  q('[data-bc-enregistrer]').addEventListener('click', function () {
+    effacer(); if (!cur || !cur.code) { err('conv', 'La convention est obligatoire.'); q('[data-bc-conv]').classList.add('err'); return; }
+    var propre = {}, somme = 0; Object.keys(cur.lignes).forEach(function (k) { var L = cur.lignes[k], o = {}; Object.keys(L).forEach(function (d) { if (L[d] > 0) { o[d] = L[d]; somme += L[d]; } }); if (Object.keys(o).length) propre[k] = o; });
+    if (!somme) { err('montant', 'Saisissez au moins un montant.'); return; }
+    data[cur.code] = { lignes: propre }; sel = cur.code; publier(); cur = null; liste(); tab('liste'); msg('Budget enregistré.');
+  });
+  window.addEventListener('plans-changed', liste); document.addEventListener('click', function (e) { if (e.target.closest && e.target.closest('[data-proc]')) setTimeout(function () { sel = ''; cur = null; liste(); if (!q('[data-bc-pan="saisie"]').hidden) tab('liste'); }, 50); }); window.addEventListener('hashchange', function () { if (location.hash === '#budgetconv' && q('[data-bc-pan="liste"]') && !q('[data-bc-pan="liste"]').hidden) liste(); });
+
+  publier(); liste(); tab('liste');
+  window.addEventListener('load', function () { setTimeout(function () { if (!cur) liste(); }, 200); }); setTimeout(function () { if (!cur) liste(); }, 600);
+})();
+</script>

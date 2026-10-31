@@ -24,10 +24,11 @@ plan('pl_geo', 'Plan Géographique', { label: 'Type', options: ['Région', 'Dist
   ['02', 'ITASY', '', 'Région'], ['02-01', 'Miarinarivo', '02', 'District'], ['03', 'ANOSY', '', 'Région'], ['03-01', 'Taolagnaro', '03', 'District'],
   ['04', 'ATSIMO ANDREFANA', '', 'Région'], ['04-01', 'Toliara I', '04', 'District'], ['05', 'ANDROY', '', 'Région'], ['05-01', 'Ambovombe Androy', '05', 'District']
 ]);
-plan('pl_financier', 'Plan Financier', { label: 'Bailleur', options: ['FIDA', 'ASAP', 'Gouvernement malagasy', 'Bénéficiaires'] }, [
-  ['01', 'Prêt FIDA', '', 'FIDA'], ['01 - 1', 'Prêt FIDA — catégorie 1', '01', 'FIDA'], ['01 - 3', 'Prêt FIDA — catégorie 3', '01', 'FIDA'],
+plan('pl_financier', 'Plan Financier', { label: 'Bailleur', options: ['IDA', 'FIDA', 'FED', 'FM', 'BAD', 'ASAP', 'Gouvernement malagasy', 'Bénéficiaires'] }, [
+  ['01', 'Prêt FIDA', '', 'FIDA'], ['01 - 1', 'Travaux', '01', 'FIDA'], ['01 - 2', 'Équipements et matériels', '01', 'FIDA'], ['01 - 3', 'Formation et accompagnement', '01', 'FIDA'], ['01 - 4', 'Prestations de services', '01', 'FIDA'], ['01 - 5', 'Subventions', '01', 'FIDA'], ['01 - 6', 'Coûts opérationnels', '01', 'FIDA'],
   ['02', 'Fonds fiduciaires ASAP', '', 'ASAP'], ['02 - 1', 'ASAP — catégorie 1', '02', 'ASAP'], ['03', 'Gouvernement malagasy', '', 'Gouvernement malagasy'], ['03 - 1', 'Contrepartie de l\'État', '03', 'Gouvernement malagasy'],
-  ['04', 'Apport bénéficiaires', '', 'Bénéficiaires']
+  ['04', 'Apport bénéficiaires', '', 'Bénéficiaires'],
+  ['05', 'Crédit IDA', '', 'IDA'], ['05 - 1', 'IDA — catégorie 1 (travaux)', '05', 'IDA'], ['05 - 2', 'IDA — catégorie 2 (biens et services)', '05', 'IDA']
 ]);
 for (let n = 5; n <= 10; n++) {
   plan('pl_' + n, 'Plan ' + n, null, [

@@ -135,7 +135,6 @@
     <section class="sc-pan" aria-label="Décomptes"><h2>Décomptes <small data-dc-n></small></h2>
       <div class="sc-tools no-print"><input class="sc-in" type="search" placeholder="Recherche…" data-dc-q aria-label="Rechercher dans les décomptes"></div>
       <div class="sc-scroll"><table class="sc-tb" data-dc-table data-no-tf></table></div>
-      <div class="sc-pg"><div class="t" data-dc-taille></div><span data-dc-pginfo></span><div class="t"><button type="button" data-dc-prec aria-label="Page précédente"><i class="ti ti-chevron-left"></i></button><button type="button" class="on" data-dc-page>1</button><button type="button" data-dc-suiv aria-label="Page suivante"><i class="ti ti-chevron-right"></i></button></div></div>
     </section>
   </div>
 </div>
@@ -195,7 +194,7 @@
     if (rap) { taux = window.COURS_API ? window.COURS_API.taux(dev, c('au').value) : null; if (!taux) { msg('Aucun cours en vigueur pour ' + dev + ' : édition en monnaie de rapport impossible.'); return; } }
     var du = c('du').value, au = c('au').value;
     var L = decomptes(k).filter(function (d) { return (!du || d.dateDec >= du) && (!au || d.dateDec <= au); });
-    etat = { k: k, rap: rap, dev: dev, taux: taux, L: L, m: montants(k) }; page = 1; recherche = ''; q('[data-dc-q]').value = '';
+    etat = { k: k, rap: rap, dev: dev, taux: taux, L: L, m: montants(k) }; recherche = ''; q('[data-dc-q]').value = '';
     afficher(); fermer(); q('[data-dc-vide]').hidden = true; q('[data-dc-res]').hidden = false; msg('');
   }
   q('[data-dc-consulter]').addEventListener('click', consulter);
@@ -219,19 +218,13 @@
   function ligne(d) { return [d.site, d.num, d.dec, dt(d.dateDec), dt(d.datePai), d.lib, conv(d.travaux), conv(d.avances), conv(d.retenues), conv(d.primes), conv(d.penalites)]; }
   function filtre() { var s = recherche.toLowerCase(); return etat.L.filter(function (d) { return !s || ligne(d).slice(0, 6).join(' ').toLowerCase().indexOf(s) >= 0; }); }
   function liste() {
-    var F = filtre(), n = F.length, tp = taille === 0 ? n : taille, np = Math.max(1, Math.ceil(n / (tp || 1)));
-    if (page > np) page = np; var debut = taille === 0 ? 0 : (page - 1) * taille, P = taille === 0 ? F : F.slice(debut, debut + taille);
+    var F = filtre(), n = F.length;
     var tot = [0, 0, 0, 0, 0]; F.forEach(function (d) { var l = ligne(d); for (var i = 0; i < 5; i++) tot[i] += l[6 + i]; });
     q('[data-dc-table]').innerHTML = '<thead><tr>' + TETE.map(function (h, i) { return '<th' + (i >= 6 ? ' class="r"' : '') + '>' + esc(h) + '</th>'; }).join('') + '</tr></thead><tbody>' +
-      (P.length ? P.map(function (d) { return '<tr>' + ligne(d).map(function (x, i) { return '<td' + (i >= 6 ? ' class="r' + (x < 0 ? ' neg' : '') + '"' : '') + '>' + (i >= 6 ? nb(x) : esc(x)) + '</td>'; }).join('') + '</tr>'; }).join('') : '<tr><td colspan="11" class="sc-novide">Aucun enregistrement trouvé</td></tr>') +
-      (P.length ? '<tr class="sc-tot"><td colspan="6">Total</td>' + tot.map(function (x) { return '<td class="r">' + nb(x) + '</td>'; }).join('') + '</tr>' : '') + '</tbody>';
+      (n ? F.map(function (d) { return '<tr>' + ligne(d).map(function (x, i) { return '<td' + (i >= 6 ? ' class="r' + (x < 0 ? ' neg' : '') + '"' : '') + '>' + (i >= 6 ? nb(x) : esc(x)) + '</td>'; }).join('') + '</tr>'; }).join('') : '<tr><td colspan="11" class="sc-novide">Aucun enregistrement trouvé</td></tr>') +
+      (n ? '<tr class="sc-tot" data-pg-keep><td colspan="6">Total</td>' + tot.map(function (x) { return '<td class="r">' + nb(x) + '</td>'; }).join('') + '</tr>' : '') + '</tbody>';
     q('[data-dc-n]').textContent = n + ' élément(s)';
-    q('[data-dc-taille]').innerHTML = [10, 20, 50, 0].map(function (t) { return '<button type="button" class="' + (t === taille ? 'on' : '') + '" data-t="' + t + '">' + (t || 'Tous') + '</button>'; }).join('');
-    q('[data-dc-pginfo]').textContent = 'Page ' + page + ' sur ' + np + ' (' + n + ' éléments)';
-    q('[data-dc-page]').textContent = page; q('[data-dc-prec]').disabled = page <= 1; q('[data-dc-suiv]').disabled = page >= np;
   }
-  q('[data-dc-taille]').addEventListener('click', function (e) { var b = e.target.closest('[data-t]'); if (!b) return; taille = +b.dataset.t; page = 1; liste(); });
-  q('[data-dc-prec]').addEventListener('click', function () { page--; liste(); }); q('[data-dc-suiv]').addEventListener('click', function () { page++; liste(); });
   q('[data-dc-q]').addEventListener('input', function (e) { recherche = e.target.value; page = 1; liste(); });
 
   // ---------- exports

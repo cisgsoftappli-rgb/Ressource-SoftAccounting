@@ -1,0 +1,47 @@
+<!--
+  Écran « Procédure FIDA › États RFI › Modèles d'état RFI » — liste des six modèles de rapport RFI (I à VI), propres à la procédure FIDA et indépendants de l'État de dépense :
+  Ouvrir le designer (Designer de déclaration, modèle verrouillé de départ) et Dupliquer. Les comptes des rubriques viennent de « Paramètres RFI ».
+  Préfixe rm / data-rm. Ne pas nommer de fonction « $$ » (build.cjs).
+-->
+<style>
+[data-rm] .rm-card{border:1px solid #E9EBF0;border-radius:12px;background:#fff;padding:16px}
+[data-rm] .rm-b{display:inline-flex;align-items:center;justify-content:center;height:36px;padding:0 14px;border:1px solid #D6D9E0;border-radius:8px;background:#fff;color:#474C58;font:700 12px var(--font-sans);cursor:pointer}[data-rm] .rm-b:hover{background:#E9EBF0}
+[data-rm] .rm-act{display:flex;justify-content:flex-end;gap:8px}[data-rm] .rm-vide{padding:22px;text-align:center;color:#747A88;font-size:13px}
+[data-rm] .rm-badge{display:inline-flex;padding:2px 10px;border:1px solid #B7C6F2;border-radius:6px;background:#E3EBFE;color:#243569;font-size:12px;font-weight:600}
+</style>
+<div class="bp-root" data-rm>
+  <h1 style="position:absolute;width:1px;height:1px;overflow:hidden;clip-path:inset(50%);margin:0">Modèles d'état RFI</h1>
+  <div class="rm-card"><div class="pf-tablewrap"><table class="pf-table" data-no-tf>
+    <thead><tr><th>Modèle</th><th>Source</th><th>Bailleur</th><th>Type</th><th></th></tr></thead>
+    <tbody data-rm-rows></tbody>
+  </table></div></div>
+</div>
+<script>
+(function () {
+  var root = document.querySelector('[data-rm]'); if (!root) return;
+  var rows = root.querySelector('[data-rm-rows]');
+  function esc(s) { return String(s == null ? '' : s).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;'); }
+  var M = [['RFI_I', 'RFI I — PTBA et plan de trésorerie'], ['RFI_II', 'RFI II — Sources et utilisations des fonds'], ['RFI_III', 'RFI III — Activité du compte désigné'], ['RFI_IV', 'RFI IV — Écart de l’utilisation des fonds par trimestre'], ['RFI_V', 'RFI V — Écart de l’utilisation des fonds, exercice'], ['RFI_VI', 'RFI VI — Écart de l’utilisation des fonds, cumulé']];
+  function ligne(code, nom, base, officiel) {
+    return '<tr data-code="' + esc(code) + '" data-base="' + esc(base) + '"><td><b>' + esc(nom) + '</b></td><td>Comptabilité générale</td><td>FIDA</td><td><span class="rm-badge">' + (officiel ? 'Modèle officiel' : 'Copie') + '</span></td>' +
+      '<td><div class="rm-act"><button type="button" class="rm-b" data-dup>Dupliquer</button><button type="button" class="rm-b" data-open>Ouvrir le designer</button></div></td></tr>';
+  }
+  rows.innerHTML = M.map(function (m) { return ligne(m[0], m[1], m[1], true); }).join('');
+  function codes() { return [].map.call(rows.querySelectorAll('tr'), function (t) { return t.dataset.code.toLowerCase(); }); }
+  function info(tr) { return { code: tr.dataset.code, nom: tr.querySelector('b').textContent.trim(), base: tr.dataset.base }; }
+  rows.addEventListener('click', function (e) {
+    var tr = e.target.closest('tr'); if (!tr) return; var i = info(tr);
+    if (e.target.closest('[data-open]')) {
+      window.__mfDesigner = { code: i.code, nom: i.nom, base: i.base, def: false }; window.__designerFrom = 'rfimodeles'; location.hash = 'designer2'; return;
+    }
+    if (e.target.closest('[data-dup]')) {
+      window.__dupModele({ source: { code: i.code, nom: i.nom }, exists: function (c) { return codes().indexOf(c.toLowerCase()) >= 0; }, onOk: function (c, n) { rows.insertAdjacentHTML('beforeend', ligne(c, n, i.base, false)); } });
+    }
+  });
+  window.addEventListener('mf-model-dup', function (e) {
+    var d = e.detail || {}; if (d.from !== 'rfimodeles') return;
+    var tr = [].filter.call(rows.querySelectorAll('tr'), function (t) { return t.querySelector('b').textContent.trim() === d.srcNom; })[0];
+    if (tr && codes().indexOf(String(d.code).toLowerCase()) < 0) rows.insertAdjacentHTML('beforeend', ligne(d.code, d.nom, tr.dataset.base, false));
+  });
+})();
+</script>
