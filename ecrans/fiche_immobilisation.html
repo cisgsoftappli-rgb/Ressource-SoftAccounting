@@ -118,6 +118,27 @@
             </div>
             <p class="fim-help" data-fim-aide style="margin:8px 0 0"></p>
           </div>
+
+          <div class="fim-card">
+            <h3>Informations de cession / sortie</h3>
+            <div class="bp-chk"><label><input type="checkbox" data-f="cede">Immobilisation cédée ou sortie du patrimoine</label></div>
+            <div data-fim-cession style="margin-top:12px">
+              <div class="fim-g4">
+                <label class="bp-champ"><span>Type de sortie <b>*</b></span><select class="bp-sel" data-f="c_type"><option value="">— Sélectionner —</option><option>Cession</option><option>Mise au rebut</option><option>Don</option><option>Perte / vol</option></select><span class="fim-er" data-er="c_type"></span></label>
+                <label class="bp-champ"><span>Date de cession / sortie <b>*</b></span><input class="bp-in" type="date" data-f="c_date"><span class="fim-er" data-er="c_date"></span></label>
+                <label class="bp-champ"><span>Valeur de cession</span><input class="bp-in" type="number" min="0" step="0.01" data-f="c_val" placeholder="0"><span class="fim-er" data-er="c_val"></span></label>
+                <label class="bp-champ"><span>Référence facture / pièce de cession</span><input class="bp-in" data-f="c_ref" maxlength="40" autocomplete="off" placeholder="FAC-CESS-2026-001"></label>
+                <label class="bp-champ fim-s2"><span>Cessionnaire / bénéficiaire <b data-fim-creq>*</b></span><input class="bp-in" data-f="c_tiers" maxlength="100" autocomplete="off" placeholder="Nom de l'acquéreur"><span class="fim-er" data-er="c_tiers"></span></label>
+                <label class="bp-champ fim-s2"><span>Motif / observations</span><input class="bp-in" data-f="c_motif" maxlength="200" autocomplete="off" placeholder="Remplacement du matériel, obsolescence…"></label>
+              </div>
+              <div class="fim-g4" style="margin-top:12px">
+                <label class="bp-champ"><span>Amortissements cumulés</span><input class="bp-in fim-ro" data-f="c_amort" readonly tabindex="-1"></label>
+                <label class="bp-champ"><span>Valeur nette comptable (VNC)</span><input class="bp-in fim-ro" data-f="c_vnc" readonly tabindex="-1"></label>
+                <label class="bp-champ"><span data-fim-pmlib>Plus-value / moins-value</span><input class="bp-in fim-ro" data-f="c_pm" readonly tabindex="-1"></label>
+              </div>
+              <p class="fim-help" data-fim-cnote style="margin:8px 0 0"></p>
+            </div>
+          </div>
         </div>
 
         <div data-fim-span="ecritures" hidden>
@@ -152,9 +173,10 @@
   var root = document.querySelector('[data-fim]'); if (!root) return;
   function q(s) { return root.querySelector(s); } function qa(s) { return [].slice.call(root.querySelectorAll(s)); }
   var data = [], sel = -1, mode = 'consultation', nextId = 1, genere = [];
-  var SIMPLES = ['annee', 'site', 'ref', 'desig', 'compte', 'qte', 'pu', 'dacq', 'dms', 'num', 'etat', 'famille', 'empl', 'resp', 'coll', 'aux'];
+  var SIMPLES = ['annee', 'site', 'ref', 'desig', 'compte', 'qte', 'pu', 'dacq', 'dms', 'num', 'etat', 'famille', 'empl', 'resp', 'coll', 'aux', 'c_type', 'c_date', 'c_val', 'c_ref', 'c_tiers', 'c_motif'];
   var LISTES = ['annee', 'site', 'compte', 'famille', 'empl', 'resp', 'coll', 'aux'];
-  var ERR = ['annee', 'site', 'ref', 'desig', 'compte', 'qte', 'pu', 'dacq', 'dms', 'num', 'etat', 'empl', 'resp', 'coll', 'aux'];
+  var ERR = ['annee', 'site', 'ref', 'desig', 'compte', 'qte', 'pu', 'dacq', 'dms', 'num', 'etat', 'empl', 'resp', 'coll', 'aux', 'c_type', 'c_date', 'c_val', 'c_tiers'];
+  var CESSION = ['cede', 'c_type', 'c_date', 'c_val', 'c_ref', 'c_tiers', 'c_motif'];   // champs de cession : modifiables même après la génération de l'écriture d'acquisition
   var REFPLAN = { PLAN1: 'activite', PLAN2: 'budget', PLAN4: 'geo' };
   function esc(s) { return String(s == null ? '' : s).replace(/[&<>"]/g, function (c) { return { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c]; }); }
   function f(k) { return q('[data-f=' + k + ']'); }
@@ -249,6 +271,33 @@
     if (fam && !f('compte').value) { if (![].some.call(f('compte').options, function (o) { return o.value === fam.compte; })) { var o = document.createElement('option'); o.value = fam.compte; o.textContent = fam.compte; f('compte').appendChild(o); } f('compte').value = fam.compte; }
   });
   f('num').addEventListener('input', function () { this.value = this.value.toUpperCase().replace(/[^A-Z0-9-]/g, ''); });
+
+  // ---------- cession / sortie : amortissements cumulés, VNC, plus-value ou moins-value (calcul indicatif d'après la famille) ----------
+  function amortCumule(valeur, famCode, debut, fin) {
+    var fam = (window.FAMILLES_IMMOBILISATION || []).filter(function (x) { return x.code === famCode; })[0];
+    if (!fam || !fam.amortissable || !debut || !fin || fin <= debut) return { cumul: 0, fam: fam };
+    var d1 = debut.split('-').map(Number), d2 = fin.split('-').map(Number), ans = ((d2[0] - d1[0]) * 12 + (d2[1] - d1[1]) + (Math.min(d2[2], 30) - Math.min(d1[2], 30)) / 30) / 12, duree = (fam.unite === 'Mois' ? (+fam.duree || 0) / 12 : (+fam.duree || 0)), t = (+fam.taux || 0) / 100, c;
+    if (fam.methode === 'Dégressif') c = valeur * (1 - Math.pow(1 - Math.min(t, 1), ans)); else c = duree > 0 ? valeur * Math.min(1, ans / duree) : 0;
+    return { cumul: Math.min(valeur, Math.max(0, Math.round(c * 100) / 100)), fam: fam };
+  }
+  function calcCession() {
+    var type = f('c_type').value, valeurAcq = valeur(), debut = f('dms').value, fin = f('c_date').value, vc = +f('c_val').value || 0;
+    var a = amortCumule(valeurAcq, f('famille').value, debut, fin), vnc = Math.round((valeurAcq - a.cumul) * 100) / 100, pm = Math.round((vc - vnc) * 100) / 100;
+    var ok = f('cede').checked && !!fin;
+    f('c_amort').value = ok ? nb(a.cumul) + ' ' + locale() : ''; f('c_vnc').value = ok ? nb(vnc) + ' ' + locale() : '';
+    f('c_pm').value = ok ? (pm >= 0 ? '+' : '−') + nb(Math.abs(pm)) + ' ' + locale() : '';
+    q('[data-fim-pmlib]').textContent = ok ? (pm >= 0 ? 'Plus-value de cession' : 'Moins-value de cession') : 'Plus-value / moins-value';
+    q('[data-fim-cnote]').textContent = ok ? (a.fam ? (a.fam.amortissable ? 'Calcul indicatif d’après la famille ' + a.fam.code + ' (' + a.fam.methode.toLowerCase() + ', ' + a.fam.duree + ' ' + (a.fam.unite === 'Mois' ? 'mois' : 'ans') + ') depuis la mise en service.' : 'La famille ' + a.fam.code + ' n’est pas amortissable : VNC = valeur d’acquisition.') : 'Aucune famille choisie : amortissements cumulés considérés nuls (VNC = valeur d’acquisition).') : 'Renseignez la date de cession ou de sortie pour calculer la VNC et la plus-value ou moins-value.';
+  }
+  function majCessionEtat() {
+    var ced = f('cede').checked, vente = f('c_type').value === 'Cession';
+    q('[data-fim-cession]').hidden = !ced;
+    q('[data-fim-creq]').style.visibility = vente ? '' : 'hidden';
+    calcCession();
+  }
+  ['c_type', 'c_date', 'c_val', 'dms', 'famille', 'qte', 'pu'].forEach(function (k) { f(k).addEventListener('input', calcCession); f(k).addEventListener('change', calcCession); });
+  f('cede').addEventListener('change', function () { majCessionEtat(); etat(); });
+  f('c_type').addEventListener('change', function () { if (f('c_type').value !== 'Cession') { f('c_val').value = ''; f('c_tiers').value = ''; } majCessionEtat(); etat(); });
   function proposerNum() { var a = f('annee').value || String(new Date().getFullYear()); var n = data.length + 1, c; do { c = 'IMM-' + a + '-' + ('000' + n).slice(-3); n++; } while (data.some(function (r) { return r.num === c; })); return c; }
 
   // ---------- liste ----------
@@ -263,7 +312,7 @@
     q('[data-fim-vide]').hidden = data.length > 0;
     q('[data-fim-lignes]').innerHTML = data.map(function (r, i) {
       return '<tr data-i="' + i + '"' + (i === sel ? ' class="sel"' : '') + '><td><span class="fim-code">' + esc(r.num) + '</span></td><td>' + esc(r.desig) + '</td><td>' + esc(famLib(r)) + '</td><td>' + esc(r.empl) + '</td><td>' + esc(dFR(r.dacq)) + '</td>' +
-        '<td class="r">' + nb(r.qte * r.pu) + '</td><td class="c" data-v="' + (r.genere ? 'généré' : 'brouillon') + '"><span class="fim-badge ' + (r.genere ? 'on' : 'off') + '">' + (r.genere ? 'Écriture générée' : 'Brouillon') + '</span></td></tr>';
+        '<td class="r">' + nb(r.qte * r.pu) + '</td><td class="c" data-v="' + (r.genere ? 'généré' : 'brouillon') + (r.cede ? ' ' + esc(r.c_type.toLowerCase()) : '') + '"><span class="fim-badge ' + (r.genere ? 'on' : 'off') + '">' + (r.genere ? 'Écriture générée' : 'Brouillon') + '</span>' + (r.cede ? ' <span class="fim-badge off">' + esc(r.c_type) + '</span>' : '') + '</td></tr>';
     }).join(''); filtrer();
   }
 
@@ -272,19 +321,23 @@
     r = r || { annee: '', site: '', ref: '', desig: '', compte: '', qte: 1, pu: '', dacq: '', dms: '', num: '', etat: '', famille: '', empl: '', resp: '', coll: '', aux: '', ana: {} };
     listes(r);
     SIMPLES.forEach(function (k) { if (LISTES.indexOf(k) < 0) f(k).value = r[k] == null ? '' : r[k]; });
-    effacer(); majValeur();
+    f('cede').checked = !!r.cede;
+    effacer(); majValeur(); majCessionEtat();
     var v = q('[data-fim-verrou]');
-    v.hidden = !(r.genere); v.textContent = r.genere ? 'Écriture générée sous le n° de pièce ' + r.e_piece + ' (journal ' + r.e_journal + ') : la fiche n’est plus modifiable.' : '';
+    v.hidden = !(r.genere); v.textContent = r.genere ? 'Écriture générée sous le n° de pièce ' + r.e_piece + ' (journal ' + r.e_journal + ') : les données d’acquisition ne sont plus modifiables ; seules les informations de cession / sortie restent modifiables.' : '';
   }
   function etat() {
     var ed = mode !== 'consultation', cur = sel >= 0 ? data[sel] : null, gen = !!(cur && cur.genere);
-    qa('[data-fim-form] input,[data-fim-form] select').forEach(function (e) { e.disabled = !ed; });
+    qa('[data-fim-form] input,[data-fim-form] select').forEach(function (e) { e.disabled = !ed || (gen && CESSION.indexOf(e.dataset.f) < 0); });
     qa('[data-fim-form] .fim-ro').forEach(function (e) { e.disabled = false; });
+    var vente = f('c_type').value === 'Cession';
+    f('c_val').disabled = !ed || !f('cede').checked || !vente; f('c_tiers').disabled = !ed || !f('cede').checked || (f('c_type').value !== '' && !vente && f('c_type').value !== 'Don');
+    ['c_type', 'c_date', 'c_ref', 'c_motif'].forEach(function (k) { f(k).disabled = !ed || !f('cede').checked; });
     var act = window.PLANS_ACTIFS ? window.PLANS_ACTIFS() : [];
     qa('[data-ana]').forEach(function (s) { if (act.indexOf(s.dataset.ana) < 0) s.disabled = true; });
-    f('aux').disabled = !ed || !f('coll').value;
+    f('aux').disabled = !ed || gen || !f('coll').value;
     var a = q('[data-fim-actions]'), peutGen = !ed && !!cur && !gen;
-    a.querySelector('[data-fim-ajouter]').disabled = ed; a.querySelector('[data-fim-modifier]').disabled = ed || sel < 0 || gen; a.querySelector('[data-fim-supprimer]').disabled = ed || sel < 0 || gen;
+    a.querySelector('[data-fim-ajouter]').disabled = ed; a.querySelector('[data-fim-modifier]').disabled = ed || sel < 0; a.querySelector('[data-fim-supprimer]').disabled = ed || sel < 0 || gen || !!(cur && cur.cede);
     a.querySelector('[data-fim-enregistrer]').disabled = !ed; a.querySelector('[data-fim-annuler]').disabled = !ed;
     a.querySelector('[data-fim-generer]').disabled = !peutGen;
     q('[data-fim-gen2]').disabled = !peutGen;
@@ -303,6 +356,8 @@
   function lire() {
     var r = {}; SIMPLES.forEach(function (k) { r[k] = f(k).value.trim(); });
     r.qte = r.qte === '' ? '' : +r.qte; r.pu = r.pu === '' ? '' : +r.pu; r.ana = lireAna();
+    r.cede = f('cede').checked; r.c_val = r.c_val === '' ? '' : +r.c_val;
+    if (!r.cede) { r.c_type = ''; r.c_date = ''; r.c_val = ''; r.c_ref = ''; r.c_tiers = ''; r.c_motif = ''; }
     return r;
   }
   function enregistrer() {
@@ -318,13 +373,24 @@
     if (r.dacq && r.dms && r.dms < r.dacq) { err('dms', 'La mise en service ne peut pas précéder l’acquisition.'); ok = false; }
     var ex = (window.EXERCICES_API ? window.EXERCICES_API.liste() : []).filter(function (x) { return x.annee === r.annee; })[0];
     if (ex && r.dacq && iso(ex.debut) && (r.dacq < iso(ex.debut) || r.dacq > iso(ex.fin))) { err('dacq', 'La date d’acquisition doit être dans l’exercice ' + r.annee + ' (' + ex.debut + ' – ' + ex.fin + ').'); ok = false; }
+    if (r.cede) {
+      if (!r.c_type) { err('c_type', 'Le type de sortie est obligatoire.'); ok = false; }
+      if (!r.c_date) { err('c_date', 'La date de cession / sortie est obligatoire.'); ok = false; }
+      else if (r.dms && r.c_date < r.dms) { err('c_date', 'La cession ne peut pas précéder la mise en service.'); ok = false; }
+      if (r.c_type === 'Cession') {
+        if (r.c_val === '' || !(r.c_val >= 0)) { err('c_val', 'La valeur de cession est obligatoire (0 ou plus).'); ok = false; }
+        if (!r.c_tiers) { err('c_tiers', 'Le cessionnaire est obligatoire pour une cession.'); ok = false; }
+      }
+    }
     if (!ok) { songlet('general'); return; }
-    r.id = mode === 'creation' ? nextId++ : data[sel].id; r.genere = false;
+    var prec = mode === 'edition' ? data[sel] : null;
+    r.id = mode === 'creation' ? nextId++ : prec.id; r.genere = !!(prec && prec.genere);
+    if (prec && prec.genere) { r.e_piece = prec.e_piece; r.e_journal = prec.e_journal; }
     if (mode === 'creation') { data.push(r); sel = data.length - 1; } else data[sel] = r;
     mode = 'consultation'; liste(); form(data[sel]); etat(); onglet('liste'); publier(); toast(ancien ? 'Fiche modifiée.' : 'Fiche enregistrée.');
   }
   function publier() {
-    window.FICHES_IMMOBILISATION = data.map(function (r) { return { num: r.num, designation: r.desig, famille: r.famille, emplacement: r.empl, responsable: r.resp, compte: r.compte, valeur: r.qte * r.pu, dateAcquisition: r.dacq, statut: r.genere ? 'Écriture générée' : 'Brouillon' }; });
+    window.FICHES_IMMOBILISATION = data.map(function (r) { return { num: r.num, designation: r.desig, famille: r.famille, emplacement: r.empl, responsable: r.resp, compte: r.compte, valeur: r.qte * r.pu, dateAcquisition: r.dacq, statut: r.genere ? 'Écriture générée' : 'Brouillon', sortie: r.cede ? { type: r.c_type, date: r.c_date, valeurCession: r.c_val === '' ? 0 : r.c_val, cessionnaire: r.c_tiers, reference: r.c_ref, motif: r.c_motif } : null }; });
     window.dispatchEvent(new Event('fiches-immobilisation-changed'));
   }
 
@@ -353,7 +419,7 @@
   // ---------- exports ----------
   function table() {
     var L = data.filter(function (m, i) { var tr = tb.children[i]; return !tr || !tr.hidden; });
-    return { tete: ['N° d’identification', 'Désignation du bien', 'Famille', 'Emplacement', 'Date d’acquisition', 'Valeur d’acquisition', 'Statut'], lignes: L.map(function (r) { return [r.num, r.desig, famLib(r), r.empl, dFR(r.dacq), nb(r.qte * r.pu), r.genere ? 'Écriture générée' : 'Brouillon']; }) };
+    return { tete: ['N° d’identification', 'Désignation du bien', 'Famille', 'Emplacement', 'Date d’acquisition', 'Valeur d’acquisition', 'Statut'], lignes: L.map(function (r) { return [r.num, r.desig, famLib(r), r.empl, dFR(r.dacq), nb(r.qte * r.pu), (r.genere ? 'Écriture générée' : 'Brouillon') + (r.cede ? ' — ' + r.c_type : '')]; }) };
   }
   function exporter(k) {
     var X = window.EXPORT_TABLEAU, t = table(); if (!X) { toast('Module d’export indisponible.'); return; } if (!t.lignes.length) { toast('Rien à exporter.'); return; }
