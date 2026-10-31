@@ -41,6 +41,10 @@
 [data-pt] .pt-act{display:flex;justify-content:flex-end;gap:10px;flex-wrap:wrap}
 [data-pt] .pt-act button.pt-p{background:#2E427B;color:#fff;border-color:#2E427B}
 [data-pt] .pt-act button.pt-p:hover{background:#243566}
+[data-pt] .pt-bt{display:inline-flex;align-items:center;gap:6px;height:30px;padding:0 12px;border:1px solid #2E427B;border-radius:6px;background:#fff;color:#2E427B;font:600 12px var(--font-sans);cursor:pointer}[data-pt] .pt-bt:hover{background:#F4F7FE}
+[data-pt] .pt-rp{display:inline-block;margin-left:6px;padding:1px 8px;border-radius:10px;background:#FDF1D8;color:#8A5A12;font-size:10px;white-space:nowrap}
+[data-pt].pt-ph .pt-cols{grid-template-columns:1fr}[data-pt].pt-ph [data-pt-secrel]{display:none}[data-pt].pt-ph .pt-sc{max-height:none}
+[data-pt] .pt-phinfo{padding:10px 18px;background:#FFF8E6;border-bottom:1px solid #F1E2B8;font-size:12px;color:#6B4A0F}[data-pt] .pt-phinfo[hidden]{display:none}
 [data-pt] .pt-msg{font-size:12px;color:#2E427B;min-height:16px}
 [data-pt] .pt-msg.er{color:#B63132}
 @media (max-width:1100px){[data-pt] .pt-cols{grid-template-columns:1fr}[data-pt] .pt-top{grid-template-columns:1fr 1fr}}
@@ -66,13 +70,14 @@
   </div>
 
   <div class="pt-cols">
-    <section class="pt-card" aria-label="Relevé bancaire">
+    <section class="pt-card" aria-label="Relevé bancaire" data-pt-secrel>
       <div class="pt-hd"><h2>Relevé bancaire</h2><small data-pt-cpt></small></div>
-      <div class="pt-sc"><table><thead><tr><th><input type="checkbox" data-pt-tout="rel" aria-label="Tout cocher"></th><th>Date</th><th>Libellé banque</th><th class="r">Montant</th><th></th></tr></thead><tbody data-pt-rel></tbody></table></div>
+      <div class="pt-sc"><table><thead><tr><th><input type="checkbox" data-pt-tout="rel" aria-label="Tout cocher"></th><th>Date</th><th>Libellé banque</th><th class="r">Montant</th><th>Relevé rapproché</th><th></th></tr></thead><tbody data-pt-rel></tbody></table></div>
       <div class="pt-vide" data-pt-vrel hidden>Aucune ligne de relevé pour ce compte.</div>
     </section>
     <section class="pt-card" aria-label="Écritures comptables">
-      <div class="pt-hd"><h2>Écritures comptables <span data-pt-cpte></span></h2><small>Non pointées</small></div>
+      <div class="pt-hd"><h2>Écritures comptables <span data-pt-cpte></span></h2><span style="display:flex;align-items:center;gap:12px"><small>Non pointées</small><button type="button" class="pt-bt no-print" data-pt-etendre aria-pressed="false" title="Pointer les écritures sans ligne de relevé (relevé papier)"><i class="ti ti-arrows-maximize" aria-hidden="true"></i><span data-pt-etl>Relevé physique</span></button></span></div>
+      <div class="pt-phinfo" data-pt-phinfo hidden>Relevé physique : aucune ligne n’est saisie ni importée. Cochez les écritures retrouvées sur le relevé papier, renseignez le n° et la date du relevé, puis validez le pointage.</div>
       <div class="pt-sc"><table><thead><tr><th><input type="checkbox" data-pt-tout="ecr" aria-label="Tout cocher"></th><th>Date</th><th>Pièce</th><th>Libellé</th><th class="r">Montant</th><th>Proposition</th></tr></thead><tbody data-pt-ecr></tbody></table></div>
       <div class="pt-vide" data-pt-vecr hidden>Toutes les écritures sont pointées.</div>
       <div class="pt-ft"><span data-pt-ecart></span><button type="button" data-pt-agios hidden>+ Créer l'écriture d'agios</button></div>
@@ -96,17 +101,19 @@
         { d: '2026-10-19', l: 'VIR TELMA MADAGASCAR', m: 2250000, r: false },
         { d: '2026-10-18', l: 'FRAIS TENUE DE COMPTE', m: -45000, r: false },
         { d: '2026-10-17', l: 'VIR SALAIRES LOT 10/2026', m: -6850000, r: true },
-        { d: '2026-10-15', l: 'AGIOS T3', m: -312000, r: false }
+        { d: '2026-10-15', l: 'AGIOS T3', m: -312000, r: false },
+        { d: '2026-09-05', l: 'FRAIS BANCAIRES SEPT', m: -500000, r: false, o: '2026-09 / 0470' }
       ],
       ecr: [
         { d: '2026-10-19', p: 'BNI-2026-0309', l: 'Virement Telma – F2026-0380', m: 2250000, prop: 'Montant + réf.' },
         { d: '2026-10-18', p: 'BOA-2026-0097', l: 'Frais bancaires octobre', m: -45000, prop: 'Montant' },
         { d: '2026-10-24', p: 'BNI-2026-0313', l: 'Chèque n°4472 – SOMACOU', m: -2400000, prop: '' },
-        { d: '2026-10-25', p: 'BNI-2026-0314', l: 'Virement Groupe STAR', m: 1500000, prop: '' }
+        { d: '2026-10-25', p: 'BNI-2026-0314', l: 'Virement Groupe STAR', m: 1500000, prop: '' },
+        { d: '2026-09-05', p: 'BOA-2026-0090', l: 'Frais bancaires septembre', m: -500000, prop: 'Montant' }
       ]
     }
   };
-  var etat = {}, cle = '', cocheR = {}, cocheE = {};
+  var etat = {}, cle = '', cocheR = {}, cocheE = {}, phys = false;
   function cfg() { return window.RAPPROCH_CONFIG || []; }
   function nbr(n) { return (n < 0 ? '-' : '') + Math.abs(n).toLocaleString('fr-FR', { maximumFractionDigits: 0 }).replace(/[  ]/g, ' '); }
   function date(d) { return d.split('-').reverse().join('/'); }
@@ -123,6 +130,7 @@
     if (v && s.querySelector('option[value="' + v + '"]')) s.value = v;
     cle = s.value;
   }
+  function orig(e, i) { return (e.orig && e.orig[i]) || (e.rel[i] && e.rel[i].o) || ''; }
   function ecart(e) {
     var s = 0; e.rel.forEach(function (r) { if (!r.r && !e.ecr.some(function (x) { return x.m === r.m; })) s += r.m; });
     return s;
@@ -135,12 +143,13 @@
     if (vide) { e = { releve: '', date: '', solder: 0, soldec: 0, rel: [], ecr: [] }; }
     q('[data-pt-releve]').value = e.releve; q('[data-pt-date]').value = e.date;
     q('[data-pt-solder]').value = e.solder ? nbr(e.solder) : ''; q('[data-pt-soldec]').value = e.soldec ? nbr(e.soldec) : '';
-    var nr = e.rel.filter(function (r) { return r.r; }).length;
-    q('[data-pt-cpt]').textContent = nr + ' rapprochées · ' + (e.rel.length - nr) + ' en attente';
+    var nr = e.rel.filter(function (r) { return r.r; }).length, nrep = e.rel.filter(function (r, i) { return orig(e, i); }).length;
+    q('[data-pt-cpt]').textContent = nr + ' rapprochées · ' + (e.rel.length - nr) + ' en attente' + (nrep ? ' (dont ' + nrep + ' reportée(s))' : '');
     q('[data-pt-rel]').innerHTML = e.rel.map(function (r, i) {
-      return '<tr><td><input type="checkbox" data-pt-r="' + i + '"' + (r.r ? ' checked disabled' : cocheR[i] ? ' checked' : '') + ' aria-label="Ligne ' + (i + 1) + '"></td><td>' + date(r.d) + '</td><td>' + esc(r.l) + '</td><td class="r ' + (r.m < 0 ? 'neg' : 'pos') + '">' + nbr(r.m) + '</td><td><span class="pt-st ' + (r.r ? 'ok' : 'ko') + '" title="' + (r.r ? 'Rapprochée' : 'En attente') + '">' + (r.r ? 'R' : '?') + '</span></td></tr>';
+      return '<tr><td><input type="checkbox" data-pt-r="' + i + '"' + (r.r ? ' checked disabled' : cocheR[i] ? ' checked' : '') + ' aria-label="Ligne ' + (i + 1) + '"></td><td>' + date(r.d) + '</td><td>' + esc(r.l) + (orig(e, i) ? '<span class="pt-rp" title="Ligne non pointée du relevé ' + esc(orig(e, i)) + ', reportée jusqu’à son pointage">Reportée · ' + esc(orig(e, i)) + '</span>' : '') + '</td><td class="r ' + (r.m < 0 ? 'neg' : 'pos') + '">' + nbr(r.m) + '</td><td class="pt-piece">' + esc(r.rr || (r.r ? e.releve : '')) + '</td><td><span class="pt-st ' + (r.r ? 'ok' : 'ko') + '" title="' + (r.r ? 'Rapprochée' : 'En attente') + '">' + (r.r ? 'R' : '?') + '</span></td></tr>';
     }).join('');
     q('[data-pt-vrel]').hidden = e.rel.length > 0;
+    root.classList.toggle('pt-ph', phys); q('[data-pt-phinfo]').hidden = !phys; q('[data-pt-etl]').textContent = phys ? 'Retour au relevé' : 'Relevé physique'; q('[data-pt-etendre]').setAttribute('aria-pressed', phys); q('[data-pt-proposer]').disabled = phys;
     q('[data-pt-ecr]').innerHTML = e.ecr.map(function (x, i) {
       return '<tr><td><input type="checkbox" data-pt-e="' + i + '"' + (cocheE[i] ? ' checked' : '') + ' aria-label="Écriture ' + (i + 1) + '"></td><td>' + date(x.d) + '</td><td class="pt-piece">' + esc(x.p) + '</td><td>' + esc(x.l) + '</td><td class="r ' + (x.m < 0 ? 'neg' : 'pos') + '">' + nbr(x.m) + '</td><td>' + (x.prop ? '<span class="pt-pr">' + esc(x.prop) + '</span>' : '') + '</td></tr>';
     }).join('');
@@ -169,9 +178,13 @@
     if (!s.querySelector('option[value="' + rel.compte + '"]')) s.insertAdjacentHTML('beforeend', '<option value="' + esc(rel.compte) + '">' + esc(rel.compte) + '</option>');
     s.value = rel.compte; cle = rel.compte;
     var demo = rel.compte === '512100' && rel.numero === '2026-10 / 0471' ? DEMO['512100'] : null, ecr = ecrDe(rel);
-    var e = { releve: rel.numero, date: rel.date, solder: rel.soldeFin, soldec: 0, rel: rel.lignes, ecr: ecr };
+    // lignes non pointées des relevés précédents du compte : reportées dans ce relevé jusqu'à leur pointage (mêmes objets, l'état est conservé dans « Relevés »)
+    var rep = [], org = [], plus = [];
+    (window.RELEVES || []).filter(function (x) { return x !== rel && x.compte === rel.compte && x.date < rel.date; }).sort(function (a, b) { return a.date < b.date ? -1 : 1; }).forEach(function (x) { x.lignes.forEach(function (l, k) { if (!l.r) { rep.push(l); org.push(x.numero); if (!demo && k % 3 !== 2) plus.push({ d: l.d, p: 'REP-' + ('000' + (plus.length + 1)).slice(-4), l: 'Écriture ' + String(l.l).slice(0, 28), m: l.m, prop: 'Montant' }); } }); });
+    ecr = plus.concat(ecr);
+    var e = { releve: rel.numero, date: rel.date, solder: rel.soldeFin, soldec: 0, rel: rep.concat(rel.lignes), orig: org.concat(rel.lignes.map(function () { return ''; })), ecr: ecr, ecrPt: [] };
     e.soldec = demo ? demo.soldec : rel.soldeFin - ecart(e);
-    etat[cle] = e; cocheR = {}; cocheE = {}; msg(); rendre();
+    etat[cle] = e; cocheR = {}; cocheE = {}; phys = false; msg(); rendre();
   } };
   function init() { selecteur(); cocheR = {}; cocheE = {}; rendre(); }
   q('[data-pt-compte]').addEventListener('change', function () { cle = this.value; cocheR = {}; cocheE = {}; msg(); rendre(); });
@@ -192,13 +205,23 @@
     });
     rendre(); msg(n ? n + ' rapprochement(s) proposé(s) : vérifiez puis validez.' : 'Aucune correspondance de montant trouvée.', !n);
   });
+  q('[data-pt-etendre]').addEventListener('click', function () { phys = !phys; cocheR = {}; cocheE = {}; msg(); rendre(); });
   q('[data-pt-valider]').addEventListener('click', function () {
     var e = lues(); if (!e) return;
+    if (phys) {
+      var ie2 = Object.keys(cocheE);
+      if (!String(e.releve).trim()) { msg('Renseignez le n° du relevé physique.', true); return; }
+      if (!ie2.length) { msg('Cochez au moins une écriture retrouvée sur le relevé physique.', true); return; }
+      var tot = 0; ie2.forEach(function (i) { tot += e.ecr[i].m; (e.ecrPt = e.ecrPt || []).push({ p: e.ecr[i].p, m: e.ecr[i].m, rr: e.releve }); });
+      e.ecr = e.ecr.filter(function (x, j) { return !cocheE[j]; }); cocheE = {}; rendre();
+      msg('Pointage du relevé physique ' + e.releve + ' : ' + ie2.length + ' écriture(s) pointée(s), total ' + nbr(tot) + ' Ar.'); return;
+    }
+    if (!String(e.releve).trim()) { msg('Renseignez le n° du relevé.', true); return; }
     var ir = Object.keys(cocheR), ie = Object.keys(cocheE);
     if (!ir.length || !ie.length) { msg('Cochez au moins une ligne du relevé et une écriture à rapprocher.', true); return; }
     var sr = 0, se = 0; ir.forEach(function (i) { sr += e.rel[i].m; }); ie.forEach(function (i) { se += e.ecr[i].m; });
     if (sr !== se) { msg('Rapprochement impossible : relevé ' + nbr(sr) + ' Ar ≠ écritures ' + nbr(se) + ' Ar.', true); return; }
-    ir.forEach(function (i) { e.rel[i].r = true; });
+    ir.forEach(function (i) { e.rel[i].r = true; e.rel[i].rr = e.releve; });
     e.ecr = e.ecr.filter(function (x, j) { return !cocheE[j]; });
     cocheR = {}; cocheE = {}; rendre(); msg('Rapprochement validé : ' + ir.length + ' ligne(s) du relevé, ' + ie.length + ' écriture(s) pointée(s).');
   });

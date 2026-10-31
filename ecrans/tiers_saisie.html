@@ -35,6 +35,7 @@
     <button type="button" data-ti-supprimer>Supprimer</button>
     <button type="button" data-ti-enregistrer>Enregistrer</button>
     <button type="button" data-ti-annuler>Annuler</button>
+    <button type="button" data-ti-importer>Importer</button>
     <button type="button" data-ti-imprimer>Imprimer</button>
     <button type="button" data-ti-exporter>Exporter</button>
   </div>
@@ -195,6 +196,43 @@
   tb.addEventListener('dblclick', function (e) { var tr = e.target.closest('tr[data-i]'); if (tr) { choisir(+tr.dataset.i); onglet('saisie'); } });
   q('[data-f=compte]').addEventListener('change', function () { if (mode === 'creation' && q('[data-f=compte]').value) q('[data-f=sous]').value = sousDe(q('[data-f=compte]').value); });
 
+  // ---- importation Excel (étapes communes : import_assistant.js) ----
+  var SOUS_TYPES = ['Client', 'Fournisseur', 'Salarié', 'Partenaire', 'Banque', 'Autre type de tiers'], MODALITES = ['Aucune', 'Virement', 'Chèque', 'Espèces', 'Mobile money'];
+  var IMP = [['Adresse', 'adr'], ['Région', 'reg'], ['Pays', 'pays'], ['Téléphone', 'tel'], ['NIF', 'nif'], ['STAT', 'stat'], ['RCS', 'rcs'], ['Banque', 'banque'], ['Code banque', 'cb'], ['Code agence', 'ca'], ['Numéro de compte', 'num'], ['Clé', 'cle'], ['SWIFT', 'swift'], ['Adresse de la banque', 'adrb'], ['Pays de la banque', 'paysb']];
+  function ech(s) { return String(s == null ? '' : s).normalize('NFD').replace(/[\u0300-\u036f]/g, '').toLowerCase().replace(/[^a-z0-9]/g, ''); }
+  function modeleImp() {
+    var c0 = D.collectifs[0] ? D.collectifs[0][0] : '401000';
+    var ch = [{ col: 'Compte collectif', oblig: true, format: 'Compte collectif de classe 4 existant (' + D.collectifs.length + ' comptes proposés dans la saisie).', exemple: c0, alias: ['Compte'] },
+      { col: 'Code', oblig: true, format: 'Unique pour un compte collectif, ' + q('[data-f=code]').maxLength + ' caractères au plus.', exemple: 'T00001' },
+      { col: 'Intitulé', oblig: true, format: 'Texte, ' + q('[data-f=nom]').maxLength + ' caractères au plus.', exemple: 'TIERS EXEMPLE', alias: ['Nom', 'Libellé'] },
+      { col: 'Sous-type', oblig: false, format: SOUS_TYPES.join(', ') + '. Par défaut : déduit du compte collectif.', exemple: 'Fournisseur' }];
+    IMP.forEach(function (c) { ch.push({ col: c[0], oblig: false, format: 'Texte, ' + q('[data-f=' + c[1] + ']').maxLength + ' caractères au plus.', exemple: '' }); });
+    ch.push({ col: 'Modalité de paiement', oblig: false, format: MODALITES.join(', ') + '.', exemple: 'Virement' }, { col: 'Site', oblig: false, format: 'Code d\'un site existant (' + D.sites.map(function (s) { return s[0]; }).join(', ') + ').', exemple: D.sites[0] ? D.sites[0][0] : '' }, { col: 'Statut', oblig: false, format: 'Actif ou Inactif. Par défaut : Actif.', exemple: 'Actif' });
+    var lig = ch.map(function (c) { return c.exemple; });
+    return { titre: 'Tiers', fichier: 'modele_tiers.xlsx', champs: ch, exemples: [lig],
+      ligne: function (v) {
+        var er = [], compte = v['Compte collectif'], code = v['Code'], nom = v['Intitulé'], sous = v['Sous-type'], st = ech(v['Statut']);
+        if (!compte) er.push('Compte collectif obligatoire'); else if (!D.collectifs.some(function (c) { return c[0] === compte; })) er.push('Compte collectif « ' + compte + ' » inconnu');
+        if (!code) er.push('Code obligatoire'); else if (code.length > q('[data-f=code]').maxLength) er.push('Code trop long (' + q('[data-f=code]').maxLength + ' caractères au plus)');
+        if (!nom) er.push('Intitulé obligatoire'); else if (nom.length > q('[data-f=nom]').maxLength) er.push('Intitulé trop long (' + q('[data-f=nom]').maxLength + ' caractères au plus)');
+        var sf = sous ? SOUS_TYPES.filter(function (x) { return ech(x) === ech(sous); })[0] : sousDe(compte); if (!sf) er.push('Sous-type « ' + sous + ' » inconnu (' + SOUS_TYPES.join(', ') + ')');
+        var d = { compte: compte, code: code, nom: nom, sous: sf, actif: st !== 'inactif' };
+        if (st && st !== 'actif' && st !== 'inactif') er.push('Statut « ' + v['Statut'] + ' » invalide (Actif ou Inactif)');
+        IMP.forEach(function (c) { d[c[1]] = v[c[0]]; var mx = q('[data-f=' + c[1] + ']').maxLength; if (v[c[0]].length > mx) er.push(c[0] + ' trop long (' + mx + ' caractères au plus)'); });
+        var md = v['Modalité de paiement']; d.modalite = md ? (MODALITES.filter(function (x) { return ech(x) === ech(md); })[0] || '') : ''; if (md && !d.modalite) er.push('Modalité « ' + md + ' » inconnue (' + MODALITES.join(', ') + ')'); if (d.modalite === 'Aucune') d.modalite = '';
+        d.site = v['Site']; if (d.site && !D.sites.some(function (s) { return s[0] === d.site; })) er.push('Site « ' + d.site + ' » inconnu');
+        return { cle: compte + ' / ' + code, doublon: !er.length && rows.some(function (x) { return x.compte === compte && x.code === code; }), erreurs: er, data: d };
+      },
+      integrer: function (L) {
+        var aj = 0, mj = 0;
+        L.forEach(function (x) {
+          var d = x.data, ex = rows.filter(function (r) { return r.compte === d.compte && r.code === d.code; })[0];
+          if (ex) { var av = { code: ex.code, compte: ex.compte }; Object.keys(d).forEach(function (k) { ex[k] = d[k]; }); synchroniser(av, ex); mj++; }
+          else { var r = { utilise: false }; Object.keys(d).forEach(function (k) { r[k] = d[k]; }); rows.push(r); synchroniser(null, r); aj++; }
+        });
+        mode = 'consultation'; sel = -1; form(null); etat(); filtres = {}; qa('[data-fc]').forEach(function (e) { e.value = ''; }); tri = { k: 'code', sens: 1 }; calculer(); page = 0; onglet('liste'); toast(aj + ' tiers ajouté(s), ' + mj + ' mis à jour.');
+      } };
+  }
   // la saisie d'écritures propose les tiers actifs du compte collectif choisi (même tableau, mis à jour sur place)
   function synchroniser(avant, apres) {
     var R = window.ECRITURES_REF; if (!R || !R.tiers) return;
@@ -217,6 +255,7 @@
   }
   root.addEventListener('click', function (e) {
     var b = e.target.closest('button'); if (!b || b.disabled) return;
+    if (b.hasAttribute('data-ti-importer')) { if (mode !== 'consultation') { toast('Terminez la saisie en cours avant d\'importer.'); return; } if (window.IMPORT_ASSISTANT) window.IMPORT_ASSISTANT.ouvrir(modeleImp()); return; }
     if (b.hasAttribute('data-ti-ajouter')) { onglet('saisie'); mode = 'creation'; sel = -1; form(null); etat(); q('[data-f=code]').focus(); return; }
     if (b.hasAttribute('data-ti-modifier')) { onglet('saisie'); mode = 'edition'; etat(); q('[data-f=nom]').focus(); return; }
     if (b.hasAttribute('data-ti-annuler')) { mode = 'consultation'; form(sel >= 0 ? rows[sel] : null); etat(); return; }

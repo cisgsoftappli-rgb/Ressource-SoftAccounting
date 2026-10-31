@@ -291,7 +291,7 @@
     if (b.dataset.pg !== undefined) { page = +b.dataset.pg; dessiner(); return; }
     if (b.hasAttribute('data-an4-pdf')) { exporter('pdf'); return; }
     if (b.hasAttribute('data-an4-xlsx')) { exporter('xlsx'); return; }
-    if (b.hasAttribute('data-an4-importer')) { window.IMPORT_ASSISTANT.ouvrir(Object.assign({ onFichier: traiter }, MODELE())); return; }
+    if (b.hasAttribute('data-an4-importer')) { window.IMPORT_ASSISTANT.ouvrir(modeleImp()); return; }
     if (b.hasAttribute('data-an4-saisie')) { ouvrirSaisie(-1); return; }
     if (b.hasAttribute('data-an4-generer')) { ouvrirModale(); return; }
     else if (b.hasAttribute('data-an4-supprimer')) {
@@ -377,6 +377,29 @@
     ].concat(M.dev.map(function (d) { return { col: titreDev(d), oblig: false, format: 'Montant en ' + d.code + ' (devise ' + d.n + ' de l\'entité). Par défaut : converti depuis le montant local.', exemple: String(conv(1000000, d.code, M)).replace('.', ',') }; }));
     function ex(site, cp, aux, sens, loc) { return [site, '01', cp, aux, sens, String(loc).replace('.', ',')].concat(M.dev.map(function (d) { return String(conv(loc, d.code, M)).replace('.', ','); })); }
     return { titre: 'À nouveaux', fichier: 'modele_a_nouveaux.xlsx', champs: champs, exemples: [ex('01', '101001', '', 'C', 1000000), ex('01', '411001', 'T00001', 'D', 450000), ex('01', '512001', '', 'D', 550000)] };
+  }
+  // importation : étapes communes (import_assistant.js) — doublons sur site | plan de regroupement | compte | auxiliaire | sens
+  function cleLigne(e) { return [e.site, e.axe, e.compte, e.aux, e.sens].join('|'); }
+  function modeleImp() {
+    var m = MODELE(), M = monnaies();
+    m.champs[1].alias = ['Axe de regroupement', 'Regroupement']; m.champs[2].alias = ['Compte général']; m.champs[3].alias = ['Auxiliaire']; m.champs[5].alias = ['Montant local', 'Local']; if (m.champs[6]) m.champs[6].alias = ['Montant devise', 'Montant rapport'];
+    m.ligne = function (v) {
+      var compte = v['Compte'].replace(/\.0+$/, ''), sens = v['Sens (D/C)'].toUpperCase().charAt(0), loc = num(v[titreLocal(M)]), er = [];
+      if (!/^[1-5]\d{5}$/.test(compte)) er.push('Compte « ' + compte + ' » invalide (6 chiffres, classes 1 à 5)');
+      if (sens !== 'D' && sens !== 'C') er.push('Sens « ' + v['Sens (D/C)'] + ' » invalide (D ou C)');
+      if (loc === null || loc < 0) er.push('Montant local « ' + v[titreLocal(M)] + ' » invalide (nombre positif ou nul)');
+      var l = { ex: exo().annee, site: v['Site'] || q('[data-an4-site]').value, axe: v['Plan de regroupement'] || '01', compte: compte, aux: v['Compte auxiliaire'], sens: sens, local: loc, d1: null, d2: null, d3: null };
+      M.dev.forEach(function (d) { var x = num(v[titreDev(d)]); l[d.cle] = x !== null ? x : (loc === null ? null : conv(loc, d.code, M)); });
+      var k = cleLigne(l);
+      return { cle: k, doublon: !er.length && enregistre().lignes.some(function (e) { return cleLigne(e) === k; }), erreurs: er, data: l };
+    };
+    m.controle = function (L) { var D = 0, C = 0; L.forEach(function (x) { if (x.data.sens === 'D') D += x.data.local; else C += x.data.local; }); return Math.abs(D - C) > 0.005 ? ['Écart débit – crédit de ' + nb(D - C) + ' ' + M.loc + ' sur les lignes retenues : les à nouveaux doivent être équilibrés (total débit = total crédit).'] : []; };
+    m.integrer = function (L) {
+      var g = enregistre();
+      L.forEach(function (x) { if (x.remplace) { var i = -1; g.lignes.forEach(function (e, j) { if (i < 0 && cleLigne(e) === cleLigne(x.data)) i = j; }); if (i >= 0) { g.lignes[i] = x.data; return; } } g.lignes.push(x.data); });
+      page = 1; dessiner(); toast(L.length + ' ligne(s) intégrée(s).');
+    };
+    return m;
   }
   var importe = null;
   function sansAccent(t) { return String(t == null ? '' : t).normalize('NFD').replace(/[̀-ͯ]/g, '').toLowerCase().replace(/[^a-z0-9]/g, ''); }

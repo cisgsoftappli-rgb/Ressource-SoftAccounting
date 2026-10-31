@@ -227,22 +227,22 @@
       { col: 'Montant', oblig: true, format: 'Nombre strictement positif, en Ariary. Virgule ou point décimal.', exemple: '1250000' }
     ],
     exemples: [['Projet démo', 'Antananarivo', 'OP-2026-0100', 'Virement bancaire', 'BÉNÉFICIAIRE 010', 'MG46 0000 1000 0100 0000 0010', '1250000'], ['Projet démo', 'Toamasina', '', 'Mobile Money', 'BÉNÉFICIAIRE 011', '034 00 000 11', '85000']],
-    onFichier: function (fich) {
-      window.IMPORT_ASSISTANT.lireFichier(fich).then(function (rows) {
-        var sans = function (t) { return String(t == null ? '' : t).normalize('NFD').replace(/[̀-ͯ]/g, '').toLowerCase().replace(/[^a-z0-9]/g, ''); };
-        var ent = (rows[0] || []).map(sans), ix = function (k) { return ent.indexOf(k); }, cols = { projet: ix('projet'), site: ix('site'), ref: ix('reference'), mode: ix('modedepaiement'), nom: ix('nombeneficiaire'), compte: ix('comptebeneficiaire'), montant: ix('montant') };
-        if (cols.nom < 0 || cols.compte < 0 || cols.montant < 0) { toast('Colonnes obligatoires introuvables : Nom bénéficiaire, Compte bénéficiaire, Montant.'); return; }
-        var n = 0, rej = 0;
-        rows.slice(1).forEach(function (r) {
-          var g = function (k) { return cols[k] < 0 || r[cols[k]] == null ? '' : String(r[cols[k]]).trim(); }, m = parseFloat(g('montant').replace(/[\s  ]/g, '').replace(',', '.'));
-          if (!g('nom') && !g('compte') && !g('montant')) return;
-          var ref = g('ref');
-          if (!g('nom') || !g('compte') || !(m > 0) || (ref && DATA.some(function (x) { return x.ref === ref; }))) { rej++; return; }
-          var mode = MODES.filter(function (x) { return sans(x) === sans(g('mode')); })[0] || MODES[0];
-          DATA.unshift({ projet: g('projet') || 'Projet démo', site: g('site') || 'Antananarivo', ref: ref || 'OP-2026-' + ('0000' + nextRef++).slice(-4), mode: mode, nom: g('nom'), compte: g('compte'), montant: m, st: 'Brouillon' }); n++;
-        });
-        etat.pg = 1; ecran(); toast(n + ' ordre(s) importé(s) en brouillon' + (rej ? ', ' + rej + ' rejeté(s) (champ obligatoire manquant, montant invalide ou référence existante)' : '') + '.');
-      }).catch(function (x) { toast('Importation impossible : ' + (x && x.message ? x.message : 'fichier illisible') + '.'); });
+    ligne: function (v) {
+      var sans = function (t) { return String(t == null ? '' : t).normalize('NFD').replace(/[̀-ͯ]/g, '').toLowerCase().replace(/[^a-z0-9]/g, ''); };
+      var m = parseFloat(v['Montant'].replace(/[\s  ]/g, '').replace(',', '.')), ref = v['Référence'], er = [];
+      if (!v['Nom bénéficiaire']) er.push('Nom du bénéficiaire obligatoire'); if (!v['Compte bénéficiaire']) er.push('Compte bénéficiaire obligatoire'); if (!(m > 0)) er.push('Montant invalide (nombre strictement positif)');
+      if (v['Mode de paiement'] && !MODES.some(function (x) { return sans(x) === sans(v['Mode de paiement']); })) er.push('Mode de paiement « ' + v['Mode de paiement'] + ' » inconnu (' + MODES.join(', ') + ')');
+      var mode = MODES.filter(function (x) { return sans(x) === sans(v['Mode de paiement']); })[0] || MODES[0];
+      return { cle: ref, doublon: !!ref && DATA.some(function (x) { return x.ref === ref; }), erreurs: er, data: { projet: v['Projet'] || 'Projet démo', site: v['Site'] || 'Antananarivo', ref: ref, mode: mode, nom: v['Nom bénéficiaire'], compte: v['Compte bénéficiaire'], montant: m } };
+    },
+    integrer: function (L) {
+      var n = 0, mj = 0;
+      L.forEach(function (x) {
+        var d = x.data, ex = d.ref && DATA.filter(function (y) { return y.ref === d.ref; })[0];
+        if (ex) { ex.projet = d.projet; ex.site = d.site; ex.mode = d.mode; ex.nom = d.nom; ex.compte = d.compte; ex.montant = d.montant; mj++; return; }
+        DATA.unshift({ projet: d.projet, site: d.site, ref: d.ref || 'OP-2026-' + ('0000' + nextRef++).slice(-4), mode: d.mode, nom: d.nom, compte: d.compte, montant: d.montant, st: 'Brouillon' }); n++;
+      });
+      etat.pg = 1; ecran(); toast(n + ' ordre(s) intégré(s) en brouillon' + (mj ? ', ' + mj + ' mis à jour' : '') + '.');
     }
   };
 

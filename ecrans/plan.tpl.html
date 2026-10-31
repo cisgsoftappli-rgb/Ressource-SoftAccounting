@@ -27,6 +27,7 @@
     <button type="button" data-pl-supprimer>Supprimer</button>
     <button type="button" data-pl-enregistrer>Enregistrer</button>
     <button type="button" data-pl-annuler>Annuler</button>
+    <button type="button" data-pl-importer>Importer</button>
     <button type="button" data-pl-imprimer>Imprimer</button>
     <button type="button" data-pl-exporter>Exporter</button>
   </div>
@@ -300,9 +301,92 @@
       if (!window.confirm('Supprimer « ' + r.code + ' — ' + r.libelle + ' » ?')) return;
       rows.splice(sel, 1); sel = -1; liste(); form(null); etat(); toast('Ligne supprimée'); return;
     }
+    if (b.hasAttribute('data-pl-importer')) { if (mode !== 'consultation') { toast('Terminez la saisie en cours avant d\'importer.'); return; } if (window.IMPORT_ASSISTANT) window.IMPORT_ASSISTANT.ouvrir(modeleImp()); return; }
     if (b.hasAttribute('data-pl-imprimer')) { window.print(); return; }
     if (b.hasAttribute('data-pl-exporter')) { toast('Export de « %%TITRE%% » (maquette)'); return; }
   });
+  // ---- importation Excel (étapes communes : import_assistant.js) : colonnes et règles propres à ce plan ----
+  var NOMS_COMP = { sans: 'Sans analytique', tiers: 'Tiers', immo: 'Immobilisations', lettrage: 'Lettrage' };
+  function ech(s) { return String(s == null ? '' : s).normalize('NFD').replace(/[\u0300-\u036f]/g, '').toLowerCase().replace(/[^a-z0-9]/g, ''); }
+  function liste2(t) { return String(t || '').split(/[;,|]/).map(function (x) { return x.trim(); }).filter(Boolean); }
+  var FM = {}, RM = {};   // code -> parent et code -> racine, d'après le fichier
+  function connu(c) { return Object.prototype.hasOwnProperty.call(FM, c) || !!rowDe(c); }
+  function parentDe(c) { return Object.prototype.hasOwnProperty.call(FM, c) ? FM[c] : (rowDe(c) || {}).parent || ''; }
+  function lvl(c) { var n = 1, g = 0; while (parentDe(c) && g++ < 40) { c = parentDe(c); if (!connu(c)) return 0; n++; } return n; }
+  function racineDe(code) { var c = code, g = 0; while (parentDe(c) && g++ < 40) c = parentDe(c); var rw = rowDe(c); return RM[c] || (rw && rw.racine) || racineDefaut({ code: c }); }
+  function segEx(l, k) { var ch = l.format === 'Numérique' ? '123456789' : l.format === 'Alphabétique' ? 'ABCDEFGHI' : 'A1B2C3D4E'; return (ch + ch).slice(k, k + (+l.car || 1)); }
+  function modeleImp() {
+    var cfg = niveauxCfg(), ch = [], ex = [], ex2 = [], ex3 = [];
+    var struct = cfg ? cfg.map(function (l, i) { return 'Niveau ' + (i + 1) + (l.libelle ? ' (' + l.libelle + ')' : '') + ' : ' + l.car + ' caractère(s) ' + (FMT[l.format] ? FMT[l.format].nom : ''); }).join(' ; ') + '. Le code d\'un niveau = code du parent + segment du niveau.' : 'Code unique, 20 caractères au plus.';
+    var c1 = cfg ? segEx(cfg[0], 0) : '1', c2 = cfg && cfg[1] ? c1 + segEx(cfg[1], 0) : '11';
+    ch.push({ col: 'Code', oblig: true, format: struct, exemple: c1 }); ex = [c1]; ex2 = [c2];
+    ch.push({ col: 'Libellé', oblig: true, format: 'Texte, 120 caractères au plus.', exemple: 'Libellé exemple' }); ex.push('Élément de niveau 1'); ex2.push('Élément de niveau 2');
+    ch.push({ col: 'Code parent', oblig: false, format: 'Vide pour le niveau 1 ; sinon code d\'un élément du niveau précédent (existant dans le plan ou présent dans le fichier).', exemple: c1 }); ex.push(''); ex2.push(c1);
+    if (CFG.extra) { ch.push({ col: CFG.extra.label, oblig: false, format: 'Valeurs : ' + CFG.extra.options.join(', ') + '.', exemple: CFG.extra.options[0] || '' }); ex.push(CFG.extra.options[0] || ''); ex2.push(CFG.extra.options[0] || ''); }
+    ch.push({ col: 'Statut', oblig: false, format: 'Actif ou Inactif. Par défaut : Actif.', exemple: 'Actif' }); ex.push('Actif'); ex2.push('Actif');
+    if (COMPTABLE) {
+      ch.push({ col: 'Racine de compte', oblig: false, format: 'Niveau 1 uniquement : code d\'une racine (Racine des comptes). Par défaut : C + 1er caractère du code.', exemple: 'C' + c1.charAt(0) }); ex.push('C' + c1.charAt(0)); ex2.push('');
+      ch.push({ col: 'Comportements', oblig: false, format: 'Dernier niveau uniquement : Sans analytique, Tiers, Immobilisations, Lettrage (séparés par « ; »).', exemple: 'Tiers' }); ex.push(''); ex2.push('');
+      ch.push({ col: 'Axes analytiques', oblig: false, format: 'Dernier niveau uniquement : plans ouverts pour la superclasse du compte (ex. PLAN1 ; PLAN2), incompatible avec « Sans analytique ».', exemple: 'PLAN1' }); ex.push(''); ex2.push('');
+    }
+    return {
+      titre: '%%TITRE%%', fichier: 'modele_%%ID%%.xlsx', champs: ch, exemples: [ex, ex2],
+      avant: function (L) {
+        FM = {}; RM = {};
+        L.forEach(function (x) { var c = x.v['Code'].toUpperCase(); if (c) { FM[c] = x.v['Code parent'].toUpperCase(); if (COMPTABLE && x.v['Racine de compte']) RM[c] = x.v['Racine de compte'].toUpperCase(); } });
+      },
+      ligne: function (v) {
+        var cfg2 = niveauxCfg(), code = v['Code'].toUpperCase(), lib = v['Libellé'], par = v['Code parent'].toUpperCase(), st = ech(v['Statut']), er = [], n = 1;
+        if (!code) er.push('Code obligatoire'); if (!lib) er.push('Libellé obligatoire'); else if (lib.length > 120) er.push('Libellé trop long (120 caractères au plus)');
+        if (par) { if (!connu(par)) er.push('Code parent « ' + par + ' » introuvable (ni dans le plan, ni dans le fichier)'); else { n = lvl(par) + 1; if (code && par === code) er.push('Un code ne peut pas être son propre parent'); } }
+        if (code && !er.length || (code && par && connu(par))) {
+          if (cfg2) {
+            if (n > cfg2.length) er.push('Niveau ' + n + ' impossible : ce plan est limité à ' + cfg2.length + ' niveau(x)');
+            else if (!par || connu(par)) {
+              var l = cfg2[n - 1], larg = +l.car, nom = FMT[l.format] ? FMT[l.format].nom : '', pre = par;
+              if (code.indexOf(pre) !== 0 || code.length !== pre.length + larg) er.push('Code « ' + code + ' » : le niveau ' + n + ' doit comporter ' + (pre.length + larg) + ' caractère(s) (' + (pre ? 'parent « ' + pre + ' » + ' : '') + larg + ' ' + nom + ')');
+              else if (!code.slice(pre.length).split('').every(function (ch2) { return FMT[l.format].re.test(ch2); })) er.push('Segment « ' + code.slice(pre.length) + ' » du niveau ' + n + ' : caractères ' + nom + ' attendus');
+            }
+          } else if (code.length > 20) er.push('Code trop long (20 caractères au plus)');
+        }
+        var extra = CFG.extra ? v[CFG.extra.label] : '';
+        if (extra && CFG.extra.options.indexOf(extra) < 0) er.push(CFG.extra.label + ' « ' + extra + ' » inconnu (' + CFG.extra.options.join(', ') + ')');
+        if (st && st !== 'actif' && st !== 'inactif') er.push('Statut « ' + v['Statut'] + ' » invalide (Actif ou Inactif)');
+        var rac = '', comp = [], ana = [];
+        if (COMPTABLE && code) {
+          var dernier = cfg2 && n === cfg2.length;
+          if (n === 1) { rac = (v['Racine de compte'] || '').toUpperCase() || racineDefaut({ code: code }); if (!racineObj(rac)) er.push(rac ? 'Racine de compte « ' + rac + ' » inconnue (Paramétrages › Racine des comptes)' : 'Racine de compte à renseigner (aucune racine par défaut pour ce code)'); }
+          else if (v['Racine de compte']) er.push('La racine de compte ne se renseigne qu\'au niveau 1');
+          if (dernier) {
+            liste2(v['Comportements']).forEach(function (t) { var k = Object.keys(NOMS_COMP).filter(function (c) { return ech(c) === ech(t) || ech(NOMS_COMP[c]) === ech(t); })[0]; if (k) { if (comp.indexOf(k) < 0) comp.push(k); } else er.push('Comportement « ' + t + ' » inconnu (' + Object.keys(NOMS_COMP).map(function (c) { return NOMS_COMP[c]; }).join(', ') + ')'); });
+            var tAna = liste2(v['Axes analytiques']);
+            if (tAna.length && comp.indexOf('sans') >= 0) er.push('« Sans analytique » est incompatible avec des axes analytiques');
+            else if (tAna.length) {
+              var sc = racineDe(par || code), ro = racineObj(sc), ouv = ro ? plansActifs().filter(function (c) { return ro.plans && ro.plans[c]; }) : [];
+              tAna.forEach(function (t) { var c = plansActifs().filter(function (x) { return ech(x) === ech(t) || ech(libPlan(x)) === ech(t); })[0]; if (!c) er.push('Axe analytique « ' + t + ' » inconnu ou plan non activé'); else if (ouv.indexOf(c) < 0) er.push('Axe « ' + t + ' » non ouvert pour la superclasse « ' + sc + ' »'); else if (ana.indexOf(c) < 0) ana.push(c); });
+            }
+          } else if (v['Comportements'] || v['Axes analytiques']) er.push('Comportements et axes analytiques : réservés au dernier niveau (' + (cfg2 ? cfg2.length : '?') + ')');
+        }
+        var ex0 = code ? rowDe(code) : null;
+        if (ex0 && ex0.parent !== par) er.push('Code existant sous un autre code parent (« ' + (ex0.parent || '—') + ' ») : parent non modifiable');
+        return { cle: code, doublon: !!ex0 && !er.length, erreurs: er, data: { code: code, libelle: lib, parent: par, extra: extra, actif: st !== 'inactif', racine: rac, comp: comp, ana: ana, n: n } };
+      },
+      controle: function (L) {
+        var S = {}; L.forEach(function (x) { S[x.data.code] = 1; }); var out = [];
+        L.forEach(function (x) { var par = x.data.parent; if (par && !S[par] && !rowDe(par)) out.push({ n: x.n, cause: 'Code parent « ' + par + ' » rejeté : « ' + x.data.code + ' » ne peut pas être intégré sans son parent' }); });
+        return out;
+      },
+      integrer: function (L) {
+        var aj = 0, mj = 0;
+        L.slice().sort(function (a, b) { return a.data.n - b.data.n; }).forEach(function (x) {
+          var d = x.data, ex = rowDe(d.code);
+          if (ex) { ex.libelle = d.libelle; ex.extra = d.extra || ex.extra; ex.actif = d.actif; if (d.racine) ex.racine = d.racine; if (d.comp.length || d.ana.length) { ex.comp = d.comp; ex.ana = d.ana; } mj++; }
+          else { rows.push({ code: d.code, libelle: d.libelle, parent: d.parent, extra: d.extra, actif: d.actif, racine: d.racine, comp: d.comp, ana: d.ana }); idxN = -1; aj++; }
+        });
+        mode = 'consultation'; sel = -1; liste(); form(null); etat(); onglet('liste'); toast(aj + ' ligne(s) ajoutée(s), ' + mj + ' mise(s) à jour');
+      }
+    };
+  }
   liste(); form(null); etat(); onglet('liste');
 })();
 </script>

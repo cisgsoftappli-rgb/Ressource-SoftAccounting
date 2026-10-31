@@ -16,7 +16,7 @@
     balance: { txt: /^(filtre|csv|excel|pdf)$/i }, balaux: { txt: /^(filtre|csv|excel|pdf)$/i }, glg: { txt: /^(filtre|csv|excel|pdf)$/i }, balana: { txt: /^(filtre|csv|excel|pdf)$/i },
     histdem: { txt: /^(filtre|csv|excel|imprimer)$/i }, listedit: { txt: /^(critères|filtre|csv|excel|pdf)/i }, recapexec: { txt: /^(critères|filtre|csv|excel|pdf)/i }
   };
-  ['pl_comptable', 'pl_activite', 'pl_budget', 'pl_geo', 'pl_financier', 'pl_5', 'pl_6', 'pl_7', 'pl_8', 'pl_9', 'pl_10', 'pl_tiers', 'pl_journaux'].forEach(function (id) { CFG[id] = { txt: /^(ajouter|modifier|supprimer|enregistrer|annuler|imprimer|exporter)$/i }; });
+  ['pl_comptable', 'pl_activite', 'pl_budget', 'pl_geo', 'pl_financier', 'pl_5', 'pl_6', 'pl_7', 'pl_8', 'pl_9', 'pl_10', 'pl_tiers', 'pl_journaux'].forEach(function (id) { CFG[id] = { txt: /^(ajouter|modifier|supprimer|enregistrer|annuler|importer|imprimer|exporter)$/i }; });
   var RECH = /^(recherch|code ou libell|code, intitul)/i;
   var ORDRE = { nav: 9, ico: -1, filter: 0, export: 1, other: 1, reset: 2, edit: 3, del: 4, cancel: 5, save: 6, run: 7, add: 8 };
   var PRIORITE = ['run', 'save', 'add', 'filter'];

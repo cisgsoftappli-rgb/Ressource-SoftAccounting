@@ -125,21 +125,18 @@
       t.tete.map(function (h) { return '<th>' + esc(h) + '</th>'; }).join('') + '</tr></thead><tbody>' + t.lignes.map(function (r) { return '<tr>' + r.map(function (c) { return '<td>' + esc(c) + '</td>'; }).join('') + '</tr>'; }).join('') + '</tbody></table>');
     w.document.close(); w.focus(); setTimeout(function () { w.print(); }, 300);
   }
-  // importation Excel / CSV : colonnes Code, Libellé, Statut
-  function importerFichier(f) {
-    window.IMPORT_ASSISTANT.lireFichier(f).then(function (rows) {
-      var sans = function (t) { return String(t == null ? '' : t).normalize('NFD').replace(/[\u0300-\u036f]/g, '').toLowerCase().replace(/[^a-z0-9]/g, ''); };
-      var ent = (rows[0] || []).map(sans), iC = ent.indexOf('code'), iL = ent.indexOf('libelle'), iS = ent.indexOf('statut'), debut = 1;
-      if (iC < 0 || iL < 0) { iC = 0; iL = 1; iS = 2; debut = /^code$/i.test(String((rows[0] || [])[0] || '').trim()) ? 1 : 0; }
-      var n = 0, rej = 0;
-      rows.slice(debut).forEach(function (r) {
-        var c = String(r[iC] || '').trim().toUpperCase(), lb = String(r[iL] || '').trim(), st = sans(r[iS]);
-        if (!c && !lb) return;
-        if (!c || !lb || data.some(function (x) { return x.code === c; })) { rej++; return; }
-        data.push({ code: c, lib: lb, actif: st !== 'inactif', usage: 0 }); n++;
-      });
-      liste(); etat(); toast(n + ' ligne(s) importée(s)' + (rej ? ', ' + rej + ' rejetée(s) (code vide, libellé vide ou code existant)' : '') + '.');
-    }).catch(function (x) { toast('Importation impossible : ' + (x && x.message ? x.message : 'fichier illisible') + '.'); });
+  // importation Excel / CSV : colonnes Code, Libellé, Statut (étapes communes : voir import_assistant.js)
+  function ligneImport(v) {
+    var c = String(v['Code']).toUpperCase(), lb = v['Libellé'], st = String(v['Statut']).toLowerCase(), er = [];
+    if (!c) er.push('Code obligatoire'); else if (c.length > 50) er.push('Code trop long (50 caractères au plus)');
+    if (!lb) er.push('Libellé obligatoire'); else if (lb.length > 150) er.push('Libellé trop long (150 caractères au plus)');
+    if (st && st !== 'actif' && st !== 'inactif') er.push('Statut « ' + v['Statut'] + ' » invalide (Actif ou Inactif)');
+    return { cle: c, doublon: !!c && data.some(function (x) { return x.code === c; }), erreurs: er, data: { code: c, lib: lb, actif: st !== 'inactif' } };
+  }
+  function integrerImport(L) {
+    var n = 0, m = 0;
+    L.forEach(function (x) { var d = x.data, ex = data.filter(function (y) { return y.code === d.code; })[0]; if (ex) { ex.lib = d.lib; ex.actif = d.actif; m++; } else { data.push({ code: d.code, lib: d.lib, actif: d.actif, usage: 0 }); n++; } });
+    liste(); etat(); toast(n + ' ligne(s) ajoutée(s), ' + m + ' mise(s) à jour.');
   }
   q('[data-typm-fichier]').addEventListener('change', function (e) {
     var f = e.target.files[0]; if (!f) return; var fr = new FileReader(), n = 0;
@@ -173,7 +170,7 @@
           { col: 'Statut', oblig: false, format: 'Actif ou Inactif. Par défaut : Actif.', exemple: 'Actif' }
         ],
         exemples: [['CODE01', 'Libellé exemple', 'Actif']],
-        onFichier: importerFichier
+        ligne: ligneImport, integrer: integrerImport
       });
       return;
     }

@@ -440,7 +440,7 @@ let child;
     sousGroupe('cg-lettrage', 'Lettrage', 'cg') +
     enfant12(child('lettparam', 'Paramètre', 'cg-lettrage')) + enfant12(child('lettmanuel', 'Lettrage', 'cg-lettrage')) + enfant12(child('prelettrage', 'Prélettrage', 'cg-lettrage')) +
     sousGroupe('cg-rapprochement', 'Rapprochement bancaire', 'cg') +
-    enfant12(child('rapprochement', 'Configuration', 'cg-rapprochement')) + enfant12(child('releves', 'Pointage', 'cg-rapprochement')) + enfant12(child('situation', 'Situation', 'cg-rapprochement')) + ['Hors Compta'].map((l) => enfant12(inerte(l, 'cg-rapprochement'))).join('') +
+    enfant12(child('rapprochement', 'Configuration', 'cg-rapprochement')) + enfant12(child('releves', 'Pointage', 'cg-rapprochement')) + enfant12(child('situation', 'Situation', 'cg-rapprochement')) +
     sousGroupe('cg-circuit', 'Circuit de validation', 'cg') +
     groupe('cg-cours', 'Gestion des cours') + child('cours', 'Saisie', 'cg-cours') + child('conversion', 'Conversion', 'cg-cours') + ['Cours appliqué'].map((l) => inerte(l, 'cg-cours')).join('') +
     groupe('cg-caisse', 'Petite caisse') + child('caissetypes', "Types d'opération", 'cg-caisse') + ['Billetage'].map((l) => inerte(l, 'cg-caisse')).join('') + child('caissesaisie', 'Saisie', 'cg-caisse') + child('caissegen', 'Génération des écritures', 'cg-caisse') +
@@ -576,6 +576,7 @@ const script = `<script>
     if (premier) { $$('[data-group-toggle]').forEach(function (sb) { setGroup(sb.dataset.groupToggle, false); }); premier = false; }
     else { var g = grp(eff); if (par(g)) setGroup(par(g), true); setGroup(g, true); }
     showLevel(eff === 'dashboard' || eff === 'tchat' ? 'root' : moduleOf(eff));
+    window.__moduleCourant = moduleOf(eff);
     $$('[data-module]').forEach(function (m) { m.classList.toggle('sidebar-active', m.dataset.module === moduleOf(eff)); });
     if (screen === 'entite') showTab(document.querySelector('[data-tab="' + h + '"]') ? h : 'infos');
     document.title = 'SoftCompta — ' + TITLES[screen];
@@ -601,6 +602,7 @@ const script = `<script>
   // Un module ayant des écrans dans la maquette ouvre son sous-menu
   $$('[data-module]').forEach(function (m) {
     m.addEventListener('click', function () {
+      if (m.dataset.module === window.__moduleCourant && m.classList.contains('sidebar-active')) { location.reload(); return; }   // re-clic sur le module en cours : réactualise
       if (m.dataset.module === 'tableau-de-bord') { location.hash = '#dashboard'; return; }
       if (LEVELS.indexOf(m.dataset.module) >= 0) showLevel(m.dataset.module);
     });
@@ -608,6 +610,11 @@ const script = `<script>
   $$('[data-sidebar-back]').forEach(function (b) {
     b.addEventListener('click', function () { showLevel('root'); });
   });
+  // re-clic sur l'écran en cours dans la sidebar : réactualise la page
+  document.addEventListener('click', function (e) {
+    var a = e.target.closest && e.target.closest('aside [data-nav]');
+    if (a && a.getAttribute('href') && a.getAttribute('href') !== '#' && a.getAttribute('href') === location.hash) { e.preventDefault(); location.reload(); }
+  }, true);
   window.addEventListener('hashchange', route);
   route();
 })();
@@ -617,7 +624,7 @@ const _du = (f) => 'data:image/png;base64,' + fs.readFileSync(f).toString('base6
 const masqueJs = 'window.__MASQUE={logo:' + JSON.stringify(_du('ecrans/masque/logo.png')) + ',qr:' + JSON.stringify(_du('ecrans/masque/qr.png')) + ',pied:' + JSON.stringify(_du('ecrans/masque/pied.png')) + '};' + String.fromCharCode(10) + read('ecrans/masque/masque.js');
 out = out.replace(/(<a aria-label="Tchat"[^>]*?)href="#"/, (m, d) => d + 'href="#tchat" data-nav="tchat"');
 out = out.replace(/<body[^>]*>/, (m) => m + '<script>' + read('ecrans/panneau_proprietes.js') + '</script>');
-out = out.replace('</body>', () => '<script>' + masqueJs + '</script>' + script + '<script>\n' + dpJs + '</script><script>\n' + exercicesJs + '</script><script>' + String.fromCharCode(10) + tiersJs + '</script><script>' + String.fromCharCode(10) + read('ecrans/plans_pc.js') + '</script><script>' + String.fromCharCode(10) + ecrituresJs + '</script><script>' + String.fromCharCode(10) + balanceJs + '</script><script>' + String.fromCharCode(10) + balanceAnaJs + '</script><script>' + String.fromCharCode(10) + balanceAuxJs + '</script><script>' + String.fromCharCode(10) + glgJs + '</script><script>' + String.fromCharCode(10) + read('ecrans/etats_modale.js') + '</script><script>' + String.fromCharCode(10) + read('ecrans/etats_boutons.js') + '</script><script>' + String.fromCharCode(10) + read('ecrans/charte_titres.js') + '</script><script>' + String.fromCharCode(10) + read('ecrans/combo_plans.js') + '</script><script>' + String.fromCharCode(10) + read('ecrans/barre_actions.js') + String.fromCharCode(10) + read('ecrans/import_assistant.js') + String.fromCharCode(10) + read('ecrans/modale_alerte.js') + String.fromCharCode(10) + read('ecrans/epayment.js') + String.fromCharCode(10) + read('ecrans/produits.js') + String.fromCharCode(10) + read('ecrans/assistant_aide.js') + String.fromCharCode(10) + read('ecrans/assistant.js') + String.fromCharCode(10) + read('ecrans/tableaux.js') + String.fromCharCode(10) + read('ecrans/pagination.js') + '</script></body>');
+out = out.replace('</body>', () => '<script>' + masqueJs + '</script>' + script + '<script>\n' + dpJs + '</script><script>\n' + exercicesJs + '</script><script>' + String.fromCharCode(10) + tiersJs + '</script><script>' + String.fromCharCode(10) + read('ecrans/plans_pc.js') + '</script><script>' + String.fromCharCode(10) + ecrituresJs + '</script><script>' + String.fromCharCode(10) + balanceJs + '</script><script>' + String.fromCharCode(10) + balanceAnaJs + '</script><script>' + String.fromCharCode(10) + balanceAuxJs + '</script><script>' + String.fromCharCode(10) + glgJs + '</script><script>' + String.fromCharCode(10) + read('ecrans/etats_modale.js') + '</script><script>' + String.fromCharCode(10) + read('ecrans/etats_boutons.js') + '</script><script>' + String.fromCharCode(10) + read('ecrans/charte_titres.js') + '</script><script>' + String.fromCharCode(10) + read('ecrans/combo_plans.js') + '</script><script>' + String.fromCharCode(10) + read('ecrans/barre_actions.js') + String.fromCharCode(10) + read('ecrans/import_assistant.js') + String.fromCharCode(10) + read('ecrans/modale_alerte.js') + String.fromCharCode(10) + read('ecrans/epayment.js') + String.fromCharCode(10) + read('ecrans/produits.js') + String.fromCharCode(10) + read('ecrans/assistant_aide.js') + String.fromCharCode(10) + read('ecrans/assistant.js') + String.fromCharCode(10) + read('ecrans/tableaux.js') + String.fromCharCode(10) + read('ecrans/pagination.js') + String.fromCharCode(10) + read('ecrans/popup_modal.js') + '</script></body>');
 
 
 // 7. Charte graphique Softwell v1.0 : teintes de marque -> marine, polices Outfit + Inter, couche de thème

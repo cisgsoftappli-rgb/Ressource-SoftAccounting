@@ -30,6 +30,7 @@
     <button type="button" data-jn-supprimer>Supprimer</button>
     <button type="button" data-jn-enregistrer>Enregistrer</button>
     <button type="button" data-jn-annuler>Annuler</button>
+    <button type="button" data-jn-importer>Importer</button>
     <button type="button" data-jn-imprimer>Imprimer</button>
     <button type="button" data-jn-exporter>Exporter</button>
   </div>
@@ -184,6 +185,57 @@
     R.journaux.length = 0; act.forEach(function (j) { R.journaux.push({ code: j.code, label: j.libelle }); });
     window.dispatchEvent(new Event('journaux-changed'));
   }
+  // ---- importation Excel (étapes communes : import_assistant.js) ----
+  function ech(s) { return String(s == null ? '' : s).normalize('NFD').replace(/[\u0300-\u036f]/g, '').toLowerCase().replace(/[^a-z0-9]/g, ''); }
+  function oui(s) { return /^(oui|o|1|vrai|true|x|yes)$/i.test(String(s).trim()); }
+  function modeleImp() {
+    var ch = [{ col: 'Code journal', oblig: true, format: 'Unique, 12 caractères au plus. Enregistré en majuscules.', exemple: 'ACH', alias: ['Code'] },
+      { col: 'Libellé', oblig: true, format: 'Texte, 80 caractères au plus.', exemple: 'Achats locaux' },
+      { col: 'Type', oblig: true, format: 'Opérations diverses, Trésorerie ou Hybride.', exemple: 'Opérations diverses' },
+      { col: 'Nature', oblig: true, format: 'Opérations diverses : Achat, Vente, Opérations diverses — Trésorerie : Banque, Caisse — Hybride : Avance.', exemple: 'Achat' },
+      { col: 'Signataire 1', oblig: false, format: 'Signataire existant (Signataires).', exemple: '' },
+      { col: 'Signataire 2', oblig: false, format: 'Signataire existant, différent du signataire 1.', exemple: '' },
+      { col: 'Banque', oblig: false, format: 'Code banque (' + BANQUES.map(function (b) { return b[0]; }).join(', ') + '). Obligatoire pour la nature Banque.', exemple: '' },
+      { col: 'Compte associé', oblig: false, format: 'Compte de détail du plan comptable. Obligatoire pour les journaux de trésorerie et hybrides.', exemple: '' },
+      { col: 'Statut', oblig: false, format: 'Actif ou Inactif. Par défaut : Actif.', exemple: 'Actif' },
+      { col: 'Exclure de la demande', oblig: false, format: 'Oui ou Non. Par défaut : Non.', exemple: 'Non' },
+      { col: 'Numérotation automatique', oblig: false, format: 'Oui ou Non. Si Oui : préfixe et longueur obligatoires.', exemple: 'Oui' },
+      { col: 'Préfixe', oblig: false, format: '10 caractères au plus.', exemple: 'ACH' },
+      { col: 'Longueur du numéro', oblig: false, format: 'Entier de 1 à 10. Par défaut : 4.', exemple: '4' },
+      { col: 'Séparateur de numéro', oblig: false, format: '3 caractères au plus.', exemple: '/' },
+      { col: 'Suffixe', oblig: false, format: '5 caractères au plus.', exemple: '' },
+      { col: 'Dernier numéro', oblig: false, format: 'Entier positif ou nul tenant sur la longueur du numéro. Par défaut : 0.', exemple: '0' }];
+    return { titre: 'Journaux', fichier: 'modele_journaux.xlsx', champs: ch, exemples: [ch.map(function (c) { return c.exemple; }), ['BNI', 'Banque BNI', 'Trésorerie', 'Banque', '', '', 'BNI', '512100', 'Actif', 'Non', 'Non', '', '', '', '', '']],
+      ligne: function (v) {
+        var er = [], code = v['Code journal'].toUpperCase(), lib = v['Libellé'], type = Object.keys(NATURES).filter(function (x) { return ech(x) === ech(v['Type']); })[0], nat = '', auto = oui(v['Numérotation automatique']);
+        if (!code) er.push('Code journal obligatoire'); else if (code.length > 12) er.push('Code trop long (12 caractères au plus)');
+        if (!lib) er.push('Libellé obligatoire'); else if (lib.length > 80) er.push('Libellé trop long (80 caractères au plus)');
+        if (!type) er.push('Type « ' + v['Type'] + ' » invalide (' + Object.keys(NATURES).join(', ') + ')');
+        else { nat = NATURES[type].filter(function (x) { return ech(x) === ech(v['Nature']); })[0]; if (!nat) er.push('Nature « ' + v['Nature'] + ' » invalide pour le type ' + type + ' (' + NATURES[type].join(', ') + ')'); }
+        var s1 = v['Signataire 1'], s2 = v['Signataire 2'];
+        if (s1 && D.signataires.indexOf(s1) < 0) er.push('Signataire 1 « ' + s1 + ' » inconnu'); if (s2 && D.signataires.indexOf(s2) < 0) er.push('Signataire 2 « ' + s2 + ' » inconnu'); if (s1 && s1 === s2) er.push('Le signataire 2 doit différer du signataire 1');
+        var bq = v['Banque'].toUpperCase(), cpt = v['Compte associé'], pc = window.PLAN_COMPTABLE || [];
+        if (bq && !BANQUES.some(function (b) { return b[0] === bq; })) er.push('Banque « ' + bq + ' » inconnue'); if (nat === 'Banque' && !bq) er.push('La banque est obligatoire pour un journal de banque');
+        if (type && tresorerie(type) && !cpt) er.push('Le compte associé est obligatoire pour un journal de trésorerie ou hybride');
+        if (cpt && pc.length && !pc.some(function (r) { return r.code === cpt; })) er.push('Compte associé « ' + cpt + ' » absent du plan comptable');
+        var st = ech(v['Statut']); if (st && st !== 'actif' && st !== 'inactif') er.push('Statut « ' + v['Statut'] + ' » invalide (Actif ou Inactif)');
+        var pre = v['Préfixe'].toUpperCase(), lg = v['Longueur du numéro'] === '' ? 4 : Number(v['Longueur du numéro']), dn = v['Dernier numéro'] === '' ? 0 : Number(v['Dernier numéro']);
+        if (pre.length > 10) er.push('Préfixe trop long (10 caractères au plus)'); if (v['Séparateur de numéro'].length > 3) er.push('Séparateur trop long (3 caractères au plus)'); if (v['Suffixe'].length > 5) er.push('Suffixe trop long (5 caractères au plus)');
+        if (auto) {
+          if (!pre) er.push('Préfixe obligatoire avec la numérotation automatique');
+          if (!(lg >= 1 && lg <= 10 && lg === Math.floor(lg))) er.push('Longueur du numéro : entier de 1 à 10'); else if (!(dn >= 0 && dn === Math.floor(dn) && String(dn).length <= lg)) er.push('Dernier numéro : entier tenant sur ' + lg + ' chiffre(s)');
+        } else if (isNaN(lg) || isNaN(dn)) er.push('Longueur et dernier numéro doivent être numériques');
+        return { cle: code, doublon: !er.length && rows.some(function (x) { return x.code === code; }), erreurs: er, data: { code: code, libelle: lib, type: type, nature: nat, sign1: s1, sign2: s2, banque: bq, compte: cpt, actif: st !== 'inactif', exclu: oui(v['Exclure de la demande']), auto: auto, prefixe: pre || code, longueur: lg || 4, sep: v['Séparateur de numéro'], suffixe: v['Suffixe'], dernier: dn || 0 } };
+      },
+      integrer: function (L) {
+        var aj = 0, mj = 0;
+        L.forEach(function (x) {
+          var d = x.data, i = -1; rows.forEach(function (r, k) { if (i < 0 && r.code === d.code) i = k; });
+          if (i >= 0) { d.site = rows[i].site; if (!d.auto) d.dernier = rows[i].dernier; rows[i] = d; mj++; } else { d.site = d.code.slice(0, 2); rows.push(d); aj++; }
+        });
+        mode = 'consultation'; sel = -1; liste(); form(null); etat(); onglet('liste'); synchroniser(); toast(aj + ' journal(aux) ajouté(s), ' + mj + ' mis à jour.');
+      } };
+  }
   function enregistrer() {
     var r = { code: q('[data-f=code]').value.trim().toUpperCase(), libelle: q('[data-f=libelle]').value.trim(), type: q('[data-f=type]').value, nature: q('[data-f=nature]').value,
       sign1: q('[data-f=sign1]').value, sign2: q('[data-f=sign2]').value, banque: q('[data-f=banque]').value, compte: q('[data-f=compte]').value,
@@ -207,6 +259,7 @@
   }
   root.addEventListener('click', function (e) {
     var b = e.target.closest('button'); if (!b || b.disabled) return;
+    if (b.hasAttribute('data-jn-importer')) { if (mode !== 'consultation') { toast('Terminez la saisie en cours avant d\'importer.'); return; } if (window.IMPORT_ASSISTANT) window.IMPORT_ASSISTANT.ouvrir(modeleImp()); return; }
     if (b.hasAttribute('data-jn-ajouter')) { onglet('saisie'); mode = 'creation'; sel = -1; liste(); form(null); etat(); q('[data-f=code]').focus(); return; }
     if (b.hasAttribute('data-jn-modifier')) { onglet('saisie'); mode = 'edition'; etat(); q('[data-f=libelle]').focus(); return; }
     if (b.hasAttribute('data-jn-annuler')) { mode = 'consultation'; liste(); form(sel >= 0 ? rows[sel] : null); etat(); return; }

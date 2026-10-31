@@ -30,6 +30,8 @@
 [data-rl] .rl-lt th{position:sticky;top:0;background:#F5F7F9;padding:6px 10px;text-align:left;font-size:11px;text-transform:uppercase;color:#5B606D;border-bottom:1px solid #E9EBF0}
 [data-rl] .rl-lt td{padding:4px 8px;border-bottom:1px solid #F1F2F5}[data-rl] .rl-lt td .bp-in{height:28px;min-height:28px!important;font-size:12px}
 [data-rl] .rl-x{width:28px;padding:0;border-color:#C5CAD6;color:#B63132}
+[data-rl] .rl-ac{display:flex;gap:4px}[data-rl] .rl-ac .rl-x{border-color:#C5CAD6;color:#2E427B;cursor:pointer;background:#fff;border-radius:6px;border-width:1px;border-style:solid}[data-rl] .rl-ac .rl-x:hover{background:#E8ECF6}[data-rl] .rl-ac .rl-x.sup{color:#B63132}[data-rl] .rl-ac .rl-x.ok{color:#0B6B43}
+[data-rl] .rl-lt tr.rl-ed td{background:#F5F7FE}[data-rl] .rl-lt td.r{text-align:right;font-variant-numeric:tabular-nums}[data-rl] .rl-np{color:#747A88}
 [data-rl] .rl-bil{display:flex;flex-wrap:wrap;gap:6px 24px;padding:8px 12px;border-top:1px solid #E9EBF0;background:#FAFBFC;font-size:12px}
 [data-rl] .rl-bil b{font-variant-numeric:tabular-nums}[data-rl] .rl-bil .ko{color:#B63132;font-weight:700}[data-rl] .rl-bil .vert{color:#0B6B43;font-weight:700}
 </style>
@@ -75,7 +77,7 @@
         </div>
         <div class="rl-lg">
           <div class="rl-lgh"><span>Lignes du relevé <span data-rl-nl></span></span><button type="button" data-rl-addl>Ajouter une ligne</button></div>
-          <div class="rl-sc"><table class="rl-lt" data-no-tf><thead><tr><th style="width:150px">Date</th><th>Libellé</th><th style="width:180px">Montant (+ entrée / − sortie)</th><th style="width:44px"></th></tr></thead><tbody data-rl-lg></tbody></table></div>
+          <div class="rl-sc"><table class="rl-lt" data-no-tf><thead><tr><th style="width:150px">Date</th><th>Libellé</th><th style="width:170px">Montant (+ entrée / − sortie)</th><th style="width:170px">Relevé rapproché</th><th style="width:120px">Actions</th></tr></thead><tbody data-rl-lg></tbody></table></div>
           <div class="rl-bil" data-rl-bil></div>
         </div>
       </form>
@@ -93,10 +95,10 @@
   function somme(l) { return l.reduce(function (s, x) { return s + (Number(x.m) || 0); }, 0); }
   function seed() {
     var oct = [
-      { d: '2026-10-22', l: 'VIR ORANGE MADAGASCAR REF F2026-0398', m: 5400000, r: true }, { d: '2026-10-21', l: 'CHQ 4471', m: -1000000, r: true }, { d: '2026-10-20', l: 'PRLV JIRAMA OCT', m: -1240000, r: true },
-      { d: '2026-10-19', l: 'VIR TELMA MADAGASCAR', m: 2250000, r: false }, { d: '2026-10-18', l: 'FRAIS TENUE DE COMPTE', m: -45000, r: false }, { d: '2026-10-17', l: 'VIR SALAIRES LOT 10/2026', m: -6850000, r: true }, { d: '2026-10-15', l: 'AGIOS T3', m: -312000, r: false }
+      { d: '2026-10-22', l: 'VIR ORANGE MADAGASCAR REF F2026-0398', m: 5400000, r: true, rr: '2026-10 / 0471' }, { d: '2026-10-21', l: 'CHQ 4471', m: -1000000, r: true, rr: '2026-10 / 0471' }, { d: '2026-10-20', l: 'PRLV JIRAMA OCT', m: -1240000, r: true, rr: '2026-10 / 0471' },
+      { d: '2026-10-19', l: 'VIR TELMA MADAGASCAR', m: 2250000, r: false }, { d: '2026-10-18', l: 'FRAIS TENUE DE COMPTE', m: -45000, r: false }, { d: '2026-10-17', l: 'VIR SALAIRES LOT 10/2026', m: -6850000, r: true, rr: '2026-10 / 0471' }, { d: '2026-10-15', l: 'AGIOS T3', m: -312000, r: false }
     ];
-    var sep = [{ d: '2026-09-28', l: 'VIR CLIENT SEPT', m: 12500000, r: true }, { d: '2026-09-20', l: 'PRLV JIRAMA SEPT', m: -4200000, r: true }, { d: '2026-09-12', l: 'CHQ 4460', m: -2800000, r: true }, { d: '2026-09-05', l: 'FRAIS BANCAIRES SEPT', m: -500000, r: true }];
+    var S = '2026-09 / 0470', sep = [{ d: '2026-09-28', l: 'VIR CLIENT SEPT', m: 12500000, r: true, rr: S }, { d: '2026-09-20', l: 'PRLV JIRAMA SEPT', m: -4200000, r: true, rr: S }, { d: '2026-09-12', l: 'CHQ 4460', m: -2800000, r: true, rr: S }, { d: '2026-09-05', l: 'FRAIS BANCAIRES SEPT', m: -500000, r: false }];
     var boa = [{ d: '2026-10-09', l: 'VIR CLIENT BETA', m: 3200000, r: false }, { d: '2026-10-07', l: 'FRAIS TENUE COMPTE', m: -640000, r: false }, { d: '2026-10-03', l: 'CHQ 0231', m: -1200000, r: false }];
     return [
       { compte: '512100', numero: '2026-10 / 0471', date: '2026-10-24', du: '2026-10-01', au: '2026-10-24', soldeIni: 31240000 - somme(oct), soldeFin: 31240000, lignes: oct },
@@ -143,17 +145,36 @@
     q('[data-rl-nl]').textContent = '(' + lignesEdit.length + ')';
     q('[data-rl-bil]').innerHTML = '<span>Solde initial (relevé précédent) : <b>' + nb(ini) + '</b></span><span>Mouvements : <b>' + nb(mv) + '</b></span><span>Solde du relevé : <b>' + nb(ini + mv) + '</b></span>';
   }
+  function numeros() {
+    var c = f('compte').value, n = f('numero').value.trim(), L = data.filter(function (r) { return r.compte === c; }).map(function (r) { return r.numero; });
+    if (n && L.indexOf(n) < 0) L.push(n); return L;
+  }
+  function bt(k, ic, t, cl) { return '<button type="button" class="rl-x ' + (cl || '') + '" data-rl-l' + k + ' title="' + t + '" aria-label="' + t + '"><i class="ti ' + ic + '" aria-hidden="true"></i></button>'; }
   function dessinerLignes() {
+    var nums = numeros();
     q('[data-rl-lg]').innerHTML = lignesEdit.map(function (l, i) {
-      return '<tr data-i="' + i + '"><td><input class="bp-in" type="date" data-l="d" value="' + esc(l.d) + '" aria-label="Date de la ligne ' + (i + 1) + '"></td><td><input class="bp-in" data-l="l" value="' + esc(l.l) + '" maxlength="120" aria-label="Libellé de la ligne ' + (i + 1) + '"></td>' +
-        '<td><input class="bp-in" type="number" step="1" data-l="m" value="' + (l.m === '' ? '' : esc(l.m)) + '" aria-label="Montant de la ligne ' + (i + 1) + '"></td><td><button type="button" class="rl-x" data-rl-supl aria-label="Supprimer la ligne ' + (i + 1) + '"><i class="ti ti-x" aria-hidden="true"></i></button></td></tr>';
-    }).join('') || '<tr><td colspan="4" style="padding:18px;text-align:center;color:#5B606D">Aucune ligne : « Ajouter une ligne » ou « Importer ».</td></tr>';
+      if (l._e) {
+        var opt = '<option value="">Non pointée</option>' + nums.map(function (n) { return '<option value="' + esc(n) + '"' + (l.rr === n ? ' selected' : '') + '>' + esc(n) + '</option>'; }).join('');
+        return '<tr class="rl-ed" data-i="' + i + '"><td><input class="bp-in" type="date" data-l="d" value="' + esc(l.d) + '" aria-label="Date de la ligne ' + (i + 1) + '"></td><td><input class="bp-in" data-l="l" value="' + esc(l.l) + '" maxlength="120" aria-label="Libellé de la ligne ' + (i + 1) + '"></td>' +
+          '<td><input class="bp-in" type="number" step="1" data-l="m" value="' + (l.m === '' ? '' : esc(l.m)) + '" aria-label="Montant de la ligne ' + (i + 1) + '"></td><td><select class="bp-sel" data-l="rr" aria-label="Relevé rapproché de la ligne ' + (i + 1) + '" data-no-combo>' + opt + '</select></td>' +
+          '<td><div class="rl-ac">' + bt('ok', 'ti-check', 'Enregistrer la ligne', 'ok') + bt('ann', 'ti-arrow-back-up', 'Annuler la modification') + bt('sup', 'ti-trash', 'Supprimer la ligne', 'sup') + '</div></td></tr>';
+      }
+      return '<tr data-i="' + i + '"><td>' + esc(date(l.d)) + '</td><td>' + esc(l.l) + '</td><td class="r ' + (l.m < 0 ? 'neg' : '') + '">' + (l.m === '' ? '' : nb(l.m)) + '</td><td title="Numéro du relevé par lequel la ligne est pointée">' + (l.rr ? esc(l.rr) : '<span class="rl-np">Non pointée</span>') + '</td>' +
+        '<td><div class="rl-ac">' + bt('mod', 'ti-pencil', 'Modifier la ligne') + bt('sup', 'ti-trash', 'Supprimer la ligne', 'sup') + '</div></td></tr>';
+    }).join('') || '<tr><td colspan="5" style="padding:18px;text-align:center;color:#5B606D">Aucune ligne : « Ajouter une ligne » ou « Importer ».</td></tr>';
     bilan();
+  }
+  // met à jour le relevé enregistré dès qu'une ligne est enregistrée ou supprimée (le pointage et les autres écrans voient le changement)
+  function persister() {
+    if (edit < 0 || !data[edit]) return;
+    var ok = lignesEdit.filter(function (l) { return !l._e && l.d && String(l.l).trim() && l.m !== '' && !isNaN(Number(l.m)); });
+    data[edit].lignes = ok.map(function (l) { return { d: l.d, l: String(l.l).trim(), m: Number(l.m), r: !!l.rr, rr: l.rr || '' }; });
+    data[edit].soldeFin = data[edit].soldeIni + somme(data[edit].lignes); window.RELEVES = data; sauver();
   }
   function charger(r) {
     comptes(); effacer();
     ['compte', 'numero', 'date'].forEach(function (n) { var el = f(n), v = r ? r[n] : (n === 'compte' ? cpt : ''); if (n === 'compte' && v && !el.querySelector('option[value="' + v + '"]')) el.insertAdjacentHTML('beforeend', '<option value="' + esc(v) + '">' + esc(v) + '</option>'); el.value = v == null ? '' : v; });
-    lignesEdit = r ? r.lignes.map(function (l) { return { d: l.d, l: l.l, m: l.m, r: l.r }; }) : []; f('compte').disabled = true; dessinerLignes();
+    lignesEdit = r ? r.lignes.map(function (l) { return { d: l.d, l: l.l, m: l.m, r: l.r, rr: l.rr || '' }; }) : []; f('compte').disabled = true; dessinerLignes();
   }
   function onglet(n) {
     qa('[data-rl-tab]').forEach(function (b) { b.classList.toggle('on', b.getAttribute('data-rl-tab') === n); });
@@ -195,9 +216,18 @@
   q('[data-rl-lignes]').addEventListener('click', function (e) { var tr = e.target.closest('tr[data-i]'); if (!tr) return; sel = +tr.dataset.i; qa('[data-rl-lignes] tr').forEach(function (r) { r.classList.toggle('rl-sel', r === tr); }); majPointage(); msg(); });
   q('[data-rl-lignes]').addEventListener('dblclick', function (e) { var tr = e.target.closest('tr[data-i]'); if (tr) { sel = +tr.dataset.i; ouvrir(sel); } });
   f('compte').addEventListener('change', bilan); f('date').addEventListener('change', bilan);
-  q('[data-rl-addl]').addEventListener('click', function () { lignesEdit.push({ d: f('date').value || '', l: '', m: '', r: false }); dessinerLignes(); var l = qa('[data-rl-lg] tr:last-child [data-l="d"]')[0]; if (l) l.focus(); });
-  q('[data-rl-lg]').addEventListener('input', function (e) { var tr = e.target.closest('tr[data-i]'); if (!tr || !e.target.dataset.l) return; var l = lignesEdit[+tr.dataset.i], k = e.target.dataset.l; l[k] = k === 'm' ? (e.target.value === '' ? '' : Number(e.target.value)) : e.target.value; bilan(); });
-  q('[data-rl-lg]').addEventListener('click', function (e) { var b = e.target.closest('[data-rl-supl]'); if (!b) return; lignesEdit.splice(+b.closest('tr').dataset.i, 1); dessinerLignes(); });
+  q('[data-rl-addl]').addEventListener('click', function () { lignesEdit.push({ d: f('date').value || '', l: '', m: '', r: false, rr: '', _e: true }); dessinerLignes(); var l = qa('[data-rl-lg] tr.rl-ed:last-child [data-l="d"]')[0]; if (l) l.focus(); });
+  q('[data-rl-lg]').addEventListener('input', function (e) { var tr = e.target.closest('tr[data-i]'); if (!tr || !e.target.dataset.l) return; var l = lignesEdit[+tr.dataset.i], k = e.target.dataset.l; l[k] = k === 'm' ? (e.target.value === '' ? '' : Number(e.target.value)) : e.target.value; if (k === 'rr') l.r = !!l.rr; bilan(); });
+  q('[data-rl-lg]').addEventListener('change', function (e) { var tr = e.target.closest('tr[data-i]'); if (tr && e.target.dataset.l === 'rr') { var l = lignesEdit[+tr.dataset.i]; l.rr = e.target.value; l.r = !!l.rr; } });
+  q('[data-rl-lg]').addEventListener('click', function (e) {
+    var b = e.target.closest('button[data-rl-lmod],button[data-rl-lok],button[data-rl-lann],button[data-rl-lsup]'); if (!b) return;
+    var i = +b.closest('tr').dataset.i, l = lignesEdit[i];
+    if (b.hasAttribute('data-rl-lmod')) { l._s = { d: l.d, l: l.l, m: l.m, rr: l.rr || '', r: l.r }; l._e = true; msg(); dessinerLignes(); return; }
+    if (b.hasAttribute('data-rl-lsup')) { if (!window.confirm('Supprimer cette ligne du relevé ?')) return; lignesEdit.splice(i, 1); persister(); dessinerLignes(); msg('Ligne supprimée.'); return; }
+    if (b.hasAttribute('data-rl-lann')) { if (l._s) { l.d = l._s.d; l.l = l._s.l; l.m = l._s.m; l.rr = l._s.rr; l.r = l._s.r; delete l._s; l._e = false; } else lignesEdit.splice(i, 1); dessinerLignes(); msg(); return; }
+    if (!l.d || !String(l.l).trim() || l.m === '' || isNaN(Number(l.m))) { msg('La ligne doit avoir une date, un libellé et un montant.'); return; }
+    l._e = false; delete l._s; l.r = !!l.rr; persister(); dessinerLignes(); msg('Ligne enregistrée' + (l.rr ? ' — pointée par le relevé ' + l.rr : '') + '.');
+  });
 
   // Import Excel : colonnes Date, Libellé, Montant
   function parseDate(v) {
@@ -208,20 +238,20 @@
   }
   function parseMontant(v) { if (typeof v === 'number') return v; var n = parseFloat(String(v == null ? '' : v).replace(/[\s ]/g, '').replace(',', '.')); return isNaN(n) ? null : n; }
   var MODELE = { titre: 'Importer les lignes du relevé', fichier: 'modele_releve_bancaire.xlsx',
-    champs: [{ col: 'Date', oblig: true, format: 'jj/mm/aaaa', exemple: '22/10/2026' }, { col: 'Libellé', oblig: true, format: 'Texte', exemple: 'VIR CLIENT REF F2026-0398' }, { col: 'Montant', oblig: true, format: 'Nombre (+ entrée / − sortie)', exemple: '5400000' }],
+    champs: [{ col: 'Date', oblig: true, format: 'jj/mm/aaaa', exemple: '22/10/2026' }, { col: 'Libellé', oblig: true, format: 'Texte', exemple: 'VIR CLIENT REF F2026-0398', alias: ['Designation'] }, { col: 'Montant', oblig: true, format: 'Nombre (+ entrée / − sortie)', exemple: '5400000' }],
     exemples: [['22/10/2026', 'VIR CLIENT REF F2026-0398', 5400000], ['21/10/2026', 'CHQ 4471', -1000000]],
-    onFichier: function (file) {
-      window.IMPORT_ASSISTANT.lireFichier(file).then(function (rows) {
-        var ent = (rows[0] || []).map(function (c) { return String(c == null ? '' : c).toLowerCase().normalize('NFD').replace(/[̀-ͯ]/g, '').replace(/[^a-z]/g, ''); });
-        var ci = { d: ent.indexOf('date'), l: Math.max(ent.indexOf('libelle'), ent.indexOf('designation')), m: ent.indexOf('montant') };
-        if (ci.d < 0 || ci.l < 0 || ci.m < 0) { msg('Colonnes attendues : Date, Libellé, Montant.'); return; }
-        var ok = [], ko = 0;
-        rows.slice(1).forEach(function (r) { if (!r || r.every(function (c) { return c === '' || c == null; })) return; var d = parseDate(r[ci.d]), m = parseMontant(r[ci.m]), l = String(r[ci.l] == null ? '' : r[ci.l]).trim(); if (d && l && m !== null) ok.push({ d: d, l: l, m: m, r: false }); else ko++; });
-        if (!ok.length) { msg('Aucune ligne valide dans le fichier (' + ko + ' rejetée(s)).'); return; }
-        lignesEdit = lignesEdit.concat(ok); dessinerLignes();
-        var ds = lignesEdit.map(function (x) { return x.d; }).filter(Boolean).sort(); if (ds.length && !f('date').value) f('date').value = ds[ds.length - 1]; bilan();
-        msg(ok.length + ' ligne(s) importée(s)' + (ko ? ', ' + ko + ' rejetée(s)' : '') + '. Complétez le n° de relevé puis enregistrez.');
-      });
+    ligne: function (v) {
+      var d = parseDate(v['Date']), l = v['Libellé'], m = parseMontant(v['Montant']), er = [];
+      if (!d) er.push('Date invalide ou absente (jj/mm/aaaa)'); if (!l) er.push('Libellé obligatoire'); if (m === null) er.push('Montant invalide (nombre, + entrée / − sortie)');
+      var cle = d + '|' + l.toLowerCase() + '|' + m;
+      return { cle: d + ' · ' + l + ' · ' + m, doublon: !er.length && lignesEdit.some(function (x) { return x.d + '|' + String(x.l).toLowerCase() + '|' + x.m === cle; }), erreurs: er, data: { d: d, l: l, m: m } };
+    },
+    integrer: function (L) {
+      var n = 0;
+      L.forEach(function (x) { var D = x.data, k = D.d + '|' + D.l.toLowerCase() + '|' + D.m; if (x.remplace && lignesEdit.some(function (y) { return y.d + '|' + String(y.l).toLowerCase() + '|' + y.m === k; })) return; lignesEdit.push({ d: D.d, l: D.l, m: D.m, r: false, rr: '' }); n++; });
+      dessinerLignes();
+      var ds = lignesEdit.map(function (x) { return x.d; }).filter(Boolean).sort(); if (ds.length && !f('date').value) f('date').value = ds[ds.length - 1]; bilan();
+      msg(n + ' ligne(s) intégrée(s). Complétez le n° de relevé puis enregistrez.');
     } };
   q('[data-rl-importer]').addEventListener('click', function () { if (window.IMPORT_ASSISTANT) window.IMPORT_ASSISTANT.ouvrir(MODELE); });
 
@@ -235,7 +265,7 @@
     if (lg.some(function (l) { return !l.d || !l.l.trim() || l.m === '' || isNaN(Number(l.m)); })) { msg('Chaque ligne doit avoir une date, un libellé et un montant.'); ok = false; }
     if (!lg.length) { msg('Ajoutez au moins une ligne au relevé.'); ok = false; }
     if (!ok) return;
-    r.lignes = lg.map(function (l) { return { d: l.d, l: l.l.trim(), m: Number(l.m), r: !!l.r }; });
+    r.lignes = lg.map(function (l) { return { d: l.d, l: l.l.trim(), m: Number(l.m), r: !!l.r, rr: l.rr || '' }; });
     var ds = r.lignes.map(function (x) { return x.d; }).sort(); r.du = ds[0]; r.au = ds[ds.length - 1];
     r.soldeIni = soldeInitial(); r.soldeFin = r.soldeIni + somme(r.lignes);
     if (edit >= 0) data[edit] = r; else { data.push(r); edit = data.length - 1; }

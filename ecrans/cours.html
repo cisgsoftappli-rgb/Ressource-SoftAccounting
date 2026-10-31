@@ -178,23 +178,18 @@
     m = s.match(/^(\d{4})-(\d{2})-(\d{2})/); return m ? m[0] : '';
   }
   var MODELE = { titre: 'Importer des cours', fichier: 'modele_cours.xlsx',
-    champs: [{ col: 'Devise', oblig: true, format: 'Code de la monnaie sélectionnée (les autres sont rejetées)', exemple: 'USD' }, { col: 'Date', oblig: true, format: 'jj/mm/aaaa', exemple: '29/10/2026' }, { col: 'Parité', oblig: true, format: 'Nombre > 0 (valeur d’une unité en monnaie locale)', exemple: '4400' }],
+    champs: [{ col: 'Devise', oblig: true, format: 'Code de la monnaie sélectionnée (les autres sont rejetées)', exemple: 'USD', alias: ['Code monnaie'] }, { col: 'Date', oblig: true, format: 'jj/mm/aaaa', exemple: '29/10/2026' }, { col: 'Parité', oblig: true, format: 'Nombre > 0 (valeur d’une unité en monnaie locale)', exemple: '4400', alias: ['Taux'] }],
     exemples: [['USD', '29/10/2026', 4400], ['USD', '30/10/2026', 4410]],
-    onFichier: function (file) {
-      window.IMPORT_ASSISTANT.lireFichier(file).then(function (rows) {
-        var ent = (rows[0] || []).map(function (c) { return String(c == null ? '' : c).toLowerCase().normalize('NFD').replace(/[̀-ͯ]/g, '').replace(/[^a-z]/g, ''); });
-        var ci = { d: Math.max(ent.indexOf('devise'), ent.indexOf('codemonnaie')), t: ent.indexOf('date'), p: Math.max(ent.indexOf('parite'), ent.indexOf('taux')) };
-        if (ci.d < 0 || ci.t < 0 || ci.p < 0) { msg('Colonnes attendues : Devise, Date, Parité.'); return; }
-        var ajoutes = 0, maj = 0, ko = 0, loc = locale();
-        rows.slice(1).forEach(function (r) {
-          if (!r || r.every(function (c) { return c === '' || c == null; })) return;
-          var dev = String(r[ci.d] == null ? '' : r[ci.d]).trim().toUpperCase(), d = parseDate(r[ci.t]), p = parseFloat(String(r[ci.p] == null ? '' : r[ci.p]).replace(/[\s ]/g, '').replace(',', '.'));
-          if (!dev || dev === loc || dev !== mon || !d || !(p > 0)) { ko++; return; }
-          var ex = data.filter(function (x) { return x.devise === dev && x.date === d; })[0];
-          if (ex) { ex.parite = p; maj++; } else { data.push({ devise: dev, date: d, parite: p }); ajoutes++; }
-        });
-        publier(); lister(); msg(ajoutes + ' cours ajouté(s), ' + maj + ' mis à jour' + (ko ? ', ' + ko + ' ligne(s) rejetée(s)' : '') + '.');
-      });
+    ligne: function (v) {
+      var dev = String(v['Devise']).toUpperCase(), d = parseDate(v['Date']), p = parseFloat(String(v['Parité']).replace(/[\s ]/g, '').replace(',', '.')), loc = locale(), er = [];
+      if (!dev) er.push('Devise obligatoire'); else if (dev === loc) er.push('Devise « ' + dev + ' » = monnaie locale (aucun cours)'); else if (dev !== mon) er.push('Devise « ' + dev + ' » différente de la monnaie sélectionnée (' + mon + ')');
+      if (!d) er.push('Date invalide ou absente (jj/mm/aaaa)'); if (!(p > 0)) er.push('Parité invalide (nombre supérieur à 0)');
+      return { cle: dev + ' · ' + (d ? d.split('-').reverse().join('/') : ''), doublon: !!(dev && d) && data.some(function (x) { return x.devise === dev && x.date === d; }), erreurs: er, data: { devise: dev, date: d, parite: p } };
+    },
+    integrer: function (L) {
+      var aj = 0, mj = 0;
+      L.forEach(function (x) { var d = x.data, ex = data.filter(function (y) { return y.devise === d.devise && y.date === d.date; })[0]; if (ex) { ex.parite = d.parite; mj++; } else { data.push({ devise: d.devise, date: d.date, parite: d.parite }); aj++; } });
+      publier(); lister(); msg(aj + ' cours ajouté(s), ' + mj + ' mis à jour.');
     } };
   q('[data-crs-importer]').addEventListener('click', function () { if (window.IMPORT_ASSISTANT) window.IMPORT_ASSISTANT.ouvrir(MODELE); });
   window.addEventListener('devises-changed', function () { remplirMon(); remplir(); lister(); });
