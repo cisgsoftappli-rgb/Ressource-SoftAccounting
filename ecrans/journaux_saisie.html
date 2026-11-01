@@ -45,17 +45,18 @@
       <h2>Journaux <small>Double-clic ou « Modifier » pour ouvrir la ligne en saisie</small></h2>
       <div style="overflow:auto;max-height:560px">
         <table class="bp-tb" style="min-width:1000px"><thead>
-          <tr><th>Code</th><th>Libellé</th><th>Type</th><th>Nature</th><th>Compte associé</th><th class="c">Numérotation</th><th class="c">Dernier numéro</th><th class="c">Exclu demande</th><th class="c">Statut</th></tr>
+          <tr><th>Code</th><th>Libellé</th><th>Type</th><th>Nature</th><th>Compte associé</th><th class="c">Devise</th><th class="c">Numérotation</th><th class="c">Dernier numéro</th><th class="c">Exclu demande</th><th class="c">Statut</th></tr>
           <tr class="flt">
             <th><input class="bp-in" data-fc="0" aria-label="Filtrer Code"></th>
             <th><input class="bp-in" data-fc="1" aria-label="Filtrer Libellé"></th>
             <th><select class="bp-sel" data-fc="2" aria-label="Filtrer Type"><option value=""></option><option>Opérations diverses</option><option>Trésorerie</option><option>Hybride</option></select></th>
             <th><select class="bp-sel" data-fc="3" aria-label="Filtrer Nature"><option value=""></option><option>Achat</option><option>Vente</option><option>Opérations diverses</option><option>Banque</option><option>Caisse</option><option>Avance</option></select></th>
             <th><input class="bp-in" data-fc="4" aria-label="Filtrer Compte associé"></th>
-            <th><select class="bp-sel" data-fc="5" aria-label="Filtrer Numérotation"><option value=""></option><option value="auto">Automatique</option><option value="manuelle">Manuelle</option></select></th>
-            <th><input class="bp-in" data-fc="6" aria-label="Filtrer Dernier numéro"></th>
-            <th><select class="bp-sel" data-fc="7" aria-label="Filtrer Exclu demande"><option value=""></option><option value="oui">Oui</option><option value="non">Non</option></select></th>
-            <th><select class="bp-sel" data-fc="8" aria-label="Filtrer Statut"><option value=""></option><option value="actif">Actif</option><option value="inactif">Inactif</option></select></th>
+            <th><input class="bp-in" data-fc="5" aria-label="Filtrer Devise"></th>
+            <th><select class="bp-sel" data-fc="6" aria-label="Filtrer Numérotation"><option value=""></option><option value="auto">Automatique</option><option value="manuelle">Manuelle</option></select></th>
+            <th><input class="bp-in" data-fc="7" aria-label="Filtrer Dernier numéro"></th>
+            <th><select class="bp-sel" data-fc="8" aria-label="Filtrer Exclu demande"><option value=""></option><option value="oui">Oui</option><option value="non">Non</option></select></th>
+            <th><select class="bp-sel" data-fc="9" aria-label="Filtrer Statut"><option value=""></option><option value="actif">Actif</option><option value="inactif">Inactif</option></select></th>
           </tr>
           </thead><tbody data-jn-lignes></tbody></table>
       </div>
@@ -73,9 +74,10 @@
           <label class="bp-champ"><span>Signataire 2</span><select class="bp-sel" data-f="sign2"></select><span class="jn-er" data-er="sign2"></span></label>
           <label class="bp-champ pleine"><span>Banque</span><select class="bp-sel" data-f="banque"></select><span class="jn-er" data-er="banque"></span></label>
           <label class="bp-champ pleine"><span>Compte associé</span><select class="bp-sel" data-f="compte"></select><span class="jn-er" data-er="compte"></span></label>
+          <label class="bp-champ"><span>Devise du journal</span><select class="bp-sel" data-f="devise"></select><span class="jn-er" data-er="devise"></span></label>
           <label class="bp-champ"><span>Statut</span><select class="bp-sel" data-f="actif"><option value="1">Actif</option><option value="0">Inactif</option></select></label>
         </div>
-        <div class="jn-chk"><label><input type="checkbox" data-f="exclu">Exclure de la demande</label><label><input type="checkbox" data-f="auto">Numérotation automatique</label></div>
+        <div class="jn-chk"><label><input type="checkbox" data-f="gdev">Journal géré en devise</label><label><input type="checkbox" data-f="exclu">Exclure de la demande</label><label><input type="checkbox" data-f="auto">Numérotation automatique</label></div>
         <div class="jn-num" data-jn-num hidden>
           <div class="jn-form">
             <label class="bp-champ"><span>Préfixe <b>*</b></span><input class="bp-in" data-f="prefixe" maxlength="10" placeholder="Ex : JV" autocomplete="off"><span class="jn-er" data-er="prefixe"></span></label>
@@ -123,12 +125,18 @@
     if (courant && !ok.some(function (r) { return r.code === courant; })) h += '<option value="' + esc(courant) + '">' + esc(courant) + ' — (compte hors plan)</option>';
     return h;
   }
+  // devises proposées : monnaies actives de « Paramètres généraux › Devise », hors monnaie locale
+  function optDevises(courant) {
+    var l = (window.DEVISES || []).filter(function (d) { return d.actif !== false && d.code !== 'MGA'; }).map(function (d) { return d.code; });
+    if (courant && l.indexOf(courant) < 0) l.push(courant);
+    return '<option value="">— Sélectionner une devise —</option>' + l.map(function (c) { return '<option>' + esc(c) + '</option>'; }).join('');
+  }
   function remplirNatures(type, courante) { q('[data-f=nature]').innerHTML = NATURES[type].map(function (n) { return '<option>' + n + '</option>'; }).join(''); if (courante && NATURES[type].indexOf(courante) >= 0) q('[data-f=nature]').value = courante; }
 
   function filtrer() {
     var F = []; qa('[data-fc]').forEach(function (e) { F[+e.dataset.fc] = e.value.trim().toLowerCase(); });
     qa('[data-jn-lignes] tr').forEach(function (tr) {
-      tr.hidden = F.some(function (v, k) { if (!v) return false; var td = tr.children[k], t = (td.dataset.v || td.textContent).toLowerCase(); return [2, 3, 5, 7, 8].indexOf(k) >= 0 ? t !== v : t.indexOf(v) < 0; });
+      tr.hidden = F.some(function (v, k) { if (!v) return false; var td = tr.children[k], t = (td.dataset.v || td.textContent).toLowerCase(); return [2, 3, 6, 8, 9].indexOf(k) >= 0 ? t !== v : t.indexOf(v) < 0; });
     });
   }
   qa('[data-fc]').forEach(function (e) { e.addEventListener('input', filtrer); e.addEventListener('change', filtrer); });
@@ -136,21 +144,22 @@
     q('[data-jn-compte]').textContent = rows.length ? rows.length + (rows.length > 1 ? ' journaux' : ' journal') : '';
     q('[data-jn-vide]').hidden = rows.length > 0;
     q('[data-jn-lignes]').innerHTML = rows.map(function (r, i) {
-      return '<tr data-i="' + i + '"' + (i === sel ? ' class="sel"' : '') + '><td>' + esc(r.code) + '</td><td>' + esc(r.libelle) + '</td><td data-v="' + esc(r.type) + '">' + esc(r.type) + '</td><td data-v="' + esc(r.nature) + '">' + esc(r.nature) + '</td><td>' + esc(r.compte) + '</td>' +
+      return '<tr data-i="' + i + '"' + (i === sel ? ' class="sel"' : '') + '><td>' + esc(r.code) + '</td><td>' + esc(r.libelle) + '</td><td data-v="' + esc(r.type) + '">' + esc(r.type) + '</td><td data-v="' + esc(r.nature) + '">' + esc(r.nature) + '</td><td>' + esc(r.compte) + '</td><td class="c">' + (r.gdev && r.devise ? esc(r.devise) : '—') + '</td>' +
         '<td class="c" data-v="' + (r.auto ? 'auto' : 'manuelle') + '">' + (r.auto ? 'Automatique' : 'Manuelle') + '</td><td class="c">' + (r.auto && r.dernier ? esc(numero(r, r.dernier)) : '—') + '</td><td class="c" data-v="' + (r.exclu ? 'oui' : 'non') + '">' + (r.exclu ? 'Oui' : 'Non') + '</td>' +
         '<td class="c" data-v="' + (r.actif ? 'actif' : 'inactif') + '"><span class="jn-badge ' + (r.actif ? 'a' : 'i') + '">' + (r.actif ? 'Actif' : 'Inactif') + '</span></td></tr>';
     }).join(''); filtrer();
   }
   function form(r) {
-    r = r || { code: '', libelle: '', type: 'Opérations diverses', nature: 'Opérations diverses', sign1: '', sign2: '', banque: '', compte: '', actif: true, exclu: false, auto: true };
+    r = r || { code: '', libelle: '', type: 'Opérations diverses', nature: 'Opérations diverses', sign1: '', sign2: '', banque: '', compte: '', actif: true, exclu: false, auto: true, gdev: false, devise: '' };
     q('[data-f=code]').value = r.code; q('[data-f=libelle]').value = r.libelle; q('[data-f=type]').value = r.type; remplirNatures(r.type, r.nature);
     q('[data-f=sign1]').innerHTML = optSignataires(r.sign1); q('[data-f=sign1]').value = r.sign1;
     q('[data-f=sign2]').innerHTML = optSignataires(r.sign2); q('[data-f=sign2]').value = r.sign2;
     q('[data-f=banque]').innerHTML = optBanques(r.banque); q('[data-f=banque]').value = r.banque;
     q('[data-f=compte]').innerHTML = optComptes(r.compte); q('[data-f=compte]').value = r.compte;
+    q('[data-f=gdev]').checked = !!r.gdev; q('[data-f=devise]').innerHTML = optDevises(r.devise); q('[data-f=devise]').value = r.devise || '';
     q('[data-f=actif]').value = r.actif ? '1' : '0'; q('[data-f=exclu]').checked = !!r.exclu; q('[data-f=auto]').checked = !!r.auto;
     q('[data-f=prefixe]').value = r.prefixe != null ? r.prefixe : r.code; q('[data-f=longueur]').value = r.longueur || 4; q('[data-f=sep]').value = r.sep || ''; q('[data-f=suffixe]').value = r.suffixe || ''; q('[data-f=dernier]').value = r.dernier || 0;
-    ['code', 'libelle', 'sign2', 'banque', 'compte', 'prefixe', 'longueur', 'dernier'].forEach(function (k) { err(k); }); apercu();
+    ['code', 'libelle', 'sign2', 'banque', 'compte', 'devise', 'prefixe', 'longueur', 'dernier'].forEach(function (k) { err(k); }); apercu();
   }
   // banque et compte associé : journaux de trésorerie et hybrides seulement
   function etat() {
@@ -159,6 +168,7 @@
     q('[data-f=code]').disabled = mode !== 'creation';
     var tr = ed && tresorerie(t); q('[data-f=banque]').disabled = !(tr && q('[data-f=nature]').value === 'Banque'); q('[data-f=compte]').disabled = !tr;
     if (!tr) { q('[data-f=banque]').value = ''; q('[data-f=compte]').value = ''; } else if (q('[data-f=nature]').value !== 'Banque') q('[data-f=banque]').value = '';
+    q('[data-f=devise]').disabled = !(ed && q('[data-f=gdev]').checked); if (!q('[data-f=gdev]').checked) q('[data-f=devise]').value = '';
     q('[data-jn-num]').hidden = !q('[data-f=auto]').checked; apercu();
     var a = q('[data-jn-actions]');
     a.querySelector('[data-jn-ajouter]').disabled = ed; a.querySelector('[data-jn-modifier]').disabled = ed || sel < 0; a.querySelector('[data-jn-supprimer]').disabled = ed || sel < 0;
@@ -166,6 +176,8 @@
   }
   q('[data-f=type]').addEventListener('change', function () { remplirNatures(q('[data-f=type]').value); etat(); });
   q('[data-f=nature]').addEventListener('change', etat);
+  q('[data-f=gdev]').addEventListener('change', function () { if (q('[data-f=gdev]').checked && !q('[data-f=devise]').value) { var o = q('[data-f=devise]').querySelectorAll('option')[1]; if (o && o.parentNode.options.length === 2) q('[data-f=devise]').value = o.value; } etat(); });
+  window.addEventListener('devises-changed', function () { var v = q('[data-f=devise]').value; q('[data-f=devise]').innerHTML = optDevises(v); q('[data-f=devise]').value = v; });
   q('[data-f=auto]').addEventListener('change', function () { if (mode === 'creation' && q('[data-f=auto]').checked && !q('[data-f=prefixe]').value) q('[data-f=prefixe]').value = q('[data-f=code]').value.trim().toUpperCase(); etat(); });
   q('[data-f=code]').addEventListener('input', function () { if (mode === 'creation' && (!q('[data-f=prefixe]').value || q('[data-f=prefixe]').dataset.suivi === '1')) { q('[data-f=prefixe]').value = q('[data-f=code]').value.trim().toUpperCase(); q('[data-f=prefixe]').dataset.suivi = '1'; apercu(); } });
   q('[data-f=prefixe]').addEventListener('input', function () { this.dataset.suivi = ''; apercu(); });
@@ -182,7 +194,7 @@
   function synchroniser() {
     var R = window.ECRITURES_REF; if (!R || !R.journaux) return;
     var act = rows.filter(function (j) { return j.actif; }).sort(function (a, b) { return (b.site === '01') - (a.site === '01') || (a.code < b.code ? -1 : 1); });
-    R.journaux.length = 0; act.forEach(function (j) { R.journaux.push({ code: j.code, label: j.libelle }); });
+    R.journaux.length = 0; act.forEach(function (j) { R.journaux.push({ code: j.code, label: j.libelle, devise: j.gdev ? j.devise : '' }); });
     window.dispatchEvent(new Event('journaux-changed'));
   }
   // ---- importation Excel (étapes communes : import_assistant.js) ----
@@ -197,6 +209,8 @@
       { col: 'Signataire 2', oblig: false, format: 'Signataire existant, différent du signataire 1.', exemple: '' },
       { col: 'Banque', oblig: false, format: 'Code banque (' + BANQUES.map(function (b) { return b[0]; }).join(', ') + '). Obligatoire pour la nature Banque.', exemple: '' },
       { col: 'Compte associé', oblig: false, format: 'Compte de détail du plan comptable. Obligatoire pour les journaux de trésorerie et hybrides.', exemple: '' },
+      { col: 'Journal géré en devise', oblig: false, format: 'Oui ou Non. Par défaut : Non (monnaie locale). Si Oui : devise obligatoire.', exemple: 'Non' },
+      { col: 'Devise', oblig: false, format: 'Code d\'une devise active (hors monnaie locale). Obligatoire si le journal est géré en devise.', exemple: '' },
       { col: 'Statut', oblig: false, format: 'Actif ou Inactif. Par défaut : Actif.', exemple: 'Actif' },
       { col: 'Exclure de la demande', oblig: false, format: 'Oui ou Non. Par défaut : Non.', exemple: 'Non' },
       { col: 'Numérotation automatique', oblig: false, format: 'Oui ou Non. Si Oui : préfixe et longueur obligatoires.', exemple: 'Oui' },
@@ -205,7 +219,7 @@
       { col: 'Séparateur de numéro', oblig: false, format: '3 caractères au plus.', exemple: '/' },
       { col: 'Suffixe', oblig: false, format: '5 caractères au plus.', exemple: '' },
       { col: 'Dernier numéro', oblig: false, format: 'Entier positif ou nul tenant sur la longueur du numéro. Par défaut : 0.', exemple: '0' }];
-    return { titre: 'Journaux', fichier: 'modele_journaux.xlsx', champs: ch, exemples: [ch.map(function (c) { return c.exemple; }), ['BNI', 'Banque BNI', 'Trésorerie', 'Banque', '', '', 'BNI', '512100', 'Actif', 'Non', 'Non', '', '', '', '', '']],
+    return { titre: 'Journaux', fichier: 'modele_journaux.xlsx', champs: ch, exemples: [ch.map(function (c) { return c.exemple; }), ['BNIU', 'Banque BNI en dollars', 'Trésorerie', 'Banque', '', '', 'BNI', '512100', 'Oui', 'USD', 'Actif', 'Non', 'Non', '', '', '', '', '']],
       ligne: function (v) {
         var er = [], code = v['Code journal'].toUpperCase(), lib = v['Libellé'], type = Object.keys(NATURES).filter(function (x) { return ech(x) === ech(v['Type']); })[0], nat = '', auto = oui(v['Numérotation automatique']);
         if (!code) er.push('Code journal obligatoire'); else if (code.length > 12) er.push('Code trop long (12 caractères au plus)');
@@ -219,13 +233,15 @@
         if (type && tresorerie(type) && !cpt) er.push('Le compte associé est obligatoire pour un journal de trésorerie ou hybride');
         if (cpt && pc.length && !pc.some(function (r) { return r.code === cpt; })) er.push('Compte associé « ' + cpt + ' » absent du plan comptable');
         var st = ech(v['Statut']); if (st && st !== 'actif' && st !== 'inactif') er.push('Statut « ' + v['Statut'] + ' » invalide (Actif ou Inactif)');
+        var gd = oui(v['Journal géré en devise']), dv = v['Devise'].toUpperCase(), dl = (window.DEVISES || []).filter(function (d) { return d.actif !== false && d.code !== 'MGA'; }).map(function (d) { return d.code; });
+        if (gd && !dv) er.push('Devise obligatoire pour un journal géré en devise'); else if (dv && dl.indexOf(dv) < 0) er.push('Devise « ' + dv + ' » inconnue ou inactive (' + (dl.join(', ') || 'aucune devise active') + ')'); else if (dv && !gd) er.push('Devise renseignée mais « Journal géré en devise » n\'est pas à Oui');
         var pre = v['Préfixe'].toUpperCase(), lg = v['Longueur du numéro'] === '' ? 4 : Number(v['Longueur du numéro']), dn = v['Dernier numéro'] === '' ? 0 : Number(v['Dernier numéro']);
         if (pre.length > 10) er.push('Préfixe trop long (10 caractères au plus)'); if (v['Séparateur de numéro'].length > 3) er.push('Séparateur trop long (3 caractères au plus)'); if (v['Suffixe'].length > 5) er.push('Suffixe trop long (5 caractères au plus)');
         if (auto) {
           if (!pre) er.push('Préfixe obligatoire avec la numérotation automatique');
           if (!(lg >= 1 && lg <= 10 && lg === Math.floor(lg))) er.push('Longueur du numéro : entier de 1 à 10'); else if (!(dn >= 0 && dn === Math.floor(dn) && String(dn).length <= lg)) er.push('Dernier numéro : entier tenant sur ' + lg + ' chiffre(s)');
         } else if (isNaN(lg) || isNaN(dn)) er.push('Longueur et dernier numéro doivent être numériques');
-        return { cle: code, doublon: !er.length && rows.some(function (x) { return x.code === code; }), erreurs: er, data: { code: code, libelle: lib, type: type, nature: nat, sign1: s1, sign2: s2, banque: bq, compte: cpt, actif: st !== 'inactif', exclu: oui(v['Exclure de la demande']), auto: auto, prefixe: pre || code, longueur: lg || 4, sep: v['Séparateur de numéro'], suffixe: v['Suffixe'], dernier: dn || 0 } };
+        return { cle: code, doublon: !er.length && rows.some(function (x) { return x.code === code; }), erreurs: er, data: { code: code, libelle: lib, type: type, nature: nat, sign1: s1, sign2: s2, banque: bq, compte: cpt, actif: st !== 'inactif', exclu: oui(v['Exclure de la demande']), auto: auto, gdev: gd, devise: gd ? dv : '', prefixe: pre || code, longueur: lg || 4, sep: v['Séparateur de numéro'], suffixe: v['Suffixe'], dernier: dn || 0 } };
       },
       integrer: function (L) {
         var aj = 0, mj = 0;
@@ -239,9 +255,11 @@
   function enregistrer() {
     var r = { code: q('[data-f=code]').value.trim().toUpperCase(), libelle: q('[data-f=libelle]').value.trim(), type: q('[data-f=type]').value, nature: q('[data-f=nature]').value,
       sign1: q('[data-f=sign1]').value, sign2: q('[data-f=sign2]').value, banque: q('[data-f=banque]').value, compte: q('[data-f=compte]').value,
-      actif: q('[data-f=actif]').value === '1', exclu: q('[data-f=exclu]').checked, auto: q('[data-f=auto]').checked, site: '',
+      actif: q('[data-f=actif]').value === '1', exclu: q('[data-f=exclu]').checked, auto: q('[data-f=auto]').checked, gdev: q('[data-f=gdev]').checked, devise: q('[data-f=devise]').value, site: '',
       prefixe: q('[data-f=prefixe]').value.trim().toUpperCase(), longueur: +q('[data-f=longueur]').value, sep: q('[data-f=sep]').value, suffixe: q('[data-f=suffixe]').value.trim(), dernier: q('[data-f=dernier]').value === '' ? 0 : +q('[data-f=dernier]').value }, ok = true, courant = mode === 'edition' ? sel : -1;
-    ['code', 'libelle', 'sign2', 'banque', 'compte', 'prefixe', 'longueur', 'dernier'].forEach(function (k) { err(k); });
+    ['code', 'libelle', 'sign2', 'banque', 'compte', 'devise', 'prefixe', 'longueur', 'dernier'].forEach(function (k) { err(k); });
+    if (r.gdev && !r.devise) { err('devise', 'La devise est obligatoire pour un journal géré en devise.'); ok = false; }
+    if (!r.gdev) r.devise = '';
     if (!r.code) { err('code', 'Le code du journal est obligatoire.'); ok = false; } else if (rows.some(function (x, i) { return x.code === r.code && i !== courant; })) { err('code', 'Ce code existe déjà.'); ok = false; }
     if (!r.libelle) { err('libelle', 'Le libellé est obligatoire.'); ok = false; }
     if (r.sign1 && r.sign1 === r.sign2) { err('sign2', 'Le signataire 2 doit différer du signataire 1.'); ok = false; }

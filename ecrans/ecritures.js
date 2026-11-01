@@ -48,6 +48,12 @@
   function parse(s) { var n = parseFloat(String(s || '').replace(/[\s  ]/g, '').replace(',', '.')); return isNaN(n) ? 0 : n; }
   function fmtDate(iso) { return iso ? iso.split('-').reverse().join('/') : ''; }
 
+  // monnaies de l'entité (Administration de l'entité › Personnalisation) : M1 tenue de compte, M2 et M3 reporting facultatives
+  function MON() { var f = window.ENTITE_MONNAIES; return f ? f() : { m1: 'MGA', m2: 'USD', m3: '' }; }
+  // plan de regroupement (Administration de l'entité › Analytique) : champ, colonne et valeur de la ligne seulement s'il est activé
+  function regrActif() { return !!(window.REGROUPEMENT && window.REGROUPEMENT()); }
+  function repCols() { var m = MON(), c = []; if (m.m2) c.push({ cle: 'montant1', code: m.m2 }); if (m.m3) c.push({ cle: 'montant2', code: m.m3 }); return c; }
+  function repNom(i, sens) { return sens + (repCols().length > 1 ? '(Rep' + (i + 1) + ')' : '(Rep)'); }
   var form = $('form');
   form.addEventListener('submit', function (e) { e.preventDefault(); });
 
@@ -284,6 +290,7 @@
     champsEntete.forEach(function (c) { c.disabled = false; });
     majEntete();
     majTiers();
+    window.dispatchEvent(new Event('ecritures-entete-ouvert'));   // l'en-tête est à (re)saisir : la saisie des lignes se verrouille (voir ecritures_disposition.js)
   }
   function entetePret() {
     var d = dateEcriture.value, per = periode();
@@ -293,6 +300,7 @@
     if (err) { notify(err, true); dateEcriture.focus(); return false; }
     return true;
   }
+  window.__ecEntete = { pret: function () { return entetePret(); } };
   function invalide(champ, on) { champ.style.borderColor = on ? '#dc2626' : ''; champ.style.boxShadow = on ? '0 0 0 2px rgba(220,38,38,.12)' : ''; }
   dateEcriture.addEventListener('input', function () { invalide(dateEcriture, false); });
 
@@ -477,6 +485,8 @@
 
   // ---------- Lignes de la pièce ----------
   var lignes = [], selection = -1, edition = -1;
+  var consult = -1, desactives = [];   // ligne choisie dans la liste : ses informations s'affichent dans la saisie (consultation, champs figés) jusqu'à « Modifier » ou « + »
+  var tresoMode = '';   // journal de trésorerie : '' | 'paiement' | 'autres' (voir ecritures_tresorerie.js)
   var tbody = $('.entry-lines-panel tbody');
   // Plus de titre « Pièce en cours » ni de bloc « Lignes de la pièce / n ligne » : la barre d'actions des lignes reste seule
   (function () {
@@ -491,9 +501,9 @@
       .map(function (w) { return { nom: w.querySelector('[data-axe]').dataset.axe, lib: w.querySelector('label').textContent.trim() }; });
   }
   function enteteListe(axes) {
-    var sig = axes.map(function (a) { return a.lib; }).join('|'); if (!trEntete || sig === sigEntete) return; sigEntete = sig;
+    var sig = axes.map(function (a) { return a.lib; }).join('|') + (regrActif() ? '+R' : '') + '#' + repCols().map(function (c) { return c.code; }).join(','); if (!trEntete || sig === sigEntete) return; sigEntete = sig;
     [].slice.call(trEntete.children).slice(1).forEach(function (t) { trEntete.removeChild(t); });
-    ['Compte', 'Tiers'].concat(axes.map(function (a) { return a.lib; }), ['Libellé', 'Débit', 'Crédit', 'Débit USD', 'Crédit USD']).forEach(function (nom) {
+    ['Compte', 'Auxiliaire'].concat(axes.map(function (a) { return a.lib; }), regrActif() ? ['Regroupement'] : [], ['Libellé', 'Débit', 'Crédit'], [].concat.apply([], repCols().map(function (c, i) { return [repNom(i, 'Débit'), repNom(i, 'Crédit')]; })), ['Échéance']).forEach(function (nom) {
       var t = thModele.cloneNode(true); t.textContent = nom;
       if (/^(Débit|Crédit)/.test(nom)) t.style.textAlign = 'right';
       trEntete.appendChild(t);
@@ -504,13 +514,18 @@
   var toolbar = {};
   $$('.entry-crud-toolbar button').forEach(function (b) { toolbar[b.textContent.trim()] = b; });
   var btnAjouter = toolbar['Ajouter'];
+  // « Enregistrer la pièce » : valide la pièce (lignes équilibrées) ; les icônes de la zone de ligne agissent sur la ligne en cours
+  var btnPiece = el('<button type="button" class="entry-action entry-action-primary"><i class="ti ti-device-floppy"></i> Enregistrer la pièce </button>');
+  var btnAnnulerPiece = $('.entry-bottom-actions button'); btnAnnulerPiece.innerHTML = '<i class="ti ti-x"></i> Annuler '; btnAnnulerPiece.title = 'Tout réinitialiser : abandonne la pièce et vide l’en-tête';
+  $('.entry-bottom-actions').insertBefore(btnPiece, btnAnnulerPiece);
 
   function lireLigne() {
     var axes = {};
     $$('[data-axe]', R).forEach(function (s) { axes[s.dataset.axe] = s.value; });
     return {
       compte: compte.value, tiers: tiers.value, contrat: contrat.value, libelle: libelle.value.trim(),
-      montant: parse(montant.value), montant1: parse(ctrl('devise1').value) || 0, sens: ctrl('sens').value, echeance: echeance.value,
+      regr: ctrl('regroupement') ? ctrl('regroupement').value : '',
+      montant: parse(montant.value), montant1: parse(ctrl('devise1') ? ctrl('devise1').value : '') || 0, montant2: parse(ctrl('devise2') ? ctrl('devise2').value : '') || 0, sens: ctrl('sens').value, echeance: echeance.value,
       axes: axes, budget: budgetSel.value, mode: modeReglement.value,
       infos: $$('[data-info]', corpsInfos).map(function (i) { return i.value.trim(); }), docs: docs.slice()
     };
@@ -522,7 +537,9 @@
     libelle.value = l ? l.libelle : '';
     montant.value = l ? fmt(l.montant) : '';
     ctrl('devise1').value = l && l.montant1 ? fmt(l.montant1) : '';
+    if (ctrl('devise2')) ctrl('devise2').value = l && l.montant2 ? fmt(l.montant2) : '';
     echeance.value = l ? l.echeance : '';
+    if (ctrl('regroupement')) ctrl('regroupement').value = l && l.regr ? l.regr : '';
     setSens(l ? l.sens : 'DEBIT');
     $$('[data-axe]', R).forEach(function (s) { s.value = l ? l.axes[s.dataset.axe] || '' : ''; });
     budgetSel.value = l ? l.budget : '';
@@ -537,8 +554,8 @@
   var equilibre = el('<div class="entry-equilibre"><div class="entry-equilibre-titre">Contrôle d\'équilibre du bordereau</div>' +
     '<table><thead><tr><th>Monnaie</th><th>Débit</th><th>Crédit</th><th>Solde</th></tr></thead><tbody></tbody></table></div>');
   function majEquilibre(liste) {
-    var MON = [['MGA', 'montant'], ['USD', 'montant1']];
-    $('tbody', equilibre).innerHTML = MON.map(function (m) {
+    var MONS = [[MON().m1, 'montant']].concat(repCols().map(function (c) { return [c.code, c.cle]; }));
+    $('tbody', equilibre).innerHTML = MONS.map(function (m) {
       var d = 0, c = 0; liste.forEach(function (l) { if (l.sens === 'DEBIT') d += l[m[1]] || 0; else c += l[m[1]] || 0; });
       var s = Math.round((d - c) * 100) / 100, ok = !s;
       return '<tr><td>' + m[0] + '</td><td>' + fmt(d) + '</td><td>' + fmt(c) + '</td><td class="' + (!liste.length ? '' : ok ? 'eq-ok' : 'eq-ko') + '">' + fmt(s) + '</td></tr>';
@@ -559,6 +576,7 @@
   var VIDE = '<span style="color:#b4b2a9">—</span>';
   window.__renderLignes = function () { render(); };
   function render() {
+    if (consult >= 0 && (selection !== consult || edition >= 0)) { var enModif = edition >= 0; sortirConsult(); if (!enModif) ecrireLigne(null); }
     var axesL = axesListe(); enteteListe(axesL);
     tbody.innerHTML = '';
     lignes.forEach(function (l, i) {
@@ -567,11 +585,12 @@
         td('<strong>' + esc(l.compte.code) + '</strong>') +
         td(l.tiers ? esc(l.tiers.code) : VIDE) +
         axesL.map(function (a) { return td(l.axes[a.nom] ? '<span style="font-family:monospace">' + esc(l.axes[a.nom]) + '</span>' : VIDE); }).join('') +
+        (regrActif() ? td(l.regr ? '<span style="font-family:monospace">' + esc(l.regr) + '</span>' : VIDE) : '') +
         td('<div style="min-width:220px">' + esc(l.libelle) + '</div>', 'whitespace-normal') +
         td(l.sens === 'DEBIT' ? '<span style="font-family:monospace">' + fmt(l.montant) + '</span>' : '', 'text-right whitespace-nowrap') +
         td(l.sens === 'DEBIT' ? '' : '<span style="font-family:monospace">' + fmt(l.montant) + '</span>', 'text-right whitespace-nowrap') +
-        td(l.sens === 'DEBIT' && l.montant1 ? '<span style="font-family:monospace">' + fmt(l.montant1) + '</span>' : '', 'text-right whitespace-nowrap') +
-        td(l.sens !== 'DEBIT' && l.montant1 ? '<span style="font-family:monospace">' + fmt(l.montant1) + '</span>' : '', 'text-right whitespace-nowrap') +
+        repCols().map(function (rc) { var v = l[rc.cle]; return td(l.sens === 'DEBIT' && v ? '<span style="font-family:monospace">' + fmt(v) + '</span>' : '', 'text-right whitespace-nowrap') + td(l.sens !== 'DEBIT' && v ? '<span style="font-family:monospace">' + fmt(v) + '</span>' : '', 'text-right whitespace-nowrap'); }).join('') +
+        td(l.echeance ? esc(fmtDate(l.echeance)) : VIDE, 'whitespace-nowrap') +
         '</tr>');
       if (i === selection) tr.style.boxShadow = 'inset 3px 0 0 #2E427B'; // sélection : filet bleu, fond blanc
       if (i === edition) tr.style.boxShadow = 'inset 3px 0 0 #0B1332';
@@ -579,7 +598,7 @@
         var act = e.target.closest('[data-act]');
         selection = i;
         if (act) ACTIONS[act.dataset.act === 'modifier' ? 'Modifier' : 'Supprimer']();
-        else render();
+        else { if (edition < 0) entrerConsult(i); render(); }
       });
       tr.addEventListener('dblclick', function () { selection = i; ACTIONS.Modifier(); });
       tbody.appendChild(tr);
@@ -593,19 +612,24 @@
     var d1 = 0, c1 = 0;
     lignes.forEach(function (l) { if (l.sens === 'DEBIT') d1 += l.montant1 || 0; else c1 += l.montant1 || 0; });
     var ecart1 = Math.round((d1 - c1) * 100) / 100;
+    var d2 = 0, c2 = 0; lignes.forEach(function (l) { if (l.sens === 'DEBIT') d2 += l.montant2 || 0; else c2 += l.montant2 || 0; });
+    window.__ecTotaux = { d: d, c: c, d1: d1, c1: c1, d2: d2, c2: c2 }; window.dispatchEvent(new Event('ecritures-totaux'));
     var trPied = trPiedFixe, tdT = 'class="px-2.5 py-2 text-right whitespace-nowrap" style="font-family:monospace;font-weight:700;color:#0B1332"';
     tfootFixe.style.display = lignes.length ? '' : 'none';
     trPied.className = ''; trPied.style.background = '#fff'; trPied.style.color = '#0B1332';
-    trPied.innerHTML = '<td colspan="' + (4 + axesL.length) + '" class="px-2.5 py-2" style="font-weight:700">Total · ' + (ecart || ecart1 ? 'Écart ' + fmt(Math.abs(ecart)) + (ecart1 ? ' / ' + fmt(Math.abs(ecart1)) + ' USD' : '') : 'Équilibré') + '</td>' +
-      '<td ' + tdT + '>' + fmt(d) + '</td><td ' + tdT + '>' + fmt(c) + '</td><td ' + tdT + '>' + fmt(d1) + '</td><td ' + tdT + '>' + fmt(c1) + '</td>';
+    trPied.innerHTML = '<td colspan="' + (4 + axesL.length + (regrActif() ? 1 : 0)) + '" class="px-2.5 py-2" style="font-weight:700">Total · ' + (ecart || ecart1 ? 'Écart ' + fmt(Math.abs(ecart)) + (ecart1 ? ' / ' + fmt(Math.abs(ecart1)) + ' USD' : '') : 'Équilibré') + '</td>' +
+      '<td ' + tdT + '>' + fmt(d) + '</td><td ' + tdT + '>' + fmt(c) + '</td>' + repCols().map(function (rc) { var a = rc.cle === 'montant1' ? d1 : d2, b = rc.cle === 'montant1' ? c1 : c2; return '<td ' + tdT + '>' + fmt(a) + '</td><td ' + tdT + '>' + fmt(b) + '</td>'; }).join('') + '<td></td>';
     $('.entry-crud-toolbar strong').textContent = lignes.length + (lignes.length > 1 ? ' lignes' : ' ligne') + (edition >= 0 ? ' · modification de la ligne ' + (edition + 1) : '');
 
     var sel = selection >= 0 && edition < 0;
-    toolbar['Enregistrer'].disabled = !lignes.length || edition >= 0;
+    toolbar['Enregistrer'].disabled = consult >= 0 && edition < 0;   // enregistre la ligne en cours (ajout ou mise à jour) ; grisé quand une ligne est seulement consultée
+    toolbar['Enregistrer'].title = edition >= 0 ? 'Enregistrer : mettre à jour la ligne ' + (edition + 1) : 'Enregistrer la ligne en cours';
+    btnPiece.disabled = !lignes.length || edition >= 0 || !!ecart;
+    btnPiece.title = !lignes.length ? 'Aucune ligne à enregistrer' : edition >= 0 ? 'Terminez la modification de la ligne en cours' : ecart ? 'Pièce déséquilibrée : écart de ' + fmt(Math.abs(ecart)) + ' entre débit et crédit' : 'Enregistrer la pièce';
     toolbar['Modifier'].disabled = !sel;
     toolbar['Dupliquer'].disabled = !sel;
     toolbar['Supprimer'].disabled = !sel;
-    btnAjouter.innerHTML = edition >= 0 ? '<i class="ti ti-check"></i> Mettre à jour ' : '<i class="ti ti-plus"></i> Ajouter ';
+    btnAjouter.innerHTML = '<i class="ti ti-plus"></i> Ajouter '; btnAjouter.title = 'Ajouter : nouvelle ligne';
   }
 
   var ACTIONS = {
@@ -631,13 +655,18 @@
       var manuelle = !!pieceSaisie(), p = pieceCourante(), n = lignes.length;
       if (!manuelle) { if (pjE) { pjE.dernier = (+pjE.dernier || 0) + 1; window.dispatchEvent(new Event('journaux-changed')); } else compteurs[journal.value.code] = (compteurs[journal.value.code] || 0) + 1; }
       ctrl('piece').value = '';
+      lignes.forEach(function (l) { if (l.apure && window.ECRITURES_APURER) window.ECRITURES_APURER(l.apure, l.montant); });   // règlements : les factures apurées sont mises à jour
+      // la pièce enregistrée rejoint le registre des pièces (détection des doublons à l'importation)
+      (window.ECRITURES_PIECES = window.ECRITURES_PIECES || []).push({ journal: journal.value.code, piece: p, date: dateEcriture.value, datePiece: ctrl('datePiece').value, facture: ctrl('facture').value, reference: ctrl('reference').value, source: 'saisie',
+        lignes: lignes.map(function (l) { return { compte: l.compte && l.compte.code, tiers: l.tiers && l.tiers.code, libelle: l.libelle, sens: l.sens, montant: l.montant, montant1: l.montant1 || 0, montant2: l.montant2 || 0, echeance: l.echeance, regr: l.regr, axes: l.axes, auto: !!l.auto, regle: 0 }; }) });
       // Les tiers mouvementés deviennent « Utilisés » dans le référentiel
       lignes.forEach(function (l) { if (l.tiers && window.SoftTiers && !PREF) window.SoftTiers.marquerUtilise(l.tiers.code); if (l.tiers && window.TIERS_MARQUER) window.TIERS_MARQUER(l.tiers.collectif, l.tiers.code); });
-      lignes = []; selection = -1; edition = -1;
+      lignes = []; selection = -1; edition = -1; tresoMode = '';
       ecrireLigne(null);
       majEntete();
       render();
       notify('Pièce ' + p + ' enregistrée (' + n + ' lignes). Pièce suivante : ' + piece() + '.');
+      window.dispatchEvent(new Event('ecritures-entete-ouvert'));   // pièce suivante : nouvel en-tête à valider
     },
     Modifier: function () {
       edition = selection;
@@ -669,14 +698,63 @@
       render();
     }
   };
+  function entrerConsult(i) {
+    sortirConsult(); ecrireLigne(lignes[i]); consult = i; desactives = [];
+    $$('input,select,textarea,button', $('.entry-general-fields')).forEach(function (x) { if (!x.disabled) { x.disabled = true; desactives.push(x); } });
+    $('.entry-general-fields').classList.add('ec-consult');
+  }
+  function sortirConsult() {
+    if (consult < 0) return;
+    desactives.forEach(function (x) { x.disabled = false; }); desactives = []; consult = -1;
+    $('.entry-general-fields').classList.remove('ec-consult'); majTiers();
+  }
+  // Journal de trésorerie (type Trésorerie ou Hybride, avec compte associé) : la ligne du compte associé est générée automatiquement en contrepartie des autres lignes
+  function jTreso() { var pj = journal.value ? paramJournal(journal.value.code) : null; return pj && (pj.type === 'Trésorerie' || pj.type === 'Hybride') && pj.compte ? pj : null; }
+  function majContrepartie(garder) {
+    var pj = jTreso(); lignes = lignes.filter(function (l) { return !l.auto; });
+    if (pj && tresoMode) {
+      var d = 0, c = 0, d1 = 0, c1 = 0, d2 = 0, c2 = 0;
+      lignes.forEach(function (l) { if (l.sens === 'DEBIT') { d += l.montant; d1 += l.montant1 || 0; d2 += l.montant2 || 0; } else { c += l.montant; c1 += l.montant1 || 0; c2 += l.montant2 || 0; } });
+      var net = Math.round((d - c) * 100) / 100;
+      if (net) {
+        var cp = REF.comptes.filter(function (x) { return x.code === pj.compte; })[0] || { code: pj.compte, label: '' }, r2 = function (v) { return Math.round(Math.abs(v) * 100) / 100; };
+        lignes.push({ compte: { code: cp.code, label: cp.label }, tiers: null, contrat: null, libelle: 'Contrepartie ' + (journal.value.label || journal.value.code), regr: '', montant: Math.abs(net), montant1: r2(d1 - c1), montant2: r2(d2 - c2), sens: net > 0 ? 'CREDIT' : 'DEBIT', echeance: '', axes: {}, budget: '', mode: '', infos: $$('[data-info]', corpsInfos).map(function () { return ''; }), docs: [], auto: true });
+      }
+    }
+    if (!garder) { selection = -1; edition = -1; }
+    render();
+  }
+  // Sémantique des actions de ligne : « Ajouter » ouvre une nouvelle ligne vide ; « Enregistrer » enregistre la ligne en cours (ajout ou mise à jour) ; la pièce s'enregistre par « Enregistrer la pièce »
+  var enregLigne = ACTIONS.Ajouter, enregPiece = ACTIONS.Enregistrer;
+  ACTIONS.Enregistrer = function () { if (consult >= 0 && edition < 0) { notify('Ligne en consultation : utilisez Modifier pour la modifier ou « + » pour une nouvelle ligne.', true); return; } var n = lignes.length, ed = edition; enregLigne(); if (lignes.length !== n || edition !== ed) majContrepartie(true); };
+  var suppr = ACTIONS.Supprimer, dupl = ACTIONS.Dupliquer; ACTIONS.Supprimer = function () { var n = lignes.length, auto = lignes[selection] && lignes[selection].auto; suppr(); if (lignes.length !== n && !auto) majContrepartie(); };   // supprimer la contrepartie la retire sans la régénérer : la pièce est alors déséquilibrée jusqu'à la prochaine ligne
+  ACTIONS.Dupliquer = function () { var n = lignes.length, auto = lignes[selection] && lignes[selection].auto; dupl(); if (lignes.length === n) return; if (auto) { if (lignes[selection]) delete lignes[selection].auto; render(); } else majContrepartie(); };
+  ACTIONS.Ajouter = function () { if (!entetePret()) return; edition = -1; selection = -1; ecrireLigne(null); render(); compte.btn.focus(); };
+  ACTIONS['Enregistrer la pièce'] = enregPiece;
   Object.keys(toolbar).forEach(function (k) {
     toolbar[k].addEventListener('click', function () { if (!toolbar[k].disabled) ACTIONS[k](); });
   });
+  btnPiece.addEventListener('click', function () { if (!btnPiece.disabled) ACTIONS['Enregistrer la pièce'](); });
+
+  // ajout de lignes déjà constituées (ex. facture lue par OCR) : mêmes objets que ceux de la saisie manuelle
+  window.__ecEntete.jTreso = function () { return jTreso(); };
+  window.__ecEntete.setTreso = function (m) { tresoMode = m || ''; majContrepartie(); };
+  window.__ecEntete.periode = function () { return periode(); };
+  window.__ecEntete.notifier = function (m, er) { notify(m, er); };
+  window.__ecEntete.journalCourant = function () { return journal.value ? journal.value.code : ''; };
+  window.__ecEntete.setJournal = function (code) { var it = REF.journaux.filter(function (j) { return j.code === code; })[0]; if (it && (!journal.value || journal.value.code !== code)) { journal.set(it); } };
+  window.__ecEntete.ajouterLignes = function (L) {
+    var vides = $$('[data-info]', corpsInfos).map(function () { return ''; });
+    L.forEach(function (x) {
+      lignes.push({ compte: x.compte, tiers: x.tiers || null, contrat: null, libelle: x.libelle, regr: '', montant: x.montant, montant1: x.montant1 || 0, montant2: x.montant2 || 0, sens: x.sens, echeance: x.echeance || '', axes: {}, budget: '', mode: '', infos: vides.slice(), docs: [], apure: x.apure || null });
+    });
+    selection = -1; edition = -1; majContrepartie(); notify(L.length + ' ligne(s) ajoutée(s) à la pièce depuis la facture.');
+  };
 
   // « Annuler » en bas de page : abandon de la pièce en cours
-  $('.entry-bottom-actions button').addEventListener('click', function () {
-    if (lignes.length && !window.confirm('Abandonner la pièce ' + pieceCourante() + ' et ses ' + lignes.length + ' ligne(s) ?')) return;
-    lignes = []; selection = -1; edition = -1;
+  btnAnnulerPiece.addEventListener('click', function () {
+    if (lignes.length && !window.confirm('Tout réinitialiser : abandonner la pièce ' + pieceCourante() + ' et ses ' + lignes.length + ' ligne(s), et vider l’en-tête ?')) return;
+    lignes = []; selection = -1; edition = -1; tresoMode = '';
     ecrireLigne(null);
     dateEcriture.value = ''; ctrl('datePiece').value = ''; ctrl('facture').value = ''; ctrl('reference').value = ''; ctrl('piece').value = '';
     verrouiller(false);

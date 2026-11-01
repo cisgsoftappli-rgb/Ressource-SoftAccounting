@@ -5,23 +5,23 @@
   Réutilise les styles ig-* de informations_generales.html.
 -->
 <div class="ig-wrap">
-<p class="ig-intro">Paramètres spécifiques à l'entité : référentiel, options de fonctionnement et monnaies.</p>
 <div class="ig-card"><div class="ig-bd">
 <div class="ig-sec"><span class="ig-t">Comptabilité</span><div class="ig-g">
-<div class="ig-f ig-s4"><label class="ig-l">Référentiel comptable</label><select class="form-input ig-in"><option value="PCG2005" selected>PCG 2005 (Madagascar)</option><option value="SYSCOHADA">SYSCOHADA</option><option value="SYCEBNL">SYCEBNL</option><option value="PCGFR">PCG France</option><option value="IFRS">IFRS</option></select></div>
-<div class="ig-f ig-s4" style="align-self:end"><label class="ig-l" style="display:flex;align-items:center;gap:8px;cursor:pointer;text-transform:none;letter-spacing:0"><input type="checkbox" data-ig-checklist checked style="width:16px;height:16px;accent-color:#2E427B"> Checklist clôture d'exercice</label><span style="display:block;margin-top:4px;font-size:12px;color:#5B606D">Active la checklist des opérations de clôture d'exercice.</span></div>
-<div class="ig-f ig-s4" style="align-self:end"><label class="ig-l" style="display:flex;align-items:center;gap:10px;cursor:pointer;text-transform:none;letter-spacing:0"><span class="ig-sw"><input type="checkbox" role="switch" aria-label="Activer la gestion des devis programmes" data-ig-gestiondp></span> Gestion des devis programmes</label><span style="display:block;margin-top:4px;font-size:12px;color:#5B606D" data-ig-gestiondp-l>Désactivée : le champ DP n'apparaît pas dans la saisie des écritures.</span></div>
+<div class="ig-f ig-s4" style="align-self:end"><label class="ig-l" style="display:flex;align-items:center;gap:8px;cursor:pointer;text-transform:none;letter-spacing:0"><input type="checkbox" data-ig-checklist checked style="width:16px;height:16px;accent-color:#2E427B"> Checklist clôture d'exercice</label></div>
+<div class="ig-f ig-s4" style="align-self:end"><label class="ig-l" style="display:flex;align-items:center;gap:10px;cursor:pointer;text-transform:none;letter-spacing:0"><span class="ig-sw"><input type="checkbox" role="switch" aria-label="Activer la gestion des devis programmes" data-ig-gestiondp></span> Gestion des devis programmes</label><span hidden style="display:none" data-ig-gestiondp-l>Désactivée : le champ DP n'apparaît pas dans la saisie des écritures.</span></div>
 </div></div>
-<div class="ig-sec"><span class="ig-t">Monnaies</span><div class="ig-g">
-<div class="ig-f ig-s3"><label class="ig-l">Monnaie locale</label><select class="form-input ig-in"><option value="">-- Aucune --</option><option value="MGA">MGA — Ariary</option><option value="MUR">MUR — ROUPIE</option><option value="XOF">XOF — FRANC CFA</option></select></div>
-<div class="ig-f ig-s3"><label class="ig-l">Devise 1</label><select class="form-input ig-in"><option value="">-- Aucune --</option><option value="MUR">MUR — ROUPIE</option><option value="USD">USD — Dollar Américain</option><option value="XOF">XOF — FRANC CFA</option></select></div>
-<div class="ig-f ig-s3"><label class="ig-l">Devise 2</label><select class="form-input ig-in"><option value="">-- Aucune --</option><option value="EUR">EUR — Euro</option><option value="MUR">MUR — ROUPIE</option><option value="XOF">XOF — FRANC CFA</option></select></div>
-<div class="ig-f ig-s3"><label class="ig-l">Devise 3</label><select class="form-input ig-in"><option value="">-- Aucune --</option><option value="MUR">MUR — ROUPIE</option><option value="XOF">XOF — FRANC CFA</option></select></div>
-</div></div>
+<div class="ig-sec"><span class="ig-t">Monnaies</span>
+<div class="ig-g">
+<div class="ig-f ig-s4"><label class="ig-l">Monnaie de tenue de compte (M1) <b style="color:#B63132">*</b></label><select class="form-input ig-in" data-mon="m1"></select></div>
+<div class="ig-f ig-s4"><label class="ig-l">Monnaie de reporting 2 (M2)</label><select class="form-input ig-in" data-mon="m2"></select></div>
+<div class="ig-f ig-s4"><label class="ig-l">Monnaie de reporting 3 (M3)</label><select class="form-input ig-in" data-mon="m3"></select></div>
+</div>
+<span data-mon-msg role="status" style="display:block;margin-top:6px;font-size:12px;color:#B63132;min-height:16px"></span>
+</div>
 <div class="ig-sec"><span class="ig-t">Procédures financières</span><div class="ig-g">
 <div class="ig-f" style="grid-column:1/-1"><label class="ig-l">Procédures financières activées</label>
 <div class="ig-procs" data-ig-procs><label class="ig-pr"><span class="ig-sw"><input type="checkbox" role="switch" data-ig-proc="IDA" aria-label="Activer la procédure IDA"></span> IDA</label><label class="ig-pr"><span class="ig-sw"><input type="checkbox" role="switch" data-ig-proc="FIDA" aria-label="Activer la procédure FIDA"></span> FIDA</label><label class="ig-pr"><span class="ig-sw"><input type="checkbox" role="switch" data-ig-proc="FED" aria-label="Activer la procédure FED"></span> FED</label><label class="ig-pr"><span class="ig-sw"><input type="checkbox" role="switch" data-ig-proc="FM" aria-label="Activer la procédure FM"></span> FM</label><label class="ig-pr"><span class="ig-sw"><input type="checkbox" role="switch" data-ig-proc="BAD" aria-label="Activer la procédure BAD"></span> BAD</label></div>
-<span style="display:block;margin-top:6px;font-size:12px;color:#5B606D">Une procédure activée est proposée dans Paramétrages financiers › Procédures financières et ajoute son module (Paramétrages, Saisie, Traitement) dans Comptabilité Projets &amp; Bailleurs.</span></div>
+</div>
 </div></div>
 </div>
 <div class="ig-ft"><button type="button" class="ig-bt">Annuler</button><button type="button" class="ig-bt ig-ok">Enregistrer</button></div>
@@ -39,3 +39,27 @@ var o={IDA:true,FIDA:true,FED:false,FM:false,BAD:false};try{var sv=JSON.parse(lo
 window.ENTITE_OPTIONS.procedures=o;window.PROCEDURES_ACTIVES=function(){return L.filter(function(p){return o[p];});};
 function maj(){cs.forEach(function(c){c.checked=!!o[c.getAttribute("data-ig-proc")];});L.forEach(function(p){document.documentElement.classList.toggle("sans-proc-"+p,!o[p]);});}
 cs.forEach(function(c){c.addEventListener("change",function(){o[c.getAttribute("data-ig-proc")]=c.checked;try{localStorage.setItem("softcompta.procedures",JSON.stringify(o));}catch(e){}maj();window.dispatchEvent(new Event("entite-options-changed"));});});maj();})();</script>
+
+<script>(function(){
+  var LS='softcompta.monnaies', d={m1:'MGA',m2:'USD',m3:'',cours2:'jour',cours3:'jour'};
+  try{var sv=JSON.parse(localStorage.getItem(LS)||'null'); if(sv&&typeof sv==='object') Object.keys(d).forEach(function(k){ if(typeof sv[k]==='string') d[k]=sv[k]; });}catch(e){}
+  window.ENTITE_OPTIONS=window.ENTITE_OPTIONS||{checklistCloture:true}; window.ENTITE_OPTIONS.monnaies=d;
+  // monnaies de la comptabilité : M1 tenue de compte, M2 / M3 reporting (lues par la saisie d'écritures, les états et les journaux)
+  window.ENTITE_MONNAIES=function(){ return {m1:d.m1,m2:d.m2,m3:d.m3,cours2:d.cours2,cours3:d.cours3,codes:[d.m1,d.m2,d.m3].filter(Boolean)}; };
+  var S={}; [].forEach.call(document.querySelectorAll('app-personnalisation-entite [data-mon]'),function(s){ S[s.getAttribute('data-mon')]=s; });
+  if(!S.m1) return;
+  function liste(){ var L=(window.DEVISES||[]).filter(function(x){return x.actif!==false;}); if(!L.length) L=[{code:'MGA',libelle:'Ariary'},{code:'USD',libelle:'Dollar américain'},{code:'EUR',libelle:'Euro'}]; return L; }
+  function remplir(){
+    ['m1','m2','m3'].forEach(function(k){ var s=S[k], o=(k==='m1'?'':'<option value="">-- Aucune --</option>'); liste().forEach(function(x){ o+='<option value="'+x.code+'">'+x.code+' — '+(x.libelle||'')+'</option>'; }); s.innerHTML=o; s.value=d[k]; });
+    S.m3.disabled=!d.m2;
+    S.m1.title='Monnaie légale de la comptabilité : non modifiable une fois des écritures saisies.';
+  }
+  function msg(t){ var m=document.querySelector('[data-mon-msg]'); if(m) m.textContent=t||''; }
+  [].forEach.call(Object.keys(S),function(k){ S[k].addEventListener('change',function(){
+    var v=S[k].value, n={m1:d.m1,m2:d.m2,m3:d.m3};
+    if(k==='m1'||k==='m2'||k==='m3'){ n[k]=v; if(!n.m2) n.m3='';
+      if((n.m2&&n.m2===n.m1)||(n.m3&&(n.m3===n.m1||n.m3===n.m2))){ msg('Les monnaies M1, M2 et M3 doivent être différentes.'); remplir(); return; } d.m1=n.m1; d.m2=n.m2; d.m3=n.m3; }
+    else d[k]=v;
+    msg(''); try{localStorage.setItem(LS,JSON.stringify(d));}catch(e){} remplir(); window.dispatchEvent(new Event('entite-options-changed')); }); });
+  window.addEventListener('devises-changed',remplir); window.addEventListener('journaux-changed',remplir); remplir();
+})();</script>

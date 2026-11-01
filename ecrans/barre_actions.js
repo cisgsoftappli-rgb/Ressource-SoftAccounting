@@ -10,7 +10,7 @@
     taxes: { txt: /^(ajouter|modifier|supprimer|enregistrer|annuler|imprimer|exporter)$/i }, racines: { txt: /^(modifier|enregistrer|annuler|imprimer|exporter)$/i }, plans: { txt: /^(modifier|enregistrer|annuler|imprimer|exporter)$/i }, journal: { txt: /^(critères|imprimer|exporter)$/i }, crparam: { txt: /^(ajouter|nouveau modèle|dupliquer|supprimer|modifier|enregistrer|annuler|imprimer|exporter|édition)$/i }, erparam: { txt: /^(ajouter|nouveau modèle|dupliquer|supprimer|modifier|enregistrer|annuler|imprimer|exporter|édition)$/i }, cred: { txt: /^(critères|imprimer|exporter|paramétrage)$/i }, ered: { txt: /^(critères|imprimer|exporter|paramétrage)$/i }, tfted: { txt: /^(critères|imprimer|exporter|paramétrage)$/i }, tftparam: { txt: /^(ajouter|nouveau modèle|dupliquer|supprimer|modifier|enregistrer|annuler|imprimer|exporter|édition)$/i }, biledit: { txt: /^(critères|imprimer|exporter|paramétrage)$/i }, bilparam: { txt: /^(ajouter|nouveau modèle|dupliquer|supprimer|modifier|enregistrer|annuler|imprimer|exporter|édition)$/i }, modfisc2: {},
     rapprochement: { txt: /^(ajouter|modifier|supprimer|enregistrer|annuler)$/i }, situation: { txt: /^(détail.*|fiche( 2)?|exporter)$/i }, pointage: { txt: /^(liste des relevés|proposer automatiquement|valider le rapprochement)$/i },
     devise: { txt: /^(ajouter|modifier|supprimer|enregistrer|annuler|imprimer|pdf|excel \(xlsx\))$/i }, banques: { plat: 1, txt: /^(ajouter|modifier|supprimer|enregistrer|annuler|imprimer|pdf|excel \(xlsx\)|récupération soft e-payment)$/i }, signataires: { txt: /^(ajouter|modifier|supprimer|enregistrer|annuler|imprimer|pdf|excel \(xlsx\))$/i }, modereglement: { txt: /^(ajouter|modifier|supprimer|enregistrer|annuler|imprimer|pdf|excel \(xlsx\))$/i }, lieuaffect: { txt: /^(ajouter|modifier|supprimer|enregistrer|annuler|imprimer|pdf|excel \(xlsx\))$/i }, jtraces: { plat: 1, txt: /^(réinitialiser|dictionnaire|pdf|pdf avec détails|excel \(xlsx\)|excel \(xlsx\) avec détails)$/i }, cloture: { txt: /^(annuler|enregistrer)$/i }, lettparam: { txt: /^(annuler|enregistrer)$/i }, prelettrage: { plat: 1, txt: /^(tout désélectionner|annuler le prélettrage|prélettrer)$/i }, designer: { plat: 1, txt: /^(retour|enregistrer)$/i }, collabresp: { txt: /^(ajouter|modifier|supprimer|enregistrer|annuler|imprimer|pdf|excel \(xlsx\))$/i }, famimmo: { txt: /^(ajouter|modifier|supprimer|enregistrer|annuler|imprimer|pdf|excel \(xlsx\))$/i }, immolist: { plat: 1, txt: /^(ajouter|modifier|supprimer|enregistrer|annuler|générer écriture|imprimer|pdf|excel \(xlsx\))$/i }, reassign: { plat: 1, txt: /^(nouvelle réassignation|supprimer|enregistrer|annuler|historique|imprimer|pdf|excel \(xlsx\))$/i }, caissegen: { plat: 1, txt: /^proposer schéma comptable$/i }, caissesaisie: { plat: 1, txt: /^(ajouter|modifier|supprimer|ajouter des opérations|enregistrer|annuler)$/i }, caissetypes: { plat: 1, txt: /^(ajouter|modifier|supprimer|enregistrer|annuler)$/i }, conversion: { plat: 1, txt: /^(réinitialiser|convertir)$/i }, cours: { plat: 1, txt: /^(ajouter|modifier|supprimer|importer|enregistrer|annuler)$/i }, releves: { plat: 1, txt: /^(ajouter|modifier|supprimer|importer les lignes|enregistrer|annuler|pointage)$/i }, lettmanuel: { plat: 1, txt: /^(lettrage automatique|tout désélectionner|délettrer|lettrer)$/i }, clotper: { plat: 1, txt: /^(clôturer la période|annuler la clôture)$/i }, clotmens: { plat: 1, txt: /^(clôturer la période|rouvrir la période)$/i }, anouveaux: { plat: 1, txt: /^(générer les à nouveaux provisoires|saisie manuelle|importer|supprimer les à nouveaux|pdf|excel \(xlsx\))$/i }, clotannuelle: { plat: 1, txt: /^(clôturer l'exercice)$/i }, traces: { txt: /^(annuler|enregistrer)$/i }, acces: { txt: /^(réinitialiser|enregistrer|nouvel utilisateur|modifier|supprimer|imprimer|pdf|excel \(xlsx\))$/i }, entite: { txt: /^(annuler|enregistrer)$/i },
-    ecritures: { txt: /^(infos libres|matrice d.import|importer|enregistrer|dupliquer|modifier)/i },
+    ecritures: { txt: /^(importer des écritures|facture ocr|infos libres|annuler|enregistrer la pièce)/i },
     ejcd: { txt: /^(éditer l.état|réinitialiser)/i },
     etatdep: { txt: /^(modifier les critères|suivant)/i }, fisctrait: { txt: /^(critères|suivant)/i },
     balance: { txt: /^(filtre|csv|excel|pdf)$/i }, balaux: { txt: /^(filtre|csv|excel|pdf)$/i }, glg: { txt: /^(filtre|csv|excel|pdf)$/i }, balana: { txt: /^(filtre|csv|excel|pdf)$/i },
@@ -18,11 +18,13 @@
   };
   ['pl_comptable', 'pl_activite', 'pl_budget', 'pl_geo', 'pl_financier', 'pl_5', 'pl_6', 'pl_7', 'pl_8', 'pl_9', 'pl_10', 'pl_tiers', 'pl_journaux'].forEach(function (id) { CFG[id] = { txt: /^(ajouter|modifier|supprimer|enregistrer|annuler|importer|imprimer|exporter)$/i }; });
   var RECH = /^(recherch|code ou libell|code, intitul)/i;
-  var ORDRE = { nav: 9, ico: -1, filter: 0, export: 1, other: 1, reset: 2, edit: 3, del: 4, cancel: 5, save: 6, run: 7, add: 8 };
+  var ORDRE = { nav: 9, ico: -1, imp: -1, ocr: 0, filter: 0, export: 1, other: 1, reset: 2, edit: 3, del: 4, cancel: 5, save: 6, run: 7, add: 8 };
   var PRIORITE = ['run', 'save', 'add', 'filter'];
   function nettoyer(t) { return t.trim().replace(/^[^a-zA-ZÀ-ÿ]+/, '').toLowerCase(); }
   function genre(t) {
     t = nettoyer(t);
+    if (/^facture ocr/.test(t)) return 'ocr';
+    if (/^importer des écritures/.test(t)) return 'imp';
     if (/^(ajouter|nouv(eau|elle|el))/.test(t)) return 'add';
     if (/^modifier/.test(t)) return 'edit';
     if (/^supprimer/.test(t)) return 'del';
@@ -35,7 +37,7 @@
     return 'other';
   }
   // Pictogrammes de la charte (traits Tabler) à la place des symboles / émoticônes de texte
-  var ICONES = { add: 'plus', edit: 'pencil', del: 'trash', save: 'device-floppy', cancel: 'x', reset: 'refresh', filter: 'adjustments-horizontal', run: 'arrow-right' };
+  var ICONES = { imp: 'upload', add: 'plus', edit: 'pencil', del: 'trash', save: 'device-floppy', cancel: 'x', reset: 'refresh', filter: 'adjustments-horizontal', run: 'arrow-right' };
   function contenu(b, g) {
     if (g === 'nav') return b.textContent.trim().replace(/[&<>]/g, function (c) { return { '&': '&amp;', '<': '&lt;', '>': '&gt;' }[c]; }) + '<i class="ti ti-arrow-right" aria-hidden="true"></i>';
     if (b.querySelector('i,svg')) return b.innerHTML;
@@ -47,7 +49,7 @@
     var esc = t.replace(/[&<>]/g, function (c) { return { '&': '&amp;', '<': '&lt;', '>': '&gt;' }[c]; });
     return (ic ? '<i class="ti ti-' + ic + '" aria-hidden="true"></i>' : '') + esc;
   }
-  function horsPage(b) { return b.closest('td,th,[class*="modal"],[class*="-ov"],[role="dialog"],[role="tablist"],[class*="-tabs"],.ba-bar'); }
+  function horsPage(b) { return b.closest('td,th,[class*="modal"],[class*="-ov"],[role="dialog"],[role="tablist"],[class*="-tabs"],.ba-bar,.ec-actions'); }
   function vu(e) { return !!(e && !e.hidden && getComputedStyle(e).display !== 'none' && e.getClientRects().length); }
 
   function hote() {

@@ -103,7 +103,7 @@
       if (er.length) { rej.push({ n: x.n, v: x.v, cause: er.join(' ; ') }); er.forEach(function (e) { ano.push({ n: x.n, cause: e }); }); return; }
       var cle = r.cle == null ? '' : String(r.cle), dup = r.doublon ? 'sys' : (cle && vus[cle] !== undefined ? 'fic' : '');
       if (dup) {
-        var cz = dup === 'sys' ? 'Doublon : « ' + cle + ' » existe déjà dans le système' : 'Doublon : « ' + cle + ' » déjà présent à la ligne ' + ret[vus[cle]].n + ' du fichier';
+        var nomD = r.libDoublon || cle, cz = dup === 'sys' ? 'Doublon : « ' + nomD + ' » existe déjà dans le système' : 'Doublon : « ' + cle + ' » déjà présent à la ligne ' + ret[vus[cle]].n + ' du fichier';
         if (mode === 'ignorer') { rej.push({ n: x.n, v: x.v, cause: cz + ' — ligne ignorée' }); return; }
         if (mode === 'anomalie') { rej.push({ n: x.n, v: x.v, cause: cz }); ano.push({ n: x.n, cause: cz }); return; }
         if (dup === 'fic') { var p = ret[vus[cle]]; p.annule = true; rej.push({ n: p.n, v: p.v, cause: 'Remplacée par la ligne ' + x.n + ' du fichier (même clé « ' + cle + ' »)' }); }

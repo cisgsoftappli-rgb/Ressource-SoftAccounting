@@ -42,7 +42,7 @@ const balanceJs = read('ecrans/dp_filtre.js') + '\n' + read('ecrans/balance.js')
 const balanceAnaJs = read('ecrans/balance_analytique.js') + '\n' + read('ecrans/etats_filtres.js');
 const balanceAuxJs = read('ecrans/balance_auxiliaire_donnees.js') + String.fromCharCode(10) + read('ecrans/balance_auxiliaire.js');
 const glgJs = read('ecrans/glg_donnees.js') + String.fromCharCode(10) + read('ecrans/grand_livre_general.js');
-const ecrituresJs = read('ecrans/ecritures_donnees.js') + '\n' + read('ecrans/ecritures.js');
+const ecrituresJs = read('ecrans/ecritures_donnees.js') + '\n' + read('ecrans/ecritures.js') + '\n' + read('ecrans/ecritures_disposition.js') + '\n' + read('ecrans/facture_ocr.js') + '\n' + read('ecrans/ecritures_import.js') + '\n' + read('ecrans/ecritures_tresorerie.js');
 // Écrans conçus pour la maquette (pas de capture de l'application)
 const dpHtml = read('ecrans/devis_programme.html');
 const dpJs = read('ecrans/devis_programme.js');
@@ -712,7 +712,7 @@ out = out.replace('</body>', () => '<script>' + masqueJs + '</script>' + script 
   }
   out = out.split('@page{size:landscape}').join('');   // l'impression est toujours en A4 portrait (règle @page dans charte.css)
   { const i = out.lastIndexOf('</bo' + 'dy>'); out = out.slice(0, i) + '<style id="charte-softwell">' + (() => {
-    let c = read('ecrans/charte.css');
+    let c = read('ecrans/charte.css') + '\n' + read('ecrans/ecritures_disposition.css');
     if (process.env.ANCIENNE_SIDEBAR) {
       // Copie « barre latérale d'origine » : on retire les règles de COULEUR de la charte sur la barre latérale (elles écrasaient,
       // avec !important, les couleurs d'origine : texte blanc, fond translucide, trait actif). La géométrie (largeur, repli) reste.
