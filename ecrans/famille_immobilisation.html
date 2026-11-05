@@ -150,9 +150,10 @@
     var pc = window.PLAN_COMPTABLE || [], parents = {};
     pc.forEach(function (r) { if (r.parent) parents[r.parent] = 1; });
     var det = pc.filter(function (r) { return !parents[r.code]; }); if (!det.length) det = pc;
-    var cl2 = det.filter(function (r) { return /^2/.test(r.code); });   // le compte d'immobilisation est un compte de classe 2 ; les autres comptes restent choisis dans tout le plan (le plan d'un projet n'a pas toujours de 28x / 681)
+    var PREF = { c_immo: /^2(?!8)/, c_amort: /^28/, c_dot: /^681/, c_plus: /^752/, c_moins: /^652/ };   // comptes proposés en priorité ; si le plan n'en contient aucun, tout le plan reste proposé
+    var cl2 = det.filter(function (r) { return /^2(?!8)/.test(r.code); });   // le compte d'immobilisation est un compte de classe 2 ; les autres comptes restent choisis dans tout le plan (le plan d'un projet n'a pas toujours de 28x / 681)
     CPT.forEach(function (k) {
-      var s = f(k), v = s.value, L = k === 'c_immo' && cl2.length ? cl2 : det;
+      var s = f(k), v = s.value, L = PREF[k] ? det.filter(function (r) { return PREF[k].test(r.code); }) : []; if (!L.length) L = k === 'c_immo' && cl2.length ? cl2 : det;
       s.innerHTML = '<option value="">— Sélectionner —</option>' + L.map(function (r) { return '<option value="' + esc(r.code) + '">' + esc(r.code + ' — ' + r.libelle) + '</option>'; }).join('') +
         (v && !L.some(function (r) { return r.code === v; }) ? '<option value="' + esc(v) + '">' + esc(v) + '</option>' : '');
       s.value = v;
