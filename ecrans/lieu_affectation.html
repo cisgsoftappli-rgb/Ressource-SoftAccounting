@@ -41,6 +41,7 @@
     <button type="button" data-la-supprimer>Supprimer</button>
     <button type="button" data-la-enregistrer>Enregistrer</button>
     <button type="button" data-la-annuler>Annuler</button>
+    <button type="button" data-la-import>Import</button>
     <button type="button" data-la-imprimer>Imprimer</button>
     <button type="button" data-la-pdf>PDF</button>
     <button type="button" data-la-xlsx>Excel (XLSX)</button>
@@ -213,6 +214,7 @@
     var a = q('[data-la-actions]'), vide = !data.length, onSt = q('[data-la-pan=structure]').hidden === false;
     a.querySelector('[data-la-ajouter]').disabled = ed || onSt || !niveaux.length; a.querySelector('[data-la-modifier]').disabled = ed || onSt || !par(sel); a.querySelector('[data-la-supprimer]').disabled = ed || onSt || !par(sel);
     a.querySelector('[data-la-enregistrer]').disabled = !ed || onSt; a.querySelector('[data-la-annuler]').disabled = !ed || onSt;
+    a.querySelector('[data-la-import]').disabled = ed || onSt || !niveaux.length;
     ['imprimer', 'pdf', 'xlsx'].forEach(function (k) { a.querySelector('[data-la-' + k + ']').disabled = vide; });
   }
   function onglet(n) { qa('[data-la-pan]').forEach(function (p) { p.hidden = p.dataset.laPan !== n; }); qa('[data-la-tab]').forEach(function (t) { var on = t.dataset.laTab === n; t.classList.toggle('on', on); t.setAttribute('aria-selected', on); }); etat(); }
@@ -230,6 +232,34 @@
   q('[data-f=parent]').addEventListener('change', aides);
   q('[data-f=seg]').addEventListener('input', function () { var nv = niveaux[+q('[data-f=niveau]').value - 1]; this.value = fmtFiltre(nv ? nv.fmt : 'Alphanumérique', this.value); });
 
+  // importation Excel / CSV : Code (complet, segments séparés par « . »), Libellé, Statut (étapes communes : voir import_assistant.js)
+  var vusImp = {};
+  function parCode(c) { for (var i = 0; i < data.length; i++) if (code(data[i]) === c) return data[i]; return null; }
+  function ligneImport(v) {
+    var c = String(v['Code'] == null ? '' : v['Code']).trim().toUpperCase(), lb = String(v['Libellé'] == null ? '' : v['Libellé']).trim(), st = String(v['Statut'] == null ? '' : v['Statut']).trim().toLowerCase(), er = [];
+    var segs = c ? c.split('.') : [], n = segs.length, pc = segs.slice(0, -1).join('.');
+    if (!niveaux.length) er.push('Aucune structure définie (onglet « Structure & codification »)');
+    else if (!c) er.push('Code obligatoire');
+    else if (n > niveaux.length) er.push('Niveau ' + n + ' non défini dans la structure (' + niveaux.length + ' niveau' + (niveaux.length > 1 ? 'x' : '') + ')');
+    else {
+      segs.forEach(function (s, i) { var nv = niveaux[i]; if (s.length !== nv.lg || fmtFiltre(nv.fmt, s) !== s) er.push('Segment « ' + s + ' » (niveau ' + (i + 1) + ') : ' + nv.lg + ' caractère' + (nv.lg > 1 ? 's' : '') + ' attendu' + (nv.lg > 1 ? 's' : '') + ' (' + fmtMot(nv.fmt) + ')'); });
+      if (!er.length && n > 1 && !parCode(pc) && !vusImp[pc]) er.push('Parent « ' + pc + ' » introuvable (à placer avant dans le fichier ou à créer d’abord)');
+    }
+    if (!lb) er.push('Nom du lieu obligatoire'); else if (lb.length > 80) er.push('Nom du lieu trop long (80 caractères au plus)');
+    if (st && st !== 'actif' && st !== 'inactif') er.push('Statut « ' + v['Statut'] + ' » invalide (Actif ou Inactif)');
+    if (!er.length) vusImp[c] = 1;
+    return { cle: c, doublon: !!c && !!parCode(c), erreurs: er, data: { code: c, n: n, pc: pc, seg: segs[n - 1], lib: lb, actif: st !== 'inactif' } };
+  }
+  function integrerImport(L) {
+    var cr = 0, mj = 0;
+    L.slice().sort(function (a, b) { return a.data.n - b.data.n; }).forEach(function (x) {
+      var d = x.data, ex = parCode(d.code);
+      if (ex) { ex.lib = d.lib; ex.actif = d.actif; if (!d.actif) descendants(ex.id).forEach(function (e) { e.actif = false; }); mj++; return; }
+      var p = d.pc ? parCode(d.pc) : null; if (d.pc && !p) return;
+      data.push({ id: nextId++, n: d.n, p: p ? p.id : 0, seg: d.seg, lib: d.lib, actif: d.actif }); if (p) ouverts[p.id] = true; cr++;
+    });
+    tabNiveaux(); liste(); etat(); publier(); toast(cr + ' ligne(s) ajoutée(s), ' + mj + ' mise(s) à jour.');
+  }
   function enregistrer() {
     var l = mode === 'edition' ? par(sel) : null, n = +q('[data-f=niveau]').value, p = +q('[data-f=parent]').value;
     var seg = q('[data-f=seg]').value.trim(), lib = q('[data-f=lib]').value.trim(), ok = true, lg = niveaux[n - 1] ? niveaux[n - 1].lg : 0;
@@ -339,6 +369,20 @@
       if (d.length) { toast('Suppression impossible : ce lieu contient ' + d.length + ' lieu(x) rattaché(s).'); return; }
       if (!window.confirm('Supprimer le lieu d’affectation « ' + l.lib + ' » ? Cette action est définitive.')) return;
       data.splice(data.indexOf(l), 1); sel = 0; liste(); form(null); etat(); publier(); tabNiveaux(); toast('Lieu d’affectation supprimé.'); return;
+    }
+    if (b.hasAttribute('data-la-import')) {
+      vusImp = {};
+      window.IMPORT_ASSISTANT.ouvrir({
+        titre: 'Lieux d’affectation', fichier: 'modele_lieux_affectation.xlsx',
+        champs: [
+          { col: 'Code', oblig: true, format: 'Code complet : un segment par niveau, séparés par un point (ex. 01.02). Le parent doit exister ou figurer avant dans le fichier.', exemple: '01.01' },
+          { col: 'Libellé', oblig: true, format: 'Texte, 80 caractères au plus.', exemple: 'Bâtiment A' },
+          { col: 'Statut', oblig: false, format: 'Actif ou Inactif. Par défaut : Actif.', exemple: 'Actif' }
+        ],
+        exemples: [['01', 'Siège', 'Actif'], ['01.01', 'Bâtiment A', 'Actif']],
+        ligne: ligneImport, integrer: integrerImport
+      });
+      return;
     }
     if (b.hasAttribute('data-la-imprimer')) { imprimer(); return; }
     if (b.hasAttribute('data-la-pdf')) { exporter('pdf'); return; }

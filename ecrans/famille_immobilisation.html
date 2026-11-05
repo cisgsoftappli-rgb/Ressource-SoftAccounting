@@ -39,6 +39,7 @@
     <button type="button" data-fi-supprimer>Supprimer</button>
     <button type="button" data-fi-enregistrer>Enregistrer</button>
     <button type="button" data-fi-annuler>Annuler</button>
+    <button type="button" data-fi-import>Import</button>
     <button type="button" data-fi-imprimer>Imprimer</button>
     <button type="button" data-fi-pdf>PDF</button>
     <button type="button" data-fi-xlsx>Excel (XLSX)</button>
@@ -188,6 +189,7 @@
     var a = q('[data-fi-actions]');
     a.querySelector('[data-fi-ajouter]').disabled = ed; a.querySelector('[data-fi-modifier]').disabled = ed || sel < 0; a.querySelector('[data-fi-supprimer]').disabled = ed || sel < 0;
     a.querySelector('[data-fi-enregistrer]').disabled = !ed; a.querySelector('[data-fi-annuler]').disabled = !ed;
+    a.querySelector('[data-fi-import]').disabled = ed;
     ['imprimer', 'pdf', 'xlsx'].forEach(function (k) { a.querySelector('[data-fi-' + k + ']').disabled = !data.length; });
   }
   function onglet(n) { qa('[data-fi-pan]').forEach(function (p) { p.hidden = p.dataset.fiPan !== n; }); qa('[data-fi-tab]').forEach(function (t) { var on = t.dataset.fiTab === n; t.classList.toggle('on', on); t.setAttribute('aria-selected', on); }); }
@@ -206,6 +208,45 @@
     r.duree = r.duree === '' ? '' : +r.duree; r.taux = r.taux === '' ? '' : +r.taux;
     if (!r.amortissable) { r.duree = ''; r.taux = ''; }
     return r;
+  }
+  // importation Excel / CSV : une ligne par famille (étapes communes : voir import_assistant.js)
+  function ouiNon(t, defaut) { t = String(t == null ? '' : t).trim().toLowerCase(); return t === '' ? defaut : t === 'oui' ? true : t === 'non' ? false : null; }
+  function choixImp(t, L, defaut) { t = String(t == null ? '' : t).trim().toLowerCase(); if (!t) return defaut; for (var i = 0; i < L.length; i++) if (L[i].toLowerCase() === t) return L[i]; return null; }
+  function ligneImport(v) {
+    function g(k) { return String(v[k] == null ? '' : v[k]).trim(); }
+    var er = [], c = g('Code').toUpperCase(), lb = g('Libellé'), pc = window.PLAN_COMPTABLE || [];
+    if (!c) er.push('Code obligatoire'); else if (c.length > 12 || /[^A-Z0-9-]/.test(c)) er.push('Code invalide (12 caractères au plus : lettres, chiffres, tiret)');
+    if (!lb) er.push('Libellé obligatoire'); else if (lb.length > 80) er.push('Libellé trop long (80 caractères au plus)');
+    var nature = choixImp(g('Nature'), ['Corporel', 'Incorporel', 'Financier'], 'Corporel'); if (!nature) er.push('Nature « ' + g('Nature') + ' » invalide (Corporel, Incorporel ou Financier)');
+    var am = ouiNon(g('Amortissable'), true); if (am === null) er.push('Amortissable « ' + g('Amortissable') + ' » invalide (Oui ou Non)');
+    var st = choixImp(g('Statut'), ['Actif', 'Inactif'], 'Actif'); if (!st) er.push('Statut « ' + g('Statut') + ' » invalide (Actif ou Inactif)');
+    var cpt = {};
+    [['c_immo', 'Compte d’immobilisation', true], ['c_amort', 'Compte d’amortissement', am !== false], ['c_dot', 'Compte de dotation', am !== false], ['c_sortie', 'Compte de sortie', false], ['c_plus', 'Compte de plus-value', false], ['c_moins', 'Compte de moins-value', false]].forEach(function (d) {
+      var x = g(d[1]); cpt[d[0]] = x;
+      if (!x) { if (d[2]) er.push(d[1] + ' obligatoire'); }
+      else if (pc.length && !pc.some(function (r) { return r.code === x; })) er.push(d[1] + ' « ' + x + ' » absent du plan comptable');
+    });
+    if (am !== false && cpt.c_amort && cpt.c_amort === cpt.c_immo) er.push('Le compte d’amortissement doit différer du compte d’immobilisation');
+    var me = choixImp(g('Méthode'), ['Linéaire', 'Dégressif'], 'Linéaire'); if (!me) er.push('Méthode « ' + g('Méthode') + ' » invalide (Linéaire ou Dégressif)');
+    var un = choixImp(g('Unité'), ['Ans', 'Mois'], 'Ans'); if (!un) er.push('Unité « ' + g('Unité') + ' » invalide (Ans ou Mois)');
+    var pr = choixImp(g('Prorata'), ['Oui', 'Non'], 'Oui'); if (!pr) er.push('Prorata « ' + g('Prorata') + ' » invalide (Oui ou Non)');
+    var pe = choixImp(g('Périodicité'), ['Annuel', 'Semestriel', 'Trimestriel', 'Mensuel'], 'Annuel'); if (!pe) er.push('Périodicité « ' + g('Périodicité') + ' » invalide (Annuel, Semestriel, Trimestriel ou Mensuel)');
+    var du = g('Durée').replace(',', '.'), ta = g('Taux').replace(',', '.').replace('%', '').trim();
+    if (am !== false) {
+      if (!(du !== '' && +du >= 1 && +du === Math.floor(+du))) er.push('Durée : entier supérieur ou égal à 1 obligatoire');
+      if (ta !== '' && !(+ta > 0 && +ta <= 100)) er.push('Taux : nombre compris entre 0 et 100 (vide = calcul automatique)');
+    }
+    var r = { code: c, lib: lb, nature: nature || 'Corporel', desc: g('Description'), actif: st !== 'Inactif', amortissable: am !== false, c_immo: cpt.c_immo, c_amort: am !== false ? cpt.c_amort : '', c_dot: am !== false ? cpt.c_dot : '', c_sortie: cpt.c_sortie, c_plus: cpt.c_plus, c_moins: cpt.c_moins, methode: me || 'Linéaire', unite: un || 'Ans', prorata: pr || 'Oui', debut: '', period: pe || 'Annuel', duree: '', taux: '', auto: true };
+    if (am !== false && !er.length) {
+      r.duree = +du; r.auto = ta === '';
+      if (r.auto) { var a = r.unite === 'Mois' ? r.duree / 12 : r.duree, t = 100 / a; if (r.methode === 'Dégressif') t *= a <= 4 ? 1.25 : a <= 6 ? 1.75 : 2.25; r.taux = Math.min(100, Math.round(t * 100) / 100); } else r.taux = +ta;
+    }
+    return { cle: c, doublon: !!c && data.some(function (x) { return x.code === c; }), erreurs: er, data: r };
+  }
+  function integrerImport(L) {
+    var cr = 0, mj = 0;
+    L.forEach(function (x) { var i = -1; data.forEach(function (y, k) { if (y.code === x.data.code) i = k; }); if (i >= 0) { data[i] = x.data; mj++; } else { data.push(x.data); cr++; } });
+    sel = -1; liste(); form(null); etat(); publier(); toast(cr + ' ligne(s) ajoutée(s), ' + mj + ' mise(s) à jour.');
   }
   function enregistrer() {
     var r = lire(), ok = true, ancien = mode === 'edition' ? data[sel].code : null;
@@ -257,6 +298,34 @@
       var r = data[sel]; if (!r) return;
       if (!window.confirm('Supprimer la famille d’immobilisation « ' + r.lib + ' » ? Cette action est définitive.')) return;
       data.splice(sel, 1); sel = -1; liste(); form(null); etat(); publier(); toast('Famille supprimée.'); return;
+    }
+    if (b.hasAttribute('data-fi-import')) {
+      window.IMPORT_ASSISTANT.ouvrir({
+        titre: 'Familles d’immobilisation', fichier: 'modele_familles_immobilisation.xlsx',
+        champs: [
+          { col: 'Code', oblig: true, format: 'Unique, 12 caractères au plus (lettres, chiffres, tiret). Enregistré en majuscules.', exemple: 'IMM-001' },
+          { col: 'Libellé', oblig: true, format: 'Texte, 80 caractères au plus.', exemple: 'Matériel informatique' },
+          { col: 'Nature', oblig: false, format: 'Corporel, Incorporel ou Financier. Par défaut : Corporel.', exemple: 'Corporel' },
+          { col: 'Compte d’immobilisation', oblig: true, format: 'Compte du plan comptable (classe 2).', exemple: '2183' },
+          { col: 'Compte d’amortissement', oblig: false, format: 'Obligatoire si la famille est amortissable ; différent du compte d’immobilisation.', exemple: '28183' },
+          { col: 'Compte de dotation', oblig: false, format: 'Obligatoire si la famille est amortissable.', exemple: '68112' },
+          { col: 'Compte de sortie', oblig: false, format: 'Compte du plan comptable.', exemple: '' },
+          { col: 'Compte de plus-value', oblig: false, format: 'Compte du plan comptable.', exemple: '' },
+          { col: 'Compte de moins-value', oblig: false, format: 'Compte du plan comptable.', exemple: '' },
+          { col: 'Amortissable', oblig: false, format: 'Oui ou Non. Par défaut : Oui.', exemple: 'Oui' },
+          { col: 'Méthode', oblig: false, format: 'Linéaire ou Dégressif. Par défaut : Linéaire.', exemple: 'Linéaire' },
+          { col: 'Durée', oblig: false, format: 'Entier ≥ 1 (obligatoire si amortissable).', exemple: '5' },
+          { col: 'Unité', oblig: false, format: 'Ans ou Mois. Par défaut : Ans.', exemple: 'Ans' },
+          { col: 'Taux', oblig: false, format: 'Entre 0 et 100 ; vide = calcul automatique d’après la durée.', exemple: '20' },
+          { col: 'Prorata', oblig: false, format: 'Oui ou Non. Par défaut : Oui.', exemple: 'Oui' },
+          { col: 'Périodicité', oblig: false, format: 'Annuel, Semestriel, Trimestriel ou Mensuel. Par défaut : Annuel.', exemple: 'Annuel' },
+          { col: 'Statut', oblig: false, format: 'Actif ou Inactif. Par défaut : Actif.', exemple: 'Actif' },
+          { col: 'Description', oblig: false, format: 'Texte libre.', exemple: '' }
+        ],
+        exemples: [['IMM-001', 'Matériel informatique', 'Corporel', '2183', '28183', '68112', '', '', '', 'Oui', 'Linéaire', '5', 'Ans', '20', 'Oui', 'Annuel', 'Actif', '']],
+        ligne: ligneImport, integrer: integrerImport
+      });
+      return;
     }
     if (b.hasAttribute('data-fi-imprimer')) { imprimer(); return; }
     if (b.hasAttribute('data-fi-pdf')) { exporter('pdf'); return; }
