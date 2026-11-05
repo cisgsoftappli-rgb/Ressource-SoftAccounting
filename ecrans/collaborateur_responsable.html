@@ -56,8 +56,8 @@
   </div>
 
   <div class="bp-tabs" role="tablist">
-    <button type="button" role="tab" class="on" data-cor-tab="collaborateurs">Collaborateurs responsables</button>
-    <button type="button" role="tab" data-cor-tab="structure">Structure &amp; codification</button>
+    <button type="button" role="tab" class="on" data-cor-tab="structure">Structure &amp; codification</button>
+    <button type="button" role="tab" data-cor-tab="collaborateurs">Collaborateurs responsables</button>
   </div>
 
   <div class="bp-grid">
@@ -344,6 +344,6 @@
     if (b.hasAttribute('data-cor-pdf')) { exporter('pdf'); return; }
     if (b.hasAttribute('data-cor-xlsx')) { exporter('xlsx'); return; }
   });
-  selectNiveaux(); tabNiveaux(); liste(); form(null); etat(); onglet('collaborateurs'); nonglet('saisie'); publier();
+  selectNiveaux(); tabNiveaux(); liste(); form(null); etat(); onglet('structure'); nonglet('saisie'); publier();
 })();
 </script>

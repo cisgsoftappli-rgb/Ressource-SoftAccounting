@@ -56,8 +56,8 @@
   </div>
 
   <div class="bp-tabs" role="tablist">
-    <button type="button" role="tab" class="on" data-la-tab="lieux">Lieux d'affectation</button>
-    <button type="button" role="tab" data-la-tab="structure">Structure &amp; codification</button>
+    <button type="button" role="tab" class="on" data-la-tab="structure">Structure &amp; codification</button>
+    <button type="button" role="tab" data-la-tab="lieux">Lieux d'affectation</button>
   </div>
 
   <div class="bp-grid">
@@ -344,6 +344,6 @@
     if (b.hasAttribute('data-la-pdf')) { exporter('pdf'); return; }
     if (b.hasAttribute('data-la-xlsx')) { exporter('xlsx'); return; }
   });
-  selectNiveaux(); tabNiveaux(); liste(); form(null); etat(); onglet('lieux'); nonglet('saisie'); publier();
+  selectNiveaux(); tabNiveaux(); liste(); form(null); etat(); onglet('structure'); nonglet('saisie'); publier();
 })();
 </script>
