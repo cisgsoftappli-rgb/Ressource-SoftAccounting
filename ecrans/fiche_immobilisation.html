@@ -174,6 +174,10 @@
   var root = document.querySelector('[data-fim]'); if (!root) return;
   function q(s) { return root.querySelector(s); } function qa(s) { return [].slice.call(root.querySelectorAll(s)); }
   var data = [], sel = -1, mode = 'consultation', nextId = 1, genere = [];
+  // persistance locale : les données saisies survivent au rechargement et aux nouvelles publications (localStorage « softcompta.immo.fiches »)
+  var CLE = 'softcompta.immo.fiches';
+  try { var sv = JSON.parse(localStorage.getItem(CLE) || 'null'); if (sv && typeof sv === 'object') { if (sv.data !== undefined) data = sv.data; if (sv.nextId !== undefined) nextId = sv.nextId; if (sv.genere !== undefined) genere = sv.genere; } } catch (e) {}
+  function sauver() { try { localStorage.setItem(CLE, JSON.stringify({ data: data, nextId: nextId, genere: genere })); } catch (e) {} }
   var SIMPLES = ['annee', 'site', 'ref', 'desig', 'compte', 'qte', 'pu', 'dacq', 'dms', 'damort', 'num', 'etat', 'famille', 'empl', 'resp', 'coll', 'aux', 'c_type', 'c_date', 'c_val', 'c_ref', 'c_tiers', 'c_motif'];
   var LISTES = ['annee', 'site', 'compte', 'famille', 'empl', 'resp', 'coll', 'aux'];
   var ERR = ['annee', 'site', 'ref', 'desig', 'compte', 'qte', 'pu', 'dacq', 'dms', 'damort', 'num', 'etat', 'empl', 'resp', 'coll', 'aux', 'c_type', 'c_date', 'c_val', 'c_tiers'];
@@ -404,6 +408,7 @@
     mode = 'consultation'; liste(); form(data[sel]); etat(); onglet('liste'); publier(); toast(ancien ? 'Fiche modifiée.' : 'Fiche enregistrée.');
   }
   function publier() {
+    sauver();
     window.FICHES_IMMOBILISATION = data.map(function (r) { return { num: r.num, designation: r.desig, famille: r.famille, emplacement: r.empl, responsable: r.resp, compte: r.compte, valeur: r.qte * r.pu, dateAcquisition: r.dacq, statut: r.genere ? 'Écriture générée' : 'Brouillon', sortie: r.cede ? { type: r.c_type, date: r.c_date, valeurCession: r.c_val === '' ? 0 : r.c_val, cessionnaire: r.c_tiers, reference: r.c_ref, motif: r.c_motif } : null }; });
     window.dispatchEvent(new Event('fiches-immobilisation-changed'));
   }

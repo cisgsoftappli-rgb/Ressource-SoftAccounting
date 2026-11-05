@@ -145,6 +145,10 @@
   var root = document.querySelector('[data-ras]'); if (!root) return;
   function q(s) { return root.querySelector(s); } function qa(s) { return [].slice.call(root.querySelectorAll(s)); }
   var mvts = [], sel = -1, mode = 'consultation', nextId = 1, fiche = null, ouvert = {}, histoOuvert = false;
+  // persistance locale : les données saisies survivent au rechargement et aux nouvelles publications (localStorage « softcompta.immo.reassignations »)
+  var CLE = 'softcompta.immo.reassignations';
+  try { var sv = JSON.parse(localStorage.getItem(CLE) || 'null'); if (sv && typeof sv === 'object') { if (sv.mvts !== undefined) mvts = sv.mvts; if (sv.nextId !== undefined) nextId = sv.nextId; } } catch (e) {}
+  function sauver() { try { localStorage.setItem(CLE, JSON.stringify({ mvts: mvts, nextId: nextId })); } catch (e) {} }
   function esc(s) { return String(s == null ? '' : s).replace(/[&<>"]/g, function (c) { return { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c]; }); }
   function f(k) { return q('[data-f=' + k + ']'); }
   function toast(m) { var t = q('[data-ras-toast]'); t.textContent = m; t.hidden = false; clearTimeout(toast.t); toast.t = setTimeout(function () { t.hidden = true; }, 3400); }
@@ -291,7 +295,7 @@
     a.querySelector('[data-ras-supprimer]').disabled = ed || !m; a.querySelector('[data-ras-historique]').disabled = ed || !m;
     ['imprimer', 'pdf', 'xlsx'].forEach(function (k) { a.querySelector('[data-ras-' + k + ']').disabled = !mvts.length; });
   }
-  function publier() { window.REASSIGNATIONS_IMMOBILISATION = mvts.map(function (m) { return { date: m.date, num: m.num, designation: m.desig, ancien: m.a, nouveau: m.n, motif: m.motif }; }); window.dispatchEvent(new Event('reassignations-immobilisation-changed')); }
+  function publier() { sauver(); window.REASSIGNATIONS_IMMOBILISATION = mvts.map(function (m) { return { date: m.date, num: m.num, designation: m.desig, ancien: m.a, nouveau: m.n, motif: m.motif }; }); window.dispatchEvent(new Event('reassignations-immobilisation-changed')); }
   function reinit() { fiche = null; selection(''); ancienne(null); q('[data-ras-attente]').hidden = false; q('[data-ras-nouvelle]').hidden = true; f('date').value = ''; f('motif').value = ''; err('s_num'); err('date'); err('chg'); histoSaisie(); }
 
   function enregistrer() {

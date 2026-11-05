@@ -128,6 +128,10 @@
   // id unique par collaborateur ; code complet recalculé à partir des parents
   var data = [];
   var nextId = 1, sel = 0, mode = 'consultation', ouverts = {}, parentFixe = 0;
+  // persistance locale : les données saisies survivent au rechargement et aux nouvelles publications (localStorage « softcompta.immo.collaborateurs »)
+  var CLE = 'softcompta.immo.collaborateurs';
+  try { var sv = JSON.parse(localStorage.getItem(CLE) || 'null'); if (sv && typeof sv === 'object') { if (sv.niveaux !== undefined) niveaux = sv.niveaux; if (sv.data !== undefined) data = sv.data; if (sv.nextId !== undefined) nextId = sv.nextId; } } catch (e) {}
+  function sauver() { try { localStorage.setItem(CLE, JSON.stringify({ niveaux: niveaux, data: data, nextId: nextId })); } catch (e) {} }
   function esc(s) { return String(s == null ? '' : s).replace(/[&<>"]/g, function (c) { return { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c]; }); }
   function toast(m) { var t = q('[data-cor-toast]'); t.textContent = m; t.hidden = false; clearTimeout(toast.t); toast.t = setTimeout(function () { t.hidden = true; }, 2500); }
   function err(k, m) { var e = q('[data-er="' + k + '"]'); e.textContent = m || ''; e.classList.toggle('show', !!m); var f = q('[data-f="' + k + '"]'); if (f) f.classList.toggle('err', !!m); }
@@ -137,6 +141,7 @@
   function descendants(id) { var r = []; enfants(id).forEach(function (e) { r.push(e); r = r.concat(descendants(e.id)); }); return r; }
   function nivLib(n) { return niveaux[n - 1] ? niveaux[n - 1].lib : 'Niveau ' + n; }
   function publier() {
+    sauver();
     window.COLLABORATEURS_RESPONSABLES = data.filter(function (l) { return l.actif; }).map(function (l) { return { code: code(l), libelle: l.lib, niveau: nivLib(l.n) }; });
     window.dispatchEvent(new Event('collaborateurs-responsables-changed'));
   }

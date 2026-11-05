@@ -130,6 +130,10 @@
   var root = document.querySelector('[data-fi]'); if (!root) return;
   function q(s) { return root.querySelector(s); } function qa(s) { return [].slice.call(root.querySelectorAll(s)); }
   var data = [], sel = -1, mode = 'consultation';
+  // persistance locale : les données saisies survivent au rechargement et aux nouvelles publications (localStorage « softcompta.immo.familles »)
+  var CLE = 'softcompta.immo.familles';
+  try { var sv = JSON.parse(localStorage.getItem(CLE) || 'null'); if (sv && typeof sv === 'object') { if (sv.data !== undefined) data = sv.data; } } catch (e) {}
+  function sauver() { try { localStorage.setItem(CLE, JSON.stringify({ data: data })); } catch (e) {} }
   var CPT = ['c_immo', 'c_amort', 'c_dot', 'c_sortie', 'c_plus', 'c_moins'];
   var CHAMPS = ['code', 'lib', 'nature', 'desc', 'c_immo', 'c_amort', 'c_dot', 'c_sortie', 'c_plus', 'c_moins', 'methode', 'duree', 'unite', 'taux', 'prorata', 'pbase', 'debut', 'period', 'coef'];
   var AMORT = ['methode', 'duree', 'unite', 'taux', 'auto', 'prorata', 'pbase', 'debut', 'period'];
@@ -281,6 +285,7 @@
     mode = 'consultation'; liste(); form(data[sel]); etat(); onglet('liste'); publier(); toast(ancien ? 'Famille modifiée.' : 'Famille enregistrée.');
   }
   function publier() {
+    sauver();
     window.FAMILLES_IMMOBILISATION = data.filter(function (r) { return r.actif; }).map(function (r) { return { code: r.code, libelle: r.lib, nature: r.nature, compte: r.c_immo, amortissable: r.amortissable, methode: r.methode, duree: r.duree, unite: r.unite, taux: r.taux, coef: r.coef, prorata: r.prorata, pbase: r.pbase, debut: r.debut }; });
     window.dispatchEvent(new Event('familles-immobilisation-changed'));
   }
