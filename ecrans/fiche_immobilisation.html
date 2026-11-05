@@ -103,6 +103,7 @@
               <label class="bp-champ"><span>Valeur d'acquisition</span><input class="bp-in fim-ro" data-f="val" readonly tabindex="-1"></label>
               <label class="bp-champ"><span>Date d'acquisition <b>*</b></span><input class="bp-in" type="date" data-f="dacq"><span class="fim-er" data-er="dacq"></span></label>
               <label class="bp-champ"><span>Date de mise en service <b>*</b></span><input class="bp-in" type="date" data-f="dms"><span class="fim-er" data-er="dms"></span></label>
+              <label class="bp-champ"><span>Date de début d'amortissement</span><input class="bp-in" type="date" data-f="damort"><span class="fim-help" data-fim-damort-aide></span><span class="fim-er" data-er="damort"></span></label>
             </div>
             <div class="fim-g4" data-fim-devs style="margin-top:12px"></div>
           </div>
@@ -173,9 +174,9 @@
   var root = document.querySelector('[data-fim]'); if (!root) return;
   function q(s) { return root.querySelector(s); } function qa(s) { return [].slice.call(root.querySelectorAll(s)); }
   var data = [], sel = -1, mode = 'consultation', nextId = 1, genere = [];
-  var SIMPLES = ['annee', 'site', 'ref', 'desig', 'compte', 'qte', 'pu', 'dacq', 'dms', 'num', 'etat', 'famille', 'empl', 'resp', 'coll', 'aux', 'c_type', 'c_date', 'c_val', 'c_ref', 'c_tiers', 'c_motif'];
+  var SIMPLES = ['annee', 'site', 'ref', 'desig', 'compte', 'qte', 'pu', 'dacq', 'dms', 'damort', 'num', 'etat', 'famille', 'empl', 'resp', 'coll', 'aux', 'c_type', 'c_date', 'c_val', 'c_ref', 'c_tiers', 'c_motif'];
   var LISTES = ['annee', 'site', 'compte', 'famille', 'empl', 'resp', 'coll', 'aux'];
-  var ERR = ['annee', 'site', 'ref', 'desig', 'compte', 'qte', 'pu', 'dacq', 'dms', 'num', 'etat', 'empl', 'resp', 'coll', 'aux', 'c_type', 'c_date', 'c_val', 'c_tiers'];
+  var ERR = ['annee', 'site', 'ref', 'desig', 'compte', 'qte', 'pu', 'dacq', 'dms', 'damort', 'num', 'etat', 'empl', 'resp', 'coll', 'aux', 'c_type', 'c_date', 'c_val', 'c_tiers'];
   var CESSION = ['cede', 'c_type', 'c_date', 'c_val', 'c_ref', 'c_tiers', 'c_motif'];   // champs de cession : modifiables même après la génération de l'écriture d'acquisition
   var REFPLAN = { PLAN1: 'activite', PLAN2: 'budget', PLAN4: 'geo' };
   function esc(s) { return String(s == null ? '' : s).replace(/[&<>"]/g, function (c) { return { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c]; }); }
@@ -270,6 +271,16 @@
     var fam = (window.FAMILLES_IMMOBILISATION || []).filter(function (x) { return x.code === f('famille').value; })[0];
     if (fam && !f('compte').value) { if (![].some.call(f('compte').options, function (o) { return o.value === fam.compte; })) { var o = document.createElement('option'); o.value = fam.compte; o.textContent = fam.compte; f('compte').appendChild(o); } f('compte').value = fam.compte; }
   });
+  // date de début d'amortissement : date d'acquisition, ou saisissable ici si la famille est paramétrée « Modifiable »
+  function famCourante() { return (window.FAMILLES_IMMOBILISATION || []).filter(function (x) { return x.code === f('famille').value; })[0] || null; }
+  function damortModifiable() { var fam = famCourante(); return !!(fam && fam.amortissable && fam.debut === 'Modifiable'); }
+  function majAmort() {
+    var m = damortModifiable(), fam = famCourante();
+    if (!m || !f('damort').value) f('damort').value = f('dacq').value;
+    f('damort').disabled = !(mode !== 'consultation' && m && !(sel >= 0 && data[sel] && data[sel].genere));
+    q('[data-fim-damort-aide]').textContent = !fam ? 'Date d’acquisition (aucune famille choisie).' : !fam.amortissable ? 'Famille non amortissable.' : m ? 'Modifiable (paramétrage de la famille ' + fam.code + ').' : 'Date d’acquisition (paramétrage de la famille ' + fam.code + ').';
+  }
+  ['dacq', 'famille'].forEach(function (k) { f(k).addEventListener('input', majAmort); f(k).addEventListener('change', majAmort); });
   f('num').addEventListener('input', function () { this.value = this.value.toUpperCase().replace(/[^A-Z0-9-]/g, ''); });
 
   // ---------- cession / sortie : amortissements cumulés, VNC, plus-value ou moins-value (calcul indicatif d'après la famille) ----------
@@ -322,7 +333,7 @@
     listes(r);
     SIMPLES.forEach(function (k) { if (LISTES.indexOf(k) < 0) f(k).value = r[k] == null ? '' : r[k]; });
     f('cede').checked = !!r.cede;
-    effacer(); majValeur(); majCessionEtat();
+    effacer(); majValeur(); majCessionEtat(); majAmort();
     var v = q('[data-fim-verrou]');
     v.hidden = !(r.genere); v.textContent = r.genere ? 'Écriture générée sous le n° de pièce ' + r.e_piece + ' (journal ' + r.e_journal + ') : les données d’acquisition ne sont plus modifiables ; seules les informations de cession / sortie restent modifiables.' : '';
   }
@@ -335,7 +346,7 @@
     ['c_type', 'c_date', 'c_ref', 'c_motif'].forEach(function (k) { f(k).disabled = !ed || !f('cede').checked; });
     var act = window.PLANS_ACTIFS ? window.PLANS_ACTIFS() : [];
     qa('[data-ana]').forEach(function (s) { if (act.indexOf(s.dataset.ana) < 0) s.disabled = true; });
-    f('aux').disabled = !ed || gen || !f('coll').value;
+    f('aux').disabled = !ed || gen || !f('coll').value; majAmort();
     var a = q('[data-fim-actions]'), peutGen = !ed && !!cur && !gen;
     a.querySelector('[data-fim-ajouter]').disabled = ed; a.querySelector('[data-fim-modifier]').disabled = ed || sel < 0; a.querySelector('[data-fim-supprimer]').disabled = ed || sel < 0 || gen || !!(cur && cur.cede);
     a.querySelector('[data-fim-enregistrer]').disabled = !ed; a.querySelector('[data-fim-annuler]').disabled = !ed;
@@ -370,6 +381,9 @@
     if (!(r.qte >= 1 && r.qte === Math.floor(r.qte))) { err('qte', 'La quantité est un entier supérieur ou égal à 1.'); ok = false; }
     if (!(r.pu >= 0) || r.pu === '') { err('pu', 'Le prix unitaire est obligatoire (0 ou plus).'); ok = false; }
     if (r.num && data.some(function (x) { return x.num === r.num && x.num !== ancien; })) { err('num', 'Ce numéro d’identification existe déjà.'); ok = false; }
+    if (!damortModifiable()) r.damort = r.dacq;
+    else if (!r.damort) { err('damort', 'La date de début d’amortissement est obligatoire.'); ok = false; }
+    else if (r.dacq && r.damort < r.dacq) { err('damort', 'Le début d’amortissement ne peut pas précéder l’acquisition.'); ok = false; }
     if (r.dacq && r.dms && r.dms < r.dacq) { err('dms', 'La mise en service ne peut pas précéder l’acquisition.'); ok = false; }
     var ex = (window.EXERCICES_API ? window.EXERCICES_API.liste() : []).filter(function (x) { return x.annee === r.annee; })[0];
     if (ex && r.dacq && iso(ex.debut) && (r.dacq < iso(ex.debut) || r.dacq > iso(ex.fin))) { err('dacq', 'La date d’acquisition doit être dans l’exercice ' + r.annee + ' (' + ex.debut + ' – ' + ex.fin + ').'); ok = false; }
@@ -397,7 +411,7 @@
   // ---------- API pour l'écran « Réassignation » (Immobilisations › Saisies) ----------
   // liste() : copie des fiches ; reaffecter(num, { site, empl, resp, ana }) : applique une nouvelle affectation (refusé pour une fiche cédée ou pendant une saisie).
   window.FICHES_API = {
-    liste: function () { return data.map(function (r) { return { num: r.num, desig: r.desig, compte: r.compte, site: r.site, dacq: r.dacq, empl: r.empl, resp: r.resp, qte: r.qte, pu: r.pu, famille: r.famille, ana: JSON.parse(JSON.stringify(r.ana || {})), cede: !!r.cede, genere: !!r.genere, dms: r.dms, c_type: r.cede ? r.c_type : '', c_date: r.cede ? r.c_date : '', c_val: r.cede ? r.c_val : '' }; }); },
+    liste: function () { return data.map(function (r) { return { num: r.num, desig: r.desig, compte: r.compte, site: r.site, dacq: r.dacq, empl: r.empl, resp: r.resp, qte: r.qte, pu: r.pu, famille: r.famille, ana: JSON.parse(JSON.stringify(r.ana || {})), cede: !!r.cede, genere: !!r.genere, dms: r.dms, damort: r.damort || r.dacq, c_type: r.cede ? r.c_type : '', c_date: r.cede ? r.c_date : '', c_val: r.cede ? r.c_val : '' }; }); },
     reaffecter: function (num, v) {
       var r = data.filter(function (x) { return x.num === num; })[0]; if (!r || r.cede || mode !== 'consultation') return false;
       r.site = v.site; r.empl = v.empl; r.resp = v.resp; r.ana = JSON.parse(JSON.stringify(v.ana || {}));
