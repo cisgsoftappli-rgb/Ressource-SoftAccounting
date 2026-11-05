@@ -67,12 +67,12 @@
       <h2>Fiches d'immobilisation <small>Double-clic ou « Modifier » pour ouvrir la fiche en saisie</small></h2>
       <div style="overflow:auto;max-height:560px">
         <table class="bp-tb" style="min-width:900px"><thead>
-          <tr><th>N° d'identification</th><th>Désignation du bien</th><th>Famille</th><th>Emplacement</th><th>Date d'acquisition</th><th class="r">Valeur d'acquisition</th><th>Statut</th></tr>
+          <tr><th>N° d'identification</th><th>Désignation du bien</th><th>Famille</th><th>Lieu d'affectation</th><th>Date d'acquisition</th><th class="r">Valeur d'acquisition</th><th>Statut</th></tr>
           <tr class="flt">
             <th><input class="bp-in" data-fc="0" aria-label="Filtrer N°"></th>
             <th><input class="bp-in" data-fc="1" aria-label="Filtrer Désignation"></th>
             <th><input class="bp-in" data-fc="2" aria-label="Filtrer Famille"></th>
-            <th><input class="bp-in" data-fc="3" aria-label="Filtrer Emplacement"></th>
+            <th><input class="bp-in" data-fc="3" aria-label="Filtrer Lieu d'affectation"></th>
             <th><input class="bp-in" data-fc="4" aria-label="Filtrer Date"></th>
             <th><input class="bp-in" data-fc="5" aria-label="Filtrer Valeur"></th>
             <th><select class="bp-sel" data-fc="6" aria-label="Filtrer Statut"><option value=""></option><option value="brouillon">Brouillon</option><option value="généré">Écriture générée</option></select></th>
@@ -103,7 +103,7 @@
               <label class="bp-champ"><span>Valeur d'acquisition</span><input class="bp-in fim-ro" data-f="val" readonly tabindex="-1"></label>
               <label class="bp-champ"><span>Date d'acquisition <b>*</b></span><input class="bp-in" type="date" data-f="dacq"><span class="fim-er" data-er="dacq"></span></label>
               <label class="bp-champ"><span>Date de mise en service <b>*</b></span><input class="bp-in" type="date" data-f="dms"><span class="fim-er" data-er="dms"></span></label>
-              <label class="bp-champ"><span>Date de début d'amortissement</span><input class="bp-in" type="date" data-f="damort"><span class="fim-help" data-fim-damort-aide></span><span class="fim-er" data-er="damort"></span></label>
+              <label class="bp-champ"><span>Date de début d'amortissement</span><input class="bp-in" type="date" data-f="damort"><span class="fim-er" data-er="damort"></span></label>
             </div>
             <div class="fim-g4" data-fim-devs style="margin-top:12px"></div>
           </div>
@@ -114,7 +114,7 @@
               <label class="bp-champ"><span>Numéro d'identification <b>*</b></span><input class="bp-in fim-code" data-f="num" maxlength="24" autocomplete="off" placeholder="IMM-2026-001"><span class="fim-er" data-er="num"></span></label>
               <label class="bp-champ"><span>État du bien <b>*</b></span><select class="bp-sel" data-f="etat"><option value="">— Sélectionner —</option><option>Neuf</option><option>Bon</option><option>Moyen</option><option>Mauvais</option><option>Hors service</option></select><span class="fim-er" data-er="etat"></span></label>
               <label class="bp-champ"><span>Famille d'immobilisation</span><select class="bp-sel" data-f="famille"></select></label>
-              <label class="bp-champ"><span>Emplacement <b>*</b></span><select class="bp-sel" data-f="empl"></select><span class="fim-er" data-er="empl"></span></label>
+              <label class="bp-champ"><span>Lieu d'affectation <b>*</b></span><select class="bp-sel" data-f="empl"></select><span class="fim-er" data-er="empl"></span></label>
               <label class="bp-champ"><span>Responsable <b>*</b></span><select class="bp-sel" data-f="resp"></select><span class="fim-er" data-er="resp"></span></label>
             </div>
             <p class="fim-help" data-fim-aide style="margin:8px 0 0"></p>
@@ -282,7 +282,6 @@
     var m = damortModifiable(), fam = famCourante();
     if (!m || !f('damort').value) f('damort').value = f('dacq').value;
     f('damort').disabled = !(mode !== 'consultation' && m && !(sel >= 0 && data[sel] && data[sel].genere));
-    q('[data-fim-damort-aide]').textContent = !fam ? 'Date d’acquisition (aucune famille choisie).' : !fam.amortissable ? 'Famille non amortissable.' : m ? 'Modifiable (paramétrage de la famille ' + fam.code + ').' : 'Date d’acquisition (paramétrage de la famille ' + fam.code + ').';
   }
   ['dacq', 'famille'].forEach(function (k) { f(k).addEventListener('input', majAmort); f(k).addEventListener('change', majAmort); });
   f('num').addEventListener('input', function () { this.value = this.value.toUpperCase().replace(/[^A-Z0-9-]/g, ''); });
@@ -381,7 +380,7 @@
     function exige(k, m) { if (!r[k] && r[k] !== 0) { err(k, m); ok = false; } }
     exige('annee', 'L’année est obligatoire.'); exige('site', 'Le site est obligatoire.'); exige('ref', 'La référence facture / pièce est obligatoire.'); exige('desig', 'La désignation du bien est obligatoire.');
     exige('compte', 'Le compte général est obligatoire.'); exige('dacq', 'La date d’acquisition est obligatoire.'); exige('dms', 'La date de mise en service est obligatoire.');
-    exige('num', 'Le numéro d’identification est obligatoire.'); exige('etat', 'L’état du bien est obligatoire.'); exige('empl', 'L’emplacement est obligatoire.'); exige('resp', 'Le responsable est obligatoire.');
+    exige('num', 'Le numéro d’identification est obligatoire.'); exige('etat', 'L’état du bien est obligatoire.'); exige('empl', 'Le lieu d’affectation est obligatoire.'); exige('resp', 'Le responsable est obligatoire.');
     if (!(r.qte >= 1 && r.qte === Math.floor(r.qte))) { err('qte', 'La quantité est un entier supérieur ou égal à 1.'); ok = false; }
     if (!(r.pu >= 0) || r.pu === '') { err('pu', 'Le prix unitaire est obligatoire (0 ou plus).'); ok = false; }
     if (r.num && data.some(function (x) { return x.num === r.num && x.num !== ancien; })) { err('num', 'Ce numéro d’identification existe déjà.'); ok = false; }
@@ -449,7 +448,7 @@
   // ---------- exports ----------
   function table() {
     var L = data.filter(function (m, i) { var tr = tb.children[i]; return !tr || !tr.hidden; });
-    return { tete: ['N° d’identification', 'Désignation du bien', 'Famille', 'Emplacement', 'Date d’acquisition', 'Valeur d’acquisition', 'Statut'], lignes: L.map(function (r) { return [r.num, r.desig, famLib(r), r.empl, dFR(r.dacq), nb(r.qte * r.pu), (r.genere ? 'Écriture générée' : 'Brouillon') + (r.cede ? ' — ' + r.c_type : '')]; }) };
+    return { tete: ['N° d’identification', 'Désignation du bien', 'Famille', 'Lieu d’affectation', 'Date d’acquisition', 'Valeur d’acquisition', 'Statut'], lignes: L.map(function (r) { return [r.num, r.desig, famLib(r), r.empl, dFR(r.dacq), nb(r.qte * r.pu), (r.genere ? 'Écriture générée' : 'Brouillon') + (r.cede ? ' — ' + r.c_type : '')]; }) };
   }
   function exporter(k) {
     var X = window.EXPORT_TABLEAU, t = table(); if (!X) { toast('Module d’export indisponible.'); return; } if (!t.lignes.length) { toast('Rien à exporter.'); return; }

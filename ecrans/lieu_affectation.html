@@ -142,7 +142,7 @@
   function nivLib(n) { return niveaux[n - 1] ? niveaux[n - 1].lib : 'Niveau ' + n; }
   function publier() {
     sauver();
-    window.LIEUX_AFFECTATION = data.filter(function (l) { return l.actif; }).map(function (l) { return { code: code(l), libelle: l.lib, niveau: nivLib(l.n) }; });
+    window.LIEUX_AFFECTATION = data.filter(function (l) { return l.actif && l.n === niveaux.length; })   /* seuls les derniers niveaux sont proposés dans les listes */.map(function (l) { return { code: code(l), libelle: l.lib, niveau: nivLib(l.n) }; });
     window.dispatchEvent(new Event('lieux-affectation-changed'));
   }
   function kpis() {
