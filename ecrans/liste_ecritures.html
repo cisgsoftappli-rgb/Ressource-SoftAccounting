@@ -1,0 +1,82 @@
+<!--
+  Écran « Comptabilité générale › Liste des écritures » — consultation (lecture seule) des pièces comptables enregistrées : saisies (Saisie d'écritures), importées
+  et générées automatiquement (Immobilisations : acquisition, dotation, cession / sortie). Source : window.ECRITURES_PIECES (registre des pièces ; chaque pièce porte
+  journal, piece, date, datePiece, source et lignes[{ compte, tiers, libelle, sens, montant, axes }]). Actualisé à l'ouverture de l'écran et à chaque génération
+  (événement « ecritures-immobilisation-generees »). Une ligne du tableau = une ligne d'écriture ; filtre texte et filtre par journal ; totaux débit / crédit des lignes affichées.
+  Préfixe lec / data-lec ; styles bp-* de « Paramétrage du bilan ». Ne pas nommer de fonction « $$ » (build.cjs).
+-->
+<style>
+[data-lec] .lec-bar{display:flex;flex-wrap:wrap;gap:12px;align-items:flex-end;margin:0 0 12px}
+[data-lec] .lec-bar .bp-champ{min-width:220px}
+[data-lec] .lec-n{margin-left:auto;font-size:13px;color:#5B606D}
+[data-lec] .lec-src{display:inline-flex;padding:2px 10px;border:1px solid #D6D9E0;border-radius:6px;font-size:12px;font-weight:600;background:#F5F7F9;color:#5B606D;white-space:nowrap}
+[data-lec] .lec-src.immo{background:#EFF6FF;border-color:#BFDBFE;color:#1D4ED8}
+[data-lec] .lec-code{font-family:ui-monospace,Consolas,monospace;font-weight:600}
+[data-lec] .bp-tb td.r,[data-lec] .bp-tb th.r{text-align:right;white-space:nowrap}
+[data-lec] .bp-tb tfoot td{background:#EEF2FB;font-weight:700;color:#18244F;border-top:2px solid #2E427B}
+[data-lec] .bp-tb input[type=checkbox]{pointer-events:auto}
+[data-lec] [hidden]{display:none!important}
+</style>
+
+<div class="bp-root" data-lec>
+  <h1 style="position:absolute;width:1px;height:1px;overflow:hidden;clip-path:inset(50%);margin:0">Liste des écritures</h1>
+  <p class="bp-help" style="margin:0 0 12px;font-size:12px;color:#5B606D">Pièces comptables enregistrées : saisies, importées et générées depuis les immobilisations (acquisition, dotation, cession / sortie).</p>
+  <div class="lec-bar">
+    <label class="bp-champ"><span>Rechercher</span><input class="bp-in" data-lec-q placeholder="Pièce, compte, tiers, libellé…" autocomplete="off"></label>
+    <label class="bp-champ"><span>Journal</span><select class="bp-sel" data-lec-j><option value="">Tous les journaux</option></select></label>
+    <label class="bp-champ"><span>Source</span><select class="bp-sel" data-lec-s><option value="">Toutes</option><option value="saisie">Saisie / import</option><option value="immobilisations">Immobilisations</option></select></label>
+    <span class="lec-n" data-lec-n></span>
+  </div>
+  <div style="overflow:auto;max-height:620px">
+    <table class="bp-tb" style="min-width:1000px">
+      <thead><tr><th>Date comptable</th><th>Journal</th><th>N° pièce</th><th>Source</th><th>Compte</th><th>Tiers</th><th>Libellé</th><th class="r">Débit</th><th class="r">Crédit</th></tr></thead>
+      <tbody data-lec-l></tbody>
+      <tfoot data-lec-t></tfoot>
+    </table>
+  </div>
+  <div class="bp-vide" data-lec-vide hidden>Aucune écriture enregistrée pour le moment.</div>
+</div>
+
+<script>
+(function () {
+  var root = document.querySelector('[data-lec]'); if (!root) return;
+  function q(s) { return root.querySelector(s); }
+  function esc(s) { return String(s == null ? '' : s).replace(/[&<>"]/g, function (c) { return { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c]; }); }
+  function nb(n) { return (Math.round((+n || 0) * 100) / 100).toLocaleString('fr-FR', { maximumFractionDigits: 2 }); }
+  function dFR(d) { return /^\d{4}-\d\d-\d\d/.test(d || '') ? d.slice(0, 10).split('-').reverse().join('/') : (d || ''); }
+  function lignes() {
+    var L = [];
+    (window.ECRITURES_PIECES || []).forEach(function (p) {
+      if (!p || !p.lignes || !p.lignes.length || p.source === 'demo') return;
+      p.lignes.forEach(function (l, i) {
+        var deb = l.sens === 'DEBIT' ? +l.montant || 0 : 0, cre = l.sens === 'DEBIT' ? 0 : +l.montant || 0;
+        L.push({ date: p.date || '', journal: p.journal || '', piece: p.piece || '', source: p.source === 'immobilisations' ? 'immobilisations' : 'saisie', type: p.type || '', compte: l.compte || '', tiers: l.tiers || '', libelle: l.libelle || '', d: deb, c: cre, ordre: i });
+      });
+    });
+    return L;
+  }
+  function maj() {
+    var L = lignes(), js = {}; L.forEach(function (l) { if (l.journal) js[l.journal] = 1; });
+    var sj = q('[data-lec-j]'), cur = sj.value;
+    sj.innerHTML = '<option value="">Tous les journaux</option>' + Object.keys(js).sort().map(function (j) { return '<option value="' + esc(j) + '">' + esc(j) + '</option>'; }).join(''); sj.value = js[cur] ? cur : '';
+    var t = q('[data-lec-q]').value.trim().toLowerCase(), jf = sj.value, sf = q('[data-lec-s]').value;
+    var V = L.filter(function (l) {
+      if (jf && l.journal !== jf) return false; if (sf && l.source !== sf) return false;
+      return !t || [l.piece, l.compte, l.tiers, l.libelle, l.journal, l.type].join(' ').toLowerCase().indexOf(t) >= 0;
+    });
+    V.sort(function (a, b) { return a.date < b.date ? 1 : a.date > b.date ? -1 : a.piece < b.piece ? 1 : a.piece > b.piece ? -1 : a.ordre - b.ordre; });
+    var td = 0, tc = 0;
+    q('[data-lec-l]').innerHTML = V.map(function (l) {
+      td += l.d; tc += l.c;
+      return '<tr><td>' + esc(dFR(l.date)) + '</td><td>' + esc(l.journal) + '</td><td class="lec-code">' + esc(l.piece) + '</td><td><span class="lec-src' + (l.source === 'immobilisations' ? ' immo' : '') + '">' + (l.source === 'immobilisations' ? 'Immobilisations' + (l.type ? ' · ' + esc(l.type) : '') : 'Saisie') + '</span></td><td class="lec-code">' + esc(l.compte) + '</td><td>' + esc(l.tiers) + '</td><td>' + esc(l.libelle) + '</td><td class="r">' + (l.d ? nb(l.d) : '') + '</td><td class="r">' + (l.c ? nb(l.c) : '') + '</td></tr>';
+    }).join('');
+    q('[data-lec-t]').innerHTML = V.length ? '<tr><td colspan="7">Total des lignes affichées</td><td class="r">' + nb(td) + '</td><td class="r">' + nb(tc) + '</td></tr>' : '';
+    q('[data-lec-vide]').hidden = L.length > 0;
+    q('[data-lec-n]').textContent = V.length + ' ligne(s) sur ' + L.length;
+  }
+  ['data-lec-q', 'data-lec-j', 'data-lec-s'].forEach(function (a) { var e = q('[' + a + ']'); e.addEventListener('input', maj); e.addEventListener('change', maj); });
+  window.addEventListener('ecritures-immobilisation-generees', maj);
+  window.addEventListener('hashchange', function () { if (location.hash === '#listecr') maj(); });
+  maj();
+})();
+</script>

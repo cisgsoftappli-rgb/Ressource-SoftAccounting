@@ -287,7 +287,7 @@
   }
   function publier() {
     sauver();
-    window.FAMILLES_IMMOBILISATION = data.filter(function (r) { return r.actif; }).map(function (r) { return { code: r.code, libelle: r.lib, nature: r.nature, compte: r.c_immo, amortissable: r.amortissable, methode: r.methode, duree: r.duree, unite: r.unite, taux: r.taux, coef: r.coef, prorata: r.prorata, pbase: r.pbase, debut: r.debut }; });
+    window.FAMILLES_IMMOBILISATION = data.filter(function (r) { return r.actif; }).map(function (r) { return { code: r.code, libelle: r.lib, nature: r.nature, compte: r.c_immo, c_amort: r.c_amort, c_dot: r.c_dot, c_sortie: r.c_sortie, c_plus: r.c_plus, c_moins: r.c_moins, amortissable: r.amortissable, methode: r.methode, duree: r.duree, unite: r.unite, taux: r.taux, coef: r.coef, prorata: r.prorata, pbase: r.pbase, debut: r.debut }; });
     window.dispatchEvent(new Event('familles-immobilisation-changed'));
   }
 
