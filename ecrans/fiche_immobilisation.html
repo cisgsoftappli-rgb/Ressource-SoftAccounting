@@ -662,8 +662,9 @@
   }
   function gPiece() {
     var r = data[sel], pj = (window.JOURNAUX_PLAN || []).filter(function (j) { return j.code === GEN.journal; })[0];
-    var auto = pj && pj.auto && window.JOURNAUX_NUMERO ? window.JOURNAUX_NUMERO(pj, (+pj.dernier || 0) + 1) : r.num, saisi = String(GEN.piece || '').trim();
-    return { pj: pj, piece: saisi || auto, auto: auto, saisi: !!saisi };
+    var ctx = { site: GEN.site || r.site || '', date: GEN.dc || '' };   // numérotation du journal : site, année et mois du contexte
+    var auto = pj && pj.auto ? (window.JOURNAUX_PROCHAIN ? window.JOURNAUX_PROCHAIN(pj, ctx) : window.JOURNAUX_NUMERO ? window.JOURNAUX_NUMERO(pj, (+pj.dernier || 0) + 1) : r.num) : r.num, saisi = String(GEN.piece || '').trim();
+    return { pj: pj, piece: saisi || auto, auto: auto, saisi: !!saisi, ctx: ctx };
   }
   // 2) aperçu : les comptes (classe 2 et tiers) reprennent ceux de la fiche et ne sont pas modifiables ; libellés et imputations analytiques restent modifiables
   function gEtape2() {
@@ -702,7 +703,7 @@
     var m = motif(GEN.type, r); if (m) { ko(m); return; }
     if (!pj) { ko('Journal introuvable : choisissez un journal valide.'); return; }
     if (genere.some(function (g) { return g.journal === pj.code && g.piece === piece; })) { ko('Le n° de pièce ' + piece + ' existe déjà dans le journal ' + pj.code + '.'); return; }
-    if (pj.auto && piece === P.auto) { pj.dernier = (+pj.dernier || 0) + 1; window.dispatchEvent(new Event('journaux-changed')); }
+    if (pj.auto && piece === P.auto) { if (window.JOURNAUX_AVANCER) window.JOURNAUX_AVANCER(pj, P.ctx); else pj.dernier = (+pj.dernier || 0) + 1; window.dispatchEvent(new Event('journaux-changed')); }
     var imp = JSON.parse(JSON.stringify(GEN.imp));
     if (ces) r.sortieCompta = { type: r.c_type, date: r.c_date, piece: piece, journal: pj.code };
     else if (dot) { LG.statut = 'Comptabilisé'; LG.piece = piece; LG.journal = pj.code; } else { r.e_piece = piece; r.e_journal = pj.code; r.genere = true; }
