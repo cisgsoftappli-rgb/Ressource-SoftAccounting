@@ -23,9 +23,6 @@
 .cor-sec{margin:6px 0 0;font-size:14px;font-weight:600;color:#2E427B}
 .cor-nbar{display:flex;align-items:flex-end;justify-content:space-between;gap:12px;margin-top:12px;flex-wrap:wrap}
 .cor-nbar .bp-tabs{margin:0}
-.cor-ics{display:flex;gap:6px;padding-bottom:4px}
-.cor-ic{display:inline-flex;align-items:center;justify-content:center;width:36px;height:36px;border:1px solid #D6D9E0;border-radius:8px;background:#fff;color:#2E427B;font-size:18px;cursor:pointer;padding:0}
-.cor-ic:hover:not(:disabled){background:#F4F7FE;border-color:#2E427B}.cor-ic:disabled{opacity:.45;cursor:default}
 [data-cor-niveaux] tr:hover td{cursor:pointer}
 [data-cor] [hidden]{display:none!important}
 [data-cor] .bp-champ>span:first-child{text-transform:uppercase;letter-spacing:.04em;font-size:12px;font-weight:600}
@@ -96,12 +93,6 @@
           <button type="button" role="tab" class="on" data-cor-ntab="saisie">Saisie</button>
           <button type="button" role="tab" data-cor-ntab="liste">Liste <span class="bp-n" data-cor-ncompte></span></button>
         </div>
-        <div class="cor-ics no-print">
-          <button type="button" class="cor-ic" data-cor-n="ajouter" title="Ajouter un niveau" aria-label="Ajouter un niveau"><i class="ti ti-plus"></i></button>
-          <button type="button" class="cor-ic" data-cor-n="modifier" title="Modifier le niveau sélectionné" aria-label="Modifier le niveau sélectionné"><i class="ti ti-pencil"></i></button>
-          <button type="button" class="cor-ic" data-cor-n="valider" title="Valider le niveau" aria-label="Valider le niveau"><i class="ti ti-check"></i></button>
-          <button type="button" class="cor-ic" data-cor-n="supprimer" title="Supprimer le niveau sélectionné (dernier niveau, s'il est vide)" aria-label="Supprimer le niveau sélectionné"><i class="ti ti-trash"></i></button>
-        </div>
       </div>
       <div data-cor-npan="saisie" style="margin-top:12px">
         <div class="bp-l3">
@@ -113,7 +104,7 @@
       </div>
       <div data-cor-npan="liste" style="margin-top:12px" hidden>
         <div style="overflow:auto"><table class="bp-tb"><thead><tr><th class="c">Niveau</th><th>Libellé du niveau</th><th>Format de codification</th><th class="c">Nombre de caractères</th></tr></thead><tbody data-cor-niveaux></tbody></table></div>
-        <div class="bp-vide" data-cor-nvide hidden>Aucun niveau : utilisez « + » dans l'onglet Saisie pour créer le premier niveau.</div>
+        <div class="bp-vide" data-cor-nvide hidden>Aucun niveau : utilisez « Ajouter » dans la barre d'actions pour créer le premier niveau.</div>
       </div>
     </section>
   </div>
@@ -217,8 +208,15 @@
     q('[data-f=niveau]').disabled = mode !== 'creation'; q('[data-f=seg]').disabled = mode !== 'creation';
     q('[data-f=parent]').disabled = !ed || +q('[data-f=niveau]').value <= 1 || mode !== 'creation';
     var a = q('[data-cor-actions]'), vide = !data.length, onSt = q('[data-cor-pan=structure]').hidden === false;
-    a.querySelector('[data-cor-ajouter]').disabled = ed || onSt || !niveaux.length; a.querySelector('[data-cor-modifier]').disabled = ed || onSt || !par(sel); a.querySelector('[data-cor-supprimer]').disabled = ed || onSt || !par(sel);
-    a.querySelector('[data-cor-enregistrer]').disabled = !ed || onSt; a.querySelector('[data-cor-annuler]').disabled = !ed || onSt;
+    if (onSt) {   // onglet Structure & codification : les boutons du haut gèrent les NIVEAUX (Ajouter reste actif au repos)
+      var ns = nmode !== 'aucun', dernier = nsel === niveaux.length - 1;
+      a.querySelector('[data-cor-ajouter]').disabled = ns || ed; a.querySelector('[data-cor-modifier]').disabled = ns || ed || nsel < 0;
+      a.querySelector('[data-cor-supprimer]').disabled = ns || ed || nsel < 0 || !dernier || niveauxUtilises(nsel);
+      a.querySelector('[data-cor-enregistrer]').disabled = !ns; a.querySelector('[data-cor-annuler]').disabled = !ns;
+    } else {
+      a.querySelector('[data-cor-ajouter]').disabled = ed || !niveaux.length; a.querySelector('[data-cor-modifier]').disabled = ed || !par(sel); a.querySelector('[data-cor-supprimer]').disabled = ed || !par(sel);
+      a.querySelector('[data-cor-enregistrer]').disabled = !ed; a.querySelector('[data-cor-annuler]').disabled = !ed;
+    }
     a.querySelector('[data-cor-import]').disabled = ed || onSt || !niveaux.length;
     ['imprimer', 'pdf', 'xlsx'].forEach(function (k) { a.querySelector('[data-cor-' + k + ']').disabled = vide; });
   }
@@ -284,7 +282,7 @@
   }
 
   // Structure & codification
-  // Même principe que « Niveaux du plan » (Configuration des plans) : sous-onglets Saisie / Liste, icônes + ✎ ✓ 🗑,
+  // Même principe que « Niveaux du plan » (Configuration des plans) : sous-onglets Saisie / Liste ; les actions (Ajouter, Modifier, Enregistrer, Annuler, Supprimer) sont celles de la barre d'actions du haut,
   // champs Niveau (automatique), Libellé du niveau *, Format de codification, Nombre de caractères * (1 à 20).
   // En plus : un niveau utilisé par des collaborateurs garde son format et sa longueur ; seul le dernier niveau, s'il est vide, peut être supprimé.
   var nsel = -1, nmode = 'aucun'; // nmode : aucun | ajout | edition
@@ -302,9 +300,6 @@
   function etatN() {
     var ns = nmode !== 'aucun', fige = nmode === 'edition' && niveauxUtilises(nsel);
     qa('[data-nf]').forEach(function (e) { e.disabled = !ns || e.dataset.nf === 'niveau' || (fige && (e.dataset.nf === 'format' || e.dataset.nf === 'car')); });
-    var ic = function (k) { return q('[data-cor-n=' + k + ']'); }, dernier = nsel === niveaux.length - 1;
-    ic('ajouter').disabled = ns; ic('modifier').disabled = ns || nsel < 0; ic('valider').disabled = !ns;
-    ic('supprimer').disabled = ns || nsel < 0 || !dernier || niveauxUtilises(nsel);
   }
   function tabNiveaux() {
     q('[data-cor-ncompte]').textContent = niveaux.length ? niveaux.length : '';
@@ -312,7 +307,7 @@
     q('[data-cor-niveaux]').innerHTML = niveaux.map(function (n, i) {
       return '<tr data-n="' + i + '"' + (i === nsel ? ' class="sel"' : '') + '><td class="c">' + (i + 1) + '</td><td>' + esc(n.lib) + '</td><td>' + esc(n.fmt) + '</td><td class="c">' + esc(n.lg) + '</td></tr>';
     }).join('');
-    formNiveau(); etatN(); selectNiveaux(); kpis();
+    formNiveau(); etatN(); selectNiveaux(); kpis(); etat();
   }
   function validerNiveau() {
     var l = q('[data-nf=libelle]').value.trim(), c = +q('[data-nf=car]').value, ok = true, fige = nmode === 'edition' && niveauxUtilises(nsel);
@@ -351,11 +346,12 @@
   }
   root.addEventListener('click', function (e) {
     var b = e.target.closest('button'); if (!b || b.disabled) return;
-    var kn = b.getAttribute('data-cor-n');
-    if (kn === 'ajouter') { nmode = 'ajout'; nsel = -1; tabNiveaux(); nonglet('saisie'); q('[data-nf=libelle]').focus(); return; }
-    if (kn === 'modifier') { nmode = 'edition'; tabNiveaux(); nonglet('saisie'); q('[data-nf=libelle]').focus(); return; }
-    if (kn === 'valider') { validerNiveau(); return; }
-    if (kn === 'supprimer') {
+    var surSt = q('[data-cor-pan=structure]').hidden === false;   // onglet Structure & codification affiché : les boutons du haut gèrent les niveaux
+    if (surSt && b.hasAttribute('data-cor-ajouter')) { nmode = 'ajout'; nsel = -1; tabNiveaux(); nonglet('saisie'); q('[data-nf=libelle]').focus(); return; }
+    if (surSt && b.hasAttribute('data-cor-modifier')) { nmode = 'edition'; tabNiveaux(); nonglet('saisie'); q('[data-nf=libelle]').focus(); return; }
+    if (surSt && b.hasAttribute('data-cor-enregistrer')) { validerNiveau(); return; }
+    if (surSt && b.hasAttribute('data-cor-annuler')) { nmode = 'aucun'; tabNiveaux(); return; }
+    if (surSt && b.hasAttribute('data-cor-supprimer')) {
       if (!window.confirm('Supprimer le niveau ' + (nsel + 1) + ' « ' + niveaux[nsel].lib + ' » ?')) return;
       niveaux.splice(nsel, 1); nsel = -1; tabNiveaux(); liste(); form(par(sel)); etat(); publier(); toast('Niveau supprimé.'); return;
     }

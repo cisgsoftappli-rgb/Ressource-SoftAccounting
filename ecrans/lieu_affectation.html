@@ -23,9 +23,6 @@
 .la-sec{margin:6px 0 0;font-size:14px;font-weight:600;color:#2E427B}
 .la-nbar{display:flex;align-items:flex-end;justify-content:space-between;gap:12px;margin-top:12px;flex-wrap:wrap}
 .la-nbar .bp-tabs{margin:0}
-.la-ics{display:flex;gap:6px;padding-bottom:4px}
-.la-ic{display:inline-flex;align-items:center;justify-content:center;width:36px;height:36px;border:1px solid #D6D9E0;border-radius:8px;background:#fff;color:#2E427B;font-size:18px;cursor:pointer;padding:0}
-.la-ic:hover:not(:disabled){background:#F4F7FE;border-color:#2E427B}.la-ic:disabled{opacity:.45;cursor:default}
 [data-la-niveaux] tr:hover td{cursor:pointer}
 [data-la] [hidden]{display:none!important}
 [data-la] .bp-champ>span:first-child{text-transform:uppercase;letter-spacing:.04em;font-size:12px;font-weight:600}
@@ -96,12 +93,6 @@
           <button type="button" role="tab" class="on" data-la-ntab="saisie">Saisie</button>
           <button type="button" role="tab" data-la-ntab="liste">Liste <span class="bp-n" data-la-ncompte></span></button>
         </div>
-        <div class="la-ics no-print">
-          <button type="button" class="la-ic" data-la-n="ajouter" title="Ajouter un niveau" aria-label="Ajouter un niveau"><i class="ti ti-plus"></i></button>
-          <button type="button" class="la-ic" data-la-n="modifier" title="Modifier le niveau sélectionné" aria-label="Modifier le niveau sélectionné"><i class="ti ti-pencil"></i></button>
-          <button type="button" class="la-ic" data-la-n="valider" title="Valider le niveau" aria-label="Valider le niveau"><i class="ti ti-check"></i></button>
-          <button type="button" class="la-ic" data-la-n="supprimer" title="Supprimer le niveau sélectionné (dernier niveau, s'il est vide)" aria-label="Supprimer le niveau sélectionné"><i class="ti ti-trash"></i></button>
-        </div>
       </div>
       <div data-la-npan="saisie" style="margin-top:12px">
         <div class="bp-l3">
@@ -113,7 +104,7 @@
       </div>
       <div data-la-npan="liste" style="margin-top:12px" hidden>
         <div style="overflow:auto"><table class="bp-tb"><thead><tr><th class="c">Niveau</th><th>Libellé du niveau</th><th>Format de codification</th><th class="c">Nombre de caractères</th></tr></thead><tbody data-la-niveaux></tbody></table></div>
-        <div class="bp-vide" data-la-nvide hidden>Aucun niveau : utilisez « + » dans l'onglet Saisie pour créer le premier niveau.</div>
+        <div class="bp-vide" data-la-nvide hidden>Aucun niveau : utilisez « Ajouter » dans la barre d'actions pour créer le premier niveau.</div>
       </div>
     </section>
   </div>
@@ -217,8 +208,15 @@
     q('[data-f=niveau]').disabled = mode !== 'creation'; q('[data-f=seg]').disabled = mode !== 'creation';
     q('[data-f=parent]').disabled = !ed || +q('[data-f=niveau]').value <= 1 || mode !== 'creation';
     var a = q('[data-la-actions]'), vide = !data.length, onSt = q('[data-la-pan=structure]').hidden === false;
-    a.querySelector('[data-la-ajouter]').disabled = ed || onSt || !niveaux.length; a.querySelector('[data-la-modifier]').disabled = ed || onSt || !par(sel); a.querySelector('[data-la-supprimer]').disabled = ed || onSt || !par(sel);
-    a.querySelector('[data-la-enregistrer]').disabled = !ed || onSt; a.querySelector('[data-la-annuler]').disabled = !ed || onSt;
+    if (onSt) {   // onglet Structure & codification : les boutons du haut gèrent les NIVEAUX (Ajouter reste actif au repos)
+      var ns = nmode !== 'aucun', dernier = nsel === niveaux.length - 1;
+      a.querySelector('[data-la-ajouter]').disabled = ns || ed; a.querySelector('[data-la-modifier]').disabled = ns || ed || nsel < 0;
+      a.querySelector('[data-la-supprimer]').disabled = ns || ed || nsel < 0 || !dernier || niveauxUtilises(nsel);
+      a.querySelector('[data-la-enregistrer]').disabled = !ns; a.querySelector('[data-la-annuler]').disabled = !ns;
+    } else {
+      a.querySelector('[data-la-ajouter]').disabled = ed || !niveaux.length; a.querySelector('[data-la-modifier]').disabled = ed || !par(sel); a.querySelector('[data-la-supprimer]').disabled = ed || !par(sel);
+      a.querySelector('[data-la-enregistrer]').disabled = !ed; a.querySelector('[data-la-annuler]').disabled = !ed;
+    }
     a.querySelector('[data-la-import]').disabled = ed || onSt || !niveaux.length;
     ['imprimer', 'pdf', 'xlsx'].forEach(function (k) { a.querySelector('[data-la-' + k + ']').disabled = vide; });
   }
@@ -284,7 +282,7 @@
   }
 
   // Structure & codification
-  // Même principe que « Niveaux du plan » (Configuration des plans) : sous-onglets Saisie / Liste, icônes + ✎ ✓ 🗑,
+  // Même principe que « Niveaux du plan » (Configuration des plans) : sous-onglets Saisie / Liste ; les actions (Ajouter, Modifier, Enregistrer, Annuler, Supprimer) sont celles de la barre d'actions du haut,
   // champs Niveau (automatique), Libellé du niveau *, Format de codification, Nombre de caractères * (1 à 20).
   // En plus : un niveau utilisé par des lieux garde son format et sa longueur ; seul le dernier niveau, s'il est vide, peut être supprimé.
   var nsel = -1, nmode = 'aucun'; // nmode : aucun | ajout | edition
@@ -302,9 +300,6 @@
   function etatN() {
     var ns = nmode !== 'aucun', fige = nmode === 'edition' && niveauxUtilises(nsel);
     qa('[data-nf]').forEach(function (e) { e.disabled = !ns || e.dataset.nf === 'niveau' || (fige && (e.dataset.nf === 'format' || e.dataset.nf === 'car')); });
-    var ic = function (k) { return q('[data-la-n=' + k + ']'); }, dernier = nsel === niveaux.length - 1;
-    ic('ajouter').disabled = ns; ic('modifier').disabled = ns || nsel < 0; ic('valider').disabled = !ns;
-    ic('supprimer').disabled = ns || nsel < 0 || !dernier || niveauxUtilises(nsel);
   }
   function tabNiveaux() {
     q('[data-la-ncompte]').textContent = niveaux.length ? niveaux.length : '';
@@ -312,7 +307,7 @@
     q('[data-la-niveaux]').innerHTML = niveaux.map(function (n, i) {
       return '<tr data-n="' + i + '"' + (i === nsel ? ' class="sel"' : '') + '><td class="c">' + (i + 1) + '</td><td>' + esc(n.lib) + '</td><td>' + esc(n.fmt) + '</td><td class="c">' + esc(n.lg) + '</td></tr>';
     }).join('');
-    formNiveau(); etatN(); selectNiveaux(); kpis();
+    formNiveau(); etatN(); selectNiveaux(); kpis(); etat();
   }
   function validerNiveau() {
     var l = q('[data-nf=libelle]').value.trim(), c = +q('[data-nf=car]').value, ok = true, fige = nmode === 'edition' && niveauxUtilises(nsel);
@@ -351,11 +346,12 @@
   }
   root.addEventListener('click', function (e) {
     var b = e.target.closest('button'); if (!b || b.disabled) return;
-    var kn = b.getAttribute('data-la-n');
-    if (kn === 'ajouter') { nmode = 'ajout'; nsel = -1; tabNiveaux(); nonglet('saisie'); q('[data-nf=libelle]').focus(); return; }
-    if (kn === 'modifier') { nmode = 'edition'; tabNiveaux(); nonglet('saisie'); q('[data-nf=libelle]').focus(); return; }
-    if (kn === 'valider') { validerNiveau(); return; }
-    if (kn === 'supprimer') {
+    var surSt = q('[data-la-pan=structure]').hidden === false;   // onglet Structure & codification affiché : les boutons du haut gèrent les niveaux
+    if (surSt && b.hasAttribute('data-la-ajouter')) { nmode = 'ajout'; nsel = -1; tabNiveaux(); nonglet('saisie'); q('[data-nf=libelle]').focus(); return; }
+    if (surSt && b.hasAttribute('data-la-modifier')) { nmode = 'edition'; tabNiveaux(); nonglet('saisie'); q('[data-nf=libelle]').focus(); return; }
+    if (surSt && b.hasAttribute('data-la-enregistrer')) { validerNiveau(); return; }
+    if (surSt && b.hasAttribute('data-la-annuler')) { nmode = 'aucun'; tabNiveaux(); return; }
+    if (surSt && b.hasAttribute('data-la-supprimer')) {
       if (!window.confirm('Supprimer le niveau ' + (nsel + 1) + ' « ' + niveaux[nsel].lib + ' » ?')) return;
       niveaux.splice(nsel, 1); nsel = -1; tabNiveaux(); liste(); form(par(sel)); etat(); publier(); toast('Niveau supprimé.'); return;
     }
