@@ -745,11 +745,22 @@
       if (idx[k] == null) { idx[k] = E.length; E.push({ fiches: [], dacq: x.dacq, ref: x.ref, coll: x.coll, aux: x.aux, annee: x.annee, site: x.site }); }
       E[idx[k]].fiches.push(x);
     });
-    E.forEach(function (e) { e.total = r2(e.fiches.reduce(function (s, x) { return s + x.qte * x.pu; }, 0)); });
+    var cnt = {};
+    E.forEach(function (e) {
+      var f0 = e.fiches[0], M = GEN.m || {}, u = (GEN.pm || {})[f0.num];
+      e.total = r2(e.fiches.reduce(function (s, x) { return s + x.qte * x.pu; }, 0));
+      e.cle = f0.num; e.annee = M.annee || f0.annee; e.site = M.site || f0.site; e.dc = M.dc || e.dacq;   // champs d'en-tête : valeur choisie, sinon celle des fiches
+      cnt[e.ref] = (cnt[e.ref] || 0) + 1; e.pdef = e.ref ? (cnt[e.ref] > 1 ? e.ref + '-' + cnt[e.ref] : e.ref) : '';   // n° de pièce proposé : référence facture
+      e.piece = u !== undefined ? u : e.pdef;
+    });
     return E;
   }
+  function gCommun(k) { var v = gElig().map(function (x) { return k === 'dc' ? x.dacq : x[k]; }).filter(function (x, i, a) { return a.indexOf(x) === i; }); return v.length === 1 ? v[0] : ''; }
   function gFour(e) { return e.coll ? e.coll + (e.aux ? ' / ' + e.aux + (libAux(e.aux, e.coll) ? ' — ' + libAux(e.aux, e.coll) : '') : '') : '—'; }
   function gEtape1M() {
+    if (!GEN.m) { GEN.m = { annee: gCommun('annee'), site: gCommun('site'), dc: gCommun('dc') }; GEN.pm = {}; }
+    var exs = (window.EXERCICES_API ? window.EXERCICES_API.liste() : []).map(function (x) { return x.annee; }), sites = ((window.PLANS_REF || {}).sites || []).filter(function (s) { return s[0] !== '00'; });
+    if (GEN.m.annee && exs.indexOf(GEN.m.annee) < 0) exs.push(GEN.m.annee);
     var ex = GEN.sf.filter(function (x) { return motif('acq', x); }), E = gEntries(), nel = gElig().length, od = journauxOD(), peut = gPeutGrouper(), groupe = GEN.mode === 'groupe' && peut;
     GV.innerHTML = '<div class="fim-md l" role="dialog" aria-modal="true" aria-label="Génération d’écriture">' +
       '<div class="fim-mh"><h2>Génération d’écriture — ' + GEN.sf.length + ' fiche(s) sélectionnée(s)</h2><p>Choisissez le type d’écriture comptable à générer pour les fiches sélectionnées.</p></div>' +
@@ -759,11 +770,15 @@
         '<button type="button" class="fim-mc' + (groupe ? ' on' : '') + '" data-g-mode="groupe"><i class="ti ti-stack-2" aria-hidden="true"></i><b>Une seule écriture par regroupement</b><small>Les fiches de même date d’acquisition, même référence facture et même fournisseur sont regroupées dans une seule écriture.</small></button>' +
         '<button type="button" class="fim-mc' + (!groupe ? ' on' : '') + '" data-g-mode="fiche"><i class="ti ti-list-details" aria-hidden="true"></i><b>Une écriture par fiche</b><small>Une écriture distincte est générée pour chacune des fiches éligibles.</small></button></div>' :
         '<div class="fim-mvd">Aucun regroupement possible (dates d’acquisition, références facture ou fournisseurs différents) : une écriture sera générée pour chaque fiche.</div>') +
-        '<h4 class="fim-mh4">Écritures prévues : ' + E.length + '</h4><div class="fim-mscroll"><table class="fim-mtb"><thead><tr><th>Écriture</th><th>Fiches</th><th>Date d’acquisition</th><th>Réf. facture</th><th>Fournisseur</th><th class="r">Montant (' + esc(locale()) + ')</th></tr></thead><tbody>' +
-        E.map(function (e, i) { return '<tr><td>' + (i + 1) + '</td><td class="fim-code">' + e.fiches.map(function (x) { return esc(x.num); }).join(', ') + '</td><td>' + esc(dFR(e.dacq)) + '</td><td>' + esc(e.ref) + '</td><td>' + esc(gFour(e)) + '</td><td class="r">' + nb(e.total) + '</td></tr>'; }).join('') + '</tbody></table></div>' : '<div class="fim-mvd">Aucune fiche éligible pour ce type d’écriture.</div>') +
+        '<h4 class="fim-mh4">Écritures prévues : ' + E.length + '</h4><div class="fim-mscroll"><table class="fim-mtb"><thead><tr><th>Écriture</th><th>Fiches</th><th>Date d’acquisition</th><th>Réf. facture</th><th>Fournisseur</th><th class="r">Montant (' + esc(locale()) + ')</th><th>N° de pièce</th></tr></thead><tbody>' +
+        E.map(function (e, i) { return '<tr><td>' + (i + 1) + '</td><td class="fim-code">' + e.fiches.map(function (x) { return esc(x.num); }).join(', ') + '</td><td>' + esc(dFR(e.dacq)) + '</td><td>' + esc(e.ref) + '</td><td>' + esc(gFour(e)) + '</td><td class="r">' + nb(e.total) + '</td><td><input class="bp-in" data-gp="' + esc(e.cle) + '" maxlength="30" autocomplete="off" value="' + esc(e.piece) + '" placeholder="Automatique : ' + esc(GEN.journal ? 'selon le journal' : 'journal à choisir') + '" aria-label="N° de pièce de l’écriture ' + (i + 1) + '" style="min-width:180px"></td></tr>'; }).join('') + '</tbody></table></div>' : '<div class="fim-mvd">Aucune fiche éligible pour ce type d’écriture.</div>') +
       '<h4 class="fim-mh4">Fiches non éligibles</h4>' + (ex.length ? '<table class="fim-mtb"><thead><tr><th>N° fiche</th><th>Désignation</th><th>Motif d’exclusion</th></tr></thead><tbody>' + ex.map(function (x) { return '<tr><td class="fim-code">' + esc(x.num) + '</td><td>' + esc(x.desig) + '</td><td class="fim-mko">' + esc(motif('acq', x)) + '</td></tr>'; }).join('') + '</tbody></table>' : '<div class="fim-mvd">Aucune fiche exclue.</div>') +
-      '<div class="fim-g2" style="margin-top:16px"><label class="bp-champ"><span>Journal <b>*</b></span><select class="bp-sel" data-g="journal"><option value="">— Sélectionner —</option>' + od.map(function (j) { return '<option value="' + esc(j.code) + '"' + (j.code === GEN.journal ? ' selected' : '') + '>' + esc(j.code + ' — ' + j.libelle) + '</option>'; }).join('') + '</select></label>' +
-      '<p class="fim-help" style="align-self:end;margin:0">Date comptable et date pièce : date d’acquisition de chaque écriture · N° de pièce : numérotation automatique du journal · Année et site : repris des fiches.</p></div></div>' +
+      '<div class="fim-g2" style="margin-top:16px">' +
+        '<label class="bp-champ"><span>Année</span><select class="bp-sel" data-gm="annee"><option value="">— Selon les fiches —</option>' + exs.map(function (a) { return '<option value="' + esc(a) + '"' + (a === GEN.m.annee ? ' selected' : '') + '>' + esc(a) + '</option>'; }).join('') + '</select></label>' +
+        '<label class="bp-champ"><span>Site</span><select class="bp-sel" data-gm="site"><option value="">— Selon les fiches —</option>' + sites.map(function (s) { return '<option value="' + esc(s[0]) + '"' + (s[0] === GEN.m.site ? ' selected' : '') + '>' + esc(s[0] + ' — ' + s[1]) + '</option>'; }).join('') + '</select></label>' +
+        '<label class="bp-champ"><span>Date comptable</span><input class="bp-in" type="date" data-gm="dc" value="' + esc(GEN.m.dc) + '"></label>' +
+        '<label class="bp-champ"><span>Journal <b>*</b></span><select class="bp-sel" data-g="journal"><option value="">— Sélectionner —</option>' + od.map(function (j) { return '<option value="' + esc(j.code) + '"' + (j.code === GEN.journal ? ' selected' : '') + '>' + esc(j.code + ' — ' + j.libelle) + '</option>'; }).join('') + '</select></label></div>' +
+      '<p class="fim-help" style="margin:8px 0 0">Année, site et date comptable vides : valeurs de chaque fiche (date d’acquisition). N° de pièce : référence facture proposée par défaut, modifiable pour chaque écriture dans le tableau ci-dessus ; vide, la numérotation automatique du journal s’applique.</p></div>' +
       '<div class="fim-mf"><button type="button" class="fim-mbt" data-g-annuler>Annuler</button><button type="button" class="fim-mbt pri" data-g-apercu><i class="ti ti-plus" aria-hidden="true"></i> Voir l’aperçu</button></div></div>';
     gValide();
   }
@@ -773,7 +788,7 @@
       '<div class="fim-mh"><h2>Aperçu — ' + E.length + ' écriture(s) à générer</h2><p>Contrôlez les écritures avant génération. Les comptes et les imputations analytiques sont repris de chaque fiche (compte tiers : fournisseur de la fiche) ; une écriture regroupe une ligne de débit par fiche et une ligne de crédit globale.</p></div>' +
       '<div class="fim-mb">' + E.map(function (e, i) {
         var lib = 'Acquisition ' + e.ref;
-        return '<div class="fim-msec">Écriture ' + (i + 1) + ' / ' + E.length + '</div><div class="fim-mgr">' + [['Type d’écriture', 'Acquisition'], ['Journal', jr], ['N° pièce', 'Automatique'], ['Date comptable', dFR(e.dacq)], ['Date pièce', dFR(e.dacq)], ['Année', e.annee], ['Site', libSite(e.site)], ['N° facture', e.ref || '—'], ['Fournisseur', gFour(e)]].map(function (c) { return '<div><small>' + c[0] + '</small><span>' + esc(c[1]) + '</span></div>'; }).join('') + '</div>' +
+        return '<div class="fim-msec">Écriture ' + (i + 1) + ' / ' + E.length + '</div><div class="fim-mgr">' + [['Type d’écriture', 'Acquisition'], ['Journal', jr], ['N° pièce', e.piece || 'Automatique'], ['Date comptable', dFR(e.dc)], ['Année', e.annee], ['Site', libSite(e.site)], ['N° facture', e.ref || '—'], ['Fournisseur', gFour(e)]].map(function (c) { return '<div><small>' + c[0] + '</small><span>' + esc(c[1]) + '</span></div>'; }).join('') + '</div>' +
           '<div class="fim-mscroll main" style="margin-bottom:20px"><table class="fim-mtb2"><thead><tr><th>Compte</th><th>Tiers</th><th>Libellé</th><th class="r">Débit (' + esc(locale()) + ')</th><th class="r">Crédit (' + esc(locale()) + ')</th>' + pa.map(function (p) { return '<th>' + esc(p.lib) + '</th>'; }).join('') + '</tr></thead><tbody>' +
           e.fiches.map(function (x) { return '<tr><td class="fim-code">' + esc(x.compte) + '</td><td>—</td><td>' + esc('Acquisition ' + x.desig + ' — ' + x.ref + ' (' + x.num + ')') + '</td><td class="r">' + nb(x.qte * x.pu) + '</td><td class="r"></td>' + pa.map(function (p) { return '<td>' + esc((x.ana || {})[p.code] || '—') + '</td>'; }).join('') + '</tr>'; }).join('') +
           '<tr><td class="fim-code">' + esc(e.coll) + '</td><td>' + esc(e.aux) + '</td><td>' + esc(lib + ' — ' + (libAux(e.aux, e.coll) || e.aux || e.coll)) + '</td><td class="r"></td><td class="r">' + nb(e.total) + '</td>' + pa.map(function () { return '<td>—</td>'; }).join('') + '</tr>' +
@@ -787,18 +802,22 @@
     if (!pj) { ko('Journal introuvable : choisissez un journal valide.'); return; }
     if (!E.length) { ko('Aucune fiche éligible pour ce type d’écriture.'); return; }
     function existe(p) { return genere.some(function (g) { return g.journal === pj.code && g.piece === p; }); }
-    if (!pj.auto) { var d = E.filter(function (e) { return existe(e.fiches[0].num); })[0]; if (d) { ko('Le n° de pièce ' + d.fiches[0].num + ' existe déjà dans le journal ' + pj.code + '.'); return; } }
+    var sais = E.filter(function (e) { return String(e.piece || '').trim(); }).map(function (e) { return String(e.piece).trim(); });
+    var d = sais.filter(function (p, i) { return existe(p) || sais.indexOf(p) !== i; })[0];
+    if (d) { ko('Le n° de pièce ' + d + ' existe déjà dans le journal ' + pj.code + ' (ou est utilisé deux fois).'); return; }
+    if (!pj.auto && E.some(function (e) { return !String(e.piece || '').trim() && existe(e.fiches[0].num); })) { ko('Le n° de pièce par défaut existe déjà dans le journal ' + pj.code + ' : saisissez un n° de pièce.'); return; }
     var pieces = [];
     E.forEach(function (e) {
-      var ctx = { site: e.site || '', date: e.dacq || '' }, p, n = 0;
-      if (pj.auto) { do { p = window.JOURNAUX_PROCHAIN ? window.JOURNAUX_PROCHAIN(pj, ctx) : window.JOURNAUX_NUMERO ? window.JOURNAUX_NUMERO(pj, (+pj.dernier || 0) + 1) : e.fiches[0].num; if (window.JOURNAUX_AVANCER) window.JOURNAUX_AVANCER(pj, ctx); else pj.dernier = (+pj.dernier || 0) + 1; n++; } while (n < 50 && (existe(p) || pieces.indexOf(p) >= 0)); }
+      var ctx = { site: e.site || '', date: e.dc || '' }, p, n = 0, s = String(e.piece || '').trim();
+      if (s) p = s;
+      else if (pj.auto) { do { p = window.JOURNAUX_PROCHAIN ? window.JOURNAUX_PROCHAIN(pj, ctx) : window.JOURNAUX_NUMERO ? window.JOURNAUX_NUMERO(pj, (+pj.dernier || 0) + 1) : e.fiches[0].num; if (window.JOURNAUX_AVANCER) window.JOURNAUX_AVANCER(pj, ctx); else pj.dernier = (+pj.dernier || 0) + 1; n++; } while (n < 50 && (existe(p) || pieces.indexOf(p) >= 0)); }
       else p = e.fiches[0].num;
       pieces.push(p);
     });
     if (pj.auto) window.dispatchEvent(new Event('journaux-changed'));
     E.forEach(function (e, i) {
       var lib = 'Acquisition ' + e.ref;
-      genere.push({ fiche: e.fiches[0].num, fiches: e.fiches.map(function (x) { return x.num; }), type: 'Acquisition', journal: pj.code, annee: e.annee, site: e.site, date: e.dacq, dateComptable: e.dacq, piece: pieces[i], libelle: lib, total: e.total,
+      genere.push({ fiche: e.fiches[0].num, fiches: e.fiches.map(function (x) { return x.num; }), type: 'Acquisition', journal: pj.code, annee: e.annee, site: e.site, date: e.dc, dateComptable: e.dc, piece: pieces[i], libelle: lib, total: e.total,
         lignes: e.fiches.map(function (x) { return { compte: x.compte, libelle: 'Acquisition ' + x.desig + ' — ' + x.ref, debit: r2(x.qte * x.pu), credit: 0, imputations: JSON.parse(JSON.stringify(x.ana || {})) }; }).concat([{ compte: e.coll, auxiliaire: e.aux, libelle: lib + ' — ' + (libAux(e.aux, e.coll) || e.aux || e.coll), debit: 0, credit: e.total }]) });
       e.fiches.forEach(function (x) { x.e_piece = pieces[i]; x.e_journal = pj.code; x.genere = true; });
       registre(genere[genere.length - 1]);
@@ -1061,12 +1080,17 @@
       if (GEN.type !== 'acq') [].slice.call(GV.querySelectorAll('[data-g-ana="' + pc + '"]')).forEach(function (s) { s.value = e.target.value; });   // dotation et amortissement portent les mêmes imputations
       return;
     }
+    if (e.target.hasAttribute('data-gm')) { GEN.m[e.target.getAttribute('data-gm')] = e.target.value; return; }   // génération multiple : année, site, date comptable (vide = valeur de chaque fiche)
     if (e.target.hasAttribute('data-g')) {
       gLire(); gValide();
       var pi = GV.querySelector('[data-g=piece]'); if (pi) pi.placeholder = GEN.journal ? 'Automatique : ' + gPiece().auto : 'Automatique selon le journal';
     }
   });
-  root.addEventListener('input', function (e) { if (GV && e.target.hasAttribute('data-g-lib')) GEN[e.target.getAttribute('data-g-lib')] = e.target.value; });
+  root.addEventListener('input', function (e) {
+    if (!GV) return;
+    if (e.target.hasAttribute('data-g-lib')) GEN[e.target.getAttribute('data-g-lib')] = e.target.value;
+    else if (e.target.hasAttribute('data-gp')) GEN.pm[e.target.getAttribute('data-gp')] = e.target.value;   // n° de pièce saisi pour une écriture
+  });
   root.addEventListener('click', function (e) {
     var b = e.target.closest('button'); if (!b || b.disabled) return;
     if (CW && CW.contains(b)) {
@@ -1078,7 +1102,7 @@
     if (b.hasAttribute('data-fim-planexp')) { exporterPlan(); return; }
     if (GV && GV.contains(b)) {
       if (b.hasAttribute('data-g-type')) { gLire(); if (GEN.type !== b.getAttribute('data-g-type')) { GEN.type = b.getAttribute('data-g-type'); gDefauts(data[sel]); } gEtape1(); }
-      else if (b.hasAttribute('data-g-mode')) { gLire(); GEN.mode = b.getAttribute('data-g-mode'); gEtape1(); }
+      else if (b.hasAttribute('data-g-mode')) { gLire(); GEN.mode = b.getAttribute('data-g-mode'); GEN.pm = {}; gEtape1(); }
       else if (b.hasAttribute('data-g-annuler')) gFermer();
       else if (b.hasAttribute('data-g-apercu')) { gLire(); gEtape2(); }
       else if (b.hasAttribute('data-g-retour')) gEtape1();
