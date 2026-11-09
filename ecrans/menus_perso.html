@@ -1,0 +1,299 @@
+<!--
+  Écran « Menus personnalisés » (Paramétrages › Administration › Menus personnalisés) — édition des menus sur le modèle de SoftPayroll :
+  à gauche le menu standard (référentiel complet et immuable, lu dans le menu latéral : modules, groupes, écrans), à droite le menu personnalisé
+  construit par glisser-déposer (ou par le bouton « Ajouter la sélection »). Un menu a un nom, un état (Non enregistré / Enregistré / Modifié) et peut être
+  activé : le menu latéral n'affiche alors que ses entrées, avec leurs libellés renommés et leur ordre dans chaque groupe. Enregistrer, Annuler, Dupliquer,
+  Importer et Télécharger (fichier JSON). Conservé localement (localStorage « softcompta.menus2 »). Exposé : window.MENUS_PERSO.
+  Les écrans « Menus personnalisés » et « Tableau de bord » restent toujours visibles. Préfixe mp / data-mp. Ne pas nommer de fonction « $$ » (build.cjs).
+-->
+<style>
+[data-mp]{color:#353944;font-size:14px}
+[data-mp] .mp-card{background:#fff;border:1px solid #E9EBF0;border-radius:12px}
+[data-mp] .mp-top{padding:16px 20px;margin-bottom:16px}
+[data-mp] .mp-top h2{margin:0 0 14px!important;font:600 16px/1.3 var(--font-heading,Outfit,sans-serif)!important;color:#0B1332!important}
+[data-mp] .mp-row{display:flex;flex-wrap:wrap;gap:16px;align-items:flex-end}
+[data-mp] .mp-f{display:flex;flex-direction:column;gap:4px;font-size:12px;font-weight:600;color:#474C58;text-transform:uppercase;letter-spacing:.04em}
+[data-mp] .mp-in{height:36px;box-sizing:border-box;border:1px solid #878D9A;border-radius:8px;background:#fff;padding:0 12px;font:inherit;font-size:13px;font-weight:400;text-transform:none;letter-spacing:0;color:#353944}
+[data-mp] .mp-in:focus-visible{outline:3px solid #2E427B;outline-offset:2px}
+[data-mp] .mp-in:disabled{background:#F5F7F9;color:#5B606D}
+[data-mp] .mp-hint{font-size:12px;font-weight:400;color:#5B606D;text-transform:none;letter-spacing:0}
+[data-mp] .mp-opt{display:flex;align-items:center;gap:8px;margin-top:12px;font-size:13px;font-weight:600;color:#353944}
+[data-mp] .mp-opt input{width:18px;height:18px;accent-color:#2E427B}
+[data-mp] .mp-etat{display:inline-flex;align-items:center;min-height:28px;padding:2px 12px;border-radius:6px;border:1px solid #D6D9E0;background:#F5F7F9;color:#5B606D;font-size:12px;font-weight:600;text-transform:none;letter-spacing:0}
+[data-mp] .mp-etat.ok{background:#ECFDF5;border-color:#A7F3D0;color:#047857}[data-mp] .mp-etat.mod{background:#FFF8E6;border-color:#F1E2B8;color:#6B4A0F}
+[data-mp] .mp-grid{display:grid;grid-template-columns:minmax(0,1fr) 96px minmax(0,1fr);gap:16px;align-items:start}
+@media(max-width:1000px){[data-mp] .mp-grid{grid-template-columns:1fr}}
+[data-mp] .mp-ph{display:flex;align-items:center;gap:8px;padding:14px 18px;border-bottom:1px solid #E9EBF0;font:600 15px var(--font-heading,Outfit,sans-serif);color:#0B1332}
+[data-mp] .mp-ph i{color:#2E427B}
+[data-mp] .mp-ph small{font:400 12px var(--font-sans,sans-serif);color:#5B606D}
+[data-mp] .mp-pb{padding:12px 16px 16px;max-height:560px;overflow:auto}
+[data-mp] .mp-ref{display:flex;align-items:center;gap:12px;margin:2px 0 12px;font-size:12px;font-weight:600;color:#474C58;text-transform:uppercase;letter-spacing:.04em}[data-mp] .mp-ref select{flex:1}
+[data-mp] .mp-n{display:flex;align-items:center;gap:6px;min-height:34px;padding:2px 8px;border-radius:8px;cursor:default}
+[data-mp] .mp-n:hover{background:#F4F7FE}
+[data-mp] .mp-n.sel{background:#E3EBFE;box-shadow:inset 3px 0 0 #2E427B}
+[data-mp] .mp-n.dej{opacity:.55}
+[data-mp] .mp-n .tg{width:18px;text-align:center;color:#5B606D;cursor:pointer;flex:none}
+[data-mp] .mp-n i.ic{color:#747A88;flex:none}
+[data-mp] .mp-n b{font-weight:600;color:#0B1332}[data-mp] .mp-n.it b{font-weight:500}
+[data-mp] .mp-n em{font-style:normal;font-size:12px;color:#5F77B9}
+[data-mp] .mp-n .ok{margin-left:auto;color:#047857;flex:none}
+[data-mp] .mp-n .ac{margin-left:auto;display:flex;gap:2px;flex:none}
+[data-mp] .mp-n .ac button{width:28px;height:28px;border:0;border-radius:6px;background:none;color:#5B606D;cursor:pointer}
+[data-mp] .mp-n .ac button:hover{background:#E3EBFE;color:#2E427B}
+[data-mp] .mp-n[draggable=true]{cursor:grab}
+[data-mp] .mp-mid{display:flex;flex-direction:column;align-items:center;gap:6px;padding-top:150px;text-align:center;font-size:12px;color:#5B606D}
+@media(max-width:1000px){[data-mp] .mp-mid{padding-top:0;flex-direction:row;justify-content:center}}
+[data-mp] .mp-add{width:44px;height:44px;border:1px solid #D6D9E0;border-radius:8px;background:#F5F7F9;color:#969BA8;font-size:20px;cursor:pointer}
+[data-mp] .mp-add.on{background:#2E427B;border-color:#2E427B;color:#fff}
+[data-mp] .mp-add:focus-visible{outline:3px solid #2E427B;outline-offset:2px}
+[data-mp] .mp-drop{margin:0 0 14px;padding:18px;border:2px dashed #B9BEC8;border-radius:12px;background:#F8F9FB;text-align:center;color:#474C58;font-size:13px}
+[data-mp] .mp-drop small{display:block;color:#5B606D;font-size:12px}[data-mp] .mp-drop.over{border-color:#2E427B;background:#F4F7FE}
+[data-mp] .mp-tt{display:flex;align-items:center;gap:8px;margin:0 0 6px;font-weight:700;text-transform:uppercase;letter-spacing:.04em;color:#0B1332;font-size:12px}
+[data-mp] .mp-vide{padding:30px 10px;text-align:center;color:#5B606D}
+</style>
+
+<div data-mp>
+  <div class="bp-tabs" role="tablist">
+    <button type="button" role="tab" class="on" data-mp-tab="saisie">Saisie</button>
+    <button type="button" role="tab" data-mp-tab="liste">Liste <span class="bp-n" data-mp-compte></span></button>
+  </div>
+  <div data-mp-pan="liste" hidden>
+    <section class="mp-card" aria-label="Liste des menus personnalisés">
+      <div class="mp-ph"><i class="ti ti-list" aria-hidden="true"></i>Menus personnalisés <small>Double-clic pour ouvrir le menu en saisie</small></div>
+      <div class="mp-pb" style="max-height:none"><table class="bp-tb" style="min-width:520px"><thead>
+        <tr><th>Nom du menu</th><th class="c">Modules rattachés</th><th>Statut</th></tr>
+        <tr class="flt"><th><input class="bp-in" data-mp-fn aria-label="Filtrer Nom du menu"></th><th></th><th><select class="bp-sel" data-mp-fs aria-label="Filtrer Statut"><option value=""></option><option value="actif">Appliqué</option><option value="inactif">Non appliqué</option></select></th></tr>
+      </thead><tbody data-mp-lignes></tbody></table>
+      <div class="mp-vide" data-mp-vide hidden>Aucun menu personnalisé : créez-en un dans l’onglet « Saisie ».</div></div>
+    </section>
+  </div>
+  <div data-mp-pan="saisie">
+  <section class="mp-card mp-top">
+    <h2>Édition des menus <span data-mp-produit>SoftAccounting</span></h2>
+    <div class="mp-row">
+      <label class="mp-f" style="min-width:230px">Menu à configurer<select class="mp-in" data-mp-sel></select></label>
+      <label class="mp-f" style="flex:1;min-width:260px">Nom du menu<input class="mp-in" data-mp-nom maxlength="60" autocomplete="off" placeholder="Nom du menu"></label>
+    </div>
+    <label class="mp-opt"><input type="checkbox" data-mp-actif>Appliquer ce menu au menu latéral</label>
+    <div class="no-print" data-mp-actions>
+      <button type="button" data-mp-enreg>Enregistrer</button>
+      <button type="button" data-mp-annuler>Annuler</button>
+      <button type="button" data-mp-dup>Dupliquer</button>
+      <button type="button" data-mp-imp>Importer</button>
+      <button type="button" data-mp-tel>Télécharger</button>
+      <button type="button" data-mp-sup>Supprimer</button>
+    </div>
+    <input type="file" accept=".json,application/json" hidden data-mp-file>
+  </section>
+
+  <div class="mp-grid">
+    <section class="mp-card" aria-label="Menus standards">
+      <div class="mp-ph"><i class="ti ti-folder" aria-hidden="true"></i>Menus standards </div>
+      <div class="mp-pb">
+        <div class="mp-ref"><span style="font-weight:600">Menu référentiel</span><select class="mp-in" disabled><option>SoftAccounting</option></select></div>
+        <div data-mp-std></div>
+      </div>
+    </section>
+    <div class="mp-mid"><button type="button" class="mp-add" data-mp-ajout title="Ajouter la sélection" aria-label="Ajouter la sélection"><i class="ti ti-arrow-right"></i></button><span>Ajouter la<br>sélection</span></div>
+    <section class="mp-card" aria-label="Menu personnalisé">
+      <div class="mp-ph"><i class="ti ti-folder" aria-hidden="true"></i>Menu personnalisé <small data-mp-cpt>0 élément(s) visible(s)</small></div>
+      <div class="mp-pb">
+        <div class="mp-drop" data-mp-drop>⠿ Glissez-déposez un menu ici<small>ou utilisez le bouton central</small></div>
+        <div class="mp-tt"><i class="ti ti-folder" aria-hidden="true"></i><span data-mp-titre></span></div>
+        <div data-mp-cust></div>
+      </div>
+    </section>
+  </div>
+  </div>
+  <div class="bp-toast" role="status" hidden data-mp-toast></div>
+</div>
+
+<style>.mp-cache{display:none!important}</style>
+<script>
+(function () {
+  var root = document.querySelector('[data-mp]'); if (!root) return;
+  function q(s) { return root.querySelector(s); }
+  function esc(s) { return String(s == null ? '' : s).replace(/[&<>"]/g, function (c) { return { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c]; }); }
+  var CLE = 'softcompta.menus2', TOUJOURS = { 'menuperso': 1, 'dashboard': 1, 'm:tableau-de-bord': 1, 'm:parametrages': 1, 'g:admin': 1 };
+  function toast(m) { var t = q('[data-mp-toast]'); t.textContent = m; t.hidden = false; clearTimeout(toast.t); toast.t = setTimeout(function () { t.hidden = true; }, 2600); }
+
+  // ---------- menu standard : lu dans le menu latéral ----------
+  var STD = null, TREE = {}, ROOTS = [];   // TREE[id] = { id, type, label, nav, parent, enfants[] }
+  function txt(e) { return (e.textContent || '').replace(/\s+/g, ' ').trim(); }
+  function lireStd() {
+    TREE = {}; ROOTS = [];
+    function noeud(id, type, label, nav, parent) { if (TREE[id]) return TREE[id]; var n = { id: id, type: type, label: label, nav: nav || '', parent: parent || '', enfants: [] }; TREE[id] = n; if (parent && TREE[parent]) TREE[parent].enfants.push(n.id); else if (!parent) ROOTS.push(n.id); return n; }
+    var racine = document.querySelector('aside [data-sidebar-level="root"]') || document.querySelector('aside');
+    [].forEach.call(document.querySelectorAll('aside [data-module]'), function (b) {
+      var m = b.dataset.module, id = 'm:' + m, lvl = document.querySelector('aside [data-sidebar-level="' + m + '"]');
+      if (TREE[id]) return; noeud(id, lvl ? 'module' : 'item', txt(b), lvl ? '' : (m === 'tableau-de-bord' ? 'dashboard' : m), '');
+      if (!lvl) return;
+      [].forEach.call(lvl.children, function (e) {
+        var g = e.getAttribute('data-group') || '';
+        if (e.hasAttribute('data-group-toggle')) { var gid = 'g:' + e.dataset.groupToggle; if (!TREE[gid]) noeud(gid, 'group', txt(e), '', g && TREE['g:' + g] ? 'g:' + g : id); }
+        else if (e.tagName === 'A' && e.dataset.nav && e.dataset.nav !== 'x') {
+          if (e.hasAttribute('data-mp-lien')) return; var nid = e.dataset.nav; if (TREE[nid]) return;
+          noeud(nid, 'item', txt(e), nid, g && TREE['g:' + g] ? 'g:' + g : id);
+        }
+      });
+    });
+  }
+  // un groupe sans enfant n'a pas d'intérêt : on l'écarte
+  function nettoyer() { var chg = true; while (chg) { chg = false; Object.keys(TREE).forEach(function (id) { var n = TREE[id]; if (n.type === 'group' && !n.enfants.length) { delete TREE[id]; if (n.parent && TREE[n.parent]) TREE[n.parent].enfants = TREE[n.parent].enfants.filter(function (x) { return x !== id; }); chg = true; } }); } ROOTS = ROOTS.filter(function (id) { return TREE[id]; }); }
+
+  // ---------- menus enregistrés ----------
+  var DB = { menus: [] }; try { DB = JSON.parse(localStorage.getItem(CLE) || '{"menus":[]}') || { menus: [] }; } catch (e) { DB = { menus: [] }; }
+  function persister() { try { localStorage.setItem(CLE, JSON.stringify(DB)); } catch (e) { /* stockage indisponible */ } window.MENUS_PERSO = DB.menus.slice(); window.dispatchEvent(new Event('menus-perso-changed')); }
+  var cur = null, base = '', selStd = {}, selCust = null;   // cur : menu en cours d'édition (copie), base : JSON enregistré
+  function vierge() { return { id: '', nom: 'Nouveau menu ' + 'SoftAccounting', ids: [], labels: {}, rank: {}, actif: false }; }
+  function ouvrirMenu(id) { var m = DB.menus.filter(function (x) { return x.id === id; })[0]; cur = m ? JSON.parse(JSON.stringify(m)) : vierge(); base = JSON.stringify(cur); selStd = {}; selCust = null; tout(); }
+  function modifie() { return JSON.stringify(cur) !== base; }
+  function majEtat() {
+    var enr = !!cur.id;
+    q('[data-mp-sup]').disabled = !enr; q('[data-mp-annuler]').disabled = !modifie() && !!cur.id; q('[data-mp-actif]').checked = !!cur.actif;
+  }
+  function majSelect() { var s = q('[data-mp-sel]'); s.innerHTML = '<option value="">Nouveau menu — non enregistré</option>' + DB.menus.map(function (m) { return '<option value="' + esc(m.id) + '">' + esc(m.nom) + (m.actif ? ' (actif)' : '') + '</option>'; }).join(''); s.value = cur.id || ''; }
+
+  // ---------- arbre standard (gauche) ----------
+  var ouverts = {}; ouverts['m:compta-generale'] = 1;
+  function descend(id) { var o = [id]; TREE[id].enfants.forEach(function (c) { o = o.concat(descend(c)); }); return o; }
+  function dans(id) { return cur.ids.indexOf(id) >= 0; }
+  function ligneStd(id, niv) {
+    var n = TREE[id], feuille = !n.enfants.length, ouv = !!ouverts[id], dej = dans(id);
+    var h = '<div class="mp-n ' + (n.type === 'item' ? 'it' : '') + (selStd[id] ? ' sel' : '') + (dej ? ' dej' : '') + '" data-id="' + esc(id) + '" draggable="' + (dej ? 'false' : 'true') + '" style="padding-left:' + (6 + niv * 18) + 'px">' +
+      '<span class="tg" data-tg>' + (feuille ? '' : '<i class="ti ti-chevron-' + (ouv ? 'down' : 'right') + '"></i>') + '</span><i class="ic ti ti-' + (n.type === 'item' ? 'file' : 'folder') + '" aria-hidden="true"></i><b>' + esc(n.label) + '</b>' + (n.nav ? ' <em>/' + esc(n.nav) + '</em>' : '') + (dej ? '<i class="ok ti ti-check" aria-hidden="true"></i>' : '') + '</div>';
+    if (!feuille && ouv) n.enfants.forEach(function (c) { h += ligneStd(c, niv + 1); });
+    return h;
+  }
+  function dessinerStd() { q('[data-mp-std]').innerHTML = ROOTS.map(function (r) { return ligneStd(r, 0); }).join(''); q('[data-mp-ajout]').classList.toggle('on', Object.keys(selStd).length > 0); }
+
+  // ---------- arbre personnalisé (droite) ----------
+  function rang(id) { return cur.rank[id] != null ? cur.rank[id] : (rangStd[id] || 0); }
+  var rangStd = {}; function calcRangStd() { var k = 0; (function p(ids) { ids.forEach(function (id) { rangStd[id] = k++; p(TREE[id].enfants); }); })(ROOTS); }
+  function enfantsCust(parent) { var L = (parent ? TREE[parent].enfants : ROOTS).filter(dans); return L.sort(function (a, b) { return rang(a) - rang(b); }); }
+  function libelle(id) { return cur.labels[id] || TREE[id].label; }
+  function ligneCust(id, niv) {
+    var n = TREE[id], ec = enfantsCust(id), h = '<div class="mp-n ' + (n.type === 'item' ? 'it' : '') + (selCust === id ? ' sel' : '') + '" data-cid="' + esc(id) + '" style="padding-left:' + (6 + niv * 18) + 'px"><span class="tg"></span><i class="ic ti ti-' + (n.type === 'item' ? 'file' : 'folder') + '" aria-hidden="true"></i><b data-lb>' + esc(libelle(id)) + '</b>' + (cur.labels[id] ? ' <em>(' + esc(n.label) + ')</em>' : '') +
+      '<span class="ac">' + '<button type="button" data-act="ren" title="Renommer"><i class="ti ti-pencil"></i></button><button type="button" data-act="haut" title="Monter"><i class="ti ti-arrow-up"></i></button><button type="button" data-act="bas" title="Descendre"><i class="ti ti-arrow-down"></i></button><button type="button" data-act="del" title="Retirer du menu"><i class="ti ti-x"></i></button></span></div>';
+    ec.forEach(function (c) { h += ligneCust(c, niv + 1); }); return h;
+  }
+  function dessinerCust() {
+    var rs = enfantsCust(''), nb = cur.ids.filter(function (i) { return TREE[i] && TREE[i].type === 'item'; }).length;
+    q('[data-mp-cpt]').textContent = nb + ' élément(s) visible(s)'; q('[data-mp-titre]').textContent = cur.nom;
+    q('[data-mp-cust]').innerHTML = rs.length ? rs.map(function (r) { return ligneCust(r, 0); }).join('') : '<div class="mp-vide">Menu vide : ajoutez des éléments depuis les menus standards.</div>';
+  }
+  function tout() { q('[data-mp-nom]').value = cur.nom; majSelect(); dessinerStd(); dessinerCust(); majEtat(); liste(); }
+  // ---------- liste des menus : nom, nombre de modules rattachés, statut ----------
+  function nbModules(m) { return m.ids.filter(function (i) { return i.indexOf('m:') === 0; }).length; }
+  function liste() {
+    q('[data-mp-compte]').textContent = DB.menus.length ? DB.menus.length + (DB.menus.length > 1 ? ' lignes' : ' ligne') : ''; q('[data-mp-vide]').hidden = DB.menus.length > 0;
+    q('[data-mp-lignes]').innerHTML = DB.menus.map(function (m, i) {
+      return '<tr data-i="' + i + '"><td><b>' + esc(m.nom) + '</b></td><td class="c">' + nbModules(m) + '</td><td data-v="' + (m.actif ? 'actif' : 'inactif') + '">' + (m.actif ? 'Appliqué' : 'Non appliqué') + '</td></tr>';
+    }).join(''); filtrer();
+  }
+  function filtrer() {
+    var n = q('[data-mp-fn]').value.trim().toLowerCase(), st = q('[data-mp-fs]').value;
+    [].forEach.call(q('[data-mp-lignes]').querySelectorAll('tr'), function (tr) { tr.hidden = (n && tr.children[0].textContent.toLowerCase().indexOf(n) < 0) || (st && tr.children[2].dataset.v !== st); });
+  }
+  q('[data-mp-fn]').addEventListener('input', filtrer); q('[data-mp-fs]').addEventListener('change', filtrer);
+  function onglet(n) {
+    [].forEach.call(root.querySelectorAll('[data-mp-pan]'), function (p) { p.hidden = p.dataset.mpPan !== n; });
+    [].forEach.call(root.querySelectorAll('[data-mp-tab]'), function (t) { var on = t.dataset.mpTab === n; t.classList.toggle('on', on); t.setAttribute('aria-selected', on); });
+  }
+  [].forEach.call(root.querySelectorAll('[data-mp-tab]'), function (t) { t.addEventListener('click', function () { onglet(t.dataset.mpTab); }); });
+  q('[data-mp-lignes]').addEventListener('dblclick', function (e) {
+    var tr = e.target.closest('tr[data-i]'); if (!tr) return; var m = DB.menus[+tr.dataset.i]; if (!m) return;
+    if (modifie() && cur.id !== m.id && !window.confirm('Abandonner les modifications non enregistrées ?')) return; ouvrirMenu(m.id); onglet('saisie');
+  });
+
+  function ajouter(ids) {
+    var plus = 0;
+    ids.forEach(function (id) { if (!TREE[id]) return; descend(id).concat(chaine(id)).forEach(function (x) { if (!dans(x)) { cur.ids.push(x); plus++; } }); });
+    selStd = {}; tout(); if (plus) toast(plus + ' entrée(s) ajoutée(s) au menu personnalisé.');
+  }
+  function chaine(id) { var o = [], p = TREE[id].parent; while (p) { o.push(p); p = TREE[p].parent; } return o; }
+  function retirer(id) { var sup = descend(id); cur.ids = cur.ids.filter(function (x) { return sup.indexOf(x) < 0; }); sup.forEach(function (x) { delete cur.labels[x]; delete cur.rank[x]; });
+    // un groupe devenu vide disparaît
+    var p = TREE[id].parent; while (p && !enfantsCust(p).length) { cur.ids = cur.ids.filter(function (x) { return x !== p; }); p = TREE[p].parent; } }
+  function deplacer(id, d) {
+    var fr = enfantsCust(TREE[id].parent), i = fr.indexOf(id), j = i + d; if (j < 0 || j >= fr.length) return;
+    fr.forEach(function (x) { cur.rank[x] = rang(x); }); var t = cur.rank[id]; cur.rank[id] = cur.rank[fr[j]]; cur.rank[fr[j]] = t; if (cur.rank[id] === cur.rank[fr[j]]) { cur.rank[id] += d * 0.5; }
+  }
+
+  // ---------- événements ----------
+  q('[data-mp-std]').addEventListener('click', function (e) {
+    var l = e.target.closest('.mp-n'); if (!l) return; var id = l.dataset.id;
+    if (e.target.closest('[data-tg]') && TREE[id].enfants.length) { ouverts[id] = !ouverts[id]; dessinerStd(); return; }
+    if (dans(id)) return; if (selStd[id]) delete selStd[id]; else selStd[id] = 1; dessinerStd();
+  });
+  q('[data-mp-std]').addEventListener('dblclick', function (e) { var l = e.target.closest('.mp-n'); if (l && !dans(l.dataset.id)) ajouter([l.dataset.id]); });
+  q('[data-mp-ajout]').addEventListener('click', function () { var ids = Object.keys(selStd); if (!ids.length) { toast('Sélectionnez des menus standards à gauche.'); return; } ajouter(ids); });
+  var glisse = null;
+  q('[data-mp-std]').addEventListener('dragstart', function (e) { var l = e.target.closest('.mp-n'); if (!l) return; glisse = Object.keys(selStd).indexOf(l.dataset.id) >= 0 ? Object.keys(selStd) : [l.dataset.id]; e.dataTransfer.effectAllowed = 'copy'; try { e.dataTransfer.setData('text/plain', glisse.join(',')); } catch (x) { /* dataTransfer indisponible */ } });
+  [q('[data-mp-drop]'), q('[data-mp-cust]')].forEach(function (z) {
+    z.addEventListener('dragover', function (e) { if (!glisse) return; e.preventDefault(); q('[data-mp-drop]').classList.add('over'); });
+    z.addEventListener('dragleave', function () { q('[data-mp-drop]').classList.remove('over'); });
+    z.addEventListener('drop', function (e) { e.preventDefault(); q('[data-mp-drop]').classList.remove('over'); if (glisse) { var g = glisse; glisse = null; ajouter(g); } });
+  });
+  q('[data-mp-std]').addEventListener('dragend', function () { glisse = null; q('[data-mp-drop]').classList.remove('over'); });
+  q('[data-mp-cust]').addEventListener('click', function (e) {
+    var l = e.target.closest('.mp-n'); if (!l) return; var id = l.dataset.cid, b = e.target.closest('[data-act]');
+    if (!b) { selCust = id; dessinerCust(); return; }
+    if (b.dataset.act === 'del') { retirer(id); tout(); }
+    else if (b.dataset.act === 'haut') { deplacer(id, -1); tout(); } else if (b.dataset.act === 'bas') { deplacer(id, 1); tout(); }
+    else if (b.dataset.act === 'ren') { var v = window.prompt('Nouveau libellé pour « ' + TREE[id].label + ' » (vide : libellé d’origine) :', libelle(id)); if (v === null) return; v = v.trim(); if (!v || v === TREE[id].label) delete cur.labels[id]; else cur.labels[id] = v; tout(); }
+  });
+  q('[data-mp-nom]').addEventListener('input', function () { cur.nom = q('[data-mp-nom]').value; q('[data-mp-titre]').textContent = cur.nom; majEtat(); });
+  q('[data-mp-actif]').addEventListener('change', function () { cur.actif = q('[data-mp-actif]').checked; majEtat(); });
+  q('[data-mp-sel]').addEventListener('change', function () { if (modifie() && !window.confirm('Abandonner les modifications non enregistrées ?')) { majSelect(); return; } ouvrirMenu(q('[data-mp-sel]').value); });
+  q('[data-mp-annuler]').addEventListener('click', function () { cur = JSON.parse(base); selStd = {}; selCust = null; tout(); toast('Modifications annulées.'); });
+  q('[data-mp-enreg]').addEventListener('click', function () {
+    cur.nom = q('[data-mp-nom]').value.trim(); if (!cur.nom) { toast('Le nom du menu est obligatoire.'); q('[data-mp-nom]').focus(); return; }
+    if (DB.menus.some(function (m) { return m.id !== cur.id && m.nom.toLowerCase() === cur.nom.toLowerCase(); })) { toast('Un menu de ce nom existe déjà.'); return; }
+    if (!cur.ids.length) { toast('Ajoutez au moins un élément au menu personnalisé.'); return; }
+    if (!cur.id) { cur.id = 'mn' + Date.now().toString(36); DB.menus.push(JSON.parse(JSON.stringify(cur))); } else DB.menus = DB.menus.map(function (m) { return m.id === cur.id ? JSON.parse(JSON.stringify(cur)) : m; });
+    if (cur.actif) DB.menus.forEach(function (m) { m.actif = m.id === cur.id; });
+    base = JSON.stringify(cur); persister(); appliquer(); tout(); toast('Menu « ' + cur.nom + ' » enregistré' + (cur.actif ? ' et appliqué au menu latéral.' : '.'));
+  });
+  q('[data-mp-dup]').addEventListener('click', function () { var c = JSON.parse(JSON.stringify(cur)); c.id = ''; c.actif = false; c.nom = cur.nom + ' (copie)'; cur = c; base = ''; selCust = null; tout(); toast('Copie créée : renseignez le nom puis enregistrez.'); });
+  q('[data-mp-sup]').addEventListener('click', function () { if (!cur.id || !window.confirm('Supprimer le menu « ' + cur.nom + ' » ?')) return; DB.menus = DB.menus.filter(function (m) { return m.id !== cur.id; }); persister(); appliquer(); ouvrirMenu(''); toast('Menu supprimé.'); });
+  q('[data-mp-tel]').addEventListener('click', function () {
+    var o = JSON.stringify({ produit: 'SoftAccounting', nom: q('[data-mp-nom]').value.trim() || cur.nom, ids: cur.ids, labels: cur.labels, rank: cur.rank }, null, 2), a = document.createElement('a');
+    a.href = URL.createObjectURL(new Blob([o], { type: 'application/json' })); a.download = 'menu_' + (cur.nom || 'personnalise').toLowerCase().replace(/[^a-z0-9]+/g, '_') + '.json'; a.click();
+  });
+  q('[data-mp-imp]').addEventListener('click', function () { q('[data-mp-file]').click(); });
+  q('[data-mp-file]').addEventListener('change', function () {
+    var f = q('[data-mp-file]').files[0]; if (!f) return; var r = new FileReader();
+    r.onload = function () {
+      try { var o = JSON.parse(r.result); if (!Array.isArray(o.ids)) throw new Error('ids'); var ids = o.ids.filter(function (i) { return TREE[i]; });
+        if (!ids.length) { toast('Aucune entrée reconnue dans ce fichier (menu d’un autre produit ?).'); return; }
+        cur = { id: '', nom: String(o.nom || 'Menu importé'), ids: ids, labels: o.labels || {}, rank: o.rank || {}, actif: false }; base = ''; tout(); toast(ids.length + ' entrée(s) importée(s) sur ' + o.ids.length + ' : renseignez le nom puis enregistrez.'); }
+      catch (e) { toast('Fichier invalide : un menu au format JSON est attendu.'); }
+      q('[data-mp-file]').value = '';
+    };
+    r.readAsText(f);
+  });
+
+  // ---------- application au menu latéral ----------
+  function appliquer() {
+    [].forEach.call(document.querySelectorAll('aside .mp-cache'), function (e) { e.classList.remove('mp-cache'); });
+    [].forEach.call(document.querySelectorAll('aside [data-mp-orig]'), function (e) { var lb = e.dataset.mpTarget === 'self' ? e : e.querySelector('[data-mp-lb]'); if (lb) lb.textContent = e.dataset.mpOrig; e.removeAttribute('data-mp-orig'); });
+    var m = DB.menus.filter(function (x) { return x.actif; })[0]; if (!m) return;
+    var inc = {}; m.ids.forEach(function (i) { inc[i] = 1; }); Object.keys(TOUJOURS).forEach(function (i) { inc[i] = 1; });
+    function cacher(e) { e.classList.add('mp-cache'); }
+    function nommer(e, label) { var cible = [].filter.call(e.querySelectorAll('span,div'), function (x) { return !x.children.length && x.textContent.trim(); })[0] || e; if (!e.hasAttribute('data-mp-orig')) e.setAttribute('data-mp-orig', cible.textContent); cible.setAttribute('data-mp-lb', ''); cible.textContent = label; }
+    [].forEach.call(document.querySelectorAll('aside [data-module]'), function (b) { var id = 'm:' + b.dataset.module; if (!inc[id]) cacher(b); else if (m.labels[id]) nommer(b, m.labels[id]); });
+    [].forEach.call(document.querySelectorAll('aside [data-group-toggle]'), function (b) { var id = 'g:' + b.dataset.groupToggle; if (!inc[id]) cacher(b); else if (m.labels[id]) nommer(b, m.labels[id]); });
+    [].forEach.call(document.querySelectorAll('aside a[data-nav]'), function (a) { var id = a.dataset.nav; if (id === 'x' || a.hasAttribute('data-mp-lien')) return; if (!inc[id]) cacher(a); else if (m.labels[id]) nommer(a, m.labels[id]); });
+    // ordre des écrans dans chaque groupe
+    var parGroupe = {}; [].forEach.call(document.querySelectorAll('aside a[data-nav]'), function (a) { var id = a.dataset.nav; if (!inc[id] || !TREE[id] || m.rank[id] == null) return; (parGroupe[TREE[id].parent] = parGroupe[TREE[id].parent] || []).push(a); });
+    Object.keys(parGroupe).forEach(function (p) { var L = parGroupe[p]; if (L.length < 2) return; var ref = L[0].previousSibling, par = L[0].parentNode, tri = L.slice().sort(function (a, b) { return (m.rank[a.dataset.nav] != null ? m.rank[a.dataset.nav] : rangStd[a.dataset.nav]) - (m.rank[b.dataset.nav] != null ? m.rank[b.dataset.nav] : rangStd[b.dataset.nav]); });
+      var pos = L[0].nextSibling; L.forEach(function (x) { x.remove(); }); tri.forEach(function (x) { par.insertBefore(x, pos); }); });
+  }
+
+  function init() { lireStd(); nettoyer(); calcRangStd(); }
+  window.addEventListener('hashchange', function () { if (location.hash === '#menuperso') { init(); if (!cur) ouvrirMenu(''); else tout(); } });
+  function demarrer() { init(); window.MENUS_PERSO = DB.menus.slice(); var actif = DB.menus.filter(function (m) { return m.actif; })[0]; ouvrirMenu(actif ? actif.id : ''); appliquer(); }
+  setTimeout(demarrer, 0);
+})();
+</script>

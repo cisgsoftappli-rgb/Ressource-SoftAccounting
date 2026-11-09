@@ -199,5 +199,38 @@
     var gain = flux.reduce(function (a, b) { return a + b; }, 0) - inv;
     return { van: van, tri: tri, payback: pay, roi: inv ? gain / inv * 100 : null };
   };
+  // ---- Contrôles de cohérence des états financiers (égalité actif = passif, résultat, trésorerie, N / N-1, qualité des données) ----
+  F.controlesCoherence = function () {
+    var r = F.dernier || F.calculer(), N = r.N, N1 = r.N1, L = [], u = r.reel ? 'millions' : 'millions';
+    var fm = function (v) { return (Math.round(v * 10) / 10).toLocaleString('fr-FR'); };
+    function ctl(code, theme, obj, regle, fn) { var o = { code: code, theme: theme, objectif: obj, regle: regle, st: 'ok', details: [] }; try { var d = fn(); if (d === null) o.st = 'na'; else if (d.length) { o.st = 'anomalie'; o.details = d; } } catch (e) { o.st = 'na'; } L.push(o); }
+    var tol = function (a, b) { return Math.max(0.5, Math.abs(a) * 0.005); };
+    ctl('FC-01', 'Cohérence des états financiers', 'Égalité actif = passif', 'Total actif = capitaux propres + dettes financières + dettes d’exploitation (' + u + ').', function () {
+      var a = N.actif, p = N.cp + N.df + N.fourn + N.fisc + N.adet, e = a - p; return Math.abs(e) > tol(a) ? ['Actif ' + fm(a) + ' ≠ passif ' + fm(p) + ' (écart ' + fm(e) + ')'] : [];
+    });
+    ctl('FC-02', 'Cohérence des états financiers', 'Concordance du résultat du compte de résultat et du bilan', 'Variation des capitaux propres N − N-1 = résultat net − dividendes versés.', function () {
+      if (!N1) return null; var e = (N.cp - N1.cp) - (N.rn - (N.div || 0)); return Math.abs(e) > tol(N.rn) ? ['Variation des capitaux propres ' + fm(N.cp - N1.cp) + ' ≠ résultat net ' + fm(N.rn) + ' − dividendes ' + fm(N.div || 0) + ' (écart ' + fm(e) + ')'] : [];
+    });
+    ctl('FC-03', 'Cohérence des états financiers', 'Variation de trésorerie du tableau de flux et des soldes bancaires', 'Variation de la trésorerie du bilan = flux d’exploitation − investissements + emprunts − remboursements − dividendes.', function () {
+      if (!N1 || isNaN(N.fluxOp)) return null; var flux = N.fluxOp - N.capex + (N.empr || 0) - (N.remb || 0) - (N.div || 0), e = (N.treso - N1.treso) - flux; return Math.abs(e) > tol(flux) ? ['Variation de trésorerie ' + fm(N.treso - N1.treso) + ' ≠ flux du tableau ' + fm(flux) + ' (écart ' + fm(e) + ')'] : [];
+    });
+    ctl('FC-04', 'Cohérence des états financiers', 'Cohérence entre N et N-1 (capitaux propres d’ouverture)', 'Les capitaux propres d’ouverture de N reprennent la clôture de N-1 (hors résultat et dividendes).', function () {
+      if (!N1) return null; var d = []; if (N1.cp > 0 && N.cp < 0) d.push('Capitaux propres devenus négatifs (N-1 : ' + fm(N1.cp) + ' ; N : ' + fm(N.cp) + ')'); if (N1.cp > 0 && Math.abs(N.cp / N1.cp - 1) > 0.5) d.push('Capitaux propres : variation de ' + Math.round((N.cp / N1.cp - 1) * 100) + ' % entre N-1 et N, à justifier'); return d;
+    });
+    ctl('FC-05', 'Prévisionnels et budgets', 'Équilibre du plan de financement', 'Emplois = ressources sur chaque période (investissements, remboursements, dividendes = flux, emprunts, apports).', function () {
+      if (!r.budget || r.budget.capex == null || isNaN(N.fluxOp)) return null; var emplois = r.budget.capex + (N.remb || 0) + (N.div || 0), ressources = N.fluxOp + (N.empr || 0), e = ressources - emplois;
+      return e < 0 ? ['Plan de financement déséquilibré : ressources ' + fm(ressources) + ' < emplois ' + fm(emplois) + ' (besoin de financement ' + fm(-e) + ')'] : [];
+    });
+    ctl('FC-06', 'Évaluation des investissements', 'Recalcul de la VAN, du TRI et du délai de récupération', 'Les indicateurs d’investissement sont recalculés à partir des flux saisis dans l’analyse (« VAN », « TRI »).', function () { return null; });
+    ctl('FC-07', 'Qualité des données', 'Valeurs manquantes, signes inversés et unités', 'Aucune valeur manquante ; stocks, clients, fournisseurs et chiffre d’affaires positifs ; pas de saut d’unité (×1 000) entre N-1 et N.', function () {
+      var d = [], cles = ['ca', 'achats', 'personnel', 'ext', 'immo', 'stocks', 'clients', 'treso', 'cp', 'df', 'fourn']; cles.forEach(function (c) { if (N[c] == null || isNaN(N[c])) d.push('Valeur manquante : ' + c); });
+      ['ca', 'stocks', 'clients', 'fourn', 'immo'].forEach(function (c) { if (N[c] < 0) d.push('Signe inversé probable : ' + c + ' = ' + fm(N[c])); });
+      if (N1) cles.forEach(function (c) { if (N1[c] > 0 && N[c] > 0 && (N[c] / N1[c] > 200 || N[c] / N1[c] < 1 / 200)) d.push('Unité incohérente entre N-1 et N pour ' + c + ' (rapport ' + Math.round(N[c] / N1[c]) + ')'); });
+      return d;
+    });
+    ctl('FC-08', 'Qualité des données', 'Traçabilité entre chiffre présenté et donnée source', 'Chaque agrégat provient d’écritures saisies ou d’un jeu identifié.', function () { return r.reel ? [] : ['Chiffres issus du jeu de démonstration : aucune écriture saisie exploitable pour tracer les agrégats']; });
+    var out = { source: r.src, date: new Date(), lignes: L, nbAnomalies: L.reduce(function (a, x) { return a + x.details.length; }, 0), nbNa: L.filter(function (x) { return x.st === 'na'; }).length };
+    F.dernierCoherence = out; return out;
+  };
 })();
 </script>

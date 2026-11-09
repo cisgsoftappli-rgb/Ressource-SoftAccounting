@@ -398,6 +398,92 @@
     draw(); show(tab || 'prev'); document.body.appendChild(ov);
   }
   window.__openA3 = openA3;
+  // ---- Formulaire A1 « Demande de décaissement » (procédure financière BAD) ----
+  // Rubriques : 1 Numéro du prêt/don, 2 Type de demande (5 cases), 3 Demande numéro, 4 Titre du projet, 5 Veuillez payer (banque du bénéficiaire du paiement),
+  // 6 Correspondant bancaire, 7 Informations bancaires du bénéficiaire, 8 Informations sur le bénéficiaire, texte du montant total (chiffres et lettres), reconstitution du compte spécial,
+  // 9 Certification (a à e), 10 Informations sur l'agence d'exécution, 11 Signataires autorisés. Se pré-paramètre dans le concepteur d'état à grille.
+  var A1TYPES = ['Remboursement', 'Avance initiale en compte spécial', 'Réapprovisionnement du compte spécial', 'Paiement direct', 'Justification sans réapprovisionnement'];
+  var A1CFG = { devise: 'UC', pret: '', projet: 'Intitulé du projet', type: 'Remboursement', compteSpecial: '', nsig: 3,
+    bBanque: 'Banque du bénéficiaire du paiement', bAdr: 'Adresse de la banque', bVille: 'Ville / Pays', bSwift: 'CODESWIFT', bIban: 'MG00 0000 0000 0000 0000 0000 000',
+    cBanque: 'Banque correspondante', cAdr: 'Adresse de la banque correspondante', cVille: 'Ville / Pays', cSwift: 'CODESWIFT', cIban: '000000000',
+    intitule: 'Intitulé du compte', bp: '', benNom: 'Nom du bénéficiaire', benAdr: 'Adresse du bénéficiaire',
+    agNom: 'Cellule de gestion du projet', agAdr: 'Adresse de l’agence d’exécution', agVille: 'Antananarivo, Madagascar', agContact: 'Nom du contact', agCoord: 'contact@exemple.mg / 000 00 000 00' };
+  window.__cfgA1 = A1CFG;
+  function a1Lettres(n) {
+    n = Math.floor(Math.abs(+n) || 0); if (!n) return 'zéro';
+    var U = ['', 'un', 'deux', 'trois', 'quatre', 'cinq', 'six', 'sept', 'huit', 'neuf', 'dix', 'onze', 'douze', 'treize', 'quatorze', 'quinze', 'seize', 'dix-sept', 'dix-huit', 'dix-neuf'], D = ['', '', 'vingt', 'trente', 'quarante', 'cinquante', 'soixante', 'soixante', 'quatre-vingt', 'quatre-vingt'];
+    function c99(x) { if (x < 20) return U[x]; var d = Math.floor(x / 10), u = x % 10; if (d === 7 || d === 9) return D[d] + (u === 1 && d === 7 ? ' et ' : '-') + U[10 + u]; if (u === 0) return D[d] + (d === 8 ? 's' : ''); return D[d] + (u === 1 && d < 8 ? ' et un' : '-' + U[u]); }
+    function c999(x) { var h = Math.floor(x / 100), r = x % 100, t = ''; if (h) t = (h > 1 ? U[h] + ' ' : '') + 'cent' + (h > 1 && !r ? 's' : ''); if (r) t += (t ? ' ' : '') + c99(r); return t; }
+    var out = [], G = [[1e9, 'milliard'], [1e6, 'million'], [1e3, 'mille']];
+    G.forEach(function (g) { var q = Math.floor(n / g[0]); if (!q) return; n %= g[0]; out.push(g[0] === 1e3 ? (q === 1 ? 'mille' : c999(q) + ' mille') : c999(q) + ' ' + g[1] + (q > 1 ? 's' : '')); });
+    if (n) out.push(c999(n)); return out.join(' ');
+  }
+  window.__lettresFr = a1Lettres;
+  window.__renderA1 = function (rows, info, cfg) {
+    info = info || {}; cfg = Object.assign({}, A1CFG, cfg || {});
+    var tot = (rows || []).reduce(function (a, g) { return a + (+g.montant || 0); }, 0), d = new Date(), p2 = function (x) { return ('0' + x).slice(-2); }, jour = p2(d.getDate()) + '/' + p2(d.getMonth() + 1) + '/' + d.getFullYear(), stamp = jour + ' à ' + p2(d.getHours()) + ':' + p2(d.getMinutes()) + ' (UTC+3)';
+    var ns = Math.max(1, Math.min(4, +cfg.nsig || 3));
+    function ch(l, v) { return '<div><span>' + l + '</span> <b>' + esc(v) + '</b></div>'; }
+    var V = { 'N° prêt/don': cfg.pret || '—', 'N° demande': info.demande || '0031', 'Titre du projet': cfg.projet, 'Banque bénéficiaire': cfg.bBanque, 'Adresse banque bénéficiaire': cfg.bAdr, 'Ville / pays banque': cfg.bVille, 'Code SWIFT bénéficiaire': cfg.bSwift, 'IBAN bénéficiaire': cfg.bIban,
+      'Banque correspondante': cfg.cBanque, 'Adresse banque correspondante': cfg.cAdr, 'Ville / pays correspondant': cfg.cVille, 'Code SWIFT correspondant': cfg.cSwift, 'IBAN correspondant': cfg.cIban, 'Intitulé du compte': cfg.intitule, 'N° bénéficiaire BP': cfg.bp || '—',
+      'Nom du bénéficiaire': cfg.benNom, 'Adresse du bénéficiaire': cfg.benAdr, 'Montant total': nf(tot, 2), 'Devise de la demande': cfg.devise, 'Montant en lettres': a1Lettres(tot), 'Compte spécial': cfg.compteSpecial || '—', 'Agence d’exécution': cfg.agNom, 'Adresse agence': cfg.agAdr,
+      'Ville / pays agence': cfg.agVille, 'Nom du contact': cfg.agContact, 'Coordonnées du contact': cfg.agCoord, 'Date d’édition': jour, 'Page': '1', 'NbPages': '1', 'Utilisateur': info.user || 'SOFTWELL' };
+    A1TYPES.forEach(function (tp, k) { V['Case type ' + (k + 1)] = tp === cfg.type ? '☒' : '☐'; });
+    function subst(s) { return String(s).replace(/\[([^\]]+)\]/g, function (m, k) { return Object.prototype.hasOwnProperty.call(V, k) ? V[k] : m; }); }
+    return '<div class="md4-doc a2-doc"><div class="md4-pg a2-pg a3-pg">' +
+      '<div class="a3-hd"><div class="a3-ti"><b>' + jour + '</b><b style="font-size:16px">A1&nbsp;&nbsp;Demande de décaissement</b><b>Page 1/1</b></div></div>' +
+      '<div style="margin-top:12px">' + (window.__ddGrid && window.__ddGrid.a1Html ? window.__ddGrid.a1Html(subst) : '') + '</div>' +
+      '<div class="a2-ft"><span>' + esc(info.user || 'SOFTWELL') + '</span><span>Edité le ' + stamp + '</span></div></div></div>';
+  };
+  var SAMPLEA1 = [{ montant: 60000 }, { montant: 30000 }, { montant: 14000 }, { montant: 10000 }];
+  window.__sampleA1 = SAMPLEA1;
+  var FILLA1 = [
+    ['1 Numéro du Prêt/don', 1, ['Paramétrage du modèle (n° du prêt ou du don de la convention).']],
+    ['2 Type de demande', 2, ['Une des cinq cases : remboursement, avance initiale en compte spécial, réapprovisionnement du compte spécial, paiement direct, justification sans réapprovisionnement.']],
+    ['3 Demande numéro', 3, ['Numéro de l’état de dépense en cours d’édition.']],
+    ['4 Titre du Projet', 4, ['Intitulé du projet de la convention (paramétrage du modèle).']],
+    ['5 Veuillez payer', 5, ['Banque bénéficiaire du paiement : nom, adresse, ville / pays, code SWIFT, numéro de compte / IBAN (paramétrage du modèle).']],
+    ['6 Correspondant bancaire', 6, ['Banque correspondante, le cas échéant (mêmes rubriques que la banque bénéficiaire).']],
+    ['7 Informations bancaires du bénéficiaire', 7, ['Intitulé du compte et numéro du bénéficiaire (BP) (paramétrage du modèle ou fiche du tiers).']],
+    ['8 Informations sur le bénéficiaire', 8, ['Nom, adresse et ville / pays du bénéficiaire.']],
+    ['Montant total demandé (chiffres et lettres)', '€', ['Somme des montants demandés de l’état de dépense, dans la devise de la demande ; montant converti en toutes lettres (« … unité de compte BAD »).']],
+    ['Reconstitution du compte spécial', 'CS', ['Numéro du compte spécial, pour une demande de reconstitution (paramétrage du modèle).']],
+    ['9 Certification (a à e)', 9, ['Texte fixe de la certification : cinq attestations a) à e).']],
+    ['10 Informations sur l’agence d’exécution', 10, ['Nom, adresse, ville / pays, contact (nom, email, téléphone / fax) de l’agence d’exécution (paramétrage du modèle).']],
+    ['11 Signataires autorisés', 11, ['Cases Noms / Titres / Signature à compléter à la main (nombre de signataires paramétrable) ; date d’édition.']]
+  ];
+  function a1Fill() {
+    return '<table class="md4-fill"><thead><tr><th style="width:64px">Repère</th><th style="width:30%">Rubrique du formulaire</th><th>Règle de remplissage</th></tr></thead><tbody>' +
+      FILLA1.map(function (f) { return '<tr><td><span class="md4-bdg">' + esc(String(f[1])) + '</span></td><td><b>' + esc(f[0]) + '</b></td><td><ul>' + f[2].map(function (x) { return '<li>' + esc(x) + '</li>'; }).join('') + '</ul></td></tr>'; }).join('') + '</tbody></table>' +
+      '<p class="md4-note">Source : formulaire A1 « Demande de décaissement » (procédure financière BAD) — structure relevée sur le modèle PDF fourni. L’ordre des numéros 5 à 8 est à confirmer.</p>';
+  }
+  var A1CH = [['Projet et prêt', [['pret', 'Numéro du prêt / don'], ['projet', 'Titre du projet'], ['devise', 'Devise'], ['compteSpecial', 'Compte spécial (reconstitution)']]],
+    ['5. Veuillez payer — banque', [['bBanque', 'Nom de la banque'], ['bAdr', 'Adresse de la banque'], ['bVille', 'Ville / Pays'], ['bSwift', 'Code SWIFT'], ['bIban', 'Numéro du compte / IBAN']]],
+    ['6. Correspondant bancaire', [['cBanque', 'Nom de la banque'], ['cAdr', 'Adresse de la banque'], ['cVille', 'Ville / Pays'], ['cSwift', 'Code SWIFT'], ['cIban', 'Numéro du compte / IBAN']]],
+    ['7. Bénéficiaire — compte · 8. Bénéficiaire', [['intitule', 'Intitulé du compte'], ['bp', 'Numéro du bénéficiaire (BP)'], ['benNom', 'Nom du bénéficiaire'], ['benAdr', 'Adresse / Ville / Pays du bénéficiaire']]],
+    ['10. Agence d’exécution', [['agNom', 'Nom'], ['agAdr', 'Adresse'], ['agVille', 'Ville / Pays'], ['agContact', 'Contact : nom'], ['agCoord', 'Email / Tél / Fax']]]];
+  function a1Param() {
+    var c = A1CFG;
+    function inp(k, lab) { return '<div class="a2p-f"><label>' + lab + '</label><input class="a2p-i" data-a1k="' + k + '" type="text" value="' + esc(c[k]) + '"></div>'; }
+    return '<div class="a2p">' + A1CH.map(function (g) { return '<p class="md4-note" style="grid-column:1/-1;margin:6px 0 0"><b>' + esc(g[0]) + '</b></p>' + g[1].map(function (f) { return inp(f[0], f[1]); }).join(''); }).join('') +
+      '<div class="a2p-f"><label>2. Type de demande</label><select class="a2p-i" data-a1k="type">' + A1TYPES.map(function (t) { return '<option' + (t === c.type ? ' selected' : '') + '>' + esc(t) + '</option>'; }).join('') + '</select></div>' +
+      '<div class="a2p-f"><label>Nombre de signataires autorisés</label><select class="a2p-i" data-a1k="nsig">' + [1, 2, 3, 4].map(function (n) { return '<option' + (n === +c.nsig ? ' selected' : '') + '>' + n + '</option>'; }).join('') + '</select></div>' +
+      '<p class="md4-note" style="grid-column:1/-1">Ces valeurs sont reprises par défaut quand le modèle est édité depuis un état de dépense de procédure BAD. L’aperçu se met à jour au fil de la saisie.</p></div>';
+  }
+  function openA1(name, tab) {
+    var ov = document.createElement('div'); ov.className = 'md4-ov';
+    ov.innerHTML = '<div class="md4-box"><div class="md4-hd"><div><h2>Modèle d’état — ' + esc(name) + '</h2><p>Procédure financière BAD · aperçu avec des données d’exemple</p></div><button type="button" class="md4-x" aria-label="Fermer">×</button></div>' +
+      '<div class="md4-tabs"><button type="button" class="on" data-md4-t="prev">Aperçu</button><button type="button" data-md4-t="par">Paramétrage</button><button type="button" data-md4-t="fill">Détail de remplissage</button></div>' +
+      '<div class="md4-bd"><div data-md4-p="prev"><div class="md4-st"><span>Format : portrait</span><span>11 rubriques</span><span>Montant total en chiffres et en lettres</span><span>Certification a) à e) et signataires autorisés</span></div><div data-a1-doc></div></div>' +
+      '<div data-md4-p="par" style="display:none">' + a1Param() + '</div><div data-md4-p="fill" style="display:none">' + a1Fill() + '</div></div></div>';
+    function draw() { ov.querySelector('[data-a1-doc]').innerHTML = window.__renderA1(SAMPLEA1, { demande: '0031' }, A1CFG); }
+    function show(t) { ov.querySelectorAll('[data-md4-t]').forEach(function (b) { b.classList.toggle('on', b.dataset.md4T === t); }); ov.querySelectorAll('[data-md4-p]').forEach(function (p) { p.style.display = p.dataset.md4P === t ? '' : 'none'; }); }
+    ov.addEventListener('click', function (e) { if (e.target === ov || e.target.closest('.md4-x')) { ov.remove(); return; } var t = e.target.closest('[data-md4-t]'); if (t) show(t.dataset.md4T); });
+    function maj(e) { var k = e.target.dataset && e.target.dataset.a1k; if (!k) return; A1CFG[k] = k === 'nsig' ? (+e.target.value || A1CFG[k]) : e.target.value; draw(); }
+    ov.addEventListener('input', maj); ov.addEventListener('change', maj);
+    draw(); show(tab || 'prev'); document.body.appendChild(ov);
+  }
+  window.__openA1 = openA1;
   // ---- Formulaire 102/A « Relevé des dépenses » (procédure FIDA) ----
   // En-tête de feuille : prêt FIDA, demande, période, catégorie et « feuille récapitulative n/N » (numérotée par catégorie) ;
   // tableau de 11 colonnes ; sur la dernière feuille de chaque catégorie : total en USD, texte de certification et signatures.
@@ -629,7 +715,7 @@
     var du = e.target.closest('[data-md-dup]');
     if (du) { var src = rinfo(du.closest('tr')); window.__dupModele({ source: { code: src.code, nom: src.nom }, exists: function (c) { return EXTRA.some(function (x) { return x.html.indexOf('data-md-code="' + esc(c) + '"') >= 0; }); }, onOk: function (c, n) { addDupRow(src, c, n); } }); return; }
     var pa = e.target.closest('[data-md-a2par]'); if (pa) { openA2(pa.dataset.mdName, 'par'); return; }
-    var pb = e.target.closest('[data-md-prev]'); if (pb) { if (/^A3/.test(pb.dataset.mdName)) openA3(pb.dataset.mdName, 'prev'); else if (/^A2/.test(pb.dataset.mdName)) openA2(pb.dataset.mdName, 'prev'); else if (/^102/.test(pb.dataset.mdName)) open102(pb.dataset.mdName, 'prev'); else if (/^104/.test(pb.dataset.mdName)) open104(pb.dataset.mdName, 'prev'); else open4F(pb.dataset.mdName); return; }
+    var pb = e.target.closest('[data-md-prev]'); if (pb) { if (/^A1/.test(pb.dataset.mdName)) openA1(pb.dataset.mdName, 'prev'); else if (/^A3/.test(pb.dataset.mdName)) openA3(pb.dataset.mdName, 'prev'); else if (/^A2/.test(pb.dataset.mdName)) openA2(pb.dataset.mdName, 'prev'); else if (/^102/.test(pb.dataset.mdName)) open102(pb.dataset.mdName, 'prev'); else if (/^104/.test(pb.dataset.mdName)) open104(pb.dataset.mdName, 'prev'); else open4F(pb.dataset.mdName); return; }
     var ob = e.target.closest('[data-md-open]'); if (!ob) return;
     var nom = ob.dataset.mdName, base = ob.dataset.mdBase || nom, ejcd = /EJCD/i.test(base), f104 = /^104/.test(base), decl = ejcd || f104 || /déclaration/i.test(base);
     window.__mfDesigner = { code: ob.dataset.mdCode || (f104 ? 'F104' : ejcd ? 'EJCD' : decl ? 'DECLARATION' : 'SOE'), nom: nom, def: false };

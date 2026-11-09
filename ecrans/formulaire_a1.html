@@ -1,0 +1,169 @@
+<!--
+  Écran « Formulaire A1 » (Comptabilité Projets & Bailleurs › BAD › Traitement › Formulaire A1) — demande de retrait de fonds adressée au bailleur BAD :
+  emprunteur, projet, prêt / don, type de demande (remboursement, avance initiale en compte spécial, réapprovisionnement du compte spécial, paiement direct),
+  montant demandé, détail des dépenses (pièce, bénéficiaire, objet, catégorie, montant), coordonnées bancaires de paiement, certification et signataire.
+  Boutons : Enregistrer, Annuler, Imprimer (mise en page du formulaire). Données en mémoire (window.FORMULAIRES_A1). Préfixe fa1 / data-fa1.
+  La mise en page suit les rubriques du modèle « Formulaire A1 BAD » fourni ; à confronter avec le PDF d'origine pour les libellés exacts. Ne pas nommer de fonction « $$ » (build.cjs).
+-->
+<style>
+[data-fa1] .fa1-bar{display:flex;flex-wrap:wrap;align-items:center;justify-content:space-between;gap:12px;margin:0 0 14px}
+[data-fa1] .fa1-bar h1{margin:0;font:600 22px var(--font-heading,Outfit,sans-serif);color:#0B1332}
+[data-fa1] .fa1-bar p{margin:2px 0 0;font-size:13px;color:#5B606D}
+[data-fa1] .fa1-act{display:flex;gap:8px;flex-wrap:wrap}
+[data-fa1] .fa1-btn{min-height:38px;padding:0 16px;border:1px solid #2E427B;border-radius:8px;background:#fff;color:#2E427B;font:600 13px var(--font-sans,sans-serif);cursor:pointer;display:inline-flex;align-items:center;gap:6px}
+[data-fa1] .fa1-btn.p{background:#2E427B;color:#fff}[data-fa1] .fa1-btn:disabled{opacity:.45;cursor:not-allowed}
+[data-fa1] .fa1-doc{background:#fff;border:1px solid #D6D9E0;border-radius:10px;padding:26px 30px;max-width:1080px}
+[data-fa1] .fa1-tt{text-align:center;margin:0 0 4px;font:700 18px var(--font-heading,Outfit,sans-serif);letter-spacing:.04em;text-transform:uppercase;color:#0B1332}
+[data-fa1] .fa1-st{text-align:center;margin:0 0 20px;font-size:13px;color:#5B606D}
+[data-fa1] .fa1-sec{margin:22px 0 10px;padding:6px 10px;background:#E9EEF8;border-left:4px solid #2E427B;font:700 13px var(--font-sans,sans-serif);text-transform:uppercase;letter-spacing:.04em;color:#243569}
+[data-fa1] .fa1-g{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:12px 22px}
+[data-fa1] .fa1-g.w3{grid-template-columns:repeat(3,minmax(0,1fr))}
+[data-fa1] .fa1-g .w{grid-column:1/-1}
+[data-fa1] label.fa1-c{display:flex;flex-direction:column;gap:4px;font-size:12px;font-weight:600;color:#474C58}
+[data-fa1] .fa1-in{height:36px;box-sizing:border-box;border:1px solid #B9BDC7;border-radius:6px;background:#fff;padding:0 10px;font:inherit;font-size:13px;color:#353944;width:100%}
+[data-fa1] .fa1-in:focus{outline:none;border-color:#2E427B;box-shadow:0 0 0 3px rgba(46,66,123,.12)}
+[data-fa1] .fa1-in:disabled{background:#F1F2F4}.fa1-in.r{text-align:right}
+[data-fa1] .fa1-in.err{border-color:#B63132}
+[data-fa1] .fa1-ty{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:8px 22px}
+[data-fa1] .fa1-ty label{display:flex;align-items:center;gap:8px;padding:8px 10px;border:1px solid #D6D9E0;border-radius:8px;font-size:13px;cursor:pointer}
+[data-fa1] .fa1-ty label.on{border-color:#2E427B;background:#F4F7FE;font-weight:600}
+[data-fa1] .fa1-t{width:100%;border-collapse:collapse;font-size:13px}
+[data-fa1] .fa1-t th{background:#F5F7F9;padding:8px;text-align:left;font-size:11px;text-transform:uppercase;color:#5B606D;border-bottom:1px solid #E9EBF0}
+[data-fa1] .fa1-t td{padding:4px 6px;border-bottom:1px solid #F1F2F5;vertical-align:middle}[data-fa1] .fa1-t td .fa1-in{height:32px}
+[data-fa1] .fa1-t tfoot td{font-weight:700;background:#EFF6FF;color:#1E40AF;padding:8px}
+[data-fa1] .fa1-x{width:30px;height:30px;border:1px solid #E6B8B8;border-radius:6px;background:#fff;color:#B63132;cursor:pointer}
+[data-fa1] .fa1-cert{margin:8px 0 0;padding-left:0;list-style:none;font-size:13px;line-height:1.55;color:#353944}
+[data-fa1] .fa1-cert li{display:flex;gap:10px;margin:6px 0}[data-fa1] .fa1-cert b{flex:none;width:20px}
+[data-fa1] .fa1-er{min-height:18px;margin:10px 0 0;color:#B63132;font-size:13px}
+[data-fa1] .fa1-ok{color:#0B6B43}
+[data-fa1] .fa1-sig{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:12px 22px;margin-top:8px}
+[data-fa1] .fa1-sg{height:84px;border:1px dashed #B9BDC7;border-radius:8px;display:flex;align-items:flex-end;justify-content:center;padding:6px;font-size:11px;color:#8A8F9C}
+@media print{body *{visibility:hidden}[data-fa1] .fa1-doc,[data-fa1] .fa1-doc *{visibility:visible}[data-fa1] .fa1-doc{position:absolute;left:0;top:0;width:100%;border:0;padding:0}[data-fa1] .fa1-x,[data-fa1] .fa1-add{display:none}[data-fa1] .fa1-in{border:0;border-bottom:1px solid #999;border-radius:0;background:transparent;padding:0}}
+</style>
+
+<div class="fa1" data-fa1>
+  <div class="fa1-bar no-print">
+    <div><h1>Formulaire A1</h1><p>Demande de retrait de fonds — Banque africaine de développement (BAD).</p></div>
+    <div class="fa1-act">
+      <button type="button" class="fa1-btn" data-fa1-nouveau><i class="ti ti-file-plus" aria-hidden="true"></i>Nouveau</button>
+      <button type="button" class="fa1-btn" data-fa1-reprendre title="Reprendre les mouvements payés du pointage de la régularisation"><i class="ti ti-download" aria-hidden="true"></i>Reprendre la régularisation</button>
+      <button type="button" class="fa1-btn" data-fa1-modele title="Ouvrir le modèle d’état A1 (aperçu, paramétrage, détail de remplissage)"><i class="ti ti-layout-grid" aria-hidden="true"></i>Modèle d’état A1</button>
+      <button type="button" class="fa1-btn" data-fa1-imprimer><i class="ti ti-printer" aria-hidden="true"></i>Imprimer</button>
+      <button type="button" class="fa1-btn p" data-fa1-enreg><i class="ti ti-device-floppy" aria-hidden="true"></i>Enregistrer</button>
+    </div>
+  </div>
+
+  <div class="fa1-doc" data-fa1-doc>
+    <h2 class="fa1-tt">Demande de retrait de fonds</h2>
+    <p class="fa1-st">Formulaire A1 — Prêt / Don BAD</p>
+
+    <div class="fa1-sec">1. Identification</div>
+    <div class="fa1-g w3">
+      <label class="fa1-c">Emprunteur / bénéficiaire<input class="fa1-in" data-f="emprunteur" value="République de Madagascar"></label>
+      <label class="fa1-c">Projet<input class="fa1-in" data-f="projet" placeholder="Intitulé du projet"></label>
+      <label class="fa1-c">N° du prêt / don<input class="fa1-in" data-f="pret" placeholder="Ex. 2100155078854"></label>
+      <label class="fa1-c">N° de la demande de retrait<input class="fa1-in" data-f="numero" placeholder="Ex. 001"></label>
+      <label class="fa1-c">Date de la demande<input class="fa1-in" type="date" data-f="date"></label>
+      <label class="fa1-c">Devise de la demande<select class="fa1-in" data-f="devise"><option>USD</option><option>EUR</option><option>MGA</option><option>UC</option></select></label>
+    </div>
+
+    <div class="fa1-sec">2. Nature de la demande</div>
+    <div class="fa1-ty" data-fa1-ty>
+      <label><input type="radio" name="fa1-type" value="Remboursement" checked>Remboursement</label>
+      <label><input type="radio" name="fa1-type" value="Avance initiale en compte spécial">Avance initiale en compte spécial</label>
+      <label><input type="radio" name="fa1-type" value="Réapprovisionnement du compte spécial">Réapprovisionnement du compte spécial</label>
+      <label><input type="radio" name="fa1-type" value="Paiement direct">Paiement direct</label>
+    </div>
+
+    <div class="fa1-sec">3. Détail des dépenses</div>
+    <table class="fa1-t"><thead><tr><th style="width:12%">Date</th><th style="width:14%">N° de pièce</th><th>Bénéficiaire / fournisseur</th><th>Objet de la dépense</th><th style="width:14%">Catégorie</th><th style="width:15%;text-align:right">Montant</th><th style="width:40px" class="no-print"></th></tr></thead>
+      <tbody data-fa1-l></tbody>
+      <tfoot><tr><td colspan="5">Montant total demandé</td><td style="text-align:right" data-fa1-tot>0,00</td><td class="no-print"></td></tr></tfoot></table>
+    <p class="no-print" style="margin:8px 0 0"><button type="button" class="fa1-btn fa1-add" data-fa1-add><i class="ti ti-plus" aria-hidden="true"></i>Ajouter une dépense</button></p>
+
+    <div class="fa1-sec">4. Paiement</div>
+    <div class="fa1-g">
+      <label class="fa1-c">Nom de la banque<input class="fa1-in" data-f="banque" placeholder="Banque bénéficiaire du paiement"></label>
+      <label class="fa1-c">Adresse de la banque<input class="fa1-in" data-f="adrb"></label>
+      <label class="fa1-c">Ville / Pays<input class="fa1-in" data-f="villeb"></label>
+      <label class="fa1-c">Compte à créditer (IBAN / n° de compte)<input class="fa1-in" data-f="compteb"></label>
+      <label class="fa1-c">Code SWIFT<input class="fa1-in" data-f="swift"></label>
+      <label class="fa1-c">Intitulé du compte<input class="fa1-in" data-f="titulaire"></label>
+    </div>
+
+    <div class="fa1-sec">5. Certification</div>
+    <ul class="fa1-cert">
+      <li><b>a)</b><span>Les dépenses ci-dessus ont été effectuées pour des biens, travaux et services admissibles au financement, conformément aux conditions de l’accord de prêt ou de don.</span></li>
+      <li><b>b)</b><span>Les biens et services ont été acquis selon les procédures d’acquisition agréées par la Banque et ont été livrés ou exécutés.</span></li>
+      <li><b>c)</b><span>Les dépenses n’ont pas été et ne seront pas financées par une autre source ; elles ne comprennent ni taxes, ni droits, ni autres dépenses non éligibles.</span></li>
+      <li><b>d)</b><span>Les pièces justificatives de ces dépenses sont conservées et tenues à la disposition de la Banque et des auditeurs.</span></li>
+    </ul>
+    <div class="fa1-sig">
+      <label class="fa1-c">Nom et prénom du signataire<input class="fa1-in" data-f="signataire"></label>
+      <label class="fa1-c">Fonction<input class="fa1-in" data-f="fonction"></label>
+      <label class="fa1-c">Date de signature<input class="fa1-in" type="date" data-f="dsign"></label>
+      <div class="fa1-sg" style="grid-column:1/-1">Signature et cachet</div>
+    </div>
+  </div>
+  <p class="fa1-er no-print" data-fa1-er></p>
+</div>
+
+<script>
+(function () {
+  var root = document.querySelector('[data-fa1]'); if (!root) return;
+  function q(s) { return root.querySelector(s); } function qa(s) { return [].slice.call(root.querySelectorAll(s)); }
+  function esc(s) { return String(s == null ? '' : s).replace(/[&<>"]/g, function (c) { return { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c]; }); }
+  function fmt(n) { return (n || 0).toLocaleString('fr-FR', { minimumFractionDigits: 2, maximumFractionDigits: 2 }); }
+  function num(s) { var n = parseFloat(String(s || '').replace(/[\s  ]/g, '').replace(',', '.')); return isNaN(n) ? 0 : n; }
+  var CAT = ['Travaux', 'Biens', 'Services', 'Consultants', 'Formation', 'Coûts opérationnels'];
+  var lignes = [], er = q('[data-fa1-er]');
+  window.FORMULAIRES_A1 = window.FORMULAIRES_A1 || [];
+  function aujourdhui() { var d = new Date(); return d.getFullYear() + '-' + ('0' + (d.getMonth() + 1)).slice(-2) + '-' + ('0' + d.getDate()).slice(-2); }
+  function F(k) { return q('[data-f="' + k + '"]'); }
+  function dessiner() {
+    q('[data-fa1-l]').innerHTML = lignes.map(function (l, i) {
+      return '<tr data-i="' + i + '"><td><input class="fa1-in" type="date" data-l="date" value="' + esc(l.date) + '"></td><td><input class="fa1-in" data-l="piece" value="' + esc(l.piece) + '"></td><td><input class="fa1-in" data-l="benef" value="' + esc(l.benef) + '"></td><td><input class="fa1-in" data-l="objet" value="' + esc(l.objet) + '"></td>' +
+        '<td><select class="fa1-in" data-l="cat">' + CAT.map(function (c) { return '<option' + (c === l.cat ? ' selected' : '') + '>' + c + '</option>'; }).join('') + '</select></td><td><input class="fa1-in r" data-l="montant" inputmode="decimal" value="' + (l.montant ? fmt(l.montant) : '') + '"></td><td class="no-print"><button type="button" class="fa1-x" data-del title="Supprimer"><i class="ti ti-x"></i></button></td></tr>';
+    }).join('') || '<tr><td colspan="7" style="text-align:center;padding:18px;color:#8A8F9C">Aucune dépense : « Ajouter une dépense » ou « Reprendre la régularisation ».</td></tr>';
+    total();
+  }
+  function total() { q('[data-fa1-tot]').textContent = fmt(lignes.reduce(function (s, l) { return s + (+l.montant || 0); }, 0)) + ' ' + F('devise').value; }
+  function nouveau() {
+    ['pret', 'numero', 'projet', 'banque', 'adrb', 'villeb', 'compteb', 'swift', 'titulaire', 'signataire', 'fonction'].forEach(function (k) { F(k).value = ''; });
+    F('emprunteur').value = 'République de Madagascar'; F('date').value = aujourdhui(); F('dsign').value = ''; F('devise').value = 'USD';
+    q('input[name="fa1-type"]').checked = true; lignes = [{ date: '', piece: '', benef: '', objet: '', cat: CAT[0], montant: 0 }]; typeMaj(); dessiner(); er.textContent = '';
+  }
+  function typeMaj() { qa('[data-fa1-ty] label').forEach(function (l) { l.classList.toggle('on', l.querySelector('input').checked); }); }
+  q('[data-fa1-ty]').addEventListener('change', typeMaj);
+  q('[data-fa1-l]').addEventListener('input', function (e) { var tr = e.target.closest('tr[data-i]'), k = e.target.dataset.l; if (!tr || !k) return; var l = lignes[+tr.dataset.i]; l[k] = k === 'montant' ? num(e.target.value) : e.target.value; if (k === 'montant') total(); });
+  q('[data-fa1-l]').addEventListener('change', function (e) { if (e.target.dataset.l === 'montant') e.target.value = num(e.target.value) ? fmt(num(e.target.value)) : ''; });
+  q('[data-fa1-l]').addEventListener('click', function (e) { var b = e.target.closest('[data-del]'); if (b) { lignes.splice(+b.closest('tr').dataset.i, 1); dessiner(); } });
+  q('[data-fa1-add]').addEventListener('click', function () { lignes.push({ date: '', piece: '', benef: '', objet: '', cat: CAT[0], montant: 0 }); dessiner(); });
+  F('devise').addEventListener('change', total);
+  q('[data-fa1-nouveau]').addEventListener('click', nouveau);
+  q('[data-fa1-reprendre]').addEventListener('click', function () {
+    var mv = window.REGUL_MOUVEMENTS_PAYES;
+    if (!Array.isArray(mv) || !mv.length) { er.className = 'fa1-er no-print'; er.textContent = 'Aucun mouvement payé disponible : pointez d’abord les mouvements dans « Régularisation de la demande ».'; return; }
+    lignes = mv.map(function (m) { return { date: m.date || '', piece: m.num || '', benef: m.benef || '', objet: m.lib || '', cat: CAT.indexOf(m.cat) >= 0 ? m.cat : CAT[0], montant: m.m || 0 }; }); dessiner(); er.textContent = '';
+  });
+  q('[data-fa1-modele]').addEventListener('click', function () { if (window.__openA1) window.__openA1('A1 — Demande de retrait de fonds', 'prev'); else { er.className = 'fa1-er no-print'; er.textContent = 'Modèle d’état indisponible.'; } });
+  q('[data-fa1-imprimer]').addEventListener('click', function () { if (verifier(true)) window.print(); });
+  function verifier(silencieux) {
+    var m = [], tot = lignes.reduce(function (s, l) { return s + (+l.montant || 0); }, 0);
+    if (!F('pret').value.trim()) m.push('le n° du prêt / don'); if (!F('numero').value.trim()) m.push('le n° de la demande'); if (!F('date').value) m.push('la date');
+    if (!(tot > 0)) m.push('au moins une dépense avec un montant'); if (lignes.some(function (l) { return (+l.montant) > 0 && (!l.benef.trim() || !l.objet.trim()); })) m.push('le bénéficiaire et l’objet de chaque dépense');
+    if (!F('banque').value.trim() || !F('compteb').value.trim()) m.push('la banque et le compte à créditer');
+    if (!F('signataire').value.trim()) m.push('le signataire');
+    qa('[data-f]').forEach(function (e) { e.classList.remove('err'); });
+    if (m.length) { er.className = 'fa1-er no-print'; er.textContent = 'Complétez : ' + m.join(', ') + '.'; return false; }
+    if (!silencieux) er.textContent = ''; return true;
+  }
+  q('[data-fa1-enreg]').addEventListener('click', function () {
+    if (!verifier()) return;
+    var t = (q('input[name="fa1-type"]:checked') || {}).value, rec = { pret: F('pret').value.trim(), numero: F('numero').value.trim(), date: F('date').value, devise: F('devise').value, type: t, total: lignes.reduce(function (s, l) { return s + (+l.montant || 0); }, 0), lignes: lignes.map(function (l) { return Object.assign({}, l); }), banque: F('banque').value, compte: F('compteb').value, signataire: F('signataire').value };
+    var L = window.FORMULAIRES_A1, i = L.findIndex(function (x) { return x.pret === rec.pret && x.numero === rec.numero; }); if (i >= 0) L[i] = rec; else L.push(rec);
+    er.className = 'fa1-er fa1-ok no-print'; er.textContent = 'Formulaire A1 n° ' + rec.numero + ' enregistré (' + fmt(rec.total) + ' ' + rec.devise + ' — ' + rec.type + ').';
+  });
+  nouveau();
+})();
+</script>

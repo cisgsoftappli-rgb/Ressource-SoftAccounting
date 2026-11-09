@@ -1201,6 +1201,12 @@
       }), { demande: q('[data-ed-ns]').textContent.trim() }));
       bindViewer(); q('[data-ed-to4]').disabled = false; setExp(true); return;
     }
+    if (/^A1/.test(selMod.value) && window.__renderA1) {
+      prev.innerHTML = viewer(selMod.value, window.__renderA1(D2.filter(function (r) { return r.fact; }).map(function (r) {
+        return { date: r.date || '', ref: r.fref || '', benef: r.benp || '', objet: r.desc || r.lib || '', cat: r.fcat ? 'Catégorie ' + r.fcat : '', montant: Math.round(ev(r) * 100) / 100 };
+      }), { demande: q('[data-ed-ns]').textContent.trim() }));
+      bindViewer(); q('[data-ed-to4]').disabled = false; setExp(true); return;
+    }
     if (/^A3/.test(selMod.value) && window.__renderA3) {
       prev.innerHTML = viewer(selMod.value, window.__renderA3(D2.filter(function (r) { return r.fact; }).map(function (r) {
         var v = Math.round(ev(r) * 100) / 100, k = r.mont ? ev(r) / r.mont : 1, mc = r.mtot && (r.mmon || 'MGA') === 'MGA' ? Math.round(r.mtot * k * 100) / 100 : v, pc = r.tx != null ? r.tx : 100;

@@ -54,7 +54,7 @@ console.log('exemples ok');
 // Gestion des accès : comptes utilisateurs d'exemple → identités neutres
 {
   let t = fs.readFileSync('ecrans/gestion_acces.html', 'utf8'), i = 0;
-  t = t.replace(/\{ id: '(ANDRY|ANDY|ANGELA|ANTHONY|HERY)', nom: '[^']*', groupe: '([^']*)', email: '[^']*', actif: true \}/g, (m, id, g) => { i++; return "{ id: 'USER0" + i + "', nom: 'Utilisateur " + i + "', groupe: '" + g + "', email: 'utilisateur" + i + "@exemple.mg', actif: true }"; });
+  t = t.replace(/\{ id: '(ANDRY|ANDY|ANGELA|ANTHONY|HERY)', nom: '[^']*', groupe: '([^']*)', (fonction: '[^']*', )?email: '[^']*', actif: true \}/g, (m, id, g, f) => { i++; return "{ id: 'USER0" + i + "', nom: 'Utilisateur " + i + "', groupe: '" + g + "', " + (f || '') + "email: 'utilisateur" + i + "@exemple.mg', actif: true }"; });
   if (i !== 5) throw new Error('utilisateurs : ' + i);
   fs.writeFileSync('import_plans/publication/gestion_acces.html', t);
 }

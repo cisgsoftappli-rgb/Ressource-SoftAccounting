@@ -109,16 +109,16 @@
     if (tr) addDup(rowInfo(tr), d.code, d.nom);
   });
   rows.addEventListener('click', function (e) {
-    var pv = e.target.closest('[data-rc-prev]'); if (pv && window.__open104) { window.__open104(pv.dataset.rcName, 'prev'); return; }
+    var pv = e.target.closest('[data-rc-prev]'); if (pv) { var fo = /^A1/.test(pv.dataset.rcName) ? window.__openA1 : window.__open104; if (fo) fo(pv.dataset.rcName, 'prev'); return; }
     var du = e.target.closest('[data-rc-dup]');
     if (du) { var src = rowInfo(du.closest('tr')); window.__dupModele({ source: { code: src.code, nom: src.nom }, exists: function (c) { return codes().indexOf(c.toLowerCase()) >= 0; }, onOk: function (c, n) { addDup(src, c, n); } }); return; }
     var b = e.target.closest('[data-rc-del]'); if (b) { b.closest('tr').remove(); refresh(); return; }
     var o = e.target.closest('[data-rc-open]'); if (!o) return;
-    var nom = o.dataset.rcName, base = o.dataset.rcBase || nom, ejcd = /EJCD/i.test(base), rcat = /r.capitulatif par cat/i.test(base), rfi = /^RFI ([IV]+) —/.exec(base), f104 = /^104/.test(base), gavi = /^Récapitulatif GAVI/i.test(base), decl = ejcd || rcat || !!rfi || f104 || gavi || /déclaration/i.test(base);
-    window.__mfDesigner = { code: o.dataset.rcCode || (gavi ? 'RECAPGAVI' : rfi ? 'RFI_' + rfi[1] : f104 ? 'F104' : ejcd ? 'EJCD' : rcat ? 'RECAPCAT' : decl ? 'DECLARATION' : 'SOE'), nom: nom, base: base, def: false }; if (rcat) { window.__mfDesigner.type = 'Récapitulatif'; window.__mfDesigner.src = 'Demande de remboursement'; }
+    var nom = o.dataset.rcName, base = o.dataset.rcBase || nom, ejcd = /EJCD/i.test(base), rcat = /r.capitulatif par cat/i.test(base), rfi = /^RFI ([IV]+) —/.exec(base), f104 = /^104/.test(base), fa1 = /^A1/.test(base), gavi = /^Récapitulatif GAVI/i.test(base), decl = ejcd || rcat || !!rfi || f104 || fa1 || gavi || /déclaration/i.test(base);
+    window.__mfDesigner = { code: o.dataset.rcCode || (gavi ? 'RECAPGAVI' : rfi ? 'RFI_' + rfi[1] : f104 ? 'F104' : fa1 ? 'A1' : ejcd ? 'EJCD' : rcat ? 'RECAPCAT' : decl ? 'DECLARATION' : 'SOE'), nom: nom, base: base, def: false }; if (fa1) { window.__mfDesigner.type = 'Récapitulatif'; window.__mfDesigner.src = 'Demande de remboursement'; window.__mfDesigner.file = 'a1_demande_de_decaissement'; } if (rcat) { window.__mfDesigner.type = 'Récapitulatif'; window.__mfDesigner.src = 'Demande de remboursement'; }
     window.__designerFrom = 'recap'; location.hash = decl ? 'designer2' : 'designer';
   });
-  var RECAP = /EJCD|récapitulatif|déclaration|^104/i;
+  var RECAP = /EJCD|récapitulatif|déclaration|^104|^A1/i;
   function buildProc() {
     Array.prototype.slice.call(rows.querySelectorAll('tr[data-rc-proc]')).forEach(function (r) { r.remove(); });
     var map = {}, order = [];
@@ -128,7 +128,7 @@
     }); });
     var html = order.map(function (k) { var r = map[k];
       return '<tr data-rc-proc data-rc-procof="' + esc(r.proc) + '"><td><b>' + esc(r.model) + '</b></td><td>Procédure ' + esc(r.proc) + '</td><td>' + esc(r.convs.join(', ')) + '</td>' +
-        '<td><div style="display:flex;justify-content:flex-end;gap:6px">' + (/^104/.test(r.model) ? '<button type="button" class="rc-btn rc-sec" data-rc-prev data-rc-name="' + esc(r.model) + '">Aperçu</button>' : '') + '<button type="button" class="rc-btn rc-sec" data-rc-dup>Dupliquer</button><button type="button" class="rc-btn rc-sec" data-rc-open data-rc-name="' + esc(r.model) + '">Ouvrir le designer</button></div></td></tr>'; }).join('');
+        '<td><div style="display:flex;justify-content:flex-end;gap:6px">' + (/^(104|A1)/.test(r.model) ? '<button type="button" class="rc-btn rc-sec" data-rc-prev data-rc-name="' + esc(r.model) + '">Aperçu</button>' : '') + '<button type="button" class="rc-btn rc-sec" data-rc-dup>Dupliquer</button><button type="button" class="rc-btn rc-sec" data-rc-open data-rc-name="' + esc(r.model) + '">Ouvrir le designer</button></div></td></tr>'; }).join('');
     rows.insertAdjacentHTML('afterbegin', html); refresh();
   }
   window.addEventListener('pf-change', buildProc); buildProc();

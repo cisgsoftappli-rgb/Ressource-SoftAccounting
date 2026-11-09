@@ -55,7 +55,7 @@
   var q = function (s) { return root.querySelector(s); };
   var MODELS = [];
   function esc(s) { var d = document.createElement('div'); d.textContent = s == null ? '' : s; return d.innerHTML; }
-  var RECAP = /EJCD|récapitulatif|déclaration|^104/i;
+  var RECAP = /EJCD|récapitulatif|déclaration|^104|^A1/i;
   function pn() { return window.__procNow ? window.__procNow() : ''; }
   function procModels() {
     var map = {}, order = [];
@@ -90,7 +90,8 @@
   });
   q('[data-so-rows]').addEventListener('click', function (e) {
     var pa = e.target.closest('[data-so-par]'); if (pa && window.__openA2) { window.__openA2(pa.dataset.soPar, 'par'); return; }
-    var pv = e.target.closest('[data-so-prev]'); if (pv && /^A3/.test(pv.dataset.soPrev) && window.__openA3) { window.__openA3(pv.dataset.soPrev, 'prev'); return; }
+    var pv = e.target.closest('[data-so-prev]'); 
+    if (pv && /^A3/.test(pv.dataset.soPrev) && window.__openA3) { window.__openA3(pv.dataset.soPrev, 'prev'); return; }
     if (pv && /^A2/.test(pv.dataset.soPrev) && window.__openA2) { window.__openA2(pv.dataset.soPrev, 'prev'); return; }
     if (pv && /^102/.test(pv.dataset.soPrev) && window.__open102) { window.__open102(pv.dataset.soPrev, 'prev'); return; }
     if (pv && window.__open4F) { window.__open4F(pv.dataset.soPrev); return; }

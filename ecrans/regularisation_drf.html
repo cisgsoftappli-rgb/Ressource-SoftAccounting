@@ -197,6 +197,7 @@
   var LAB = { paye: 'Payé', litige: 'Litige', apure: 'Apuré', rejete: 'Rejeté' };
   function drawDash() {
     var x = totals();
+    window.REGUL_MOUVEMENTS_PAYES = MV.filter(function (m) { return m.s === 'paye'; }).map(function (m) { var p = m.date.split('/'); return { date: p.length === 3 ? p[2] + '-' + p[1] + '-' + p[0] : '', num: m.num, lib: m.lib, cat: m.cat, m: m.m }; });   // repris par le Formulaire A1 (BAD)
     q('[data-rg-s="conv"]').textContent = sel.conv; q('[data-rg-s="drf"]').textContent = sel.drf; q('[data-rg-s="per"]').textContent = sel.per; q('[data-rg-s="mon"]').textContent = cur;
     q('[data-rg-stat]').innerHTML = Object.keys(LAB).map(function (k) { return '<div class="rg-st ' + k + '"><i></i><span>● ' + LAB[k] + '</span><b>' + fmt(conv$(x.t[k])) + ' ' + cur + '</b><em>' + x.c[k] + (x.c[k] > 1 ? ' mouvements' : ' mouvement') + '</em></div>'; }).join('');
     q('[data-rg-solde]').textContent = fmt(conv$(TOTAL_USD - (x.t.paye + x.t.apure))) + ' ' + cur;
