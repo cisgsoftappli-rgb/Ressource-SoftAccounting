@@ -450,7 +450,7 @@
     qa('[data-ana]').forEach(function (s) { if (act.indexOf(s.dataset.ana) < 0) s.disabled = true; });
     f('aux').disabled = !ed || gen || !f('coll').value; majAmort();
     majQinfo();
-    var a = q('[data-fim-actions]'), peutGen = !ed && !!cur;
+    var a = q('[data-fim-actions]'), peutGen = !ed && (!!cur || cochees().length > 0);   // une fiche affichée ou des fiches cochées (génération en masse)
     a.querySelector('[data-fim-ajouter]').disabled = ed; a.querySelector('[data-fim-modifier]').disabled = ed || sel < 0; a.querySelector('[data-fim-supprimer]').disabled = ed || sel < 0 || gen || !!(cur && cur.cede);
     a.querySelector('[data-fim-enregistrer]').disabled = !ed; a.querySelector('[data-fim-annuler]').disabled = !ed;
     a.querySelector('[data-fim-generer]').disabled = !peutGen;
@@ -720,6 +720,7 @@
     else { GEN.annee = r.annee || ''; GEN.dc = r.dacq || auj(); GEN.dp = GEN.dc; GEN.l1 = GEN.l2 = 'Acquisition ' + r.desig + ' — ' + r.ref; }
   }
   function gOuvrir(type, ligne) {
+    if (sel < 0 && mode === 'consultation') { var c0 = cochees()[0]; if (c0) { sel = data.indexOf(c0); liste(); form(c0); etat(); } }   // sélection en masse (case « tout cocher ») : la première fiche cochée devient la fiche affichée
     var r = data[sel]; if (!r || (mode !== 'consultation' && type !== 'dot')) return;
     var pj = journalAchats(), od = journauxOD();
     var sf = cochees(); if (sf.indexOf(r) < 0) sf.push(r);   // fiches cochées (+ fiche affichée) : génération multiple pour l'acquisition
