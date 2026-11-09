@@ -80,6 +80,14 @@
 .fim-mmeta{display:flex;justify-content:space-between;gap:12px;margin-top:12px;font-size:13px;color:#5B606D}
 .fim-mbt{display:inline-flex;align-items:center;gap:6px;min-height:40px;padding:0 16px;border-radius:8px;border:1px solid #D6D9E0;background:#fff;color:#18244F;font-weight:600;font-size:14px;cursor:pointer}
 .fim-mbt.pri{background:#2E427B;border-color:#2E427B;color:#fff}.fim-mbt:disabled{opacity:.45;cursor:not-allowed}
+/* quantité > 1 : choix fiche groupée / fiches individuelles, éclatement */
+.fim-md.m{width:min(720px,100%)}
+.fim-mt.deux{grid-template-columns:repeat(2,minmax(0,1fr))}
+.fim-ecg{display:grid;grid-template-columns:repeat(auto-fill,minmax(520px,1fr));gap:12px}
+.fim-ecu{border:1px solid #D6D9E0;border-radius:12px;padding:12px 14px;background:#fff}
+.fim-ecu h4{margin:0 0 8px;font-size:13px;color:#2E427B;text-transform:uppercase;letter-spacing:.04em}
+.fim-ecu .fim-g2{gap:10px}
+.fim-ecu .bp-champ>span:first-child{text-transform:none;letter-spacing:0;font-size:12px}
 /* plan d'amortissement */
 .fim-planh{display:flex;align-items:center;justify-content:space-between;gap:12px;margin-bottom:12px}
 .fim-planh h3{margin:0;display:flex;align-items:center;gap:8px}.fim-planh h3 i{font-size:20px;color:#2E427B}
@@ -162,6 +170,7 @@
               <label class="bp-champ"><span>Date de début d'amortissement</span><input class="bp-in" type="date" data-f="damort"><span class="fim-er" data-er="damort"></span></label>
             </div>
             <div class="fim-g4" data-fim-devs style="margin-top:12px"></div>
+            <div class="fim-info" data-fim-qinfo hidden style="margin-top:12px"><i class="ti ti-info-circle" aria-hidden="true"></i><span data-fim-qinfo-t></span></div>
           </div>
 
           <div class="fim-card">
@@ -440,6 +449,7 @@
     var act = window.PLANS_ACTIFS ? window.PLANS_ACTIFS() : [];
     qa('[data-ana]').forEach(function (s) { if (act.indexOf(s.dataset.ana) < 0) s.disabled = true; });
     f('aux').disabled = !ed || gen || !f('coll').value; majAmort();
+    majQinfo();
     var a = q('[data-fim-actions]'), peutGen = !ed && !!cur;
     a.querySelector('[data-fim-ajouter]').disabled = ed; a.querySelector('[data-fim-modifier]').disabled = ed || sel < 0; a.querySelector('[data-fim-supprimer]').disabled = ed || sel < 0 || gen || !!(cur && cur.cede);
     a.querySelector('[data-fim-enregistrer]').disabled = !ed; a.querySelector('[data-fim-annuler]').disabled = !ed;
@@ -509,6 +519,7 @@
       }
     }
     if (!ok) { songlet('general'); return; }
+    if (mode === 'creation' && r.qte > 1 && !QTE_OK) { qChoix(r); return; }   // quantité > 1 : fiche groupée ou fiches individuelles
     var prec = mode === 'edition' ? data[sel] : null;
     r.id = mode === 'creation' ? nextId++ : prec.id; r.genere = !!(prec && prec.genere);
     if (prec && prec.genere) { r.e_piece = prec.e_piece; r.e_journal = prec.e_journal; }
@@ -517,6 +528,99 @@
     if (prec && prec.plan && prec.plan.length) { if (prec.planSig === sigPlan(r)) { r.plan = prec.plan; r.planSig = prec.planSig; } else planPerdu = true; }
     if (mode === 'creation') { data.push(r); sel = data.length - 1; } else data[sel] = r;
     mode = 'consultation'; liste(); form(data[sel]); etat(); onglet('liste'); publier(); toast((ancien ? 'Fiche modifiée.' : 'Fiche enregistrée.') + (planPerdu ? ' Le plan d’amortissement n’est plus valable (valeur, dates ou famille modifiées) : recalculez les dotations.' : ''));
+  }
+  // ---------- quantité supérieure à 1 (création) : 1) choix fiche groupée / fiches individuelles, 2) éclatement unité par unité ----------
+  var QTE_OK = false, QV = null, EC = null;
+  function qFermer() { if (QV) { QV.remove(); QV = null; } EC = null; }
+  function qOuvrir(html, large) {
+    qFermer(); QV = document.createElement('div'); QV.className = 'fim-mv'; root.insertBefore(QV, q('[data-fim-toast]'));
+    QV.innerHTML = '<div class="fim-md ' + (large ? 'l' : 'm') + '" role="dialog" aria-modal="true">' + html + '</div>';
+    QV.addEventListener('keydown', function (e) { if (e.key === 'Escape') qFermer(); });
+  }
+  function majQinfo() {
+    var n = +f('qte').value || 0, b = q('[data-fim-qinfo]'); b.hidden = !(mode === 'creation' && n > 1);
+    q('[data-fim-qinfo-t]').textContent = 'Cette fiche concerne ' + n + ' unités. À l’enregistrement, vous pourrez la conserver groupée ou la scinder en ' + n + ' fiches individuelles : l’année, le site et la date de mise en service seront alors repris sur chaque fiche ; le numéro d’identification, l’emplacement et le responsable seront à renseigner unité par unité.';
+  }
+  f('qte').addEventListener('input', majQinfo);
+  function qChoix(r) {
+    var n = r.qte, tot = nb(n * r.pu) + ' ' + locale();
+    qOuvrir('<div class="fim-mh"><h2>Quantité supérieure à 1</h2><p>La quantité saisie est de ' + n + '. Comment souhaitez-vous enregistrer cette immobilisation ?</p></div>' +
+      '<div class="fim-mb"><div class="fim-mt deux">' +
+      '<button type="button" class="fim-mc" data-q-groupe><i class="ti ti-stack-2" aria-hidden="true"></i><b>Conserver une fiche groupée</b><small>Une seule fiche, quantité ' + n + ', valeur totale ' + esc(tot) + ' : la quantité et la valeur restent inchangées.</small></button>' +
+      '<button type="button" class="fim-mc" data-q-indiv><i class="ti ti-layout-grid" aria-hidden="true"></i><b>Créer ' + n + ' fiches individuelles</b><small>Une fiche par unité : quantité 1, valeur = prix unitaire (' + esc(nb(r.pu) + ' ' + locale()) + '). Numéro, emplacement et responsable saisis pour chaque unité.</small></button>' +
+      '</div></div><div class="fim-mf"><button type="button" class="fim-mbt" data-q-annuler>Annuler</button></div>');
+    QV.addEventListener('click', function (e) {
+      var b = e.target.closest('button'); if (!b) return;
+      if (b.hasAttribute('data-q-annuler')) qFermer();
+      else if (b.hasAttribute('data-q-groupe')) { qFermer(); QTE_OK = true; try { enregistrer(); } finally { QTE_OK = false; } }
+      else if (b.hasAttribute('data-q-indiv')) qEclater(r);
+    });
+    QV.querySelector('[data-q-groupe]').focus();
+  }
+  function qEclater(r) {
+    var n = r.qte, U = [];
+    for (var i = 0; i < n; i++) U.push({ num: i === 0 ? r.num : '', dacq: r.dacq, empl: i === 0 ? r.empl : '', resp: i === 0 ? r.resp : '', t: {} });
+    var lieux = window.LIEUX_AFFECTATION || [], resps = window.COLLABORATEURS_RESPONSABLES || [];
+    function opts(L, v) { return '<option value="">— Sélectionner —</option>' + L.map(function (x) { return '<option value="' + esc(x.code) + '"' + (x.code === v ? ' selected' : '') + '>' + esc(x.code + ' — ' + x.libelle) + '</option>'; }).join('') + (v && !L.some(function (x) { return x.code === v; }) ? '<option value="' + esc(v) + '" selected>' + esc(v) + '</option>' : ''); }
+    var exo = (window.EXERCICES_API ? window.EXERCICES_API.liste() : []).filter(function (x) { return x.annee === r.annee; })[0];
+    var cartes = U.map(function (u, i) {
+      function champ(k, lib, corps) { return '<label class="bp-champ"><span>' + lib + ' <b>*</b></span>' + corps + '<span class="fim-er" data-ec-er="' + i + '-' + k + '"></span></label>'; }
+      return '<div class="fim-ecu"><h4>Unité ' + (i + 1) + ' / ' + n + '</h4><div class="fim-g2">' +
+        champ('num', 'Numéro d’identification', '<input class="bp-in fim-code" data-ec="' + i + '-num" maxlength="24" autocomplete="off" placeholder="' + esc(r.num ? r.num.replace(/\d+$/, '') + ('000' + (i + 1)).slice(-3) : 'IMM-2026-001') + '" value="' + esc(u.num) + '">') +
+        champ('dacq', 'Date d’acquisition', '<input class="bp-in" type="date" data-ec="' + i + '-dacq" value="' + esc(u.dacq) + '">') +
+        champ('empl', 'Emplacement / Lieu d’affectation', '<select class="bp-sel" data-ec="' + i + '-empl">' + opts(lieux, u.empl) + '</select>') +
+        champ('resp', 'Responsable', '<select class="bp-sel" data-ec="' + i + '-resp">' + opts(resps, u.resp) + '</select>') +
+      '</div></div>';
+    }).join('');
+    qOuvrir('<div class="fim-mh"><h2>Créer ' + n + ' fiches individuelles</h2><p>Renseignez les informations propres à chaque unité. Chaque fiche aura une quantité de 1 et une valeur de ' + esc(nb(r.pu) + ' ' + locale()) + ' ; le compte général, le fournisseur et les imputations analytiques de la fiche d’origine sont repris sur chaque fiche.</p></div>' +
+      '<div class="fim-mb"><div class="fim-mgr">' + [['Année', r.annee], ['Site', r.site ? r.site + (libSite(r.site) && libSite(r.site) !== r.site ? ' — ' + libSite(r.site) : '') : ''], ['Date de mise en service', dFR(r.dms)]].map(function (c) { return '<div><small>' + esc(c[0]) + '</small><span>' + esc(c[1] || '—') + '</span></div>'; }).join('') + '</div>' +
+      '<div class="fim-ecg">' + cartes + '</div></div>' +
+      '<div class="fim-mf"><span class="fim-help" data-ec-etat style="margin-right:auto;align-self:center"></span><button type="button" class="fim-mbt" data-q-annuler>Annuler</button><button type="button" class="fim-mbt pri" data-q-valider disabled><i class="ti ti-check" aria-hidden="true"></i>Valider l’éclatement</button></div>', true);
+    EC = { r: r, U: U };   // après qOuvrir (qui réinitialise l'état)
+    function verifier(montrer) {
+      var tout = true, nums = {}, nvalides = 0;
+      EC.U.forEach(function (u, i) {
+        var e = {};
+        if (!u.num) e.num = 'Le numéro d’identification est obligatoire.';
+        else if (data.some(function (x) { return x.num === u.num; })) e.num = 'Ce numéro d’identification existe déjà.';
+        else if (EC.U.some(function (v, j) { return j !== i && v.num === u.num; })) e.num = 'Numéro déjà utilisé par une autre unité.';
+        if (!u.dacq) e.dacq = 'La date d’acquisition est obligatoire.';
+        else if (r.dms && r.dms < u.dacq) e.dacq = 'L’acquisition ne peut pas suivre la mise en service (' + dFR(r.dms) + ').';
+        else if (damortModifiable() && r.damort && r.damort < u.dacq) e.dacq = 'L’acquisition ne peut pas suivre le début d’amortissement (' + dFR(r.damort) + ').';
+        else if (exo && iso(exo.debut) && (u.dacq < iso(exo.debut) || u.dacq > iso(exo.fin))) e.dacq = 'La date doit être dans l’exercice ' + r.annee + ' (' + exo.debut + ' – ' + exo.fin + ').';
+        if (!u.empl) e.empl = 'Le lieu d’affectation est obligatoire.';
+        if (!u.resp) e.resp = 'Le responsable est obligatoire.';
+        var ok = !Object.keys(e).length; if (ok) nvalides++; else tout = false;
+        ['num', 'dacq', 'empl', 'resp'].forEach(function (k) {
+          var s = QV.querySelector('[data-ec-er="' + i + '-' + k + '"]'), x = QV.querySelector('[data-ec="' + i + '-' + k + '"]'), m = e[k] && (montrer || u.t[k]) ? e[k] : '';
+          s.textContent = m; s.classList.toggle('show', !!m); x.classList.toggle('err', !!m);
+        });
+      });
+      QV.querySelector('[data-q-valider]').disabled = !tout;
+      QV.querySelector('[data-ec-etat]').textContent = nvalides + ' / ' + n + ' unité(s) complète(s)';
+      return tout;
+    }
+    function lireChamp(x) { var p = x.getAttribute('data-ec').split('-'), u = EC.U[+p[0]]; u[p[1]] = x.value.trim(); u.t[p[1]] = true; return u; }
+    QV.addEventListener('input', function (e) { if (e.target.hasAttribute('data-ec') && e.target.tagName === 'INPUT') { var p = e.target.getAttribute('data-ec').split('-'); EC.U[+p[0]][p[1]] = e.target.value.trim(); verifier(false); } });
+    QV.addEventListener('change', function (e) { if (e.target.hasAttribute('data-ec')) { lireChamp(e.target); verifier(false); } });
+    QV.addEventListener('focusout', function (e) { if (e.target.hasAttribute('data-ec')) { lireChamp(e.target); verifier(false); } });
+    QV.addEventListener('click', function (e) {
+      var b = e.target.closest('button'); if (!b || b.disabled) return;
+      if (b.hasAttribute('data-q-annuler')) qFermer();
+      else if (b.hasAttribute('data-q-valider')) { if (verifier(true)) qCreer(EC.r, EC.U); }
+    });
+    verifier(false); QV.querySelector('[data-ec="1-num"]').focus();
+  }
+  function qCreer(r, U) {
+    var premier = data.length;
+    U.forEach(function (u) {
+      var c = JSON.parse(JSON.stringify(r));
+      c.id = nextId++; c.qte = 1; c.num = u.num; c.dacq = u.dacq; c.empl = u.empl; c.resp = u.resp;
+      c.damort = damortModifiable() ? r.damort : u.dacq; c.genere = false;
+      data.push(c);
+    });
+    qFermer(); sel = premier; mode = 'consultation'; liste(); form(data[sel]); etat(); onglet('liste'); publier();
+    toast(U.length + ' fiches individuelles créées (' + U[0].num + ' … ' + U[U.length - 1].num + ').');
   }
   function publier() {
     sauver();
@@ -618,7 +722,8 @@
   function gOuvrir(type, ligne) {
     var r = data[sel]; if (!r || (mode !== 'consultation' && type !== 'dot')) return;
     var pj = journalAchats(), od = journauxOD();
-    GEN = { type: type || (r.genere ? (r.cede ? 'ces' : 'dot') : 'acq'), ligne: ligne != null ? ligne : ligneSuivante(r), site: r.site || '', journal: (pj && od.some(function (j) { return j.code === pj.code; }) ? pj.code : (od[0] ? od[0].code : '')), imp: JSON.parse(JSON.stringify(r.ana || {})) };
+    var sf = cochees(); if (sf.indexOf(r) < 0) sf.push(r);   // fiches cochées (+ fiche affichée) : génération multiple pour l'acquisition
+    GEN = { sf: sf, mode: 'groupe', type: type || (sf.some(function (x) { return !x.genere; }) ? 'acq' : r.genere ? (r.cede ? 'ces' : 'dot') : 'acq'), ligne: ligne != null ? ligne : ligneSuivante(r), site: r.site || '', journal: (pj && od.some(function (j) { return j.code === pj.code; }) ? pj.code : (od[0] ? od[0].code : '')), imp: JSON.parse(JSON.stringify(r.ana || {})) };
     gDefauts(r);
     GV = document.createElement('div'); GV.className = 'fim-mv'; root.insertBefore(GV, q('[data-fim-toast]'));
     GV.addEventListener('keydown', function (e) { if (e.key === 'Escape') gFermer(); });
@@ -628,7 +733,82 @@
     if (!GV) return;
     ['annee', 'site', 'dc', 'dp', 'journal', 'piece'].forEach(function (k) { var e = GV.querySelector('[data-g=' + k + ']'); if (e) GEN[k] = e.value; });
   }
+  // ---------- génération multiple (acquisition) : fiches de même date d'acquisition, même référence facture et même fournisseur -> une seule écriture (au choix) ----------
+  function gMulti() { return !!GEN && GEN.type === 'acq' && !!GEN.sf && GEN.sf.length > 1; }
+  function gElig() { return GEN.sf.filter(function (x) { return !motif('acq', x); }); }
+  function gCle(x) { return [x.dacq, x.ref, x.coll, x.aux].join('|'); }
+  function gPeutGrouper() { var vu = {}, g = false; gElig().forEach(function (x) { if (vu[gCle(x)]) g = true; vu[gCle(x)] = 1; }); return g; }
+  function gEntries() {
+    var E = [], idx = {};
+    gElig().forEach(function (x) {
+      var k = GEN.mode === 'groupe' ? gCle(x) : x.num;
+      if (idx[k] == null) { idx[k] = E.length; E.push({ fiches: [], dacq: x.dacq, ref: x.ref, coll: x.coll, aux: x.aux, annee: x.annee, site: x.site }); }
+      E[idx[k]].fiches.push(x);
+    });
+    E.forEach(function (e) { e.total = r2(e.fiches.reduce(function (s, x) { return s + x.qte * x.pu; }, 0)); });
+    return E;
+  }
+  function gFour(e) { return e.coll ? e.coll + (e.aux ? ' / ' + e.aux + (libAux(e.aux, e.coll) ? ' — ' + libAux(e.aux, e.coll) : '') : '') : '—'; }
+  function gEtape1M() {
+    var ex = GEN.sf.filter(function (x) { return motif('acq', x); }), E = gEntries(), nel = gElig().length, od = journauxOD(), peut = gPeutGrouper(), groupe = GEN.mode === 'groupe' && peut;
+    GV.innerHTML = '<div class="fim-md l" role="dialog" aria-modal="true" aria-label="Génération d’écriture">' +
+      '<div class="fim-mh"><h2>Génération d’écriture — ' + GEN.sf.length + ' fiche(s) sélectionnée(s)</h2><p>Choisissez le type d’écriture comptable à générer pour les fiches sélectionnées.</p></div>' +
+      '<div class="fim-mb"><div class="fim-mt">' + TYPES_GEN.map(function (t) { return '<button type="button" class="fim-mc' + (GEN.type === t[0] ? ' on' : '') + '" data-g-type="' + t[0] + '"><i class="ti ' + t[2] + '" aria-hidden="true"></i><b>' + t[1] + '</b><small>' + t[3] + '</small></button>'; }).join('') + '</div>' +
+      '<div class="fim-mbn ' + (nel ? 'ok' : 'ko') + '">' + nel + ' fiche(s) éligible(s) · ' + ex.length + ' fiche(s) qui seront exclues (voir détail ci-dessous) pour une écriture de type Acquisition.</div>' +
+      (nel ? '<h4 class="fim-mh4">Mode de génération</h4>' + (peut ? '<div class="fim-mt deux">' +
+        '<button type="button" class="fim-mc' + (groupe ? ' on' : '') + '" data-g-mode="groupe"><i class="ti ti-stack-2" aria-hidden="true"></i><b>Une seule écriture par regroupement</b><small>Les fiches de même date d’acquisition, même référence facture et même fournisseur sont regroupées dans une seule écriture.</small></button>' +
+        '<button type="button" class="fim-mc' + (!groupe ? ' on' : '') + '" data-g-mode="fiche"><i class="ti ti-list-details" aria-hidden="true"></i><b>Une écriture par fiche</b><small>Une écriture distincte est générée pour chacune des fiches éligibles.</small></button></div>' :
+        '<div class="fim-mvd">Aucun regroupement possible (dates d’acquisition, références facture ou fournisseurs différents) : une écriture sera générée pour chaque fiche.</div>') +
+        '<h4 class="fim-mh4">Écritures prévues : ' + E.length + '</h4><div class="fim-mscroll"><table class="fim-mtb"><thead><tr><th>Écriture</th><th>Fiches</th><th>Date d’acquisition</th><th>Réf. facture</th><th>Fournisseur</th><th class="r">Montant (' + esc(locale()) + ')</th></tr></thead><tbody>' +
+        E.map(function (e, i) { return '<tr><td>' + (i + 1) + '</td><td class="fim-code">' + e.fiches.map(function (x) { return esc(x.num); }).join(', ') + '</td><td>' + esc(dFR(e.dacq)) + '</td><td>' + esc(e.ref) + '</td><td>' + esc(gFour(e)) + '</td><td class="r">' + nb(e.total) + '</td></tr>'; }).join('') + '</tbody></table></div>' : '<div class="fim-mvd">Aucune fiche éligible pour ce type d’écriture.</div>') +
+      '<h4 class="fim-mh4">Fiches non éligibles</h4>' + (ex.length ? '<table class="fim-mtb"><thead><tr><th>N° fiche</th><th>Désignation</th><th>Motif d’exclusion</th></tr></thead><tbody>' + ex.map(function (x) { return '<tr><td class="fim-code">' + esc(x.num) + '</td><td>' + esc(x.desig) + '</td><td class="fim-mko">' + esc(motif('acq', x)) + '</td></tr>'; }).join('') + '</tbody></table>' : '<div class="fim-mvd">Aucune fiche exclue.</div>') +
+      '<div class="fim-g2" style="margin-top:16px"><label class="bp-champ"><span>Journal <b>*</b></span><select class="bp-sel" data-g="journal"><option value="">— Sélectionner —</option>' + od.map(function (j) { return '<option value="' + esc(j.code) + '"' + (j.code === GEN.journal ? ' selected' : '') + '>' + esc(j.code + ' — ' + j.libelle) + '</option>'; }).join('') + '</select></label>' +
+      '<p class="fim-help" style="align-self:end;margin:0">Date comptable et date pièce : date d’acquisition de chaque écriture · N° de pièce : numérotation automatique du journal · Année et site : repris des fiches.</p></div></div>' +
+      '<div class="fim-mf"><button type="button" class="fim-mbt" data-g-annuler>Annuler</button><button type="button" class="fim-mbt pri" data-g-apercu><i class="ti ti-plus" aria-hidden="true"></i> Voir l’aperçu</button></div></div>';
+    gValide();
+  }
+  function gEtape2M() {
+    var E = gEntries(), pa = plansActifs(), jr = GEN.journal;
+    GV.innerHTML = '<div class="fim-md l" role="dialog" aria-modal="true" aria-label="Aperçu des écritures">' +
+      '<div class="fim-mh"><h2>Aperçu — ' + E.length + ' écriture(s) à générer</h2><p>Contrôlez les écritures avant génération. Les comptes et les imputations analytiques sont repris de chaque fiche (compte tiers : fournisseur de la fiche) ; une écriture regroupe une ligne de débit par fiche et une ligne de crédit globale.</p></div>' +
+      '<div class="fim-mb">' + E.map(function (e, i) {
+        var lib = 'Acquisition ' + e.ref;
+        return '<div class="fim-msec">Écriture ' + (i + 1) + ' / ' + E.length + '</div><div class="fim-mgr">' + [['Type d’écriture', 'Acquisition'], ['Journal', jr], ['N° pièce', 'Automatique'], ['Date comptable', dFR(e.dacq)], ['Date pièce', dFR(e.dacq)], ['Année', e.annee], ['Site', libSite(e.site)], ['N° facture', e.ref || '—'], ['Fournisseur', gFour(e)]].map(function (c) { return '<div><small>' + c[0] + '</small><span>' + esc(c[1]) + '</span></div>'; }).join('') + '</div>' +
+          '<div class="fim-mscroll main" style="margin-bottom:20px"><table class="fim-mtb2"><thead><tr><th>Compte</th><th>Tiers</th><th>Libellé</th><th class="r">Débit (' + esc(locale()) + ')</th><th class="r">Crédit (' + esc(locale()) + ')</th>' + pa.map(function (p) { return '<th>' + esc(p.lib) + '</th>'; }).join('') + '</tr></thead><tbody>' +
+          e.fiches.map(function (x) { return '<tr><td class="fim-code">' + esc(x.compte) + '</td><td>—</td><td>' + esc('Acquisition ' + x.desig + ' — ' + x.ref + ' (' + x.num + ')') + '</td><td class="r">' + nb(x.qte * x.pu) + '</td><td class="r"></td>' + pa.map(function (p) { return '<td>' + esc((x.ana || {})[p.code] || '—') + '</td>'; }).join('') + '</tr>'; }).join('') +
+          '<tr><td class="fim-code">' + esc(e.coll) + '</td><td>' + esc(e.aux) + '</td><td>' + esc(lib + ' — ' + (libAux(e.aux, e.coll) || e.aux || e.coll)) + '</td><td class="r"></td><td class="r">' + nb(e.total) + '</td>' + pa.map(function () { return '<td>—</td>'; }).join('') + '</tr>' +
+          '</tbody><tfoot><tr><td colspan="3">Total — écriture équilibrée</td><td class="r">' + nb(e.total) + '</td><td class="r">' + nb(e.total) + '</td>' + (pa.length ? '<td colspan="' + pa.length + '"></td>' : '') + '</tr></tfoot></table></div>';
+      }).join('') + '<div class="fim-er" data-g-er></div></div>' +
+      '<div class="fim-mf"><button type="button" class="fim-mbt" data-g-retour><i class="ti ti-arrow-left" aria-hidden="true"></i> Retour</button><button type="button" class="fim-mbt" data-g-annuler>Annuler</button><button type="button" class="fim-mbt pri" data-g-generer><i class="ti ti-wand" aria-hidden="true"></i> Générer ' + (E.length > 1 ? 'les ' + E.length + ' écritures' : 'l’écriture') + '</button></div></div>';
+  }
+  function gGenererM() {
+    var er = GV.querySelector('[data-g-er]'), pj = (window.JOURNAUX_PLAN || []).filter(function (j) { return j.code === GEN.journal; })[0], E = gEntries();
+    function ko(m) { er.textContent = m; er.classList.add('show'); }
+    if (!pj) { ko('Journal introuvable : choisissez un journal valide.'); return; }
+    if (!E.length) { ko('Aucune fiche éligible pour ce type d’écriture.'); return; }
+    function existe(p) { return genere.some(function (g) { return g.journal === pj.code && g.piece === p; }); }
+    if (!pj.auto) { var d = E.filter(function (e) { return existe(e.fiches[0].num); })[0]; if (d) { ko('Le n° de pièce ' + d.fiches[0].num + ' existe déjà dans le journal ' + pj.code + '.'); return; } }
+    var pieces = [];
+    E.forEach(function (e) {
+      var ctx = { site: e.site || '', date: e.dacq || '' }, p, n = 0;
+      if (pj.auto) { do { p = window.JOURNAUX_PROCHAIN ? window.JOURNAUX_PROCHAIN(pj, ctx) : window.JOURNAUX_NUMERO ? window.JOURNAUX_NUMERO(pj, (+pj.dernier || 0) + 1) : e.fiches[0].num; if (window.JOURNAUX_AVANCER) window.JOURNAUX_AVANCER(pj, ctx); else pj.dernier = (+pj.dernier || 0) + 1; n++; } while (n < 50 && (existe(p) || pieces.indexOf(p) >= 0)); }
+      else p = e.fiches[0].num;
+      pieces.push(p);
+    });
+    if (pj.auto) window.dispatchEvent(new Event('journaux-changed'));
+    E.forEach(function (e, i) {
+      var lib = 'Acquisition ' + e.ref;
+      genere.push({ fiche: e.fiches[0].num, fiches: e.fiches.map(function (x) { return x.num; }), type: 'Acquisition', journal: pj.code, annee: e.annee, site: e.site, date: e.dacq, dateComptable: e.dacq, piece: pieces[i], libelle: lib, total: e.total,
+        lignes: e.fiches.map(function (x) { return { compte: x.compte, libelle: 'Acquisition ' + x.desig + ' — ' + x.ref, debit: r2(x.qte * x.pu), credit: 0, imputations: JSON.parse(JSON.stringify(x.ana || {})) }; }).concat([{ compte: e.coll, auxiliaire: e.aux, libelle: lib + ' — ' + (libAux(e.aux, e.coll) || e.aux || e.coll), debit: 0, credit: e.total }]) });
+      e.fiches.forEach(function (x) { x.e_piece = pieces[i]; x.e_journal = pj.code; x.genere = true; });
+      registre(genere[genere.length - 1]);
+    });
+    window.ECRITURES_IMMOBILISATIONS = genere.slice(); window.dispatchEvent(new Event('ecritures-immobilisation-generees'));
+    var r = data[sel]; gFermer(); liste(); if (mode === 'consultation') form(r); etat(); publier();
+    toast(E.length + ' écriture(s) générée(s) pour ' + E.reduce(function (s, e) { return s + e.fiches.length; }, 0) + ' fiche(s) (journal ' + pj.code + ', pièces ' + pieces.join(', ') + ').');
+  }
   function gEtape1() {
+    if (gMulti()) { gEtape1M(); return; }
     var r = data[sel], m = motif(GEN.type, r), ok = !m, exs = (window.EXERCICES_API ? window.EXERCICES_API.liste() : []).map(function (x) { return x.annee; });
     if (GEN.annee && exs.indexOf(GEN.annee) < 0) exs.push(GEN.annee);
     var sites = ((window.PLANS_REF || {}).sites || []).filter(function (s) { return s[0] !== '00'; });
@@ -658,6 +838,7 @@
   }
   function gValide() {
     var b = GV.querySelector('[data-g-apercu]'); if (!b) return;
+    if (gMulti()) { b.disabled = !(gElig().length && GEN.journal); return; }
     b.disabled = !(!motif(GEN.type, data[sel]) && GEN.annee && GEN.site && GEN.dc && GEN.dp && GEN.journal);
   }
   function gPiece() {
@@ -668,6 +849,7 @@
   }
   // 2) aperçu : les comptes (classe 2 et tiers) reprennent ceux de la fiche et ne sont pas modifiables ; libellés et imputations analytiques restent modifiables
   function gEtape2() {
+    if (gMulti()) { gEtape2M(); return; }
     var r = data[sel], dot = GEN.type === 'dot', ces = GEN.type === 'ces', LG = dot ? r.plan[GEN.ligne] : null, fam = famDe(r.famille) || {}, S = ces ? sortieSchema(r) : null, v0 = Math.round(r.qte * r.pu * 100) / 100, P = gPiece(), pa = plansActifs(), D = devisesEtrangeres(), d = GEN.dc, rows;
     if (ces) rows = S.lignes.map(function (l, i) { return { compte: l.compte, tiers: esc(l.tiers), lk: 'l' + (i + 1), d: l.d, c: l.c, ed: true }; });
     else if (dot) rows = [{ compte: fam.c_dot, tiers: '', lk: 'l1', d: LG.dot, c: 0, ed: true }, { compte: fam.c_amort, tiers: '', lk: 'l2', d: 0, c: LG.dot, ed: true }];
@@ -695,6 +877,7 @@
       '<div class="fim-mf"><button type="button" class="fim-mbt" data-g-retour><i class="ti ti-arrow-left" aria-hidden="true"></i> Retour</button><button type="button" class="fim-mbt" data-g-annuler>Annuler</button><button type="button" class="fim-mbt pri" data-g-generer><i class="ti ti-wand" aria-hidden="true"></i> Générer l’écriture</button></div></div>';
   }
   function gGenerer() {
+    if (gMulti()) { gGenererM(); return; }
     var r = data[sel], er = GV.querySelector('[data-g-er]'), P = gPiece(), pj = P.pj, piece = P.piece, dot = GEN.type === 'dot', ces = GEN.type === 'ces', LG = dot ? r.plan[GEN.ligne] : null, fam = famDe(r.famille) || {}, S = ces ? sortieSchema(r) : null, v = ces ? S.lignes.reduce(function (s, l) { return s + l.d; }, 0) : dot ? LG.dot : Math.round(r.qte * r.pu * 100) / 100;
     function ko(m) { er.textContent = m; er.classList.add('show'); }
     if (GEN.type === 'acq' && r.genere) { ko('Écriture déjà générée (pièce ' + r.e_piece + ', journal ' + r.e_journal + ').'); return; }
@@ -722,7 +905,7 @@
     var P = window.ECRITURES_PIECES = window.ECRITURES_PIECES || [];
     if (P.some(function (x) { return x.journal === ge.journal && x.piece === ge.piece; })) return;
     var f0 = data.filter(function (x) { return x.num === ge.fiche; })[0] || {};
-    P.push({ journal: ge.journal, piece: ge.piece, date: ge.dateComptable, datePiece: ge.date, facture: f0.ref || '', reference: ge.fiche, source: 'immobilisations', type: ge.type,
+    P.push({ journal: ge.journal, piece: ge.piece, date: ge.dateComptable, datePiece: ge.date, facture: f0.ref || '', reference: ge.fiches ? ge.fiches.join(', ') : ge.fiche, source: 'immobilisations', type: ge.type,
       lignes: ge.lignes.map(function (l) { return { compte: l.compte, tiers: l.auxiliaire || '', libelle: l.libelle, sens: l.debit > 0 ? 'DEBIT' : 'CREDIT', montant: l.debit > 0 ? l.debit : l.credit, montant1: 0, montant2: 0, axes: JSON.parse(JSON.stringify(l.imputations || {})), auto: true, regle: 0 }; }) });
   }
   function generer() { gOuvrir(); }
@@ -820,7 +1003,7 @@
   // écritures déjà générées pour la fiche, avec leur numéro de pièce
   function renderEcrs(r) {
     var c = q('[data-fim-ecrs]'); if (!c) return;
-    var L = r ? genere.filter(function (e) { return e.fiche === r.num; }) : [];
+    var L = r ? genere.filter(function (e) { return (e.fiches || [e.fiche]).indexOf(r.num) >= 0; }) : [];
     c.innerHTML = L.length ? '<div class="fim-mscroll"><table class="fim-mtb"><thead><tr><th>Type</th><th>N° pièce</th><th>Journal</th><th>Date comptable</th><th class="r">Montant</th></tr></thead><tbody>' + L.map(function (e) {
       return '<tr><td>' + esc(e.type + (e.dotAnnee ? ' ' + e.dotAnnee : '')) + '</td><td class="fim-code">' + esc(e.piece) + '</td><td>' + esc(e.journal) + '</td><td>' + esc(dFR(e.dateComptable)) + '</td><td class="r">' + nb(e.total) + ' ' + esc(locale()) + '</td></tr>';
     }).join('') + '</tbody></table></div>' : '<p class="fim-help" style="margin:0">Aucune écriture générée pour cette fiche.</p>';
@@ -895,6 +1078,7 @@
     if (b.hasAttribute('data-fim-planexp')) { exporterPlan(); return; }
     if (GV && GV.contains(b)) {
       if (b.hasAttribute('data-g-type')) { gLire(); if (GEN.type !== b.getAttribute('data-g-type')) { GEN.type = b.getAttribute('data-g-type'); gDefauts(data[sel]); } gEtape1(); }
+      else if (b.hasAttribute('data-g-mode')) { gLire(); GEN.mode = b.getAttribute('data-g-mode'); gEtape1(); }
       else if (b.hasAttribute('data-g-annuler')) gFermer();
       else if (b.hasAttribute('data-g-apercu')) { gLire(); gEtape2(); }
       else if (b.hasAttribute('data-g-retour')) gEtape1();
