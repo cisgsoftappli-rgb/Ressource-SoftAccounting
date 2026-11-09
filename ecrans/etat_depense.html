@@ -1358,7 +1358,8 @@
     sd.value = ok.some(function (d) { return d[0] === cur; }) ? cur : 'MGA';
   }
   window.addEventListener('pf-change', devises);
-  q('[data-ed-open]').addEventListener('click', function () { devises(); fillFields(); modal.style.display = ''; });
+  window.addEventListener('pf-selections-changed', majParams);
+  q('[data-ed-open]').addEventListener('click', function () { majParams(); devises(); fillFields(); modal.style.display = ''; });
   qa('[data-ed-close]').forEach(function (b) { b.addEventListener('click', function () { modal.style.display = 'none'; }); });
   q('[data-ed-show]').addEventListener('click', function () {
     modal.style.display = 'none'; var p = loadFor(keyNow()); shown = true; draw1();
@@ -1418,6 +1419,13 @@
     return p;
   }
   // Sélection en cours pour le paramètre + la convention choisis : champs préremplis (et verrouillés) ; sinon à renseigner
+  // paramètres de sélection : ceux de Paramétrages › Procédures financières (Sélection) ; la numérotation automatique du n° de sélection en est issue
+  function majParams() {
+    var L = (window.PF_SELECTIONS || []).filter(function (s) { return s.num; }); if (!L.length) return;
+    var cur = f('param').value, h = L.map(function (s) { var v = s.num + ' — ' + s.desc; return '<option' + (v === cur ? ' selected' : '') + '>' + v.replace(/&/g, '&amp;').replace(/</g, '&lt;') + '</option>'; }).join('');
+    if (f('param').innerHTML !== h) { f('param').innerHTML = h; if (!f('param').value) f('param').selectedIndex = 0; }
+  }
+  function autoNum() { var v = f('param').value || PSOE, s = (window.PF_SELECTIONS || []).filter(function (x) { return v.indexOf(x.num + ' — ') === 0; })[0]; return s && s.numAuto ? s.numAuto : null; }
   function fillFields() {
     var p = pendOf(keyNow());
     if (p) {
@@ -1428,6 +1436,8 @@
       ['num', 'd1', 'd2', 'e1', 'e2'].forEach(function (k) { f(k).value = ''; });
     }
     ['num', 'exo', 'dev', 'd1', 'd2', 'e1', 'e2'].forEach(function (k) { if (f(k)) f(k).disabled = !!p; });
+    var na = !p && autoNum(); f('num').readOnly = !!na; f('num').style.background = na ? '#F5F7F9' : '';
+    if (na && window.pfNumSuivant) { var kk = keyNow(); f('num').value = window.pfNumSuivant(na, SELS.filter(function (x) { return keyOf(x) === kk; }).map(function (x) { return x.num; })); }
     chks.forEach(function (x) { x.disabled = !!p; if (p) x.checked = false; });
     if (!p) chkSync();
   }

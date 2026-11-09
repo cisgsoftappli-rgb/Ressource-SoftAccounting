@@ -175,7 +175,10 @@
       <section class="bp-pan" aria-label="Saisie d'une sélection" data-pfs-pan="saisie" hidden>
         <form class="pfs-fm" onsubmit="return false" novalidate>
           <div class="pfs-b">
-            <div class="bp-champ"><span>N° paramètre <b>*</b></span><input class="bp-in" data-pfs-f="num" maxlength="20" placeholder="Ex : SOE"><label style="display:flex;align-items:center;gap:6px;font-size:12px;color:#353944;margin-top:4px"><input type="checkbox" data-pfs-auto style="width:15px;height:15px;min-height:0;accent-color:#2E427B"> Numérotation automatique du n° de sélection</label>
+            <div class="bp-champ"><span>N° paramètre <b>*</b></span><input class="bp-in" data-pfs-f="num" maxlength="20" placeholder="Ex : SOE"><span class="pfs-er" data-pfs-er="num"></span></div>
+            <label class="bp-champ"><span>Description <b>*</b></span><input class="bp-in" data-pfs-f="desc" maxlength="80" placeholder="Ex : STATE OF EXPENDITURE"><span class="pfs-er" data-pfs-er="desc"></span></label>
+            <label class="bp-champ"><span>Type de dépense <b>*</b></span><select class="bp-sel" data-pfs-f="type"><option value="">— Sélectionner —</option><option>Décaissement</option><option>Engagement</option></select><span class="pfs-er" data-pfs-er="type"></span></label>
+            <div class="bp-champ pfs-w"><span>Numérotation des sélections</span><label style="display:flex;align-items:center;gap:6px;font-size:12px;color:#353944;margin-top:4px"><input type="checkbox" data-pfs-auto style="width:15px;height:15px;min-height:0;accent-color:#2E427B"> Numérotation automatique du n° de sélection des états de dépense</label>
               <div data-pfs-np hidden style="margin-top:8px;padding:10px;border:1px solid #D5DBE5;border-radius:8px;background:#F8F9FB">
                 <div style="display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:8px">
                   <label style="display:flex;flex-direction:column;gap:3px;font-size:11px;font-weight:700;text-transform:uppercase;color:#353944">Préfixe<input class="bp-in" data-pfs-npk="pre" maxlength="8" value="SEL" style="text-transform:none;font-weight:400"></label>
@@ -184,9 +187,7 @@
                   <label style="display:flex;flex-direction:column;gap:3px;font-size:11px;font-weight:700;text-transform:uppercase;color:#353944">Suffixe<input class="bp-in" data-pfs-npk="suf" maxlength="8" value="" style="text-transform:none;font-weight:400"></label>
                 </div>
                 <p style="margin:8px 0 0;font-size:12px;color:#5B606D">Exemple : <b data-pfs-npex></b></p>
-              </div><span class="pfs-er" data-pfs-er="num"></span></div>
-            <label class="bp-champ"><span>Description <b>*</b></span><input class="bp-in" data-pfs-f="desc" maxlength="80" placeholder="Ex : STATE OF EXPENDITURE"><span class="pfs-er" data-pfs-er="desc"></span></label>
-            <label class="bp-champ"><span>Type de dépense <b>*</b></span><select class="bp-sel" data-pfs-f="type"><option value="">— Sélectionner —</option><option>Décaissement</option><option>Engagement</option></select><span class="pfs-er" data-pfs-er="type"></span></label>
+              </div></div>
             <div class="pfs-w" style="display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:12px 16px;align-items:start"><div class="bp-champ"><span>Centres de saisie <b>*</b> <em data-pfs-ncs style="font-style:normal;text-transform:none;color:#5B606D"></em></span>
               <div class="pfs-jr"><div class="pfs-jl">
                 <table class="pfs-jt" data-no-tf><thead>
@@ -422,28 +423,26 @@
   }
   function lireCS() { qa('[data-pfs-cl] input').forEach(function (c) { var i = cscoches.indexOf(c.value); if (c.checked && i < 0) cscoches.push(c.value); if (!c.checked && i >= 0) cscoches.splice(i, 1); }); q('[data-pfs-ncs]').textContent = cscoches.length ? '(' + cscoches.length + ' sélectionné' + (cscoches.length > 1 ? 's' : '') + ')' : ''; }
   /* numérotation automatique du n° de sélection : SEL-001, SEL-002… */
-  var CLEN = 'softcompta.pfNumParams';
-  function npLire() {
-    var p = { pre: 'SEL', mid: '-', len: 3, suf: '' }; try { var s = JSON.parse(localStorage.getItem(CLEN) || 'null'); if (s) p = Object.assign(p, s); } catch (e) {}
-    qa('[data-pfs-npk]').forEach(function (i) { var k = i.dataset.pfsNpk; if (document.activeElement !== i && !i.dataset.init) { i.value = p[k]; i.dataset.init = 1; } });
-    return { pre: q('[data-pfs-npk="pre"]').value, mid: q('[data-pfs-npk="mid"]').value, len: Math.max(1, Math.min(8, +q('[data-pfs-npk="len"]').value || 3)), suf: q('[data-pfs-npk="suf"]').value };
-  }
+  /* numérotation automatique du n° de sélection des états de dépense (préfixe + texte intermédiaire + compteur + suffixe) :
+     enregistrée avec le paramétrage (numAuto) et appliquée par l'état de dépense à chaque nouvelle sélection */
   function reEsc(s) { return s.replace(/[.*+?^\x24()|\[\]{}\\]/g, function (c) { return '\\' + c; }); }
-  function numSuivant() {
-    var p = npLire(), re = new RegExp('^' + reEsc(p.pre + p.mid) + '(\\d+)' + reEsc(p.suf) + '\x24'), m = 0;
-    data.forEach(function (x, i) { var k = re.exec(x.num || ''); if (k && i !== edit) m = Math.max(m, +k[1]); });
-    var n = String(m + 1); while (n.length < p.len) n = '0' + n;
-    return p.pre + p.mid + n + p.suf;
-  }
+  function npLire() { return { pre: q('[data-pfs-npk="pre"]').value, mid: q('[data-pfs-npk="mid"]').value, len: Math.max(1, Math.min(8, +q('[data-pfs-npk="len"]').value || 3)), suf: q('[data-pfs-npk="suf"]').value }; }
+  function npEcrire(p) { p = p || { pre: 'SEL', mid: '-', len: 3, suf: '' }; ['pre', 'mid', 'len', 'suf'].forEach(function (k) { q('[data-pfs-npk="' + k + '"]').value = p[k]; }); }
+  /* prochain numéro de sélection : plus grand compteur déjà utilisé au même format + 1 */
+  window.pfNumSuivant = function (p, nums) {
+    var re = new RegExp('^' + reEsc(p.pre + p.mid) + '(\\d+)' + reEsc(p.suf) + '\x24'), m = 0;
+    (nums || []).forEach(function (x) { var k = re.exec(String(x)); if (k) m = Math.max(m, +k[1]); });
+    var n = String(m + 1); while (n.length < p.len) n = '0' + n; return p.pre + p.mid + n + p.suf;
+  };
   function majAuto() {
-    var a = q('[data-pfs-auto]').checked, n = f('num'); n.readOnly = a; n.style.background = a ? '#F5F7F9' : ''; q('[data-pfs-np]').hidden = !a;
-    if (a) { n.value = numSuivant(); q('[data-pfs-npex]').textContent = n.value; try { localStorage.setItem(CLEN, JSON.stringify(npLire())); } catch (e) {} }
+    var a = q('[data-pfs-auto]').checked, p = npLire(); q('[data-pfs-np]').hidden = !a;
+    var n = '1'; while (n.length < p.len) n = '0' + n; q('[data-pfs-npex]').textContent = p.pre + p.mid + n + p.suf + '  (puis ' + p.pre + p.mid + (n.slice(0, -1) + '2') + p.suf + '…)';
   }
   function lire() { qa('[data-pfs-jl] input').forEach(function (c) { var i = coches.indexOf(c.value); if (c.checked && i < 0) coches.push(c.value); if (!c.checked && i >= 0) coches.splice(i, 1); }); q('[data-pfs-nj]').textContent = coches.length ? '(' + coches.length + ' sélectionné' + (coches.length > 1 ? 's' : '') + ')' : ''; }
   function ouvrir(i) {
     edit = i; effacer(); var r = i >= 0 ? data[i] : { num: '', desc: '', type: '', jnl: [], cs: '' };
     f('num').value = r.num; f('desc').value = r.desc; f('type').value = r.type;
-    cscoches = csArr(r).slice(); q('[data-pfs-qcs]').value = ''; casesCS(); qa('.pfs-jl').forEach(function (l) { l.scrollTop = 0; }); q('[data-pfs-auto]').checked = false; majAuto();
+    cscoches = csArr(r).slice(); q('[data-pfs-qcs]').value = ''; casesCS(); qa('.pfs-jl').forEach(function (l) { l.scrollTop = 0; }); q('[data-pfs-auto]').checked = !!r.numAuto; npEcrire(r.numAuto); majAuto();
     coches = r.jnl.slice(); q('[data-pfs-qc]').value = ''; q('[data-pfs-ql]').value = ''; cases(); onglet('saisie'); f('num').focus();
   }
   q('[data-pfs-tab="saisie"]').addEventListener('click', function () { if (q('[data-pfs-pan="saisie"]').hidden) ouvrir(sel >= 0 && !data[sel].lie ? sel : -1); });
@@ -469,7 +468,7 @@
   f('type').addEventListener('change', typeChange);
   q('[data-pfs-tous]').addEventListener('click', function () { lire(); var vis = qa('[data-pfs-jl] input'), tout = vis.every(function (c) { return c.checked; }); vis.forEach(function (c) { c.checked = !tout; }); lire(); this.title = tout ? 'Tout sélectionner' : 'Tout désélectionner'; });
   q('[data-pfs-enregistrer]').addEventListener('click', function () {
-    effacer(); lire(); lireCS(); if (q('[data-pfs-auto]').checked) f('num').value = numSuivant(); var ok = true, r = { num: f('num').value.trim(), desc: f('desc').value.trim(), type: f('type').value, jnl: coches.slice(), cs: cscoches.slice() };
+    effacer(); lire(); lireCS(); var ok = true, r = { numAuto: q('[data-pfs-auto]').checked ? npLire() : null, num: f('num').value.trim(), desc: f('desc').value.trim(), type: f('type').value, jnl: coches.slice(), cs: cscoches.slice() };
     if (!r.num) { err('num', 'Le n° de paramètre est obligatoire.', f('num')); ok = false; } else if (data.some(function (x, i) { return i !== edit && x.num.toLowerCase() === r.num.toLowerCase(); })) { err('num', 'Ce n° de paramètre existe déjà.', f('num')); ok = false; }
     if (!r.desc) { err('desc', 'La description est obligatoire.', f('desc')); ok = false; }
     if (!r.type) { err('type', 'Le type de dépense est obligatoire.', f('type')); ok = false; }
