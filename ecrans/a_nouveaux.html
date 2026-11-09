@@ -144,10 +144,9 @@
   function taux(c) { return TAUX[c] || 1000; }
   function monnaies() {
     var m = {}, M = { loc: 'MGA', dev: [] };
-    [].slice.call(document.querySelectorAll('.ig-f')).forEach(function (f) { var l = f.querySelector('.ig-l'), s = f.querySelector('select'); if (l && s) m[l.textContent.trim()] = s.value; });
-    if (m['Monnaie locale']) M.loc = m['Monnaie locale'];
-    if (!('Devise 1' in m)) { m['Devise 1'] = 'USD'; m['Devise 2'] = 'MUR'; }
-    ['Devise 1', 'Devise 2', 'Devise 3'].forEach(function (k, i) { if (m[k]) M.dev.push({ n: i + 1, code: m[k], cle: 'd' + (i + 1) }); });
+    [].slice.call(document.querySelectorAll('.ig-f')).forEach(function (f) { var l = f.querySelector('.ig-l'), s = f.querySelector('select'), k = l && /\((M[123])\)/.exec(l.textContent); if (k && s) m[k[1]] = s.value; });
+    if (m.M1) M.loc = m.M1;   // M1 : monnaie de tenue de compte ; M2 et M3 : monnaies de reporting (Administration de l'entité › Informations générales)
+    ['M2', 'M3'].forEach(function (k, i) { if (m[k] && m[k] !== M.loc) M.dev.push({ n: i + 1, code: m[k], cle: 'd' + (i + 1) }); });
     return M;
   }
   function conv(loc, code, M) { return Math.round(loc * taux(M.loc) / taux(code) * 100) / 100; }

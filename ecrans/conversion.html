@@ -49,7 +49,7 @@
 [data-cv] .cvn-tile b{display:block;font-size:14px;margin-bottom:3px}[data-cv] .cvn-tile .d{font-size:12px;color:#667085;line-height:1.4;display:block}[data-cv] .cvn-tile .meta{margin-top:10px;font-size:12px;font-weight:600;color:#667085;font-variant-numeric:tabular-nums}
 [data-cv] .cvn-tile .chk{position:absolute;top:12px;right:12px;width:20px;height:20px;border-radius:6px;border:1.5px solid #C9D2E3;display:grid;place-items:center;color:#fff;background:#fff;font-size:12px}
 [data-cv] .cvn-tile:has(input:checked){border-color:#23408E;background:#EEF2FB}[data-cv] .cvn-tile:has(input:checked) .ic{background:#23408E;color:#fff}[data-cv] .cvn-tile:has(input:checked) .chk{background:#23408E;border-color:#23408E}[data-cv] .cvn-tile:has(input:checked) .meta{color:#23408E}
-[data-cv] .cvn-cur{cursor:default}[data-cv] .cvn-cur .rate{font-size:17px;font-weight:700;font-variant-numeric:tabular-nums;margin-top:2px}[data-cv] .cvn-cur .warn{color:#B45309;font-size:12px;font-weight:600;margin-top:6px}
+[data-cv] .cvn-cur{cursor:pointer}[data-cv] .cvn-cur .rate{font-size:17px;font-weight:700;font-variant-numeric:tabular-nums;margin-top:2px}[data-cv] .cvn-cur .warn{color:#B45309;font-size:12px;font-weight:600;margin-top:6px}
 [data-cv] .cvn-opt{display:flex;gap:14px;align-items:flex-start;margin-top:18px;padding:14px;border:1px solid #E3E7EE;border-radius:10px;cursor:pointer}
 [data-cv] .cvn-opt input{position:absolute;opacity:0;pointer-events:none}[data-cv] .cvn-sw{width:36px;height:20px;border-radius:999px;background:#CFD6E4;position:relative;transition:.15s;flex:none;margin-top:1px}[data-cv] .cvn-sw::after{content:"";position:absolute;top:2px;left:2px;width:16px;height:16px;border-radius:50%;background:#fff;box-shadow:0 1px 2px rgba(0,0,0,.2);transition:.15s}
 [data-cv] .cvn-opt input:checked+.cvn-sw{background:#23408E}[data-cv] .cvn-opt input:checked+.cvn-sw::after{left:18px}[data-cv] .cvn-opt b{display:block;font-size:13.5px}[data-cv] .cvn-opt .d{font-size:12.5px;color:#667085}
@@ -103,7 +103,7 @@
       </div>
     </div>
     <div class="cv-card">
-      <div class="cvn-sh"><span class="cvn-n" data-cvn="3">3</span><div><h2>Devises des rapports</h2><p>Monnaie des rapports : <b data-cv-monrap></b>. Le cours en vigueur à la fin de période est appliqué à chaque devise de l’entité.</p></div></div>
+      <div class="cvn-sh"><span class="cvn-n" data-cvn="3">3</span><div><h2>Devises des rapports</h2><p>Monnaie de tenue de compte : <b data-cv-monrap></b>. Monnaies de reporting de l’entité (Administration › Informations générales) ; le cours en vigueur à la fin de période est appliqué à chaque devise sélectionnée.</p></div></div>
       <div class="cvn-g" data-cv-cur></div>
       <label class="cvn-opt"><input type="checkbox" id="cv-nuls" data-cv-nuls checked><span class="cvn-sw"></span><span><b>Convertir uniquement les montants nuls</b><span class="d">Seules les lignes dont le montant en devise est encore à zéro sont traitées. Les conversions déjà faites sont conservées.</span></span></label>
     </div>
@@ -202,45 +202,48 @@
   }
 
   // ---------- Devises de l'entité, cours, synthèses ----------
-  function locale() { var l = 'MGA'; [].slice.call(document.querySelectorAll('.ig-f')).forEach(function (x) { var a = x.querySelector('.ig-l'), s = x.querySelector('select'); if (a && s && a.textContent.trim() === 'Monnaie locale' && s.value) l = s.value; }); return l; }
-  function devisesEntite() {
-    var m = {}; [].slice.call(document.querySelectorAll('.ig-f')).forEach(function (x) { var a = x.querySelector('.ig-l'), s = x.querySelector('select'); if (a && s) m[a.textContent.trim()] = s.value; });
-    if (!('Devise 1' in m)) { m['Devise 1'] = 'USD'; m['Devise 2'] = 'MUR'; }
-    return ['Devise 1', 'Devise 2', 'Devise 3'].map(function (k) { return m[k]; }).filter(Boolean);
+  // Monnaies de comptabilisation lues dans Administration de l'entité › Informations générales : M1 = monnaie de tenue de compte (locale), M2 et M3 = monnaies de reporting
+  function monnaiesEntite() {
+    var m = { M1: '', M2: '', M3: '' }; [].slice.call(document.querySelectorAll('.ig-f')).forEach(function (x) { var a = x.querySelector('.ig-l'), s = x.querySelector('select'), k = a && /\((M[123])\)/.exec(a.textContent); if (k && s) m[k[1]] = s.value; });
+    return m;
   }
+  function locale() { return monnaiesEntite().M1 || 'MGA'; }
+  function devisesEntite() { var m = monnaiesEntite(); return [m.M2, m.M3].filter(function (d, k, a) { return d && d !== m.M1 && a.indexOf(d) === k; }); }
+  var curSel = {};   // devises des rapports retenues (par défaut : toutes les devises de comptabilisation de l'entité)
+  function devisesSel() { return devisesEntite().filter(function (d) { return curSel[d] !== false; }); }
   function coursA(dev, d) { var r = null; (window.COURS || []).forEach(function (x) { if (x.devise === dev && (!d || x.date <= d) && (!r || x.date > r.date)) r = x; }); return r; }
   function infos() {
     var an = Object.keys(window.A_NOUVEAUX || {}).length, du = q('[data-cv-du]').value, au = q('[data-cv-au]').value, txt = {
       compta: MS.journaux ? 'Écritures du ' + date(du) + ' au ' + date(au) + ' · ' + nbSel(MS.journaux) + ' journal(aux)' : '',
       anouveaux: an + ' jeu(x) d’à-nouveaux en mémoire', immo: 'Mouvements des immobilisations de la période', marches: 'Ventilations des fiches marchés de la période' };
     qa('[data-cv-info]').forEach(function (i) { var c = q('[data-cv-el="' + i.dataset.cvInfo + '"]'); i.value = c && c.checked ? txt[i.dataset.cvInfo] : ''; });
-    q('[data-cv-monrap]').textContent = devisesEntite()[0] || '';
+    q('[data-cv-monrap]').textContent = locale();
     recap();
   }
 
   // récapitulatif, volumes par ensemble, devises (cours à fin de période)
   function recap() {
     if (!MS.site || !MS.journaux) return;
-    var du = q('[data-cv-du]').value, au = q('[data-cv-au]').value, els = qa('[data-cv-el]:checked').map(function (c) { return c.dataset.cvEl; }), nuls = q('[data-cv-nuls]').checked, loc = locale(), D = devisesEntite();
+    var du = q('[data-cv-du]').value, au = q('[data-cv-au]').value, els = qa('[data-cv-el]:checked').map(function (c) { return c.dataset.cvEl; }), nuls = q('[data-cv-nuls]').checked, loc = locale(), D = devisesEntite(), DS = devisesSel();
     function S(k, v) { q('[data-cv-s="' + k + '"]').textContent = v; }
     S('per', date(du) + ' → ' + date(au));
     S('sites', nbSel(MS.site) === MS.site.items.length ? 'Tous (' + nbSel(MS.site) + ')' : nbSel(MS.site) + ' / ' + MS.site.items.length);
     S('jnl', nbSel(MS.journaux) === MS.journaux.items.length ? 'Tous (' + nbSel(MS.journaux) + ')' : nbSel(MS.journaux) + ' / ' + MS.journaux.items.length);
     S('data', els.length ? els.map(function (e) { return { compta: 'Comptabilité générale', anouveaux: 'À-nouveaux', immo: 'Immobilisations', marches: 'Marchés' }[e]; }).join(', ') : '—');
-    S('cur', D.join(', ') || '—'); S('mode', nuls ? 'Montants nuls uniquement' : 'Tous les montants');
+    S('cur', DS.join(', ') || '—'); S('mode', nuls ? 'Montants nuls uniquement' : 'Tous les montants');
     var ok = du && au && du <= au;
     if (ok) {
       var vAll = volumes(du, au, ['compta', 'anouveaux', 'immo', 'marches'], false), vSel = volumes(du, au, els, nuls);
       vAll.forEach(function (x) { var m = q('[data-cv-meta="' + x.el + '"]'); if (m) m.textContent = nb(x.total) + (x.el === 'compta' || x.el === 'anouveaux' ? ' lignes' : x.el === 'immo' ? ' fiches' : ' contrats'); });
       S('n', nb(vSel.reduce(function (t, x) { return t + x.conv; }, 0)));
     } else S('n', '0');
-    q('[data-cv-cur]').innerHTML = D.map(function (d) { var c = ok ? coursA(d, au) : null; return '<div class="cvn-tile cvn-cur c3"><div class="cvn-top"><span class="ic" style="font-weight:700;font-size:12px">' + esc(d) + '</span>' + (c ? '<div class="rate">' + Number(c.parite).toLocaleString('fr-FR', { minimumFractionDigits: 2, maximumFractionDigits: 2 }) + ' <span style="font-size:12px;color:#667085;font-weight:500">' + esc(loc) + '</span></div>' : '') + '</div><b>' + esc(d) + ' → ' + esc(loc) + '</b>' + (c ? '<span class="d">Dernier cours au ' + date(c.date) + '</span>' : '<div class="warn">⚠ Aucun cours saisi</div><span class="d">Saisissez un cours dans Gestion des cours › Saisie</span>') + '</div>'; }).join('');
-    var n1 = q('[data-cvn="1"]'), n2 = q('[data-cvn="2"]'), n3 = q('[data-cvn="3"]'); n1.classList.toggle('ok', !!(ok && nbSel(MS.site) && nbSel(MS.journaux))); n2.classList.toggle('ok', !!els.length); n3.classList.toggle('ok', D.length > 0 && D.every(function (d) { return coursA(d, au); }));
+    if (!D.length) q('[data-cv-cur]').innerHTML = '<div class="c12" style="grid-column:span 12;color:#B45309;font-size:13px;font-weight:600">⚠ Aucune monnaie de reporting (M2, M3) n’est définie dans Administration de l’entité › Informations générales.</div>'; else q('[data-cv-cur]').innerHTML = D.map(function (d) { var c = ok ? coursA(d, au) : null; return '<label class="cvn-tile cvn-cur c3"><input type="checkbox" data-cv-dev="' + esc(d) + '"' + (curSel[d] !== false ? ' checked' : '') + '><span class="chk">✓</span><div class="cvn-top"><span class="ic" style="font-weight:700;font-size:12px">' + esc(d) + '</span>' + (c ? '<div class="rate">' + Number(c.parite).toLocaleString('fr-FR', { minimumFractionDigits: 2, maximumFractionDigits: 2 }) + ' <span style="font-size:12px;color:#667085;font-weight:500">' + esc(loc) + '</span></div>' : '') + '</div><b>' + esc(d) + ' → ' + esc(loc) + '</b>' + (c ? '<span class="d">Dernier cours au ' + date(c.date) + '</span>' : '<div class="warn">⚠ Aucun cours saisi</div><span class="d">Saisissez un cours dans Gestion des cours › Saisie</span>') + '</label>'; }).join('');
+    var n1 = q('[data-cvn="1"]'), n2 = q('[data-cvn="2"]'), n3 = q('[data-cvn="3"]'); n1.classList.toggle('ok', !!(ok && nbSel(MS.site) && nbSel(MS.journaux))); n2.classList.toggle('ok', !!els.length); n3.classList.toggle('ok', DS.length > 0 && DS.every(function (d) { return coursA(d, au); }));
   }
   function aujourdhui() { return new Date(); }
   function defauts() {
     var y = aujourdhui().getFullYear(); q('[data-cv-du]').value = y + '-01-01'; q('[data-cv-au]').value = y + '-12-31';
-    qa('[data-cv-el]').forEach(function (c) { c.checked = c.dataset.cvEl === 'compta'; }); q('[data-cv-nuls]').checked = true;
+    qa('[data-cv-el]').forEach(function (c) { c.checked = c.dataset.cvEl === 'compta'; }); q('[data-cv-nuls]').checked = true; curSel = {};
     ['site', 'journaux'].forEach(function (n) { msInit(n); });
     q('[data-cv-err]').hidden = true; q('[data-cv-res]').hidden = true; infos();
   }
@@ -260,7 +263,8 @@
     if (au < du) { erreur('La fin de période précède le début.'); return; }
     if (!nbSel(MS.site)) { erreur('Sélectionnez au moins un site.'); return; }
     if (els.indexOf('compta') >= 0 && !nbSel(MS.journaux)) { erreur('Sélectionnez au moins un journal.'); return; }
-    var loc = locale(), cours = devisesEntite().map(function (d) { return { dev: d, c: coursA(d, au) }; }), manque = cours.filter(function (x) { return !x.c; });
+    if (!devisesSel().length) { erreur('Sélectionnez au moins une devise de rapport à convertir.'); return; }
+    var loc = locale(), cours = devisesSel().map(function (d) { return { dev: d, c: coursA(d, au) }; }), manque = cours.filter(function (x) { return !x.c; });
     if (manque.length) { erreur('Aucun cours à la date du ' + date(au) + ' (ou avant) pour : ' + manque.map(function (x) { return x.dev + loc; }).join(', ') + '. Saisissez-les dans Gestion des cours › Saisie.'); return; }
     if (!(reprise || window.confirm('Convertir ' + els.map(function (e) { return EL[e]; }).join(', ') + ' du ' + date(du) + ' au ' + date(au) + ' ?'))) return;
     if (!reprise && window.SC_ETATS) {   // opération longue : barre de progression avec pourcentage, volume traité et annulation
@@ -292,7 +296,8 @@
   });
   q('[data-cv-ov]').addEventListener('mousedown', function (e) { if (e.target === this) this.hidden = true; });
   document.addEventListener('keydown', function (e) { var o = q('[data-cv-ov]'); if (e.key === 'Escape' && o && !o.hidden) o.hidden = true; });
-  root.addEventListener('change', function (e) { if (e.target.matches('[data-cv-el],[data-cv-du],[data-cv-au],[data-cv-nuls]')) infos(); });
+  document.addEventListener('change', function (e) { if (e.target.closest && e.target.closest('.ig-f') && q('[data-cv-cur]')) infos(); });
+  root.addEventListener('change', function (e) { if (e.target.matches('[data-cv-dev]')) curSel[e.target.dataset.cvDev] = e.target.checked; if (e.target.matches('[data-cv-el],[data-cv-du],[data-cv-au],[data-cv-nuls],[data-cv-dev]')) infos(); });
   window.addEventListener('hashchange', function () { if (location.hash === '#conversion') { ['site', 'journaux'].forEach(function (n) { if (!MS[n] || MS[n].items.length !== sources()[n].length) msInit(n); }); infos(); } else fermer(); });
   defauts(); histo();
   [600, 2000].forEach(function (t) { setTimeout(function () { ['site', 'journaux'].forEach(function (n) { if (!MS[n] || MS[n].items.length !== sources()[n].length) msInit(n); }); infos(); }, t); });

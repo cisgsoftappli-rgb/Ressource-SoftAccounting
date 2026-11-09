@@ -95,7 +95,7 @@
   }
   // devises : monnaie locale et devise 1 (Administration de l'entité), taux d'exemple
   var TAUX = { MGA: 1, USD: 4000, EUR: 4400, GBP: 5100, MUR: 100, XOF: 6.6, CNY: 560 };
-  function devise1() { var d = 'USD'; qaDoc('.ig-f').forEach(function (f) { var l = f.querySelector('.ig-l'), s = f.querySelector('select'); if (l && s && l.textContent.trim() === 'Devise 1' && s.value) d = s.value; }); return d; }
+  function devise1() { var m = {}; qaDoc('.ig-f').forEach(function (f) { var l = f.querySelector('.ig-l'), s = f.querySelector('select'), k = l && /\((M[123])\)/.exec(l.textContent); if (k && s) m[k[1]] = s.value; }); return m.M2 || m.M3 || m.M1 || 'MGA'; }   // première monnaie de reporting (M2, à défaut M3) d'Administration de l'entité
   function qaDoc(s) { return [].slice.call(document.querySelectorAll(s)); }
   function conv(loc, code) { return Math.round(loc / (TAUX[code] || 1000) * 100) / 100; }
 

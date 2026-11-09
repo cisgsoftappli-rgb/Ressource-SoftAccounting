@@ -175,17 +175,32 @@
       <section class="bp-pan" aria-label="Saisie d'une sélection" data-pfs-pan="saisie" hidden>
         <form class="pfs-fm" onsubmit="return false" novalidate>
           <div class="pfs-b">
-            <label class="bp-champ"><span>N° paramètre <b>*</b></span><input class="bp-in" data-pfs-f="num" maxlength="20" placeholder="Ex : SOE"><span class="pfs-er" data-pfs-er="num"></span></label>
+            <div class="bp-champ"><span>N° paramètre <b>*</b></span><input class="bp-in" data-pfs-f="num" maxlength="20" placeholder="Ex : SOE"><label style="display:flex;align-items:center;gap:6px;font-size:12px;color:#353944;margin-top:4px"><input type="checkbox" data-pfs-auto style="width:15px;height:15px;min-height:0;accent-color:#2E427B"> Numérotation automatique du n° de sélection</label>
+              <div data-pfs-np hidden style="margin-top:8px;padding:10px;border:1px solid #D5DBE5;border-radius:8px;background:#F8F9FB">
+                <div style="display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:8px">
+                  <label style="display:flex;flex-direction:column;gap:3px;font-size:11px;font-weight:700;text-transform:uppercase;color:#353944">Préfixe<input class="bp-in" data-pfs-npk="pre" maxlength="8" value="SEL" style="text-transform:none;font-weight:400"></label>
+                  <label style="display:flex;flex-direction:column;gap:3px;font-size:11px;font-weight:700;text-transform:uppercase;color:#353944">Texte intermédiaire<input class="bp-in" data-pfs-npk="mid" maxlength="6" value="-" style="text-transform:none;font-weight:400"></label>
+                  <label style="display:flex;flex-direction:column;gap:3px;font-size:11px;font-weight:700;text-transform:uppercase;color:#353944">Incrémentation<input title="Nombre de chiffres du compteur" class="bp-in" type="number" min="1" max="8" data-pfs-npk="len" value="3" style="text-transform:none;font-weight:400"></label>
+                  <label style="display:flex;flex-direction:column;gap:3px;font-size:11px;font-weight:700;text-transform:uppercase;color:#353944">Suffixe<input class="bp-in" data-pfs-npk="suf" maxlength="8" value="" style="text-transform:none;font-weight:400"></label>
+                </div>
+                <p style="margin:8px 0 0;font-size:12px;color:#5B606D">Exemple : <b data-pfs-npex></b></p>
+              </div><span class="pfs-er" data-pfs-er="num"></span></div>
             <label class="bp-champ"><span>Description <b>*</b></span><input class="bp-in" data-pfs-f="desc" maxlength="80" placeholder="Ex : STATE OF EXPENDITURE"><span class="pfs-er" data-pfs-er="desc"></span></label>
-            <label class="bp-champ"><span>Type de dépense <b>*</b></span><select class="bp-sel" data-pfs-f="type"><option value="">— Sélectionner —</option><option>Décaissement</option><option>Engagement</option><option>Prévision</option></select><span class="pfs-er" data-pfs-er="type"></span></label>
-            <label class="bp-champ"><span>Centre de saisie <b>*</b></span><select class="bp-sel" data-pfs-f="cs"></select><span class="pfs-er" data-pfs-er="cs"></span></label>
-            <div class="bp-champ pfs-w"><span>Journaux <b>*</b> <em data-pfs-nj style="font-style:normal;text-transform:none;color:#5B606D"></em></span>
+            <label class="bp-champ"><span>Type de dépense <b>*</b></span><select class="bp-sel" data-pfs-f="type"><option value="">— Sélectionner —</option><option>Décaissement</option><option>Engagement</option></select><span class="pfs-er" data-pfs-er="type"></span></label>
+            <div class="pfs-w" style="display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:12px 16px;align-items:start"><div class="bp-champ"><span>Centres de saisie <b>*</b> <em data-pfs-ncs style="font-style:normal;text-transform:none;color:#5B606D"></em></span>
+              <div class="pfs-jr"><div class="pfs-jl">
+                <table class="pfs-jt" data-no-tf><thead>
+                  <tr><th class="pfs-ck"></th><th>Centre de saisie</th></tr>
+                  <tr class="pfs-jf"><th class="pfs-ck"><button type="button" data-pfs-tcs title="Tout sélectionner" aria-label="Tout sélectionner"><i class="ti ti-checks"></i></button></th><th><input class="bp-in" data-pfs-qcs placeholder="Filtrer" aria-label="Filtrer par centre de saisie"></th></tr>
+                </thead><tbody data-pfs-cl></tbody></table></div></div>
+              <span class="pfs-er" data-pfs-er="cs"></span></div>
+            <div class="bp-champ"><span>Journaux <b>*</b> <em data-pfs-nj style="font-style:normal;text-transform:none;color:#5B606D"></em></span>
               <div class="pfs-jr"><div class="pfs-jl">
                 <table class="pfs-jt" data-no-tf><thead>
                   <tr><th class="pfs-ck"></th><th>Code</th><th>Libellé</th></tr>
                   <tr class="pfs-jf"><th class="pfs-ck"><button type="button" data-pfs-tous title="Tout sélectionner" aria-label="Tout sélectionner"><i class="ti ti-checks"></i></button></th><th><input class="bp-in" data-pfs-qc placeholder="Filtrer" aria-label="Filtrer par code"></th><th><input class="bp-in" data-pfs-ql placeholder="Filtrer" aria-label="Filtrer par libellé"></th></tr>
                 </thead><tbody data-pfs-jl></tbody></table></div></div>
-              <span class="pfs-er" data-pfs-er="jnl"></span></div>
+              <span class="pfs-er" data-pfs-er="jnl"></span></div></div>
           </div>
         </form>
       </section>
@@ -349,8 +364,9 @@
 
   var CLE = 'softcompta.pfSelections', sel = -1, edit = -1;
   var SOE_J = ['BFM — Journal Banque BFM', 'BSGA2 — Journal Banque SGM A -MGA', 'CA — Journal Caisse', 'FID — Journal Fonds confiés FID', 'JAVNU — Journal Avance Agence des Nations Unies', 'JPDNU — Journal Paiement Direct Des Nations Unies', 'MISS — Journal mission', 'JPR — Journal Pénalité de retard', 'JPDFR — Journal Paiement Direct Fournisseur', 'FONDS — Journal Avance de Fonds', 'CREDOC — Journal CREDOC', 'BSGB1 — Journal Banque SGM B -USD', 'BSGA1 — Journal Banque SGM A - USD'];
-  var data = [{ num: 'SOE', desc: 'STATE OF EXPENDITURE', type: 'Décaissement', jnl: SOE_J, cs: 'Siège', lie: true }];
+  var data = [{ num: 'SOE', desc: 'STATE OF EXPENDITURE', type: 'Décaissement', jnl: SOE_J, cs: ['Siège'], lie: true }];
   try { var sv = JSON.parse(localStorage.getItem(CLE) || 'null'); if (Array.isArray(sv)) data = sv; } catch (e) {}
+  function csArr(r) { return Array.isArray(r.cs) ? r.cs : (r.cs ? [r.cs] : []); }
   function msg(t) { q('[data-pfs-msg]').textContent = t || ''; }
   function publier() { window.PF_SELECTIONS = data; try { localStorage.setItem(CLE, JSON.stringify(data)); } catch (e) {} var c = page.querySelector('[data-pf-selcount]'); if (c) c.textContent = data.length; window.dispatchEvent(new Event('pf-selections-changed')); }
   function journaux() {
@@ -358,6 +374,13 @@
     SOE_J.forEach(function (x) { if (!l.some(function (y) { return y.split(' — ')[0] === x.split(' — ')[0]; })) l.push(x); });
     return l;
   }
+  /* Type de dépense « Décaissement » : seuls les journaux de type Trésorerie ou Hybride sont sélectionnables */
+  function typeJournal(j) {
+    var code = j.split(' — ')[0], p = (window.JOURNAUX_PLAN || []).filter(function (x) { return x.code === code; })[0];
+    if (p && p.type) return p.type;
+    return /banque|caisse|avance|fonds|paiement direct|credoc/i.test(j) ? 'Trésorerie' : 'Opérations diverses';
+  }
+  function eligible(j) { return f('type').value !== 'Décaissement' || /^(Trésorerie|Hybride)$/.test(typeJournal(j)); }
   function centres() { var l = ['Siège']; ((window.PLANS_REF || {}).sites || []).forEach(function (x) { if (x[0] !== '00') l.push(x[1]); }); return l; }
   function onglet(n) {
     qa('[data-pfs-tab]').forEach(function (b) { b.classList.toggle('on', b.getAttribute('data-pfs-tab') === n); });
@@ -368,7 +391,7 @@
   }
   function lister() {
     q('[data-pfs-rows]').innerHTML = data.map(function (r, i) {
-      return '<tr data-i="' + i + '"' + (i === sel ? ' class="pfs-sel"' : '') + '><td><b>' + esc(r.num) + '</b></td><td>' + esc(r.desc) + '</td><td><span class="pfs-pill">' + esc(r.type) + '</span></td><td class="c">' + r.jnl.length + '</td><td>' + esc(r.cs) + '</td></tr>';
+      return '<tr data-i="' + i + '"' + (i === sel ? ' class="pfs-sel"' : '') + '><td><b>' + esc(r.num) + '</b></td><td>' + esc(r.desc) + '</td><td><span class="pfs-pill">' + esc(r.type) + '</span></td><td class="c">' + r.jnl.length + '</td><td>' + esc(csArr(r).join(', ')) + '</td></tr>';
     }).join(''); q('[data-pfs-vide]').hidden = data.length > 0; q('[data-pfs-n]').textContent = '(' + data.length + ')';
     if (!q('[data-pfs-pan="liste"]').hidden) {
       var r = data[sel], b = function (k) { return q('[data-pfs-' + k + ']'); }, fige = sel < 0 || !!(r && r.lie);
@@ -381,7 +404,7 @@
   var coches = [];
   function cases() {
     var h = '', qc = q('[data-pfs-qc]').value.toLowerCase(), ql = q('[data-pfs-ql]').value.toLowerCase();
-    journaux().forEach(function (j) {
+    journaux().filter(eligible).forEach(function (j) {
       var p = j.split(' — '), code = p.shift(), lib = p.join(' — ');
       if ((qc && code.toLowerCase().indexOf(qc) < 0) || (ql && lib.toLowerCase().indexOf(ql) < 0)) return;
       h += '<tr><td class="pfs-ck"><input type="checkbox" value="' + esc(j) + '"' + (coches.indexOf(j) >= 0 ? ' checked' : '') + ' aria-label="Sélectionner ' + esc(code) + '"></td><td class="pfs-cd">' + esc(code) + '</td><td>' + esc(lib) + '</td></tr>';
@@ -389,11 +412,38 @@
     q('[data-pfs-jl]').innerHTML = h || '<tr><td colspan="3" style="padding:10px;font-size:12px;color:#5B606D">Aucun journal.</td></tr>';
     q('[data-pfs-nj]').textContent = coches.length ? '(' + coches.length + ' sélectionné' + (coches.length > 1 ? 's' : '') + ')' : '';
   }
+  function typeChange() { lire(); coches = coches.filter(eligible); cases(); }
+  var cscoches = [];
+  function casesCS() {
+    var h = '', qs = q('[data-pfs-qcs]').value.toLowerCase();
+    centres().forEach(function (c) { if (qs && c.toLowerCase().indexOf(qs) < 0) return; h += '<tr><td class="pfs-ck"><input type="checkbox" value="' + esc(c) + '"' + (cscoches.indexOf(c) >= 0 ? ' checked' : '') + ' aria-label="Sélectionner ' + esc(c) + '"></td><td class="pfs-cd">' + esc(c) + '</td></tr>'; });
+    q('[data-pfs-cl]').innerHTML = h || '<tr><td colspan="2" style="padding:10px;font-size:12px;color:#5B606D">Aucun centre de saisie.</td></tr>';
+    q('[data-pfs-ncs]').textContent = cscoches.length ? '(' + cscoches.length + ' sélectionné' + (cscoches.length > 1 ? 's' : '') + ')' : '';
+  }
+  function lireCS() { qa('[data-pfs-cl] input').forEach(function (c) { var i = cscoches.indexOf(c.value); if (c.checked && i < 0) cscoches.push(c.value); if (!c.checked && i >= 0) cscoches.splice(i, 1); }); q('[data-pfs-ncs]').textContent = cscoches.length ? '(' + cscoches.length + ' sélectionné' + (cscoches.length > 1 ? 's' : '') + ')' : ''; }
+  /* numérotation automatique du n° de sélection : SEL-001, SEL-002… */
+  var CLEN = 'softcompta.pfNumParams';
+  function npLire() {
+    var p = { pre: 'SEL', mid: '-', len: 3, suf: '' }; try { var s = JSON.parse(localStorage.getItem(CLEN) || 'null'); if (s) p = Object.assign(p, s); } catch (e) {}
+    qa('[data-pfs-npk]').forEach(function (i) { var k = i.dataset.pfsNpk; if (document.activeElement !== i && !i.dataset.init) { i.value = p[k]; i.dataset.init = 1; } });
+    return { pre: q('[data-pfs-npk="pre"]').value, mid: q('[data-pfs-npk="mid"]').value, len: Math.max(1, Math.min(8, +q('[data-pfs-npk="len"]').value || 3)), suf: q('[data-pfs-npk="suf"]').value };
+  }
+  function reEsc(s) { return s.replace(/[.*+?^\x24()|\[\]{}\\]/g, function (c) { return '\\' + c; }); }
+  function numSuivant() {
+    var p = npLire(), re = new RegExp('^' + reEsc(p.pre + p.mid) + '(\\d+)' + reEsc(p.suf) + '\x24'), m = 0;
+    data.forEach(function (x, i) { var k = re.exec(x.num || ''); if (k && i !== edit) m = Math.max(m, +k[1]); });
+    var n = String(m + 1); while (n.length < p.len) n = '0' + n;
+    return p.pre + p.mid + n + p.suf;
+  }
+  function majAuto() {
+    var a = q('[data-pfs-auto]').checked, n = f('num'); n.readOnly = a; n.style.background = a ? '#F5F7F9' : ''; q('[data-pfs-np]').hidden = !a;
+    if (a) { n.value = numSuivant(); q('[data-pfs-npex]').textContent = n.value; try { localStorage.setItem(CLEN, JSON.stringify(npLire())); } catch (e) {} }
+  }
   function lire() { qa('[data-pfs-jl] input').forEach(function (c) { var i = coches.indexOf(c.value); if (c.checked && i < 0) coches.push(c.value); if (!c.checked && i >= 0) coches.splice(i, 1); }); q('[data-pfs-nj]').textContent = coches.length ? '(' + coches.length + ' sélectionné' + (coches.length > 1 ? 's' : '') + ')' : ''; }
   function ouvrir(i) {
     edit = i; effacer(); var r = i >= 0 ? data[i] : { num: '', desc: '', type: '', jnl: [], cs: '' };
     f('num').value = r.num; f('desc').value = r.desc; f('type').value = r.type;
-    var cs = f('cs'); cs.innerHTML = '<option value="">— Sélectionner —</option>' + centres().map(function (c) { return '<option>' + esc(c) + '</option>'; }).join(''); if (r.cs && centres().indexOf(r.cs) < 0) cs.insertAdjacentHTML('beforeend', '<option>' + esc(r.cs) + '</option>'); cs.value = r.cs;
+    cscoches = csArr(r).slice(); q('[data-pfs-qcs]').value = ''; casesCS(); qa('.pfs-jl').forEach(function (l) { l.scrollTop = 0; }); q('[data-pfs-auto]').checked = false; majAuto();
     coches = r.jnl.slice(); q('[data-pfs-qc]').value = ''; q('[data-pfs-ql]').value = ''; cases(); onglet('saisie'); f('num').focus();
   }
   q('[data-pfs-tab="saisie"]').addEventListener('click', function () { if (q('[data-pfs-pan="saisie"]').hidden) ouvrir(sel >= 0 && !data[sel].lie ? sel : -1); });
@@ -410,14 +460,21 @@
   ['[data-pfs-qc]', '[data-pfs-ql]'].forEach(function (x) { q(x).addEventListener('input', function () { lire(); cases(); }); });
   q('[data-pfs-jl]').addEventListener('click', function (e) { var td = e.target.closest('td'); if (!td || e.target.tagName === 'INPUT') return; var c = td.parentElement.querySelector('input'); if (c) { c.checked = !c.checked; lire(); } });
   q('[data-pfs-jl]').addEventListener('change', lire);
+  q('[data-pfs-auto]').addEventListener('change', majAuto);
+  qa('[data-pfs-npk]').forEach(function (i) { i.addEventListener('input', majAuto); });
+  q('[data-pfs-qcs]').addEventListener('input', function () { lireCS(); casesCS(); });
+  q('[data-pfs-cl]').addEventListener('click', function (e) { var td = e.target.closest('td'); if (!td || e.target.tagName === 'INPUT') return; var c = td.parentElement.querySelector('input'); if (c) { c.checked = !c.checked; lireCS(); } });
+  q('[data-pfs-cl]').addEventListener('change', lireCS);
+  q('[data-pfs-tcs]').addEventListener('click', function () { lireCS(); var vis = qa('[data-pfs-cl] input'), tout = vis.every(function (c) { return c.checked; }); vis.forEach(function (c) { c.checked = !tout; }); lireCS(); this.title = tout ? 'Tout sélectionner' : 'Tout désélectionner'; });
+  f('type').addEventListener('change', typeChange);
   q('[data-pfs-tous]').addEventListener('click', function () { lire(); var vis = qa('[data-pfs-jl] input'), tout = vis.every(function (c) { return c.checked; }); vis.forEach(function (c) { c.checked = !tout; }); lire(); this.title = tout ? 'Tout sélectionner' : 'Tout désélectionner'; });
   q('[data-pfs-enregistrer]').addEventListener('click', function () {
-    effacer(); lire(); var ok = true, r = { num: f('num').value.trim(), desc: f('desc').value.trim(), type: f('type').value, jnl: coches.slice(), cs: f('cs').value };
+    effacer(); lire(); lireCS(); if (q('[data-pfs-auto]').checked) f('num').value = numSuivant(); var ok = true, r = { num: f('num').value.trim(), desc: f('desc').value.trim(), type: f('type').value, jnl: coches.slice(), cs: cscoches.slice() };
     if (!r.num) { err('num', 'Le n° de paramètre est obligatoire.', f('num')); ok = false; } else if (data.some(function (x, i) { return i !== edit && x.num.toLowerCase() === r.num.toLowerCase(); })) { err('num', 'Ce n° de paramètre existe déjà.', f('num')); ok = false; }
     if (!r.desc) { err('desc', 'La description est obligatoire.', f('desc')); ok = false; }
     if (!r.type) { err('type', 'Le type de dépense est obligatoire.', f('type')); ok = false; }
     if (!r.jnl.length) { err('jnl', 'Choisissez au moins un journal.'); ok = false; }
-    if (!r.cs) { err('cs', 'Le centre de saisie est obligatoire.', f('cs')); ok = false; }
+    if (!r.cs.length) { err('cs', 'Choisissez au moins un centre de saisie.'); ok = false; }
     if (!ok) return;
     if (edit >= 0) data[edit] = r; else { data.push(r); edit = data.length - 1; }
     sel = edit; publier(); msg('Sélection enregistrée.'); onglet('liste');

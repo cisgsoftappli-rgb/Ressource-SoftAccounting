@@ -55,7 +55,7 @@
   function nb(n, d) { return Number(n).toLocaleString('fr-FR', { minimumFractionDigits: d || 0, maximumFractionDigits: d || 0 }).replace(/[  ]/g, ' '); }
   function dt(d) { return d ? d.split('-').reverse().join('/') : ''; }
   function toast(m) { var t = q('[data-cpa-toast]'); t.textContent = m; t.hidden = false; clearTimeout(toast.t); toast.t = setTimeout(function () { t.hidden = true; }, 2600); }
-  function devise1() { var d = 'USD'; [].slice.call(document.querySelectorAll('.ig-f')).forEach(function (f) { var l = f.querySelector('.ig-l'), s = f.querySelector('select'); if (l && s && l.textContent.trim() === 'Devise 1' && s.value) d = s.value; }); return d; }
+  function devise1() { var m = {}; [].slice.call(document.querySelectorAll('.ig-f')).forEach(function (f) { var l = f.querySelector('.ig-l'), s = f.querySelector('select'), k = l && /\((M[123])\)/.exec(l.textContent); if (k && s) m[k[1]] = s.value; }); return m.M2 || m.M3 || m.M1 || 'MGA'; }   // première monnaie de reporting (M2, à défaut M3) d'Administration de l'entité
   function exercices() { return (window.EXERCICES_API && window.EXERCICES_API.liste()) || []; }
   function exo() { var v = q('[data-cpa-ex]').value; return exercices().filter(function (e) { return String(e.annee) === v; })[0]; }
   function iso(d) { return d ? d.split('/').reverse().join('-') : ''; }
