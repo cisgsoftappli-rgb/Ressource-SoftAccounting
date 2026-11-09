@@ -116,7 +116,7 @@
       return { code: c.num, lib: c.designation, benef: c.tiers, statut: c.statut || 'Actif', marche: m, fact: fact, paye: fact * (.5 + r * .5), tm: c.typeMarche, tp: c.typePassation, site: c.site, date: c.dateSign, ana: ((c.vent || [])[0] || {}).ana || {}, pcg: ((c.vent || [])[0] || {}).pcg || '' };
     });
     return EXEMPLES.concat(l).map(function (x) {
-      var tr = TIERS[x.benef] || ['', x.benef || ''], mt = x.marche, f = Math.round(mt * x.fact), p = Math.round(mt * x.paye);
+      var tr = TIERS[x.benef] || ['', x.benef || ''], mt = x.marche, f = Math.round(mt * x.fact) + (window.ECRITURES_SAISIES ? Math.round(window.ECRITURES_SAISIES({ contrat: x.code }).filter(function (y) { return /^[26]/.test(y.compte); }).reduce(function (a, y) { return a + y.debit - y.credit; }, 0)) : 0), p = Math.round(mt * x.paye);
       return { site: x.site, code: x.code, lib: x.lib, benef: x.benef, nomBenef: (x.benef ? x.benef + ' — ' + tr[1] : ''), compte: tr[0], statut: x.statut, marche: mt, fact: f, paye: Math.min(p, f || p), tm: x.tm, tp: x.tp, date: x.date, exo: (x.date || '').slice(0, 4), ana: x.ana || {}, pcg: x.pcg || '' };
     });
   }

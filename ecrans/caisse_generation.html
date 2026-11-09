@@ -80,7 +80,10 @@
   function compteCaisse(l) { return l.compte || journal(l).compte || '531000'; }
   function libCompte(c) { var r = (window.PLAN_COMPTABLE || []).filter(function (x) { return x.code === c; })[0]; return r ? r.libelle : ''; }
   function typeDe(lib) { return (window.CAISSE_TYPES || []).filter(function (t) { return t.libelle === lib; })[0]; }
-  function fermeture(l) { return (l.ops || []).reduce(function (m, o) { return o.date > m ? o.date : m; }, ''); }
+  function pvValide(l) { return !!(l.pv && l.pv.valide); }
+  function fermeture(l) { if (pvValide(l) && l.pv.date) { var d = new Date(l.pv.date); if (!isNaN(d)) return d.getFullYear() + '-' + ('0' + (d.getMonth() + 1)).slice(-2) + '-' + ('0' + d.getDate()).slice(-2); } return (l.ops || []).reduce(function (m, o) { return o.date > m ? o.date : m; }, ''); }
+  // numéro de pièce suivant dans le journal : suite des pièces « journal + 4 chiffres » déjà enregistrées
+  function dernierNum(jr) { var m = 0; (window.ECRITURES_PIECES || []).forEach(function (p) { var n = String(p.piece || ''), reste = n.slice(jr.length); if (p.journal === jr && n.indexOf(jr) === 0 && /^[0-9]+$/.test(reste) && +reste > m) m = +reste; }); return m; }
   function mouvement(l) { return (l.ops || []).reduce(function (a, o) { return a + (Number(o.rec) || 0) + (Number(o.dep) || 0); }, 0); }
   function lot(n) { return lots().filter(function (l) { return l.num === n; })[0]; }
   function enreg() { try { localStorage.setItem(CLE, JSON.stringify(gen)); } catch (e) {} }
@@ -89,17 +92,17 @@
     var h = '';
     lots().forEach(function (l) {
       var g = gen[l.num];
-      h += '<tr class="cge-l' + (l.num === sel ? ' cge-sel' : '') + '" data-n="' + esc(l.num) + '"><td>' + esc(l.num) + '</td><td>' + esc(compteCaisse(l)) + '</td><td class="c">' + date(fermeture(l)) + '</td><td class="r">' + (l.ops || []).length + '</td><td class="r">' + nb(mouvement(l)) + '</td><td class="c"><span class="cge-st ' + (g ? 'g' : 'a') + '">' + (g ? 'Généré' : 'À générer') + '</span></td></tr>';
+      h += '<tr class="cge-l' + (l.num === sel ? ' cge-sel' : '') + '" data-n="' + esc(l.num) + '"><td>' + esc(l.num) + '</td><td>' + esc(compteCaisse(l)) + '</td><td class="c">' + date(fermeture(l)) + '</td><td class="r">' + (l.ops || []).length + '</td><td class="r">' + nb(mouvement(l)) + '</td><td class="c"><span class="cge-st ' + (g ? 'g' : 'a') + '">' + (g ? 'Généré' : pvValide(l) ? 'À générer' : 'PV à valider') + '</span></td></tr>';
     });
     q('[data-cge-lignes]').innerHTML = h; q('[data-cge-vide]').hidden = lots().length > 0; boutons();
   }
   function boutons() {
     var l = sel && lot(sel);
-    q('[data-cge-proposer]').disabled = !l;
+    q('[data-cge-proposer]').disabled = !l || (!gen[l.num] && !pvValide(l));
   }
   // schéma comptable : une écriture par opération du lot
   function schema(l) {
-    var cc = compteCaisse(l), jr = l.journal, rows = [], seq = 0, td = 0, tc = 0, manque = [];
+    var cc = compteCaisse(l), jr = l.journal, rows = [], seq = gen[l.num] && gen[l.num].seq0 != null ? gen[l.num].seq0 : dernierNum(jr), td = 0, tc = 0, manque = [];
     (l.ops || []).forEach(function (o) {
       var t = typeDe(o.type), cg = t && t.compte, m = Number(o.rec) || Number(o.dep) || 0, rec = Number(o.rec) > 0;
       if (!cg) manque.push(o.libelle);
@@ -134,6 +137,7 @@
   });
   q('[data-cge-proposer]').addEventListener('click', function () {
     var l = sel && lot(sel); if (!l) { msg('Sélectionnez un lot de caisse.'); return; }
+    if (!gen[l.num] && !pvValide(l)) { msg('Le PV de caisse du lot ' + l.num + ' doit être validé avant la génération des écritures.'); return; }
     msg(); afficher(l);
   });
   function fermer() { q('[data-cge-ov]').hidden = true; }
@@ -141,7 +145,17 @@
   q('[data-cge-ov]').addEventListener('keydown', function (e) { if (e.key === 'Escape') fermer(); });
   q('[data-cge-valider]').addEventListener('click', function () {
     var l = sel && lot(sel); if (!l || gen[sel]) return;
-    gen[sel] = { date: new Date().toISOString().slice(0, 10), nb: (l.ops || []).length * 2 }; enreg(); fermer(); lister();
+    var sc = schema(l), seq0 = dernierNum(l.journal), AX = (window.ECRITURES_SAISIES && window.ECRITURES_SAISIES.AXES) || [], parPiece = {}, ordre = [];
+    sc.rows.forEach(function (x) { if (!parPiece[x.piece]) { parPiece[x.piece] = { date: x.date, lignes: [] }; ordre.push(x.piece); } parPiece[x.piece].lignes.push(x); });
+    ordre.forEach(function (n) {
+      var P = parPiece[n];
+      (window.ECRITURES_PIECES = window.ECRITURES_PIECES || []).push({ journal: l.journal, piece: n, date: P.date, datePiece: P.date, facture: '', reference: l.num, source: 'caisse', statut: '', createur: 'Génération petite caisse', site: l.site || '',
+        lignes: P.lignes.map(function (x) {
+          var axes = {}; Object.keys(x.ana || {}).forEach(function (k) { var i = /^PLAN(\d+)$/.exec(k); var nom = i ? AX[+i[1] - 1] : k; if (nom && x.ana[k]) axes[nom] = x.ana[k]; });
+          return { contrat: '', compte: x.cpt, tiers: '', libelle: x.lib, sens: x.d ? 'D' : 'C', montant: x.d || x.c, montant1: 0, montant2: 0, echeance: '', regr: '', axes: axes, auto: true, regle: 0 };
+        }) });
+    });
+    gen[sel] = { date: new Date().toISOString().slice(0, 10), nb: (l.ops || []).length * 2, seq0: seq0 }; enreg(); window.dispatchEvent(new Event('ecritures-pieces-changed')); fermer(); lister();
     msg('Écritures du lot ' + l.num + ' générées (' + gen[l.num].nb + ' lignes).');
   });
   window.addEventListener('caisse-lots-changed', lister); 

@@ -1,0 +1,355 @@
+<!--
+  Écran « Comptabilité Projets & Bailleurs › BAD › Saisie › Programme et budget A3 » — onglets Fiche / Liste. Propre à la procédure BAD (les autres procédures gardent « Budget de la convention »).
+  Convention : lignes du plan financier (niveau de type CONVENTION) dont le bailleur est BAD. Une fiche = une ligne du programme et budget A3 :
+  Date, Catégorie, Sous catégorie, Activité, Description, Pays d'origine du bien, Pays d'origine du fournisseur, Quantité, Total budgétisé, Portion FAD, Montant demandé, Date d'approbation.
+  Données : window.BAD_PROGRAMME = [ { id, conv, date, cat, sous, act, desc, paysBien, paysFourn, qte, total, fad, demande, appro } ], copie localStorage softcompta.badProgramme. Préfixe ba / data-ba.
+  S'appuie sur les styles bp-*. Ne pas nommer de fonction « $$ » (build.cjs).
+-->
+<style>
+[data-ba] .ba-card{padding:16px;border:1px solid #E9EBF0;border-radius:12px;background:#fff;margin-bottom:12px}
+[data-ba] .ba-conv{display:grid;grid-template-columns:minmax(0,2fr) minmax(0,1fr) minmax(0,1fr);gap:12px 16px;margin-bottom:12px}
+[data-ba] .ba-g{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:12px 16px}
+[data-ba] .ba-g .ba-w{grid-column:1/-1}
+@media (max-width:700px){[data-ba] .ba-g,[data-ba] .ba-conv{grid-template-columns:1fr}}
+[data-ba] .ba-ro{min-height:36px;display:flex;align-items:center;padding:0 12px;border:1px solid #D6D9E0;border-radius:8px;background:#F5F7F9;color:#353944;font-size:12px}
+[data-ba] .bp-in.err,[data-ba] .bp-sel.err{border-color:#B63132}
+[data-ba] .ba-er{display:none;font-size:12px;color:#B63132;margin-top:8px}[data-ba] .ba-er.show{display:block}
+[data-ba] .ba-ok{font-size:12px;color:#2E427B;margin-left:8px}
+[data-ba] td.r,[data-ba] th.r{text-align:right;font-variant-numeric:tabular-nums;white-space:nowrap}
+[data-ba] input.r{text-align:right}
+[data-ba] tbody tr.ba-row{cursor:pointer}[data-ba] tbody tr.ba-sel td{background:#E8ECF6}
+[data-ba] .ba-ov{position:fixed;inset:0;z-index:2300;display:flex;align-items:center;justify-content:center;background:#0B133280;padding:16px}[data-ba] .ba-ov[hidden]{display:none}
+[data-ba] .ba-md{background:#fff;border-radius:12px;width:min(980px,100%);max-height:calc(100vh - 32px);display:flex;flex-direction:column;overflow:hidden;box-shadow:0 20px 60px #0000004d}
+[data-ba] .ba-mh{display:flex;justify-content:space-between;align-items:flex-start;gap:12px;padding:16px 20px;border-bottom:1px solid #E9EBF0}[data-ba] .ba-mh h2{margin:0;font-size:18px;font-weight:700;color:#0B1332}[data-ba] .ba-mh p{margin:4px 0 0;font-size:13px;color:#5B606D}
+[data-ba] .ba-x{border:0;background:none;font-size:26px;line-height:1;color:#5B606D;cursor:pointer;padding:0 4px}
+[data-ba] .ba-mb{padding:16px 20px;overflow:auto;display:flex;flex-direction:column;gap:14px}[data-ba] .ba-mf{display:flex;justify-content:flex-end;align-items:center;gap:8px;padding:12px 88px 12px 20px;border-top:1px solid #E9EBF0;background:#F5F7F9}[data-ba] .ba-mi{margin-right:auto;font-size:12px;color:#5B606D}
+[data-ba] .ba-fmt{padding:10px 12px;border-radius:8px;background:#F4F7FE;color:#18244F;font-size:13px}
+[data-ba] .ba-r2{display:grid;grid-template-columns:minmax(0,2fr) minmax(0,1fr);gap:12px 16px;align-items:end}
+[data-ba] .ba-b{display:inline-flex;align-items:center;justify-content:center;height:36px;padding:0 14px;border:1px solid #D6D9E0;border-radius:8px;background:#fff;color:#353944;font:inherit;font-size:13px;font-weight:600;cursor:pointer}[data-ba] .ba-b.pri{background:#2E427B;border-color:#2E427B;color:#fff}[data-ba] .ba-b:disabled{opacity:.5;cursor:not-allowed}
+[data-ba] .ba-pv{max-height:300px;overflow:auto}[data-ba] .ba-tout{display:flex;align-items:center;gap:8px;font-size:13px;font-weight:600;color:#353944;margin-bottom:8px}
+[data-ba] .ba-badge{display:inline-flex;padding:2px 10px;border:1px solid;border-radius:6px;font-size:12px;font-weight:600}[data-ba] .ba-badge.on{background:#ECFDF5;border-color:#A7F3D0;color:#047857}[data-ba] .ba-badge.maj{background:#FFF7E6;border-color:#F5D58A;color:#8A5A00}[data-ba] .ba-badge.off{background:#F5F7F9;border-color:#D6D9E0;color:#5B606D}
+[data-ba] .ba-vide{padding:22px;text-align:center;color:#747A88;font-size:13px}
+</style>
+
+<div class="bp-root" data-ba>
+  <h1 style="position:absolute;width:1px;height:1px;overflow:hidden;clip-path:inset(50%);margin:0">Programme et budget A3</h1>
+
+  <div class="no-print">
+    <button type="button" data-ba-ajouter>Ajouter</button>
+    <button type="button" data-ba-modifier>Modifier</button>
+    <button type="button" data-ba-supprimer>Supprimer</button>
+    <button type="button" data-ba-enregistrer>Enregistrer</button>
+    <button type="button" data-ba-annuler>Annuler</button>
+    <button type="button" data-ba-import>Importer</button>
+    <button type="button" data-ba-sync>Récupération SoftBudget</button>
+    <span class="ba-ok" data-ba-msg role="status"></span>
+  </div>
+
+  <div class="ba-conv">
+    <label class="bp-champ"><span>Convention <b>*</b></span><select class="bp-sel" data-ba-conv></select></label>
+    <div class="bp-champ"><span>Bailleur</span><div class="ba-ro" data-ba-bailleur></div></div>
+    <div class="bp-champ"><span>Monnaie d'émission</span><div class="ba-ro" data-ba-mon title="Monnaie d'émission de la convention (Procédures financières). Les montants de la fiche sont exprimés dans cette monnaie."></div></div>
+  </div>
+
+  <div class="bp-tabs" role="tablist">
+    <button type="button" role="tab" class="on" data-ba-tab="fiche">Fiche</button>
+    <button type="button" role="tab" data-ba-tab="liste">Liste <span class="bp-n" data-ba-compte></span></button>
+  </div>
+
+  <div class="bp-grid">
+    <section class="bp-pan" aria-label="Fiche" data-ba-pan="fiche">
+      <div class="ba-card"><div class="ba-g">
+        <label class="bp-champ"><span>Date <b>*</b></span><input type="date" class="bp-in" data-ba-f="date"></label>
+        <label class="bp-champ"><span>Catégorie <b>*</b></span><input class="bp-in" data-ba-f="cat" list="ba-dl-cat" autocomplete="off"></label>
+        <label class="bp-champ"><span>Sous catégorie</span><input class="bp-in" data-ba-f="sous" list="ba-dl-sous" autocomplete="off"></label>
+        <label class="bp-champ"><span>Activité</span><input class="bp-in" data-ba-f="act" list="ba-dl-act" autocomplete="off"></label>
+        <label class="bp-champ ba-w"><span>Description</span><input class="bp-in" data-ba-f="desc"></label>
+        <label class="bp-champ"><span>Pays d'origine du bien</span><input class="bp-in" data-ba-f="paysBien" list="ba-dl-pays" autocomplete="off"></label>
+        <label class="bp-champ"><span>Pays origine fournisseur</span><input class="bp-in" data-ba-f="paysFourn" list="ba-dl-pays" autocomplete="off"></label>
+        <label class="bp-champ"><span>Quantité</span><input class="bp-in r" data-ba-f="qte" inputmode="decimal"></label>
+        <label class="bp-champ"><span data-ba-m>Total budgétisé</span><input class="bp-in r" data-ba-f="total" inputmode="decimal"></label>
+        <label class="bp-champ"><span data-ba-m>Portion FAD</span><input class="bp-in r" data-ba-f="fad" inputmode="decimal"></label>
+        <label class="bp-champ"><span data-ba-m>Montant demandé</span><input class="bp-in r" data-ba-f="demande" inputmode="decimal"></label>
+        <label class="bp-champ"><span>Date d'approbation</span><input type="date" class="bp-in" data-ba-f="appro"></label>
+      </div></div>
+      <datalist id="ba-dl-cat"></datalist><datalist id="ba-dl-sous"></datalist><datalist id="ba-dl-act"></datalist><datalist id="ba-dl-pays"></datalist>
+      <div class="ba-er" data-ba-er role="alert"></div>
+    </section>
+
+    <section class="bp-pan" aria-label="Liste des lignes du programme et budget A3" data-ba-pan="liste" hidden>
+      <div class="pf-tablewrap"><table class="pf-table">
+        <thead><tr><th>Date</th><th>Catégorie</th><th>Sous catégorie</th><th>Activité</th><th>Description</th><th>Pays du bien</th><th>Pays fournisseur</th><th class="r">Quantité</th><th class="r" data-ba-m>Total budgétisé</th><th class="r" data-ba-m>Portion FAD</th><th class="r" data-ba-m>Montant demandé</th><th>Date d'approbation</th></tr></thead>
+        <tbody data-ba-liste></tbody>
+      </table></div>
+    </section>
+  </div>
+
+  <div class="ba-ov" data-ba-ovs hidden>
+    <div class="ba-md" role="dialog" aria-modal="true" aria-label="Récupération SoftBudget">
+      <header class="ba-mh"><div><h2>Récupération SoftBudget</h2><p>Récupère le programme et budget A3 des conventions depuis SoftBudget. Les montants sont dans la monnaie d'émission de la convention.</p></div><button type="button" class="ba-x" data-ba-sclose aria-label="Fermer">×</button></header>
+      <div class="ba-mb">
+        <div class="ba-fmt">Source : <b>SoftBudget</b> (données de démonstration, aucun appel réseau dans la maquette) · Dernière récupération : <b data-ba-slast>jamais</b></div>
+        <div class="ba-r2">
+          <label class="bp-champ"><span>Périmètre</span><select class="bp-sel" data-ba-sscope></select></label>
+          <div class="bp-champ"><span>État</span><div class="ba-ro" data-ba-sstat role="status">Prêt à récupérer.</div></div>
+        </div>
+        <div><button type="button" class="ba-b pri" data-ba-sgo>Lancer la récupération</button></div>
+        <div data-ba-sprev></div>
+      </div>
+      <footer class="ba-mf"><span class="ba-mi" data-ba-sinfo></span><button type="button" class="ba-b" data-ba-sclose>Fermer</button><button type="button" class="ba-b pri" data-ba-sok disabled>Appliquer la sélection</button></footer>
+    </div>
+  </div>
+</div>
+
+<script>
+(function () {
+  var root = document.querySelector('[data-ba]'); if (!root) return;
+  function q(s) { return root.querySelector(s); } function qa(s) { return [].slice.call(root.querySelectorAll(s)); }
+  function esc(s) { return String(s == null ? '' : s).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;'); }
+  function nb(v) { return Number(v || 0).toLocaleString('fr-FR', { minimumFractionDigits: 2, maximumFractionDigits: 2 }); }
+  function num(t) { var x = parseFloat(String(t == null ? '' : t).replace(/\s| /g, '').replace(',', '.')); return isFinite(x) ? x : 0; }
+  function fr(d) { return d ? String(d).split('-').reverse().join('/') : ''; }
+  function iso(d) { return d.getFullYear() + '-' + ('0' + (d.getMonth() + 1)).slice(-2) + '-' + ('0' + d.getDate()).slice(-2); }
+  function msg(t) { q('[data-ba-msg]').textContent = t || ''; }
+  var CLE = 'softcompta.badProgramme', data = [], sel = '', mode = 'liste', cur = null;
+  try { var sv = JSON.parse(localStorage.getItem(CLE) || 'null'); if (Array.isArray(sv)) data = sv; } catch (e) {}
+  function publier() { window.BAD_PROGRAMME = data; try { localStorage.setItem(CLE, JSON.stringify(data)); } catch (e) {} }
+  publier();
+
+  // ---------- plan financier : conventions du bailleur BAD
+  function plan() { return (window.PLANS_CFG || []).filter(function (p) { return p.code === 'PLAN3'; })[0] || { niveaux: [] }; }
+  function lignes() { var L = window.PLANS_LIGNES && window.PLANS_LIGNES.PLAN3; return (L && L.rows ? L.rows : []).filter(function (r) { return r.actif !== false; }); }
+  function profondeur(r, L) { var d = 0, p = r.parent, g = 0; while (p && g++ < 10) { d++; p = (L.filter(function (x) { return x.code === p; })[0] || {}).parent; } return d; }
+  function typeDe(r, L) { var n = plan().niveaux[profondeur(r, L)]; return n ? n.type : ''; }
+  function conventions() { var L = lignes(), C = L.filter(function (r) { return typeDe(r, L) === 'CONVENTION'; }), B = C.filter(function (r) { return String(r.extra || '').trim().toLowerCase() === 'bad'; }); return B.length ? B : C; }   // à défaut de convention rattachée au bailleur BAD, toutes les conventions du plan financier sont proposées
+  function conv(code) { return conventions().filter(function (r) { return r.code === code; })[0]; }
+  function sousLignes(code, type) {
+    var L = lignes(), res = [];
+    (function descend(p) { L.filter(function (r) { return r.parent === p; }).forEach(function (r) { if (!type || typeDe(r, L) === type) res.push(r); descend(r.code); }); })(code);
+    return res;
+  }
+  function libConv(r) { return r.code + ' ' + (r.libelle || r.label || r.nom || ''); }
+  function lib(r) { return r.libelle || r.label || r.nom || ''; }
+
+  // ---------- champs
+  var CH = ['date', 'cat', 'sous', 'act', 'desc', 'paysBien', 'paysFourn', 'qte', 'total', 'fad', 'demande', 'appro'];
+  function F(k) { return q('[data-ba-f="' + k + '"]'); }
+  function vide() { return { id: '', conv: q('[data-ba-conv]').value, date: iso(new Date()), cat: '', sous: '', act: '', desc: '', paysBien: 'M/CAR', paysFourn: 'M/CAR', qte: 0, total: 0, fad: 0, demande: 0, appro: '' }; }
+  function afficher(o) {
+    CH.forEach(function (k) { var e = F(k); if (['qte', 'total', 'fad', 'demande'].indexOf(k) >= 0) e.value = nb(o[k]); else e.value = o[k] || ''; e.classList.remove('err'); });
+    q('[data-ba-er]').classList.remove('show');
+  }
+  function lire() { var o = { id: cur ? cur.id : '', conv: q('[data-ba-conv]').value, mon: monConv(q('[data-ba-conv]').value) }; CH.forEach(function (k) { var v = F(k).value; o[k] = ['qte', 'total', 'fad', 'demande'].indexOf(k) >= 0 ? num(v) : v.trim(); }); return o; }
+  /* état des boutons : consultation (rien en cours de saisie) → Ajouter ; Modifier / Supprimer seulement si une ligne est sélectionnée ; saisie en cours → Enregistrer / Annuler (Supprimer seulement pour une ligne existante) ; Importer et Récupération seulement hors saisie */
+  var edit = false;
+  function etatBoutons() {
+    var ligne = !!(sel && data.some(function (x) { return x.id === sel; })) || !!(cur && cur.id && data.some(function (x) { return x.id === cur.id; })), conv = !!q('[data-ba-conv]').value;
+    function d(k, v) { var b = q('[data-ba-' + k + ']'); if (b) b.disabled = !!v; }
+    d('ajouter', edit || !conv); d('modifier', edit || !ligne); d('supprimer', edit ? !(cur && cur.id) : !ligne);
+    d('enregistrer', !edit); d('annuler', !edit); d('import', edit || !conv); d('sync', edit || !conv);
+  }
+  function verrou(on) { edit = !!on; etatBoutons(); CH.forEach(function (k) { F(k).disabled = !on; }); q('[data-ba-conv]').disabled = on && !!cur && !!cur.id; }
+  function suggestions() {
+    var c = q('[data-ba-conv]').value;
+    function opts(L) { return L.map(function (r) { return '<option value="' + esc(r.code) + '">' + esc(lib(r)) + '</option>'; }).join(''); }
+    document.getElementById('ba-dl-cat').innerHTML = opts(sousLignes(c, 'CATEGORIE'));
+    var cat = F('cat').value.trim();
+    document.getElementById('ba-dl-sous').innerHTML = opts(cat ? sousLignes(cat) : []);
+    var A = window.PLANS_LIGNES && window.PLANS_LIGNES.PLAN1; document.getElementById('ba-dl-act').innerHTML = opts(A && A.rows ? A.rows.filter(function (r) { return r.actif !== false; }) : []);
+    var P = (window.PAYS || []).map(function (p) { return p.code || p[0] || ''; }).filter(Boolean); if (P.indexOf('M/CAR') < 0) P.unshift('M/CAR');
+    document.getElementById('ba-dl-pays').innerHTML = P.map(function (x) { return '<option value="' + esc(x) + '">'; }).join('');
+  }
+
+  // ---------- liste et onglets
+  function filtrees() { var c = q('[data-ba-conv]').value; return data.filter(function (o) { return o.conv === c; }); }
+  function liste() {
+    var L = filtrees();
+    q('[data-ba-compte]').textContent = L.length ? '(' + L.length + ')' : ''; etatBoutons();
+    q('[data-ba-liste]').innerHTML = L.length ? L.map(function (o) {
+      return '<tr class="ba-row' + (o.id === sel ? ' ba-sel' : '') + '" data-ba-id="' + esc(o.id) + '"><td>' + fr(o.date) + '</td><td>' + esc(o.cat) + '</td><td>' + esc(o.sous) + '</td><td>' + esc(o.act) + '</td><td>' + esc(o.desc) + '</td><td>' + esc(o.paysBien) + '</td><td>' + esc(o.paysFourn) + '</td><td class="r">' + nb(o.qte) + '</td><td class="r">' + nb(o.total) + '</td><td class="r">' + nb(o.fad) + '</td><td class="r">' + nb(o.demande) + '</td><td>' + fr(o.appro) + '</td></tr>';
+    }).join('') : '<tr><td colspan="12" class="ba-vide">Aucune ligne pour cette convention. Utilisez « Ajouter ».</td></tr>';
+  }
+  function onglet(t) {
+    qa('[data-ba-tab]').forEach(function (b) { b.classList.toggle('on', b.dataset.baTab === t); });
+    qa('[data-ba-pan]').forEach(function (p) { p.hidden = p.dataset.baPan !== t; });
+    if (t === 'liste') liste();
+  }
+  function convs() {
+    var C = conventions(), cv = q('[data-ba-conv]').value;
+    q('[data-ba-conv]').innerHTML = C.length ? C.map(function (r) { return '<option value="' + esc(r.code) + '"' + (r.code === cv ? ' selected' : '') + '>' + esc(libConv(r)) + '</option>'; }).join('') : '<option value="">Aucune convention BAD (plan financier)</option>';
+    majBailleur();
+  }
+  /* monnaie d'émission : celle de la convention paramétrée dans Procédures financières (procédure BAD d'abord, puis toute procédure) */
+  function monConv(code) {
+    var r = conv(code), P = window.__pfProcs || [], nm = function (x) { return String(x || '').toLowerCase().replace(/\s+/g, ''); };
+    function cherche(L) { return L.filter(function (p) { return nm(p.conv).indexOf(nm(code)) >= 0 || (r && lib(r) && nm(p.conv).indexOf(nm(lib(r))) >= 0); })[0]; }
+    var hit = cherche(P.filter(function (p) { return p.proc === 'BAD'; })) || cherche(P) || P.filter(function (p) { return p.proc === 'BAD'; })[0];
+    return hit && hit.mon ? String(hit.mon).trim().toUpperCase() : '';
+  }
+  function majMonnaie() {
+    var m = monConv(q('[data-ba-conv]').value); q('[data-ba-mon]').textContent = m || 'Non définie';
+    qa('[data-ba-m]').forEach(function (e) { if (!e.dataset.baT) e.dataset.baT = e.textContent; e.textContent = e.dataset.baT + (m ? ' (' + m + ')' : ''); });
+  }
+  function majBailleur() { var r = conv(q('[data-ba-conv]').value); q('[data-ba-bailleur]').textContent = r ? (r.extra || 'BAD') : ''; majMonnaie(); }
+  function ouvrirFiche(o, edition) { cur = o; afficher(o); suggestions(); verrou(edition); onglet('fiche'); }
+
+  // ---------- actions
+  function ajouter() {
+    if (!q('[data-ba-conv]').value) convs();
+    if (!q('[data-ba-conv]').value) { msg('Aucune convention BAD dans le plan financier.'); return; }
+    ouvrirFiche(vide(), true); msg('Nouvelle ligne : renseignez la fiche puis Enregistrer.');
+  }
+  function modifier() {
+    var o = data.filter(function (x) { return x.id === sel; })[0] || (cur && cur.id ? cur : null);
+    if (!o) { msg('Sélectionnez une ligne dans la liste.'); return; }
+    ouvrirFiche(JSON.parse(JSON.stringify(o)), true); msg('');
+  }
+  function supprimer() {
+    var o = data.filter(function (x) { return x.id === sel; })[0] || (cur && cur.id ? cur : null);
+    if (!o) { msg('Sélectionnez une ligne dans la liste.'); return; }
+    if (!window.confirm('Supprimer cette ligne du programme et budget A3 ?')) return;
+    data = data.filter(function (x) { return x.id !== o.id; }); sel = ''; cur = null; publier(); verrou(false); afficher(vide()); onglet('liste'); msg('Ligne supprimée.');
+  }
+  function enregistrer() {
+    if (!cur) { msg('Rien à enregistrer : utilisez « Ajouter » ou « Modifier ».'); return; }
+    var o = lire(), er = [];
+    if (!o.conv) er.push('la convention'); if (!o.date) { er.push('la date'); F('date').classList.add('err'); } if (!o.cat) { er.push('la catégorie'); F('cat').classList.add('err'); }
+    if (er.length) { var e = q('[data-ba-er]'); e.textContent = 'Renseignez ' + er.join(', ') + '.'; e.classList.add('show'); return; }
+    if (o.id) data = data.map(function (x) { return x.id === o.id ? o : x; }); else { o.id = 'A3-' + Date.now(); data.push(o); }
+    sel = o.id; cur = o; publier(); verrou(false); msg('Ligne enregistrée.'); onglet('liste');
+  }
+  function annuler() { cur = null; verrou(false); afficher(vide()); msg(''); }
+
+  // ---------- importation Excel / CSV (assistant d'importation commun)
+  var MONTANTS = ['Quantité', 'Total budgétisé', 'Portion FAD', 'Montant demandé'];
+  function dateIso(x) {
+    x = String(x || '').trim(); if (!x) return '';
+    var m = /^(\d{4})-(\d{2})-(\d{2})/.exec(x); if (m) return m[1] + '-' + m[2] + '-' + m[3];
+    m = /^(\d{1,2})[\/.-](\d{1,2})[\/.-](\d{4})$/.exec(x); if (m) return m[3] + '-' + ('0' + m[2]).slice(-2) + '-' + ('0' + m[1]).slice(-2);
+    if (/^\d{5}$/.test(x)) return iso(new Date(Math.round((+x - 25569) * 86400000) + 43200000));
+    return null;
+  }
+  function trouverConv(t) {
+    t = String(t || '').trim().toLowerCase(); if (!t) return null;
+    return conventions().filter(function (r) { return r.code.toLowerCase() === t || lib(r).toLowerCase() === t || libConv(r).toLowerCase() === t; })[0] || null;
+  }
+  var MODELE = {
+    titre: 'Programme et budget A3', fichier: 'modele_programme_budget_a3.xlsx',
+    champs: [
+      { col: 'Convention', oblig: true, format: "Code ou libellé d'une convention du plan financier.", exemple: '01' },
+      { col: 'Date', oblig: true, format: 'JJ/MM/AAAA ou AAAA-MM-JJ.', exemple: '09/11/2026' },
+      { col: 'Catégorie', oblig: true, format: 'Code de la catégorie.', exemple: 'A' },
+      { col: 'Sous catégorie', oblig: false, format: 'Texte ou code.', exemple: '1' },
+      { col: 'Activité', oblig: false, format: "Code de l'activité.", exemple: '4421' },
+      { col: 'Description', oblig: false, format: 'Texte libre.', exemple: 'Véhicule' },
+      { col: "Pays d'origine du bien", oblig: false, format: 'Code pays. Par défaut : M/CAR.', exemple: 'M/CAR' },
+      { col: 'Pays origine fournisseur', oblig: false, format: 'Code pays. Par défaut : M/CAR.', exemple: 'M/CAR' },
+      { col: 'Quantité', oblig: false, format: 'Nombre positif ou nul. Virgule ou point décimal.', exemple: '2' },
+      { col: 'Total budgétisé', oblig: false, format: "Nombre positif ou nul, dans la monnaie d'émission de la convention.", exemple: '1500000' },
+      { col: 'Portion FAD', oblig: false, format: "Nombre positif ou nul, dans la monnaie d'émission de la convention.", exemple: '1200000' },
+      { col: 'Montant demandé', oblig: false, format: "Nombre positif ou nul, dans la monnaie d'émission de la convention.", exemple: '500000' },
+      { col: "Date d'approbation", oblig: false, format: 'JJ/MM/AAAA ou AAAA-MM-JJ.', exemple: '10/11/2026' }
+    ],
+    exemples: [['01', '09/11/2026', 'A', '1', '4421', 'Véhicule', 'M/CAR', 'M/CAR', '2', '1500000', '1200000', '500000', '10/11/2026']],
+    ligne: function (v) {
+      var er = [], c = trouverConv(v['Convention']), d = dateIso(v['Date']), ap = dateIso(v["Date d'approbation"]), o = {};
+      if (!v['Convention']) er.push('Convention obligatoire'); else if (!c) er.push('Convention « ' + v['Convention'] + ' » inconnue');
+      if (!v['Date']) er.push('Date obligatoire'); else if (d === null) er.push('Date invalide (JJ/MM/AAAA)');
+      if (!v['Catégorie']) er.push('Catégorie obligatoire');
+      if (ap === null) er.push("Date d'approbation invalide (JJ/MM/AAAA)");
+      MONTANTS.forEach(function (k) { var s = String(v[k] || '').trim(), x = num(s); if (s && (!isFinite(parseFloat(s.replace(/\s/g, '').replace(',', '.'))) || x < 0)) er.push(k + ' invalide (nombre positif ou nul)'); o[k] = x; });
+      var cle = [c ? c.code : v['Convention'], d, v['Catégorie'], v['Sous catégorie'], v['Activité'], v['Description']].join('|');
+      return { cle: cle, doublon: !!c && data.some(function (x) { return [x.conv, x.date, x.cat, x.sous, x.act, x.desc].join('|') === cle; }), erreurs: er, data: {
+        conv: c ? c.code : '', date: d || '', cat: v['Catégorie'], sous: v['Sous catégorie'] || '', act: v['Activité'] || '', desc: v['Description'] || '', paysBien: v["Pays d'origine du bien"] || 'M/CAR', paysFourn: v['Pays origine fournisseur'] || 'M/CAR',
+        mon: c ? monConv(c.code) : '', qte: o['Quantité'], total: o['Total budgétisé'], fad: o['Portion FAD'], demande: o['Montant demandé'], appro: ap || '' } };
+    },
+    integrer: function (L) {
+      var n = 0, mj = 0;
+      L.forEach(function (x) {
+        var d = x.data, cle = [d.conv, d.date, d.cat, d.sous, d.act, d.desc].join('|'), ex = data.filter(function (y) { return [y.conv, y.date, y.cat, y.sous, y.act, y.desc].join('|') === cle; })[0];
+        if (ex) { Object.keys(d).forEach(function (k) { ex[k] = d[k]; }); mj++; } else { d.id = 'A3-' + Date.now() + '-' + (n + mj); data.push(d); n++; }
+      });
+      publier(); liste(); onglet('liste'); msg(n + ' ligne(s) intégrée(s)' + (mj ? ', ' + mj + ' mise(s) à jour' : '') + '.');
+    }
+  };
+  // ---------- récupération SoftBudget (données de démonstration générées à partir du plan financier ; une ligne par catégorie budgétée)
+  var SB = 'softcompta.softbudgetA3', sync = { lignes: [] };
+  function hash(s) { var h = 7; for (var i = 0; i < s.length; i++) h = (h * 31 + s.charCodeAt(i)) >>> 0; return h; }
+  function softbudget(c, k) {
+    var h = hash(c.code + '|' + k.code); if (h % 7 === 0) return null;
+    var tx = { USD: 4500, EUR: 4900, UC: 5700 }[monConv(c.code)] || 1, total = Math.round(((20 + (h % 580)) * 1000000) / tx / 10) * 10, fad = Math.round(total * 0.8 / 10) * 10;
+    return { conv: c.code, date: '2026-01-01', cat: k.code, sous: '1', act: '', desc: lib(k), paysBien: 'M/CAR', paysFourn: 'M/CAR', mon: monConv(c.code), qte: 1 + (h % 9), total: total, fad: fad, demande: Math.round(fad * 0.5 / 10) * 10, appro: '' };
+  }
+  function cleLigne(x) { return [x.conv, x.date, x.cat, x.sous, x.act, x.desc].join('|'); }
+  function derniereSync() { var v = ''; try { v = localStorage.getItem(SB) || ''; } catch (e) {} q('[data-ba-slast]').textContent = v || 'jamais'; }
+  function ouvre(s) { q(s).hidden = false; } function ferme(s) { q(s).hidden = true; }
+  function ouvrirSync() {
+    sync.lignes = []; if (!conventions().length) convs();
+    q('[data-ba-sscope]').innerHTML = '<option value="">Toutes les conventions</option>' + conventions().map(function (c) { return '<option value="' + esc(c.code) + '">' + esc(libConv(c)) + '</option>'; }).join('');
+    q('[data-ba-sscope]').value = q('[data-ba-conv]').value;
+    q('[data-ba-sstat]').textContent = 'Prêt à récupérer.'; q('[data-ba-sprev]').innerHTML = ''; q('[data-ba-sinfo]').textContent = ''; q('[data-ba-sok]').disabled = true; q('[data-ba-sgo]').disabled = false; derniereSync(); ouvre('[data-ba-ovs]');
+  }
+  function majSel() { var n = qa('[data-ba-sl]:checked').length; q('[data-ba-sok]').disabled = !n; q('[data-ba-sok]').textContent = n ? 'Appliquer ' + n + ' ligne(s)' : 'Appliquer la sélection'; }
+  function lancerSync() {
+    var C = conventions(), sc = q('[data-ba-sscope]').value; if (sc) C = C.filter(function (c) { return c.code === sc; });
+    if (!C.length) { q('[data-ba-sstat]').textContent = 'Aucune convention dans le plan financier.'; return; }
+    var go = q('[data-ba-sgo]'); go.disabled = true; q('[data-ba-sok]').disabled = true; q('[data-ba-sprev]').innerHTML = '';
+    q('[data-ba-sstat]').textContent = 'Connexion à SoftBudget…';
+    setTimeout(function () { q('[data-ba-sstat]').textContent = 'Lecture du programme et budget A3…'; }, 450);
+    setTimeout(function () {
+      var rows = [], absentes = 0;
+      C.forEach(function (c) { sousLignes(c.code, 'CATEGORIE').forEach(function (k) {
+        var s = softbudget(c, k); if (!s) { absentes++; return; }
+        var ex = data.filter(function (y) { return cleLigne(y) === cleLigne(s); })[0], idem = ex && ['qte', 'total', 'fad', 'demande'].every(function (f) { return Number(ex[f]) === s[f]; });
+        s.etat = !ex ? 'nouveau' : (idem ? 'identique' : 'maj'); rows.push(s);
+      }); });
+      sync.lignes = rows; go.disabled = false;
+      var chg = rows.filter(function (x) { return x.etat !== 'identique'; });
+      q('[data-ba-sstat]').textContent = 'Récupération terminée : ' + rows.length + ' ligne(s) reçue(s).';
+      q('[data-ba-sprev]').innerHTML = rows.length ? '<label class="ba-tout"><input type="checkbox" data-ba-stout checked> Tout sélectionner (' + chg.length + ' modification(s))</label><div class="ba-pv"><table class="pf-table" data-no-pg data-no-tf><thead><tr><th></th><th>Convention</th><th>Catégorie</th><th>Description</th><th class="r">Quantité</th><th class="r">Total budgétisé</th><th class="r">Portion FAD</th><th class="r">Montant demandé</th><th>Monnaie</th><th>Statut</th></tr></thead><tbody>' + rows.map(function (x, i) {
+        var st = x.etat === 'nouveau' ? '<span class="ba-badge on">Nouveau</span>' : x.etat === 'maj' ? '<span class="ba-badge maj">Modifié</span>' : '<span class="ba-badge off">Identique</span>';
+        return '<tr><td><input type="checkbox" data-ba-sl="' + i + '"' + (x.etat === 'identique' ? ' disabled' : ' checked') + ' aria-label="Appliquer"></td><td>' + esc(x.conv) + '</td><td>' + esc(x.cat) + '</td><td>' + esc(x.desc) + '</td><td class="r">' + nb(x.qte) + '</td><td class="r">' + nb(x.total) + '</td><td class="r">' + nb(x.fad) + '</td><td class="r">' + nb(x.demande) + '</td><td>' + esc(x.mon || '—') + '</td><td>' + st + '</td></tr>';
+      }).join('') + '</tbody></table></div>' : '<div class="ba-vide">SoftBudget n\'a renvoyé aucune ligne pour ce périmètre.</div>';
+      q('[data-ba-sinfo]').textContent = (absentes ? absentes + ' catégorie(s) non budgétée(s) dans SoftBudget · ' : '') + chg.length + ' modification(s) proposée(s)';
+      majSel();
+    }, 1100);
+  }
+  function appliquerSync() {
+    var ch = qa('[data-ba-sl]:checked').map(function (c) { return sync.lignes[+c.dataset.baSl]; }).filter(Boolean); if (!ch.length) return;
+    var nou = 0, mj = 0;
+    ch.forEach(function (x) {
+      var ex = data.filter(function (y) { return cleLigne(y) === cleLigne(x); })[0], d = JSON.parse(JSON.stringify(x)); delete d.etat;
+      if (ex) { Object.keys(d).forEach(function (k) { ex[k] = d[k]; }); mj++; } else { d.id = 'A3-' + Date.now() + '-' + (nou + mj); data.push(d); nou++; }
+    });
+    var dt = new Date(), p = function (v) { return ('0' + v).slice(-2); }; try { localStorage.setItem(SB, p(dt.getDate()) + '/' + p(dt.getMonth() + 1) + '/' + dt.getFullYear() + ' à ' + p(dt.getHours()) + ':' + p(dt.getMinutes())); } catch (e) {}
+    publier(); ferme('[data-ba-ovs]'); liste(); onglet('liste'); msg('Récupération SoftBudget appliquée : ' + ch.length + ' ligne(s) (' + nou + ' nouvelle(s), ' + mj + ' modifiée(s)).');
+  }
+  q('[data-ba-ovs]').addEventListener('change', function (e) {
+    if (e.target.matches('[data-ba-stout]')) { qa('[data-ba-sl]:not(:disabled)').forEach(function (c) { c.checked = e.target.checked; }); majSel(); } else if (e.target.matches('[data-ba-sl]')) majSel();
+  });
+  q('[data-ba-ovs]').addEventListener('mousedown', function (e) { if (e.target === q('[data-ba-ovs]')) ferme('[data-ba-ovs]'); });
+  document.addEventListener('keydown', function (e) { if (e.key === 'Escape') ferme('[data-ba-ovs]'); });
+  function importer() { if (!window.IMPORT_ASSISTANT) { msg("Assistant d'importation indisponible."); return; } if (!conventions().length) convs(); window.IMPORT_ASSISTANT.ouvrir(MODELE); }
+
+  root.addEventListener('click', function (e) {
+    var t = e.target.closest && e.target.closest('button,tr[data-ba-id]'); if (!t) return;
+    if (t.hasAttribute('data-ba-ajouter')) ajouter(); else if (t.hasAttribute('data-ba-modifier')) modifier(); else if (t.hasAttribute('data-ba-supprimer')) supprimer();
+    else if (t.hasAttribute('data-ba-import')) importer(); else if (t.hasAttribute('data-ba-sync')) ouvrirSync(); else if (t.hasAttribute('data-ba-sgo')) lancerSync(); else if (t.hasAttribute('data-ba-sok')) appliquerSync(); else if (t.hasAttribute('data-ba-sclose')) ferme('[data-ba-ovs]'); else if (t.hasAttribute('data-ba-enregistrer')) enregistrer(); else if (t.hasAttribute('data-ba-annuler')) annuler();
+    else if (t.hasAttribute('data-ba-tab')) onglet(t.dataset.baTab);
+    else if (t.hasAttribute('data-ba-id')) { sel = t.dataset.baId; liste(); }
+  });
+  root.addEventListener('dblclick', function (e) { var t = e.target.closest && e.target.closest('tr[data-ba-id]'); if (t) { sel = t.dataset.baId; modifier(); } });
+  root.addEventListener('change', function (e) {
+    var t = e.target; if (t.hasAttribute('data-ba-conv')) { sel = ''; cur = null; verrou(false); afficher(vide()); majBailleur(); suggestions(); liste(); }
+    else if (t.getAttribute('data-ba-f') === 'cat') suggestions();
+    else if (/^(qte|total|fad|demande)$/.test(t.getAttribute('data-ba-f') || '')) t.value = nb(num(t.value));
+  });
+  window.addEventListener('plans-changed', function () { convs(); suggestions(); liste(); });
+  document.addEventListener('click', function (e) { if (e.target.closest && e.target.closest('[data-proc]')) setTimeout(function () { convs(); suggestions(); liste(); }, 50); });
+  window.addEventListener('hashchange', function () { if (location.hash === '#badprog') { convs(); suggestions(); afficher(cur || vide()); liste(); } });
+
+  convs(); suggestions(); afficher(vide()); verrou(false); liste();
+  // le plan financier peut être chargé après cet écran : nouvelle lecture tant qu'aucune convention n'est trouvée
+  [300, 1000, 2500].forEach(function (d) { setTimeout(function () { if (!q('[data-ba-conv]').value) { convs(); suggestions(); if (!cur) afficher(vide()); liste(); } }, d); });
+})();
+</script>

@@ -19,7 +19,11 @@
 
   // --- Listes déroulantes ---
   var coll = q('#bx-collectif');
-  coll.innerHTML = '<option value="">Sélectionner un compte collectif</option>' + window.BX_COLLECTIFS.map(function (c) { return '<option>' + esc(c) + '</option>'; }).join('');
+  function remplirColl() {   // collectifs de démonstration + collectifs mouvementés par les écritures saisies
+    var v = coll.value, L = window.ECRITURES_SAISIES ? window.ECRITURES_SAISIES.collectifs(window.BX_COLLECTIFS) : window.BX_COLLECTIFS;
+    coll.innerHTML = '<option value="">Sélectionner un compte collectif</option>' + L.map(function (c) { return '<option>' + esc(c) + '</option>'; }).join(''); coll.value = v;
+  }
+  remplirColl(); window.addEventListener('ecritures-pieces-changed', remplirColl);
   coll.selectedIndex = 1;
   var tiersOpt = T.map(function (t) { return '<option value="' + esc(t.code) + '">' + esc(t.code) + ' — ' + esc(t.libelle) + '</option>'; }).join('');
   var aDeb = q('#bx-aux-debut'), aFin = q('#bx-aux-fin');
@@ -112,19 +116,16 @@
     erreur.textContent = msg; erreur.style.display = msg ? '' : 'none';
     if (msg) return;
     var iD = aDeb.value, iF = aFin.value;
-    courant = avecDonnees() ? T.filter(function (t) { return (!iD || t.code >= iD) && (!iF || t.code <= iF); }) : [];
+    var TS = avecDonnees() ? T : []; if (window.ECRITURES_SAISIES) TS = window.ECRITURES_SAISIES.aux(TS, String(coll.value || '').split(' — ')[0]);   // + écritures saisies
+    courant = TS.filter(function (t) { return (!iD || t.code >= iD) && (!iF || t.code <= iF); });
     var devise = root.querySelector('input[name="bx-monnaie"]:checked').value, d2 = dp.valeur();
     titre.textContent = 'BALANCE AUXILIAIRE ' + coll.value.split(' — ')[0] + ' au ' + fr(fin.value) + ' (' + devise + ')' + (d2 ? ' — PROGRAMME ' + d2.code : '');
-    rech.value = ''; hint.textContent = 'Clic sur une ligne pour afficher le détail des écritures.';
+    rech.value = ''; hint.textContent = 'Double-clic sur une ligne pour afficher le détail des mouvements constituant le solde.';
     afficher(); crit.style.display = 'none'; res.style.display = '';
   }
   q('.bx-consulter').addEventListener('click', consulter);
   q('.bx-retour').addEventListener('click', function () { res.style.display = 'none'; crit.style.display = ''; });
   rech.addEventListener('input', afficher);
-  tbody.addEventListener('click', function (e) {
-    var tr = e.target.closest('tr[data-code]');
-    if (tr) hint.textContent = 'Détail des écritures du tiers ' + tr.dataset.code + ' : non intégré dans la maquette.';
-  });
   q('.bx-pdf').addEventListener('click', function () { window.print(); });
   q('.bx-csv').addEventListener('click', function () {
     var rows = [['Code', 'Libellé', 'A nouveau D', 'A nouveau C', 'Mouvements D', 'Mouvements C', 'Total D', 'Total C', 'Solde D', 'Solde C']];

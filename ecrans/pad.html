@@ -1,0 +1,294 @@
+<!--
+  Écran « Saisie du PAD » (Comptabilité Projets & Bailleurs › Saisie PAD).
+  Choix du type de saisie (Acti, 123, PCOP, Financement, Acti + Financement), saisie « Code / Montant en devise du REP / Montant révisé »,
+  liste des lignes saisies et importation (fichier CSV ou copier-coller depuis Excel) avec contrôle avant import.
+-->
+<style>
+.pd{color:#1f2a4d}
+.pd h1{margin:0;font-size:20px;font-weight:700;color:#1f2a4d}
+.pd-sub{margin:6px 0 16px;font-size:13px;color:#667085}
+.pd-head{display:flex;flex-wrap:wrap;align-items:flex-start;justify-content:space-between;gap:12px}
+.pd-card{background:#fff;border:1px solid #edf1f5;border-radius:12px;box-shadow:0 1px 2px #1f2a4d0a;padding:18px 20px;margin-bottom:16px}
+.pd-card h2{margin:0 0 14px;font-size:14px;font-weight:700;color:#1f2a4d;padding-bottom:10px;border-bottom:2px solid #2E427B;display:inline-block}
+.pd-types{display:flex;flex-wrap:wrap;gap:8px}
+.pd-ty{display:inline-flex;align-items:center;gap:10px;min-height:40px;padding:0 16px 0 12px;border:1px solid #dbdfe9;border-radius:999px;background:#fff;cursor:pointer;font-size:13px;font-weight:600;color:#4b5675}
+.pd-ty:hover{background:#F5F7F9}
+.pd-ty input{position:absolute;opacity:0;pointer-events:none}
+.pd-ty i{width:18px;height:18px;border-radius:50%;border:2px solid #c3cad9;background:#fff;display:inline-block;flex:none;box-sizing:border-box}
+.pd-ty.on{border-color:#2E427B;color:#1f2a4d;background:#F5F7F9}
+.pd-ty.on i{border-color:#2E427B;background:radial-gradient(circle,#2E427B 0 45%,#fff 50%)}
+.pd-ty:focus-within{outline:2px solid #2E427B33}
+.pd-form{display:grid;grid-template-columns:repeat(auto-fit,minmax(260px,1fr));gap:16px 20px;align-items:start}
+.pd-f label{display:block;margin-bottom:6px;font-size:11px;font-weight:600;letter-spacing:.04em;text-transform:uppercase;color:#78829d}
+.pd-f label b{color:#d1416c}
+.pd-in{width:100%;min-height:40px;padding:0 12px;border:1px solid #dbdfe9;border-radius:8px;background:#fff;font:inherit;font-size:13px;color:#1f2a4d;box-sizing:border-box}
+.pd-in:focus{outline:2px solid #2E427B33;border-color:#2E427B}
+.pd-in.bad{border-color:#d1416c}
+.pd-num{text-align:right;font-variant-numeric:tabular-nums}
+.pd-hint{margin-top:4px;font-size:12px;color:#78829d}
+.pd-act{display:flex;flex-wrap:wrap;gap:8px;justify-content:flex-end;margin-top:16px}
+.pd-btn{display:inline-flex;align-items:center;gap:8px;min-height:40px;padding:0 16px;border:1px solid #2E427B;border-radius:8px;background:#2E427B;color:#fff;font:inherit;font-size:13px;font-weight:700;cursor:pointer}
+.pd-btn:hover{background:#243564}
+.pd-btn:disabled{opacity:.45;cursor:not-allowed}
+.pd-btn.sec{background:#fff;color:#4b5675;border-color:#dbdfe9}.pd-btn.sec:hover{background:#F5F7F9}
+.pd-btn.dg{background:#fff;color:#d1416c;border-color:#f3c3d0}.pd-btn.dg:hover{background:#fff5f8}
+.pd-btn.sm{min-height:32px;padding:0 10px;font-size:12px}
+.pd-msg{min-height:20px;margin-top:10px;font-size:12.5px;font-weight:600}
+.pd-msg.ok{color:#0f7a52}.pd-msg.ko{color:#c7254e}
+.pd-tw{border:1px solid #edf1f5;border-radius:12px;overflow:auto}
+.pd-t{width:100%;border-collapse:collapse;font-size:13px}
+.pd-t th{background:#F5F7F9;color:#78829d;text-align:left;padding:10px 12px;font-size:11px;font-weight:600;letter-spacing:.04em;text-transform:uppercase;border-bottom:1px solid #dbdfe9;white-space:nowrap}
+.pd-t td{padding:9px 12px;border-bottom:1px solid #edf1f5;vertical-align:middle}
+.pd-t .r{text-align:right;font-variant-numeric:tabular-nums;white-space:nowrap}
+.pd-t td.ac{text-align:right;white-space:nowrap;width:1%}
+.pd-t tfoot td{background:#F5F7F9;font-weight:700;border-bottom:0}
+.pd-t tbody tr:hover{background:#F5F7F9}
+.pd-t tr.edit td{background:#eef2fb}
+.pd-vide{padding:28px 20px;text-align:center;border:1px dashed #dbdfe9;border-radius:12px;background:#F5F7F9;color:#667085;font-size:13px}
+.pd-vide b{display:block;margin-bottom:6px;color:#1f2a4d;font-size:14px}
+.pd-vide .pd-btn{margin-top:12px}
+/* fenêtre d'importation */
+.pd-ov{position:fixed;inset:0;z-index:2000;display:none;align-items:center;justify-content:center;background:#0f172a59;padding:16px}
+.pd-md{width:100%;max-width:820px;max-height:calc(100vh - 32px);display:flex;flex-direction:column;background:#fff;border-radius:12px;box-shadow:0 20px 60px #0000002e;overflow:hidden}
+.pd-mh{padding:16px 22px;border-bottom:1px solid #edf1f5;display:flex;justify-content:space-between;gap:12px}
+.pd-mh h3{margin:0;font-size:16px;font-weight:700;color:#1f2a4d}.pd-mh p{margin:4px 0 0;font-size:12.5px;color:#667085}
+.pd-x{border:0;background:none;font-size:24px;line-height:1;color:#667085;cursor:pointer}
+.pd-mb{padding:18px 22px;overflow:auto;display:flex;flex-direction:column;gap:14px}
+.pd-mf{padding:14px 22px;border-top:1px solid #edf1f5;background:#F5F7F9;display:flex;justify-content:flex-end;align-items:center;gap:8px;flex-wrap:wrap}
+.pd-mf .pd-sum{margin-right:auto;font-size:12.5px;color:#667085}
+.pd-drop{border:1.5px dashed #c3cad9;border-radius:12px;background:#F5F7F9;padding:16px;display:flex;flex-wrap:wrap;align-items:center;gap:12px;justify-content:space-between}
+.pd-drop.over{border-color:#2E427B;background:#eef2fb}
+.pd-drop small{display:block;color:#78829d;font-size:12px;margin-top:2px}
+.pd-ta{width:100%;min-height:84px;padding:10px 12px;border:1px solid #dbdfe9;border-radius:8px;font:12.5px/1.45 ui-monospace,Consolas,monospace;box-sizing:border-box;resize:vertical}
+.pd-rd{display:flex;flex-wrap:wrap;gap:8px 20px;font-size:13px}.pd-rd label{display:flex;gap:8px;align-items:center;cursor:pointer}
+.pd-pv{max-height:230px;overflow:auto;border:1px solid #edf1f5;border-radius:12px}
+.pd-st{display:inline-block;padding:2px 10px;border-radius:999px;font-size:11.5px;font-weight:700}
+.pd-st.ok{background:#e8f6ef;color:#0f7a52}.pd-st.upd{background:#eef2fb;color:#2E427B}.pd-st.err{background:#fdecf1;color:#c7254e}
+.pd-lab{font-size:11px;font-weight:600;letter-spacing:.04em;text-transform:uppercase;color:#78829d;margin-bottom:6px;display:block}
+@media(max-width:700px){.pd-form{grid-template-columns:1fr}}
+</style>
+<app-saisie-pad>
+<div class="pd" data-pd-root>
+  <div class="pd-head">
+    <div><h1>Saisie du PAD</h1><p class="pd-sub">Choisissez le type de saisie, renseignez les montants par code, ou importez-les depuis un fichier.</p></div>
+    <button type="button" class="pd-btn sec" data-pd-import><i class="ti ti-upload" aria-hidden="true"></i> Importer</button>
+  </div>
+
+  <div class="pd-card"><h2>Type de saisie</h2>
+    <div class="pd-types" role="radiogroup" aria-label="Type de saisie du PAD" data-pd-types></div>
+  </div>
+
+  <div class="pd-card"><h2 data-pd-ftitle>Saisie du PAD — Acti</h2>
+    <div class="pd-form" data-pd-fields></div>
+    <div class="pd-msg" data-pd-msg role="status" aria-live="polite"></div>
+    <div class="pd-act"><button type="button" class="pd-btn sec" data-pd-reset>Réinitialiser</button><button type="button" class="pd-btn" data-pd-save>Enregistrer</button></div>
+  </div>
+
+  <div class="pd-card"><h2 data-pd-ltitle>Lignes saisies</h2>
+    <div class="pd-tw" data-pd-tw><table class="pd-t" data-pd-table><thead data-pd-thead></thead><tbody data-pd-rows></tbody><tfoot data-pd-tfoot></tfoot></table></div>
+    <div class="pd-vide" data-pd-vide style="display:none"><b>Aucune ligne saisie</b>Renseignez un code et un montant ci-dessus, ou importez un fichier.<br><button type="button" class="pd-btn" data-pd-import2><i class="ti ti-upload" aria-hidden="true"></i> Importer</button></div>
+  </div>
+
+  <!-- Fenêtre d'importation -->
+  <div class="pd-ov" data-pd-ov>
+    <div class="pd-md" role="dialog" aria-modal="true" aria-label="Importer la saisie du PAD">
+      <div class="pd-mh"><div><h3 data-pd-mtitle>Importer la saisie du PAD</h3><p>Chargez un fichier CSV ou collez les lignes copiées depuis Excel, puis vérifiez avant d’importer.</p></div><button type="button" class="pd-x" data-pd-mclose aria-label="Fermer">×</button></div>
+      <div class="pd-mb">
+        <div class="pd-drop" data-pd-drop>
+          <div><b>Fichier CSV / texte</b><small data-pd-cols></small><small data-pd-fname>Aucun fichier choisi</small></div>
+          <div style="display:flex;gap:8px;flex-wrap:wrap"><button type="button" class="pd-btn sec" data-pd-model><i class="ti ti-download" aria-hidden="true"></i> Télécharger le modèle</button><button type="button" class="pd-btn sec" data-pd-pick><i class="ti ti-file-upload" aria-hidden="true"></i> Choisir un fichier</button></div>
+          <input type="file" accept=".csv,.txt,.tsv,text/csv,text/plain" data-pd-file style="display:none">
+        </div>
+        <div><label class="pd-lab" for="pd-paste">Ou coller les lignes depuis Excel <button type="button" class="pd-btn sec sm" data-pd-sample style="margin-left:8px;text-transform:none;letter-spacing:0">Insérer un exemple</button></label>
+          <textarea class="pd-ta" id="pd-paste" data-pd-paste placeholder="Code ; Montant en devise du REP ; Montant révisé"></textarea></div>
+        <div><span class="pd-lab">Mode d’importation</span>
+          <div class="pd-rd"><label><input type="radio" name="pdmode" value="add" checked> Ajouter aux lignes existantes (les codes déjà saisis sont mis à jour)</label><label><input type="radio" name="pdmode" value="replace"> Remplacer toutes les lignes de ce type</label></div></div>
+        <div data-pd-pvw style="display:none"><span class="pd-lab">Contrôle avant import</span><div class="pd-pv"><table class="pd-t" data-pd-pv></table></div></div>
+      </div>
+      <div class="pd-mf"><span class="pd-sum" data-pd-sum></span><button type="button" class="pd-btn sec" data-pd-mclose>Annuler</button><button type="button" class="pd-btn" data-pd-go disabled>Importer</button></div>
+    </div>
+  </div>
+
+  <!-- Confirmation de suppression -->
+  <div class="pd-ov" data-pd-cf>
+    <div class="pd-md" style="max-width:440px" role="alertdialog" aria-modal="true" aria-label="Confirmer la suppression">
+      <div class="pd-mh"><div><h3>Supprimer cette ligne ?</h3><p data-pd-cfp></p></div></div>
+      <div class="pd-mf"><button type="button" class="pd-btn sec" data-pd-cfno>Annuler</button><button type="button" class="pd-btn dg" data-pd-cfok>Supprimer</button></div>
+    </div>
+  </div>
+</div>
+<script>
+(function () {
+  var root = document.currentScript.parentElement.querySelector('[data-pd-root]');
+  var q = function (s) { return root.querySelector(s); }, qa = function (s) { return Array.prototype.slice.call(root.querySelectorAll(s)); };
+  var TYPES = [['acti', 'Acti'], ['p123', '123'], ['pcop', 'PCOP'], ['fin', 'Financement'], ['actifin', 'Acti + Financement']];
+  var REF = {
+    acti: [['11', 'Sous composante 1.1 : Développement des infrastructures productives'], ['12', 'Sous composante 1.2 : Appui à la production agricole'], ['21', 'Composante 2 : Renforcement des capacités'], ['31', 'Composante 3 : Gestion du projet']],
+    p123: [['1', 'Composante 1'], ['2', 'Composante 2'], ['3', 'Composante 3']],
+    pcop: [['01', 'Travaux'], ['02', 'Biens'], ['03', 'Services de consultants'], ['04', 'Formation et ateliers'], ['05', 'Coûts de fonctionnement']],
+    fin: [['DA-A', 'Don IDA — catégorie A'], ['DA-B', 'Don IDA — catégorie B'], ['IDA', 'Crédit IDA'], ['PD', 'Contrepartie de l’État']]
+  };
+  var DATA = { acti: [{ a: '11', rep: 9000000, rev: 0 }, { a: '12', rep: 4500000, rev: 4800000 }], p123: [], pcop: [], fin: [], actifin: [] };
+  var cur = 'acti', editKey = null, pending = null, delKey = null, importRows = [];
+  function esc(s) { var d = document.createElement('div'); d.textContent = s == null ? '' : s; return d.innerHTML; }
+  function fmt(n) { var p = Math.abs(n).toFixed(2).split('.'); p[0] = p[0].replace(/\B(?=(\d{3})+(?!\d))/g, ' '); return (n < 0 ? '-' : '') + p.join(','); }
+  function num(v) {
+    v = String(v == null ? '' : v).replace(/[\s  ]/g, ''); if (v === '') return NaN;
+    if (/,/.test(v) && /\./.test(v)) v = v.replace(/\./g, '').replace(',', '.'); else v = v.replace(',', '.');
+    return /^-?\d+(\.\d+)?$/.test(v) ? parseFloat(v) : NaN;
+  }
+  var tName = function (t) { return TYPES.filter(function (x) { return x[0] === t; })[0][1]; };
+  var codesOf = function (t) { return t === 'actifin' ? REF.acti : REF[t]; };
+  function libOf(list, code) { var r = list.filter(function (x) { return x[0] === code; })[0]; return r ? r[1] : ''; }
+  function keyOf(l) { return cur === 'actifin' ? l.a + '|' + l.f : l.a; }
+  function resolve(list, cell) {
+    var c = String(cell || '').trim(); if (!c) return null;
+    var head = c.split(/\s[-–]\s/)[0].trim().toLowerCase();
+    var r = list.filter(function (x) { return x[0].toLowerCase() === head || (x[0] + ' - ' + x[1]).toLowerCase() === c.toLowerCase(); })[0];
+    return r ? r[0] : null;
+  }
+  function opts(list, sel) { return '<option value="">Sélectionner</option>' + list.map(function (x) { return '<option value="' + esc(x[0]) + '"' + (x[0] === sel ? ' selected' : '') + '>' + esc(x[0] + ' - ' + x[1]) + '</option>'; }).join(''); }
+
+  function drawTypes() {
+    q('[data-pd-types]').innerHTML = TYPES.map(function (t) { return '<label class="pd-ty' + (t[0] === cur ? ' on' : '') + '"><input type="radio" name="pdtype" value="' + t[0] + '"' + (t[0] === cur ? ' checked' : '') + '><i></i>' + esc(t[1]) + '</label>'; }).join('');
+  }
+  function drawForm(l) {
+    var a = cur === 'actifin';
+    q('[data-pd-ftitle]').textContent = 'Saisie du PAD — ' + tName(cur);
+    q('[data-pd-fields]').innerHTML =
+      (a ? '<div class="pd-f"><label for="pd-a">Code activité <b>*</b></label><select class="pd-in" id="pd-a" data-pd-i="a">' + opts(REF.acti, l && l.a) + '</select></div>' +
+           '<div class="pd-f"><label for="pd-f">Code financement <b>*</b></label><select class="pd-in" id="pd-f" data-pd-i="f">' + opts(REF.fin, l && l.f) + '</select></div>'
+         : '<div class="pd-f" style="grid-column:1/-1"><label for="pd-a">Code <b>*</b></label><select class="pd-in" id="pd-a" data-pd-i="a">' + opts(REF[cur], l && l.a) + '</select></div>') +
+      '<div class="pd-f"><label for="pd-rep">Montant en devise du REP <b>*</b></label><input class="pd-in pd-num" id="pd-rep" data-pd-i="rep" inputmode="decimal" placeholder="0,00" value="' + (l ? esc(fmt(l.rep)) : '') + '"></div>' +
+      '<div class="pd-f"><label for="pd-rev">Montant révisé</label><input class="pd-in pd-num" id="pd-rev" data-pd-i="rev" inputmode="decimal" placeholder="0,00" value="' + (l ? esc(fmt(l.rev)) : '0,00') + '"><div class="pd-hint">Laisser à 0,00 si aucune révision.</div></div>';
+    q('[data-pd-save]').textContent = editKey ? 'Mettre à jour' : 'Enregistrer';
+    q('[data-pd-reset]').textContent = editKey ? 'Annuler la modification' : 'Réinitialiser';
+  }
+  function drawTable() {
+    var a = cur === 'actifin', L = DATA[cur];
+    q('[data-pd-ltitle]').textContent = 'Lignes saisies — ' + tName(cur);
+    q('[data-pd-thead]').innerHTML = '<tr>' + (a ? '<th>Code activité</th><th>Activité</th><th>Code financement</th><th>Financement</th>' : '<th>Code</th><th>Libellé</th>') + '<th class="r">Montant en devise du REP</th><th class="r">Montant révisé</th><th></th></tr>';
+    q('[data-pd-rows]').innerHTML = L.map(function (l) {
+      var k = keyOf(l);
+      return '<tr' + (k === editKey ? ' class="edit"' : '') + ' data-pd-row="' + esc(k) + '"><td><b>' + esc(l.a) + '</b></td><td>' + esc(libOf(a ? REF.acti : REF[cur], l.a)) + '</td>' +
+        (a ? '<td><b>' + esc(l.f) + '</b></td><td>' + esc(libOf(REF.fin, l.f)) + '</td>' : '') +
+        '<td class="r">' + fmt(l.rep) + '</td><td class="r">' + fmt(l.rev) + '</td><td class="ac"><button type="button" class="pd-btn sec sm" data-pd-edit="' + esc(k) + '">Modifier</button> <button type="button" class="pd-btn dg sm" data-pd-del="' + esc(k) + '">Supprimer</button></td></tr>';
+    }).join('');
+    var tr = L.reduce(function (s, l) { return s + l.rep; }, 0), tv = L.reduce(function (s, l) { return s + l.rev; }, 0);
+    q('[data-pd-tfoot]').innerHTML = L.length ? '<tr><td colspan="' + (a ? 4 : 2) + '">Total (' + L.length + ' ligne' + (L.length > 1 ? 's' : '') + ')</td><td class="r">' + fmt(tr) + '</td><td class="r">' + fmt(tv) + '</td><td></td></tr>' : '';
+    q('[data-pd-tw]').style.display = L.length ? '' : 'none';
+    q('[data-pd-vide]').style.display = L.length ? 'none' : '';
+  }
+  function say(t, ok) { var m = q('[data-pd-msg]'); m.textContent = t || ''; m.className = 'pd-msg' + (t ? (ok ? ' ok' : ' ko') : ''); }
+  function redraw() { drawTypes(); drawForm(null); drawTable(); say(''); }
+  function inp(k) { return q('[data-pd-i="' + k + '"]'); }
+
+  /* ---- saisie ---- */
+  q('[data-pd-types]').addEventListener('change', function (e) { if (e.target.name === 'pdtype') { cur = e.target.value; editKey = null; redraw(); } });
+  q('[data-pd-save]').addEventListener('click', function () {
+    var a = cur === 'actifin', bad = false;
+    ['a', 'f'].forEach(function (k) { var el = inp(k); if (el) { var b = !el.value; el.classList.toggle('bad', b); if (b) bad = true; } });
+    var rep = num(inp('rep').value), rev = inp('rev').value.trim() === '' ? 0 : num(inp('rev').value);
+    var r1 = isNaN(rep) || rep < 0, r2 = isNaN(rev) || rev < 0;
+    inp('rep').classList.toggle('bad', r1); inp('rev').classList.toggle('bad', r2);
+    if (bad || r1 || r2) { say(bad ? 'Renseignez le code.' : 'Saisissez des montants valides (nombres positifs).', false); return; }
+    var l = { a: inp('a').value, rep: rep, rev: rev }; if (a) l.f = inp('f').value;
+    var k = keyOf(l), L = DATA[cur], i = -1; L.forEach(function (x, n) { if (keyOf(x) === k) i = n; });
+    var iEdit = -1; if (editKey) L.forEach(function (x, n) { if (keyOf(x) === editKey) iEdit = n; });
+    if (i >= 0 && i !== iEdit) { say('Ce code est déjà saisi pour ce type : modifiez la ligne existante.', false); return; }
+    if (iEdit >= 0) L[iEdit] = l; else L.push(l);
+    var was = !!editKey; editKey = null; drawForm(null); drawTable(); say(was ? 'Ligne mise à jour.' : 'Ligne enregistrée.', true);
+  });
+  q('[data-pd-reset]').addEventListener('click', function () { editKey = null; drawForm(null); drawTable(); say(''); });
+  root.addEventListener('click', function (e) {
+    var b = e.target.closest('[data-pd-edit]'); if (b) { editKey = b.dataset.pdEdit; var l = DATA[cur].filter(function (x) { return keyOf(x) === editKey; })[0]; drawForm(l); drawTable(); say('Modification de la ligne ' + editKey.replace('|', ' / ') + '.', true); inp('rep').focus(); return; }
+    b = e.target.closest('[data-pd-del]'); if (b) { delKey = b.dataset.pdDel; q('[data-pd-cfp]').textContent = 'La ligne « ' + delKey.replace('|', ' / ') + ' » sera retirée de la saisie du PAD (' + tName(cur) + ').'; q('[data-pd-cf]').style.display = 'flex'; }
+  });
+  q('[data-pd-cfno]').addEventListener('click', function () { q('[data-pd-cf]').style.display = 'none'; });
+  q('[data-pd-cfok]').addEventListener('click', function () {
+    DATA[cur] = DATA[cur].filter(function (x) { return keyOf(x) !== delKey; }); if (editKey === delKey) editKey = null;
+    q('[data-pd-cf]').style.display = 'none'; drawForm(null); drawTable(); say('Ligne supprimée.', true);
+  });
+
+  /* ---- importation ---- */
+  function colsTxt() { return cur === 'actifin' ? 'Colonnes : Code activité ; Code financement ; Montant en devise du REP ; Montant révisé' : 'Colonnes : Code ; Montant en devise du REP ; Montant révisé'; }
+  function parse(text) {
+    var a = cur === 'actifin', lines = String(text || '').replace(/^﻿/, '').split(/\r?\n/).filter(function (l) { return l.trim() !== ''; });
+    var d = /\t/.test(text) ? '\t' : /;/.test(text) ? ';' : ',';
+    var out = [], seen = {};
+    lines.forEach(function (ln, i) {
+      var c = ln.split(d).map(function (x) { return x.replace(/^"|"$/g, '').trim(); });
+      var iv = a ? 2 : 1;
+      if (i === 0 && !resolve(codesOf(cur), c[0]) && isNaN(num(c[iv]))) return;   // ligne d'en-tête
+      var r = { n: i + 1, a: resolve(codesOf(cur), c[0]), f: a ? resolve(REF.fin, c[1]) : null, raw: c, st: 'ok', msg: '' };
+      var rep = num(c[iv]), rev = (c[iv + 1] == null || c[iv + 1] === '') ? 0 : num(c[iv + 1]);
+      if (!r.a) { r.st = 'err'; r.msg = a ? 'Code activité inconnu' : 'Code inconnu'; }
+      else if (a && !r.f) { r.st = 'err'; r.msg = 'Code financement inconnu'; }
+      else if (isNaN(rep) || rep < 0) { r.st = 'err'; r.msg = 'Montant REP invalide'; }
+      else if (isNaN(rev) || rev < 0) { r.st = 'err'; r.msg = 'Montant révisé invalide'; }
+      else {
+        r.rep = rep; r.rev = rev; var k = a ? r.a + '|' + r.f : r.a;
+        if (seen[k]) { r.st = 'err'; r.msg = 'Doublon dans le fichier (ligne ' + seen[k] + ')'; }
+        else { seen[k] = r.n; if (q('[name="pdmode"]:checked').value === 'add' && DATA[cur].some(function (x) { return keyOf(x) === k; })) { r.st = 'upd'; r.msg = 'Ligne existante mise à jour'; } }
+      }
+      out.push(r);
+    });
+    return out;
+  }
+  function analyse() {
+    var t = q('[data-pd-paste]').value, a = cur === 'actifin';
+    importRows = t.trim() ? parse(t) : [];
+    var ok = importRows.filter(function (r) { return r.st !== 'err'; }), ko = importRows.length - ok.length;
+    q('[data-pd-pvw]').style.display = importRows.length ? '' : 'none';
+    q('[data-pd-pv]').innerHTML = '<thead><tr><th>Ligne</th><th>' + (a ? 'Activité' : 'Code') + '</th>' + (a ? '<th>Financement</th>' : '') + '<th class="r">REP</th><th class="r">Révisé</th><th>Contrôle</th></tr></thead><tbody>' +
+      importRows.map(function (r) { return '<tr><td>' + r.n + '</td><td>' + esc(r.a || r.raw[0]) + '</td>' + (a ? '<td>' + esc(r.f || r.raw[1]) + '</td>' : '') + '<td class="r">' + (r.st === 'err' ? esc(r.raw[a ? 2 : 1] || '') : fmt(r.rep)) + '</td><td class="r">' + (r.st === 'err' ? esc(r.raw[a ? 3 : 2] || '') : fmt(r.rev)) + '</td><td><span class="pd-st ' + r.st + '">' + (r.st === 'ok' ? 'Valide' : r.st === 'upd' ? 'Mise à jour' : 'Erreur') + '</span>' + (r.msg ? ' <small style="color:#78829d">' + esc(r.msg) + '</small>' : '') + '</td></tr>'; }).join('') + '</tbody>';
+    q('[data-pd-sum]').textContent = importRows.length ? ok.length + ' ligne(s) valide(s)' + (ko ? ' · ' + ko + ' en erreur (ignorée' + (ko > 1 ? 's' : '') + ')' : '') : '';
+    var go = q('[data-pd-go]'); go.disabled = !ok.length; go.textContent = ok.length ? 'Importer ' + ok.length + ' ligne' + (ok.length > 1 ? 's' : '') : 'Importer';
+  }
+  function openImport() {
+    q('[data-pd-mtitle]').textContent = 'Importer la saisie du PAD — ' + tName(cur);
+    q('[data-pd-cols]').textContent = colsTxt();
+    q('[data-pd-paste]').value = ''; q('[data-pd-fname]').textContent = 'Aucun fichier choisi'; q('[data-pd-file]').value = '';
+    q('[name="pdmode"][value="add"]').checked = true; analyse(); q('[data-pd-ov]').style.display = 'flex';
+  }
+  function sample() {
+    var a = cur === 'actifin', L = codesOf(cur), F = REF.fin;
+    return (a ? 'Code activité;Code financement;Montant en devise du REP;Montant révisé\n' : 'Code;Montant en devise du REP;Montant révisé\n') +
+      L.slice(0, 3).map(function (x, i) { return a ? x[0] + ';' + F[i % F.length][0] + ';' + (1500000 * (i + 1)) + ',00;0,00' : x[0] + ';' + (2000000 * (i + 1)) + ',00;' + (i === 1 ? '2300000,00' : '0,00'); }).join('\n');
+  }
+  q('[data-pd-import]').addEventListener('click', openImport);
+  q('[data-pd-import2]').addEventListener('click', openImport);
+  qa('[data-pd-mclose]').forEach(function (b) { b.addEventListener('click', function () { q('[data-pd-ov]').style.display = 'none'; }); });
+  q('[data-pd-pick]').addEventListener('click', function () { q('[data-pd-file]').click(); });
+  function readFile(f) {
+    if (!f) return; q('[data-pd-fname]').textContent = f.name;
+    if (/\.xlsx?$/i.test(f.name)) { q('[data-pd-paste]').value = ''; analyse(); q('[data-pd-sum]').textContent = 'Format Excel non lu directement : enregistrez le classeur en CSV, ou copiez-collez les cellules ci-dessus.'; return; }
+    var fr = new FileReader();
+    fr.onload = function () { var buf = fr.result, t = new TextDecoder('utf-8').decode(buf); if (t.indexOf('�') >= 0) t = new TextDecoder('windows-1252').decode(buf); q('[data-pd-paste]').value = t; analyse(); };
+    fr.readAsArrayBuffer(f);
+  }
+  q('[data-pd-file]').addEventListener('change', function (e) { readFile(e.target.files[0]); });
+  var dz = q('[data-pd-drop]');
+  ['dragover', 'dragenter'].forEach(function (ev) { dz.addEventListener(ev, function (e) { e.preventDefault(); dz.classList.add('over'); }); });
+  ['dragleave', 'drop'].forEach(function (ev) { dz.addEventListener(ev, function (e) { e.preventDefault(); dz.classList.remove('over'); if (ev === 'drop') readFile(e.dataTransfer.files[0]); }); });
+  q('[data-pd-paste]').addEventListener('input', analyse);
+  qa('[name="pdmode"]').forEach(function (r) { r.addEventListener('change', analyse); });
+  q('[data-pd-sample]').addEventListener('click', function () { q('[data-pd-paste]').value = sample(); q('[data-pd-fname]').textContent = 'Exemple inséré'; analyse(); });
+  q('[data-pd-model]').addEventListener('click', function () {
+    var a = document.createElement('a'); a.href = URL.createObjectURL(new Blob(['﻿' + sample().replace(/\n/g, '\r\n') + '\r\n'], { type: 'text/csv;charset=utf-8' }));
+    a.download = 'Modele_import_PAD_' + tName(cur).replace(/[^A-Za-z0-9]+/g, '-') + '.csv'; document.body.appendChild(a); a.click(); a.remove();
+  });
+  q('[data-pd-go]').addEventListener('click', function () {
+    var ok = importRows.filter(function (r) { return r.st !== 'err'; }), a = cur === 'actifin';
+    if (!ok.length) return;
+    var news = ok.map(function (r) { var l = { a: r.a, rep: r.rep, rev: r.rev }; if (a) l.f = r.f; return l; });
+    if (q('[name="pdmode"]:checked').value === 'replace') DATA[cur] = news;
+    else news.forEach(function (l) { var k = keyOf(l), i = -1; DATA[cur].forEach(function (x, n) { if (keyOf(x) === k) i = n; }); if (i >= 0) DATA[cur][i] = l; else DATA[cur].push(l); });
+    var ko = importRows.length - ok.length;
+    q('[data-pd-ov]').style.display = 'none'; editKey = null; drawForm(null); drawTable();
+    say(ok.length + ' ligne(s) importée(s)' + (ko ? ', ' + ko + ' ignorée(s) pour erreur' : '') + '.', true);
+  });
+  redraw();
+})();
+</script>
+</app-saisie-pad>

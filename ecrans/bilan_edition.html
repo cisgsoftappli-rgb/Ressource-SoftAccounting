@@ -200,23 +200,58 @@
     ['AZ', 'TOTAL ACTIF IMMOBILISÉ', 'total', '132 050 000,00', '129 900 000,00'], ['', 'CAPITAUX PROPRES ET RESSOURCES ASSIMILÉES', 'titre'],
     ['CB', 'Capital', 'ligne', '100 000 000,00', '100 000 000,00'], ['CJ', "Résultat net de l'exercice", 'ligne', '85 400 000,00', '64 200 000,00'],
     ['CZ', 'TOTAL CAPITAUX PROPRES', 'total', '185 400 000,00', '164 200 000,00']];
+  function efIso(t) { var p = (t || '').split('/'); return p.length === 3 ? p[2] + '-' + p[1] + '-' + p[0] : t; }
+  function efEsc(t) { return String(t == null ? '' : t).replace(/&/g, '&amp;').replace(/</g, '&lt;'); }
+  function efModeleId() { return (K.modele.value || '').split(' ')[0]; }
+  function majModeles() {
+    var M = window.ETATS_FIN ? window.ETATS_FIN.modeles('bil') : []; if (!M.length) return;
+    var sig = M.map(function (m) { return m.id; }).join('|'); if (K.modele.getAttribute('data-sig') === sig) return;
+    var cur = efModeleId(); K.modele.innerHTML = M.map(function (m) { return '<option value="' + efEsc(m.id) + '">' + efEsc(m.id + ' — ' + m.libelle) + '</option>'; }).join('');
+    K.modele.setAttribute('data-sig', sig); if (M.some(function (m) { return m.id === cur; })) K.modele.value = cur;
+  }
+  function efTaux(au) { var dv = K.devise.value; if (!dv || dv === 'MGA') return 1; var C = window.COURS_API, t = C && C.taux(dv, au); if (!t && Array.isArray(window.COURS)) { var l = window.COURS.filter(function (x) { return x.devise === dv; }).sort(function (a, b) { return a.date < b.date ? -1 : 1; })[0]; t = l && l.parite; } return t || 1; }
+  function efCalc(du, au) { return window.ETATS_FIN ? window.ETATS_FIN.calc('bil', efModeleId(), du, au, { taux: efTaux(au) }) : []; }
+  function corps() {
+    var P = window.ETATS_FIN, du = efIso(K.debut.value), au = efIso(K.arrete.value); if (!P) return '';
+    var N = efCalc(du, au), N1 = efCalc(P.an(du, -1), P.an(au, -1)), CL = { titre: 'titre', soustitre: 'soustitre', ligne: 'ligne', resultat: 'ligne', constante: 'ligne', soustotal: 'total', total: 'total', formule: 'total' };
+    return N.map(function (r, i) { if (!r.afficher) return ''; var v = r.nature === 'titre' || r.nature === 'soustitre'; return '<tr class="' + CL[r.nature] + '"><td>' + efEsc(r.code) + '</td><td>' + efEsc(r.libelle) + '</td><td class="r">' + (v ? '' : P.fmt(r.v)) + '</td><td class="r">' + (v ? '' : P.fmt(N1[i].v)) + '</td></tr>'; }).join('');
+  }
   function editer() {
+    majModeles();
     q('[data-r=titre]').textContent = T.titre.value;
     q('[data-r=soustitre]').textContent = T.soustitre.value;
     q('[data-r=meta]').textContent = ['Du ' + K.debut.value + ' au ' + K.arrete.value, T.exercice.value && 'Exercice ' + T.exercice.value, T.entite.value, T.site.value, T.devise.value].filter(Boolean).join(' · ');
     q('[data-r=autres]').textContent = T.autres.value;
     q('[data-be-info]').textContent = 'Modèle ' + K.modele.value.split(' ')[0];
-    q('[data-be-corps]').innerHTML = LIGNES.map(function (l) { var v = l[2] === 'titre' || l[2] === 'soustitre'; return '<tr class="' + l[2] + '"><td>' + l[0] + '</td><td>' + l[1] + '</td><td class="r">' + (v ? '' : l[3] || '0,00') + '</td><td class="r">' + (v ? '' : l[4] || '0,00') + '</td></tr>'; }).join('');
+    q('[data-be-corps]').innerHTML = corps();
     var r = q('[data-be-res]'); r.hidden = false; majEtat();
   }
   var ov = q('[data-be-ov]');
-  function ouvrir() { ov.hidden = false; var f = q('[data-k=modele]'); if (f) f.focus(); }
+  function ouvrir() { majModeles(); ov.hidden = false; var f = q('[data-k=modele]'); if (f) f.focus(); }
   function fermer() { ov.hidden = true; }
   q('[data-be-editer]').addEventListener('click', function () { editer(); fermer(); });
   qa('[data-be-fermer]').forEach(function (b) { b.addEventListener('click', fermer); });
   q('[data-be-criteres]').addEventListener('click', ouvrir);
-  q('[data-be-imprimer]').addEventListener('click', function () { window.print(); });
-  q('[data-be-exporter]').addEventListener('click', function () { var t = q('[data-be-toast]'); if (t) { t.hidden = false; setTimeout(function () { t.hidden = true; }, 2200); } });
+  function imprimerEtat() {
+    var P = window.ETATS_FIN, X = window.ETAT_IMPRESSION; if (!P || !X) { window.print(); return; }
+    var du = efIso(K.debut.value), au = efIso(K.arrete.value), M = (P.modeles('bil') || []).filter(function (m) { return m.id === efModeleId(); })[0];
+    X.bilan({ titre: T.titre.value, modele: efModeleId(), modeleLib: M && M.libelle, du: du, au: au, devise: K.devise.options[K.devise.selectedIndex].text, site: q('[data-site=tous]').checked ? 'Tous les sites' : '01',
+      N: efCalc(du, au), N1: efCalc(P.an(du, -1), P.an(au, -1)), fmt: P.fmt });
+  }
+  q('[data-be-imprimer]').addEventListener('click', imprimerEtat);
+  function exportExcel() {
+    var X = window.EXPORT_TABLEAU, res = q('[data-be-res]'), t = q('[data-be-toast]');
+    function dire(m) { if (t) { t.textContent = m; t.hidden = false; setTimeout(function () { t.hidden = true; }, 2600); } }
+    if (!X || res.hidden) return;
+    var tb = res.querySelector('table'), tete = [];
+    [].forEach.call(tb.querySelectorAll('thead tr:first-child th'), function (th) { tete.push(th.textContent.trim()); for (var i = 1; i < (+th.getAttribute('colspan') || 1); i++) tete.push(''); });
+    var lignes = [].map.call(tb.querySelectorAll('tbody tr'), function (tr) { return [].map.call(tr.children, function (td) { return td.textContent.replace(/\s+/g, ' ').trim(); }); }).filter(function (l) { return l.some(function (c) { return c; }); });
+    function tx(k) { var e = q('[data-r=' + k + ']'); return e ? e.textContent.trim() : ''; }
+    var avant = ['titre', 'soustitre', 'meta', 'autres'].map(tx).filter(Boolean).map(function (v) { return [v]; }); avant.push([]);
+    X.xlsx('bilan.xlsx', 'Bilan', tete, lignes, avant);
+    dire('Export Excel (XLSX) généré : ' + lignes.length + ' ligne(s).');
+  }
+  q('[data-be-exporter]').addEventListener('click', exportExcel);
   q('[data-be-reinit]').addEventListener('click', function () { touche = {}; K.modele.selectedIndex = 0; K.exercice.selectedIndex = 0; K.devise.selectedIndex = 0; q('[data-site=tous]').checked = true; q('[data-site=siege]').checked = true; periodes(); T.titre.value = 'BILAN'; T.soustitre.value = ''; T.entite.value = ''; T.autres.value = ''; pre(); });
   root.addEventListener('keydown', function (e) { if (e.key === 'Escape' && !ov.hidden) fermer(); });
   // La fenêtre de critères s'ouvre directement à l'arrivée sur l'écran tant qu'aucun bilan n'est édité

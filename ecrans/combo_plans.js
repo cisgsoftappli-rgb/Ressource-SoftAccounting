@@ -20,13 +20,21 @@
   document.head.appendChild(st);
 
   var ouvert = null;
-  function decouper(txt) { var m = /^(\S+)\s+[—–-]\s+(.*)$/.exec((txt || '').trim()); return m ? [m[1], m[2]] : [(txt || '').trim(), '']; }
+  function nbCols(s) { return Math.max(2, ((s && s.getAttribute('data-combo-cols')) || 'a|b').split('|').length); }
+  function decouper(txt, s) {
+    if (s && s.getAttribute('data-combo-cols')) {
+      var t = (txt || '').trim(), n = nbCols(s);
+      if (n > 2) { var p = t.split(' — '); while (p.length < n) p.push(''); if (p.length > n) p = p.slice(0, n - 1).concat([p.slice(n - 1).join(' — ')]); return p; }
+      var k = t.lastIndexOf(' — '); return k > 0 ? [t.slice(0, k), t.slice(k + 3)] : [t, ''];
+    }
+    var m = /^(\S+)\s+[—–-]\s+(.*)$/.exec((txt || '').trim()); return m ? [m[1], m[2]] : [(txt || '').trim(), ''];
+  }
   function texte(s) { var o = s.options[s.selectedIndex]; return o ? o.textContent.trim() : ''; }
   function maj(c) {
     var s = c.sel, o = s.options[s.selectedIndex], t = c.box.querySelector('.cb-t');
     var vide = !o || o.value === '' || /^[—–-]/.test(o.textContent.trim());
     // choix fait : seul le code est affiché, le libellé reste en infobulle (il ne sert qu'à se repérer pendant la sélection)
-    var tx = o ? o.textContent.trim() : '', d = vide ? null : /^(\S+)\s+[—–-]\s+(.*)$/.exec(tx);
+    var tx = o ? o.textContent.trim() : '', d = vide ? null : s.getAttribute('data-combo-cols') ? [''].concat(decouper(tx, s)) : /^(\S+)\s+[—–-]\s+(.*)$/.exec(tx);
     t.textContent = d ? d[1] : tx; t.title = d ? tx : ''; t.classList.toggle('vide', !!vide);
     var dis = s.disabled; c.box.classList.toggle('dis', dis); c.box.setAttribute('aria-disabled', dis); c.box.tabIndex = dis ? -1 : 0;
   }
@@ -43,28 +51,29 @@
   }
   function ouvrir(c) {
     if (c.sel.disabled) return; if (ouvert) { var meme = ouvert === c; fermer(); if (meme) return; }
-    var s = c.sel, opts = [].slice.call(s.options), pan = document.createElement('div'); pan.className = 'cb-pan';
-    var r = c.box.getBoundingClientRect(), larg = Math.max(r.width, 460), bas = window.innerHeight - r.bottom - 12, haut = r.top - 12, dessous = bas >= 260 || bas >= haut, h = Math.min(380, Math.max(200, dessous ? bas : haut));
+    var s = c.sel, cols = (s.getAttribute('data-combo-cols') || 'Code|Libellé').split('|'), N = Math.max(2, cols.length), opts = [].slice.call(s.options), pan = document.createElement('div'); pan.className = 'cb-pan';
+    var r = c.box.getBoundingClientRect(), larg = Math.max(r.width, N > 2 ? 640 : 460), bas = window.innerHeight - r.bottom - 12, haut = r.top - 12, dessous = bas >= 260 || bas >= haut, h = Math.min(380, Math.max(200, dessous ? bas : haut));
     pan.style.width = Math.min(larg, window.innerWidth - 16) + 'px'; pan.style.left = Math.max(8, Math.min(r.left, window.innerWidth - larg - 8)) + 'px'; pan.style.maxHeight = h + 'px';
     if (dessous) pan.style.top = (r.bottom + 4) + 'px'; else pan.style.bottom = (window.innerHeight - r.top + 4) + 'px';
-    pan.innerHTML = '<div class="cb-sc"><table class="cb-tb"><colgroup><col style="width:34%"><col></colgroup><thead><tr><th>Code</th><th>Libellé</th></tr>' +
-      '<tr class="cb-f"><th><span class="cb-in"><i class="ti ti-search"></i><input data-cb="0" placeholder="Rechercher…" aria-label="Filtrer par code" autocomplete="off"></span></th><th><span class="cb-in"><i class="ti ti-search"></i><input data-cb="1" placeholder="Rechercher…" aria-label="Filtrer par libellé" autocomplete="off"></span></th></tr></thead><tbody></tbody></table><div class="cb-vide" hidden>Aucun résultat</div></div>';
+    var cg = N > 2 ? '<col style="width:24%"><col style="width:36%"><col>' : '<col style="width:34%"><col>', th = '', fl = '';
+    for (var ci = 0; ci < N; ci++) { th += '<th>' + (cols[ci] || '') + '</th>'; fl += '<th><span class="cb-in"><i class="ti ti-search"></i><input data-cb="' + ci + '" placeholder="Rechercher…" aria-label="Filtrer ' + (cols[ci] || '') + '" autocomplete="off"></span></th>'; }
+    pan.innerHTML = '<div class="cb-sc"><table class="cb-tb"><colgroup>' + cg + '</colgroup><thead><tr>' + th + '</tr><tr class="cb-f">' + fl + '</tr></thead><tbody></tbody></table><div class="cb-vide" hidden>Aucun résultat</div></div>';
     var tb = pan.querySelector('tbody');
     opts.forEach(function (o) {
-      var tr = document.createElement('tr'), vide = o.value === '' || /^[—–-]/.test(o.textContent.trim()), d = vide ? ['', o.textContent.trim()] : decouper(o.textContent);
+      var tr = document.createElement('tr'), vide = o.value === '' || /^[—–-]/.test(o.textContent.trim()), d = vide ? ['', o.textContent.trim()] : decouper(o.textContent, s);
       tr.dataset.v = o.value; tr.dataset.vide = vide ? '1' : ''; if (o.disabled || o.hidden) { tr.hidden = true; tr.dataset.off = '1'; }
       if (o.value === s.value) tr.className = 'cb-sel';
-      var a = document.createElement('td'), b = document.createElement('td'); a.textContent = d[0]; b.textContent = d[1]; a.title = d[0]; b.title = d[1];
-      if (vide) { a.colSpan = 2; a.textContent = d[1]; a.style.color = '#5B606D'; tr.appendChild(a); } else { tr.appendChild(a); tr.appendChild(b); }
+      if (vide) { var a0 = document.createElement('td'); a0.colSpan = N; a0.textContent = d[1]; a0.style.color = '#5B606D'; tr.appendChild(a0); }
+      else for (var k = 0; k < N; k++) { var td = document.createElement('td'); td.textContent = d[k] || ''; td.title = d[k] || ''; tr.appendChild(td); }
       tb.appendChild(tr);
     });
     function filtrer() {
-      var f = [].slice.call(pan.querySelectorAll('[data-cb]')).map(function (i) { return i.value.trim().toLowerCase(); }), n = 0;
+      var f = [].slice.call(pan.querySelectorAll('[data-cb]')).map(function (i) { return i.value.trim().toLowerCase(); }), n = 0, actif = f.some(function (v) { return v; });
       [].slice.call(tb.rows).forEach(function (tr) {
-        var ok = !tr.dataset.off && (tr.dataset.vide ? !f[0] && !f[1] : (!f[0] || tr.cells[0].textContent.toLowerCase().indexOf(f[0]) >= 0) && (!f[1] || tr.cells[1].textContent.toLowerCase().indexOf(f[1]) >= 0));
+        var ok = !tr.dataset.off && (tr.dataset.vide ? !actif : f.every(function (v, k) { return !v || (tr.cells[k] && (k === 0 ? tr.cells[k].textContent.toLowerCase().indexOf(v) === 0 : tr.cells[k].textContent.toLowerCase().indexOf(v) >= 0)); }));
         tr.hidden = !ok; if (ok && !tr.dataset.vide) n++;
       });
-      pan.querySelector('.cb-vide').hidden = n > 0 || !(f[0] || f[1]);
+      pan.querySelector('.cb-vide').hidden = n > 0 || !actif;
     }
     pan.addEventListener('input', filtrer);
     tb.addEventListener('click', function (e) { var tr = e.target.closest('tr'); if (tr) choisir(c, tr.dataset.v); });

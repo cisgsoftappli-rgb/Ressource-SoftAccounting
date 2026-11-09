@@ -36,7 +36,7 @@
     periodes: [['clotmens', 'Clôture mensuelle'], ['clotper', 'Clôture périodique']],
     anouveaux: [['anouveaux', 'À nouveau']],
     etats: [['bilparam', 'Bilan'], ['crparam', 'Compte de résultat'], ['erparam', 'Emplois et ressources'], ['tftparam', 'Flux de trésorerie']],
-    balance: [['balance', 'Balance générale'], ['balaux', 'Balance auxiliaire'], ['glg', 'Grand livre']],
+    balance: [['balance', 'Balance générale'], ['balaux', 'Balance auxiliaire'], ['glaux', 'Grand livre auxiliaire'], ['echeancier', 'Échéancier et balance âgée'], ['glg', 'Grand livre']],
     rapprochement: [['rapprochement', 'Configuration'], ['pointage', 'Pointage'], ['situation', 'Situation']],
     banques: [['banques', 'Liste des banques']],
     ecritures: [['ecritures', "Saisie d'écritures"]],

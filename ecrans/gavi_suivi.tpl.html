@@ -1,0 +1,291 @@
+<!--
+  Écran « Suivi détaillé » de la procédure financière GAVI (Comptabilité Projets & Bailleurs › GAVI › Suivi détaillé).
+  Même charte que les éditions des états financiers : barre d'actions (Critères, Imprimer, Exporter), fenêtre de critères, état édité dans un panneau.
+  Critères : année en cours, périodicité, numéro (période calculée), budget dépenses, type de dépenses, centre de saisie, subvention, journal, milliers, monnaie.
+  Résultat : Subvention / Activité / Domaine / Objectif / Catégorie / Poste, Budget et Réel par trimestre, Total annuel (fichier ExploitationGaviSuiviDetaille.xlsx).
+  Données : lignes de démonstration du fichier + écritures saisies (imputation FINANCEMENT / ACTIVITE / CATEGORIE DE DEPENSE / POSTE BUDGETAIRE),
+  règle « type de dépenses » (décaissement : classes 2, 4, 6 en journaux de trésorerie ; engagement : classes 2 et 6, tous journaux).
+-->
+<style>
+.be-root{width:100%;color:#353944;font-size:12px}
+.be-eyebrow{margin:0 0 4px;font-size:12px;font-weight:600;letter-spacing:.08em;text-transform:uppercase;color:#706000}
+.be-h1{margin:0;font-family:var(--font-heading);font-size:24px;font-weight:600;line-height:1.2;color:#0B1332}
+.be-sub{margin:4px 0 16px;color:#5B606D;font-size:14px}
+.be-pan{background:#fff;border:1px solid #E9EBF0;border-radius:12px;margin-bottom:16px;overflow:hidden}
+.be-pan>h2{margin:0;padding:12px 16px;border-bottom:1px solid #E9EBF0;font-family:var(--font-heading);font-size:14px;font-weight:600;color:#0B1332}
+.be-g{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:16px;padding:16px}
+@media (max-width:760px){.be-g{grid-template-columns:1fr}}
+.be-c{display:flex;flex-direction:column;gap:4px;min-width:0}
+.be-c>span,.be-lab{font-size:12px;font-weight:600;color:#474C58}
+.be-in,.be-sel{width:100%;box-sizing:border-box;height:36px;border:1px solid #878D9A;border-radius:8px;background:#fff;color:#353944;font:inherit;font-size:12px;padding:0 12px}
+.be-in:focus-visible,.be-sel:focus-visible{outline:3px solid #2E427B;outline-offset:2px}
+.be-sites{display:flex;flex-wrap:wrap;gap:8px 16px;align-items:center;min-height:36px}
+.be-sites label{display:inline-flex;align-items:center;gap:6px;font-size:12px;cursor:pointer}
+.be-sites input{width:16px;height:16px;accent-color:#2E427B;margin:0}
+.be-res h2{display:flex;justify-content:space-between;align-items:center}
+.be-res small{font:400 12px var(--font-sans);color:#5B606D}
+.be-titre{padding:16px;text-align:center;border-bottom:1px solid #E9EBF0}
+.be-titre h3{margin:0;font-family:var(--font-heading);font-size:18px;font-weight:600;color:#0B1332}
+.be-titre p{margin:2px 0 0;color:#5B606D}
+.be-tb{width:100%;border-collapse:collapse}
+.be-tb th{padding:8px 16px;background:#F5F7F9;border-bottom:1px solid #E9EBF0;text-align:left;font-size:12px;font-weight:600;letter-spacing:.05em;text-transform:uppercase;color:#5B606D}
+.be-tb th.r,.be-tb td.r{text-align:right;font-variant-numeric:tabular-nums}
+.be-tb td{padding:8px 16px;border-bottom:1px solid #E9EBF0}
+.be-tb tr.titre td,.be-tb tr.total td{font-weight:700}.be-tb tr.total td{background:#F5F7F9}
+.be-tb tr.soustitre td:nth-child(2){padding-left:28px;font-weight:600}.be-tb tr.ligne td:nth-child(2){padding-left:40px}
+.be-pan[hidden]{display:none}
+.be-tb.ter td:first-child{white-space:normal}.be-tb.ter tr.soustitre td:first-child{padding-left:28px;font-weight:600}.be-tb.ter tr.ligne td:first-child{padding-left:44px}.be-tb.ter tr.total td{background:#F5F7F9}.be-tb.ter td.r,.be-tb.ter th.r{white-space:nowrap}.be-tb.ter{min-width:820px}.be-res{overflow-x:auto!important}.be-tb.ter td:first-child{min-width:260px}
+.be-span2{grid-column:1/-1}
+.be-db{grid-auto-rows:max-content;align-content:start}
+.be-dp{position:relative}.be-dp .be-in{padding-right:40px}
+.be-dpb{position:absolute;right:2px;top:2px;width:32px;height:32px;border:0;border-radius:6px;background:none;color:#2E427B;font-size:14px;cursor:pointer}.be-dpb:hover{background:#E9EBF0}
+.be-cal{position:fixed;z-index:60;width:300px;background:#fff;border:1px solid #D6D9E0;border-radius:12px;box-shadow:0 12px 32px -8px rgba(11,19,50,.3);padding:12px}
+.be-cal[hidden]{display:none}
+.be-cal-h{display:flex;align-items:center;justify-content:space-between;gap:4px;margin-bottom:8px;text-transform:capitalize;color:#0B1332}
+.be-cal-h button{width:28px;height:28px;border:1px solid #D6D9E0;border-radius:50%;background:#fff;color:#2E427B;font-size:14px;line-height:1;cursor:pointer}.be-cal-h button:hover{background:#E9EBF0}
+.be-cal-t{width:100%;border-collapse:collapse;text-align:center}
+.be-cal-t th{padding:4px 0;font-size:12px;font-weight:600;color:#474C58}
+.be-cal-t td{padding:1px}.be-cal-t td.w{font-size:11px;color:#969BA8;width:24px}
+.be-cal-t td button{width:32px;height:30px;border:0;border-radius:6px;background:none;color:#0B1332;font:inherit;font-size:12px;cursor:pointer}
+.be-cal-t td button.we{color:#B63132}.be-cal-t td button.o{color:#747A88}
+.be-cal-t td button.au{font-weight:700;box-shadow:inset 0 0 0 1px #2E427B}
+.be-cal-t td button.sel{background:#2E427B;color:#fff}
+.be-cal-t td button:hover:not(:disabled):not(.sel){background:#E3EBFE}
+.be-cal-t td button:disabled{opacity:.35;cursor:not-allowed}
+.be-cal-t td button:focus-visible,.be-cal-h button:focus-visible{outline:3px solid #2E427B;outline-offset:1px}
+.be-cal-f{display:flex;justify-content:center;gap:8px;margin-top:10px}
+.be-per{display:flex;align-items:center;gap:12px;flex-wrap:wrap}
+.be-per .be-pl{font-size:12px;font-weight:600;color:#474C58;min-width:70px}
+.be-per .be-in{width:150px}
+.be-in:disabled{background:#F5F7F9;border-color:#D6D9E0;color:#747A88;cursor:not-allowed}
+.be-ov{position:fixed;inset:0;z-index:50;background:rgba(11,19,50,.5);display:flex;align-items:center;justify-content:center;padding:16px}
+.be-ov[hidden]{display:none}
+.be-dlg{width:100%;max-width:820px;max-height:calc(100vh - 32px);display:flex;flex-direction:column;background:#fff;border-radius:12px;box-shadow:0 12px 32px -8px rgba(11,19,50,.3)}
+.be-dh{display:flex;justify-content:space-between;align-items:flex-start;gap:12px;padding:16px 20px;border-bottom:1px solid #E9EBF0}
+.be-dh h2{margin:0;font-family:var(--font-heading);font-size:18px;font-weight:600;color:#0B1332}
+.be-dsub{margin:4px 0 0;color:#5B606D}
+.be-x{width:36px;height:36px;border:0;border-radius:8px;background:none;color:#474C58;font-size:16px;cursor:pointer}.be-x:hover{background:#E9EBF0}
+.be-db{overflow:auto;padding:16px 20px;display:grid;gap:16px}
+.be-db .be-pan{margin:0}
+.be-df{display:flex;justify-content:flex-end;gap:8px;padding:12px 20px;border-top:1px solid #E9EBF0}
+.be-b{display:inline-flex;align-items:center;justify-content:center;gap:6px;height:36px;padding:0 14px;border:1px solid #D6D9E0;border-radius:8px;background:#fff;color:#474C58;font:inherit;font-size:12px;font-weight:700;cursor:pointer}
+.be-b:hover{background:#E9EBF0}.be-b.pri{background:#2E427B;border-color:#2E427B;color:#fff}.be-b.pri:hover{background:#243569}
+.be-b:focus-visible,.be-x:focus-visible{outline:3px solid #2E427B;outline-offset:2px}
+.be-vide{padding:48px 16px;text-align:center;color:#5B606D;font-size:14px}.be-vide[hidden]{display:none}
+.be-tb.ter.gv-w{min-width:2300px}.be-tb.ter.gv-w td:first-child{min-width:0;white-space:nowrap}.gv-w th,.gv-w td{white-space:nowrap;padding:6px 10px}.gv-w th{text-align:center}.gv-w th.g{background:#243569}.gv-w td.r{text-align:right;font-variant-numeric:tabular-nums}.gv-w td.l{max-width:260px;overflow:hidden;text-overflow:ellipsis}
+.gv-ms{position:relative}.gv-ms-b{min-height:48px;border:1px solid #878D9A;border-radius:8px;background:#fff;padding:6px 40px 6px 8px;cursor:pointer;box-sizing:border-box;position:relative}
+.gv-ms-c{display:inline-flex;align-items:center;background:#E9EBF0;border-radius:4px;padding:4px 10px;font-weight:600}
+.gv-ms-x{position:absolute;right:8px;top:50%;transform:translateY(-50%);width:22px;height:22px;border-radius:50%;background:#9ca3af;color:#fff;border:0;cursor:pointer;line-height:22px;padding:0;font-size:14px}
+.gv-ms-p{position:absolute;left:0;right:0;top:100%;z-index:5;background:#fff;border:1px solid #D6D9E0;border-radius:8px;box-shadow:0 12px 32px -8px rgba(11,19,50,.3);max-height:220px;overflow:auto;display:none;padding:6px}
+.gv-ms-p.open{display:block}.gv-ms-p label{display:flex;gap:8px;align-items:center;padding:5px 6px;cursor:pointer;font-weight:400}
+.gv-er{margin:0 20px 12px;font-size:12px;color:#B63132}.gv-er[hidden]{display:none}
+</style>
+<div class="be-root" data-gv>
+  <h1 style="position:absolute;width:1px;height:1px;overflow:hidden;clip-path:inset(50%);margin:0">Suivi détaillé</h1>
+  <div class="no-print" data-gv-actions>
+    <button type="button" data-gv-open>Critères</button>
+    <button type="button" data-gv-pdf disabled>Imprimer</button>
+    <button type="button" data-gv-xls disabled>Exporter</button>
+  </div>
+  <div class="be-ov" data-gv-mod hidden>
+    <div class="be-dlg" role="dialog" aria-modal="true" aria-labelledby="gv-dt">
+      <div class="be-dh"><div><p class="be-eyebrow">Critères d'édition</p><h2 id="gv-dt">Suivi détaillé — GAVI</h2><p class="be-dsub">Choisissez les critères puis éditez l'état.</p></div>
+        <button type="button" class="be-x" data-gv-cancel aria-label="Fermer"><i class="ti ti-x"></i></button></div>
+      <div class="be-db"><section class="be-pan" aria-label="Critères"><h2>Critères de sélection</h2><div class="be-g">
+        <label class="be-c"><span>Année en cours *</span><select class="be-sel" data-gv-k="annee"></select></label>
+        <label class="be-c"><span>Périodicité *</span><select class="be-sel" data-gv-k="perio"><option value="1">Mois</option><option value="3" selected>Trimestre</option><option value="6">Semestre</option><option value="12">Année</option></select></label>
+        <label class="be-c"><span>Numéro *</span><select class="be-sel" data-gv-k="num"></select></label>
+        <label class="be-c"><span>Type de dépenses *</span><select class="be-sel" data-gv-k="depense" title="Décaissements : mouvements des racines C2, C4, C6 dans les journaux de trésorerie, avec imputation analytique. Engagements : mouvements des racines C2, C6 dans tous les journaux, avec imputation analytique."><option value="decaissement" selected>Décaissements</option><option value="engagement">Engagements</option></select></label>
+        <label class="be-c"><span>Période du</span><input class="be-in" data-gv-k="du" disabled></label>
+        <label class="be-c"><span>Au</span><input class="be-in" data-gv-k="au" disabled></label>
+        <label class="be-c"><span>Budget dépenses</span><select class="be-sel" data-gv-k="budget"><option value=""></option><option>1 - BUDGET INITIAL</option><option>2 - BUDGET AMENDE</option><option>3 - BUDGET FORMATION</option><option>4 - Budget RFI</option></select></label>
+        <label class="be-c"><span>Monnaie *</span><select class="be-sel" data-gv-k="monnaie"></select></label>
+        <div class="be-c be-span2"><span>Centre de saisie</span><div class="gv-ms" data-gv-ms="centre"></div></div>
+        <div class="be-c be-span2" data-regr><span>Plan de regroupement</span><div class="gv-ms" data-gv-ms="sub"></div></div>
+        <div class="be-c be-span2"><span>Journal</span><div class="gv-ms" data-gv-ms="jnl"></div></div>
+        <div class="be-c be-span2"><div class="be-sites"><label><input type="checkbox" data-gv-k="milliers">État exprimé en milliers</label></div></div>
+      </div></section></div>
+      <p class="gv-er" data-gv-er hidden></p>
+      <div class="be-df"><button type="button" class="be-b" data-gv-cancel>Annuler</button><button type="button" class="be-b pri" data-gv-go><i class="ti ti-file-text"></i>Éditer</button></div>
+    </div>
+  </div>
+  <div class="be-vide" data-gv-hint>Aucun suivi détaillé édité. Utilisez « Critères » pour lancer l'édition.</div>
+  <section class="be-pan be-res" aria-label="Résultat" data-gv-res hidden>
+    <h2>Suivi détaillé édité <small data-gv-info></small></h2>
+    <div data-gv-sc><table class="be-tb ter gv-w" data-gv-t></table></div>
+  </section>
+</div>
+<script>
+(function () {
+  var root = document.querySelector('[data-gv]'); if (!root) return;
+  function q(s) { return root.querySelector(s); }
+  function qa(s) { return [].slice.call(root.querySelectorAll(s)); }
+  function K(k) { return q('[data-gv-k="' + k + '"]'); }
+  function esc(s) { var d = document.createElement('div'); d.textContent = s == null ? '' : s; return d.innerHTML; }
+  var DATA = /*DATA*/[];
+  var MOIS = ['Janvier', 'Février', 'Mars', 'Avril', 'Mai', 'Juin', 'Juillet', 'Août', 'Septembre', 'Octobre', 'Novembre', 'Décembre'];
+  var out = null;
+
+  // ---------- libellés des plans (Subvention, Activité)
+  function plans() { var P = window.PLANS_LIGNES || {}; return Object.keys(P).filter(function (k) { return /^PLAN\d+$/.test(k); }).map(function (k) { return (P[k] && P[k].rows) || []; }); }
+  function ligne(code) { var L = plans(), i, r; for (i = 0; i < L.length; i++) { r = L[i].filter(function (x) { return x.code === code; })[0]; if (r) return { r: r, rows: L[i] }; } return null; }
+  function lib(code) { var l = ligne(code); return l ? l.r.libelle : ''; }
+  function ancetres(code) { var l = ligne(code), ch = [], p, g = 0; if (!l) return ch; p = l.r.parent; while (p && g++ < 10) { ch.unshift(p); var x = l.rows.filter(function (y) { return y.code === p; })[0]; p = x ? x.parent : ''; } return ch; }
+
+  // ---------- listes des critères
+  var SEL = { centre: [['01', 'Siège']], sub: [], jnl: [] };
+  var CHO = { centre: {}, sub: {}, jnl: {} };
+  function journaux() { return (window.JOURNAUX_PLAN || []).map(function (j) { return [j.code, j.code + (j.libelle ? ' — ' + j.libelle : '')]; }); }
+  // plan de regroupement : éléments proposés, axe analytique du plan, appartenance d'une valeur à un élément
+  function subventions() { var R = window.REGROUPEMENT ? window.REGROUPEMENT() : null; return R ? R.elements.map(function (e) { return [e.code, e.code + ' — ' + e.libelle]; }) : []; }
+  function axeRegr() { var R = window.REGROUPEMENT ? window.REGROUPEMENT() : null, AX = (window.ECRITURES_SAISIES && window.ECRITURES_SAISIES.AXES) || []; return R ? (AX[parseInt(String(R.plan).slice(4), 10) - 1] || '') : ''; }
+  function dansElt(v, code) { return v === code || v.indexOf(code) === 0 || ancetres(v).indexOf(code) >= 0; }
+  function okDemo(code) { var R = window.REGROUPEMENT ? window.REGROUPEMENT() : null; if (!R || !R.elements.some(function (e) { return e.code === code; })) return true; return !!CHO.sub[code]; }
+  function okAxe(ax) {
+    var R = window.REGROUPEMENT ? window.REGROUPEMENT() : null; if (!R) return true; var a = axeRegr(), v = a ? (ax[a] || '') : '';
+    if (!v) return R.elements.every(function (e) { return CHO.sub[e.code]; });
+    return R.elements.some(function (e) { return CHO.sub[e.code] && dansElt(v, e.code); });
+  }
+  function subventionsFichier() {
+    var m = {}, o = [];
+    DATA.forEach(function (r) { if (!m[r[0]]) { m[r[0]] = 1; o.push([r[0], r[0] + ' — ' + r[1]]); } });
+    var S = window.ECRITURES_SAISIES; if (S) S({}).forEach(function (x) { var c = (x.axes || {}).FINANCEMENT; if (c && !m[c]) { m[c] = 1; o.push([c, c + (lib(c) ? ' — ' + lib(c) : '')]); } });
+    return o;
+  }
+  function initMs() {
+    SEL.sub = subventions(); SEL.jnl = journaux();
+    ['centre', 'sub', 'jnl'].forEach(function (k) {
+      var keep = CHO[k], all = {}; SEL[k].forEach(function (o) { all[o[0]] = (k in keep && Object.keys(keep).length) ? !!keep[o[0]] : true; }); CHO[k] = all; drawMs(k);
+    });
+  }
+  function drawMs(k) {
+    var box = q('[data-gv-ms="' + k + '"]'), n = SEL[k].length, c = SEL[k].filter(function (o) { return CHO[k][o[0]]; }).length, open = box.querySelector('.gv-ms-p') && box.querySelector('.gv-ms-p').classList.contains('open');
+    var txt = c === n ? 'Tous sélectionnés (' + n + ')' : c === 0 ? 'Aucune sélection' : c + ' sélectionné(s) sur ' + n;
+    box.innerHTML = '<div class="gv-ms-b" data-gv-tg="' + k + '"><span class="gv-ms-c">' + esc(txt) + '</span><button type="button" class="gv-ms-x" data-gv-all="' + k + '" aria-label="Tout sélectionner" title="Tout sélectionner">×</button></div>' +
+      '<div class="gv-ms-p' + (open ? ' open' : '') + '">' + SEL[k].map(function (o) { return '<label><input type="checkbox" data-gv-ck="' + k + '" value="' + esc(o[0]) + '"' + (CHO[k][o[0]] ? ' checked' : '') + '> ' + esc(o[1]) + '</label>'; }).join('') + '</div>';
+  }
+
+  // ---------- période
+  function iso(d) { return d.getFullYear() + '-' + ('0' + (d.getMonth() + 1)).slice(-2) + '-' + ('0' + d.getDate()).slice(-2); }
+  function fr(s) { return s ? s.split('-').reverse().join('/') : ''; }
+  function bornes() {
+    var y = +K('annee').value, p = +K('perio').value || 3, n = +K('num').value || 1;
+    K('du').value = iso(new Date(y, (n - 1) * p, 1)); K('au').value = iso(new Date(y, n * p, 0));
+  }
+  function numeros() {
+    var p = +K('perio').value || 3, cur = K('num').value, o = '', i; for (i = 1; i <= 12 / p; i++) o += '<option' + (String(i) === cur ? ' selected' : '') + '>' + i + '</option>';
+    K('num').innerHTML = o; bornes();
+  }
+  function devises() { var d = (window.DEVISES || []).filter(function (x) { return x.actif !== false && x.code !== 'MGA'; }).map(function (x) { return [x.code, x.code + (x.libelle ? ' - ' + x.libelle : '')]; }); return [['MGA', 'MGA - Ariary']].concat(d); }
+  function ouvrir() {
+    var a = K('annee'); if (!a.options.length) { a.innerHTML = '<option>2028</option><option>2027</option><option selected>2026</option><option>2025</option><option>2024</option><option>2023</option>'; }
+    K('monnaie').innerHTML = devises().map(function (d) { return '<option value="' + esc(d[0]) + '">' + esc(d[1]) + '</option>'; }).join('');
+    numeros(); initMs(); q('[data-gv-er]').hidden = true; q('[data-gv-mod]').hidden = false;
+  }
+
+  // ---------- calcul
+  function trim(dt) { return Math.floor((+dt.slice(5, 7) - 1) / 3); }
+  function cle(r) { return [r[0], r[2], r[6], r[7]].join('|'); }
+  var SUBL = {}, ACTL = {}; DATA.forEach(function (r) { SUBL[r[0]] = r[1]; ACTL[r[2]] = r[3]; });
+  function tauxCours(m, d) { if (!m || m === 'MGA') return 1; var C = window.COURS_API, t = C && C.taux(m, d); if (!t && Array.isArray(window.COURS)) { var l = window.COURS.filter(function (x) { return x.devise === m; }).sort(function (a, b) { return a.date < b.date ? -1 : 1; })[0]; t = l && l.parite; } return t || 0; }
+  function calculer(c) {
+    var rows = [], idx = {}, an = c.annee, tr = [0, 1, 2, 3].map(function (i) { var d0 = iso(new Date(an, i * 3, 1)), d1 = iso(new Date(an, i * 3 + 3, 0)); return d0 <= c.au && d1 >= c.du; });
+    function vide() { return null; }
+    DATA.forEach(function (r) {
+      if (r[0] === 'Total' || an !== 2026) return;   // lignes de démonstration : exercice 2026 uniquement
+      if (!okDemo(r[0])) return;
+      var o = { sub: r[0], subl: r[1], act: r[2], actl: r[3], dom: r[4], obj: r[5], cat: r[6], poste: r[7], b: [r[8], r[9], r[10], r[11]].map(function (v, i) { return tr[i] && v !== '' ? +v : null; }), r: [r[12], r[13], r[14], r[15]].map(function (v, i) { return tr[i] && v !== '' ? +v : null; }) };
+      o.intrant = ''; idx[cle(r) + '|'] = o; rows.push(o);
+    });
+    var E = window.ETATS_FIN && window.ETATS_FIN.depense ? window.ETATS_FIN.depense(c.du, c.au, c.depense) : [];
+    E.forEach(function (e) {
+      var ax = e.ax || {}, sub = ax.FINANCEMENT || '', act = ax.ACTIVITE || '', cat = ax['CATEGORIE DE DEPENSE'] || '', po = ax['POSTE BUDGETAIRE'] || '';
+      if (!CHO.centre[e.site || '01'] || !okAxe(ax) || (e.jnl && CHO.jnl[e.jnl] === false)) return;
+      if (!sub) sub = '—';
+      var intr = ax.INTRANT || '', k = [sub, act, cat, po].join('|') + '|' + intr, o = idx[k];
+      if (!o) {
+        var an2 = ancetres(act);
+        o = idx[k] = { sub: sub, subl: SUBL[sub] || lib(sub) || '', act: act, actl: ACTL[act] || lib(act) || '', dom: an2.length > 1 ? an2[0] : '', obj: an2.length ? an2[an2.length - 1] : '', cat: cat, poste: po, intrant: intr, b: [null, null, null, null], r: [null, null, null, null], saisi: true }; rows.push(o);
+      }
+      var t = trim(e.dt); o.r[t] = (o.r[t] || 0) + (e.d - e.cr) / 100;
+    });
+    rows.forEach(function (o) {
+      var sb = o.b.reduce(function (a, v) { return a + (v || 0); }, 0), sr = o.r.reduce(function (a, v) { return a + (v || 0); }, 0);
+      o.tb = o.b.some(function (v) { return v !== null; }) ? sb : null; o.tr = o.r.some(function (v) { return v !== null; }) ? sr : null;
+      o.vm = (o.tb || 0) - (o.tr || 0); o.vp = o.tb ? o.vm / o.tb * 100 : null;
+    });
+    var tx = tauxCours(c.monnaie, c.au);   // monnaie d'édition : montants divisés par le cours
+    if (tx && tx !== 1) rows.forEach(function (o) {
+      for (var i = 0; i < 4; i++) { if (o.b[i] !== null) o.b[i] /= tx; if (o.r[i] !== null) o.r[i] /= tx; }
+      var sb = o.b.reduce(function (a, v) { return a + (v || 0); }, 0), sr = o.r.reduce(function (a, v) { return a + (v || 0); }, 0);
+      o.tb = o.b.some(function (v) { return v !== null; }) ? sb : null; o.tr = o.r.some(function (v) { return v !== null; }) ? sr : null; o.vm = (o.tb || 0) - (o.tr || 0); o.vp = o.tb ? o.vm / o.tb * 100 : null;
+    });
+    rows.sort(function (a, b) { return (a.sub + a.act + a.cat + a.poste) < (b.sub + b.act + b.cat + b.poste) ? -1 : 1; });
+    var T = { sub: 'Total', b: [0, 0, 0, 0], r: [0, 0, 0, 0], tb: 0, tr: 0 };
+    rows.forEach(function (o) { for (var i = 0; i < 4; i++) { T.b[i] += o.b[i] || 0; T.r[i] += o.r[i] || 0; } T.tb += o.tb || 0; T.tr += o.tr || 0; });
+    T.vm = T.tb - T.tr; T.vp = T.tb ? T.vm / T.tb * 100 : null;
+    return { rows: rows, total: T, tr: tr };
+  }
+  function nf(v, mil) {
+    if (v === null || v === undefined) return '';
+    var x = mil ? v / 1000 : v, d = mil ? 0 : 2, s = Math.abs(x).toFixed(d).split('.'); s[0] = s[0].replace(/\B(?=(\d{3})+(?!\d))/g, ' ');
+    return (x < 0 && +Math.abs(x).toFixed(d) !== 0 ? '-' : '') + s.join(',');
+  }
+  function pc(v) { return v === null || v === undefined ? '' : (Math.round(v * 100) / 100).toFixed(2).replace('.', ',') + ' %'; }
+  var HEAD = ['Subvention', 'Subvention - Libellé', 'Activité', 'Activité - Libellé', 'Domaines', 'Objectifs', 'Catégories de dépenses', 'Postes de dépenses', 'Intrant', 'Trimestre 1', 'Trimestre 2', 'Trimestre 3', 'Trimestre 4', 'Trimestre 1', 'Trimestre 2', 'Trimestre 3', 'Trimestre 4', 'Total Budget', 'Total Réel', 'Variance en MGA', 'Variance en %'];
+  function ligneTab(o, mil) {
+    return [o.sub, o.subl || '', o.act || '', o.actl || '', o.dom || '', o.obj || '', o.cat || '', o.poste || '', o.intrant || ''].concat(o.b.map(function (v) { return nf(v, mil); }), o.r.map(function (v) { return nf(v, mil); }), [nf(o.tb, mil), nf(o.tr, mil), nf(o.vm, mil), pc(o.vp)]);
+  }
+  function rendre() {
+    var c = out.c, R = out.res, mil = c.milliers, h = '<thead><tr><th colspan="9"></th><th class="g" colspan="4">Budget</th><th class="g" colspan="4">Réel</th><th class="g" colspan="4">Total annuel</th></tr><tr>' + HEAD.map(function (t, i) { return '<th>' + (i === 19 ? 'Variance en ' + c.monnaie : esc(t)) + '</th>'; }).join('') + '</tr></thead>';
+    var b = R.rows.map(function (o) { return '<tr>' + ligneTab(o, mil).map(function (v, i) { return '<td class="' + (i >= 9 ? 'r' : i === 3 ? 'l' : '') + '" title="' + (i === 3 ? esc(v) : '') + '">' + esc(v) + '</td>'; }).join('') + '</tr>'; }).join('');
+    var t = ligneTab(Object.assign({}, R.total, { subl: '', act: '', actl: '', dom: '', obj: '', cat: '', poste: '', intrant: '' }), mil);
+    b += '<tr class="total">' + t.map(function (v, i) { return '<td class="' + (i >= 9 ? 'r' : '') + '">' + esc(v) + '</td>'; }).join('') + '</tr>';
+    q('[data-gv-t]').innerHTML = h + '<tbody>' + b + '</tbody>';
+    out.meta = q('[data-gv-info]').textContent = 'Exercice ' + c.annee + ' · ' + c.perioLib + ' n° ' + c.num + ' (' + fr(c.du) + ' → ' + fr(c.au) + ') · ' + c.depenseLib + (c.budget ? ' · ' + c.budget : '') + ' · ' + c.monnaie + (mil ? ' · en milliers' : '') + ' · ' + R.rows.length + ' ligne(s)';
+  }
+  function lire() {
+    var p = K('perio');
+    return { annee: +K('annee').value, perio: +p.value, perioLib: p.options[p.selectedIndex].text, num: +K('num').value, du: K('du').value, au: K('au').value, budget: K('budget').value, depense: K('depense').value, depenseLib: K('depense').options[K('depense').selectedIndex].text, milliers: K('milliers').checked, monnaie: K('monnaie').value };
+  }
+  function executer() {
+    var er = q('[data-gv-er]'); er.hidden = true;
+    var c = lire();
+    if (!tauxCours(c.monnaie, c.au)) { er.textContent = 'Aucun cours n’est enregistré pour ' + c.monnaie + ' (écran Cours).'; er.hidden = false; return; }
+    if (SEL.sub.length && !SEL.sub.some(function (o) { return CHO.sub[o[0]]; })) { er.textContent = 'Sélectionnez au moins un élément du plan de regroupement.'; er.hidden = false; return; }
+    out = { c: c, res: calculer(c) }; q('[data-gv-mod]').hidden = true;
+    q('[data-gv-hint]').hidden = true; q('[data-gv-res]').hidden = false; q('[data-gv-xls]').disabled = false; q('[data-gv-pdf]').disabled = false; rendre();
+  }
+  function exporter(k) {
+    if (!out) return; var X = window.EXPORT_TABLEAU; if (!X) return;
+    var c = out.c, mil = c.milliers, tete = HEAD.map(function (t, i) { return i >= 9 && i < 13 ? 'Budget ' + t : i >= 13 && i < 17 ? 'Réel ' + t : i === 19 ? 'Variance en ' + c.monnaie : t; });
+    var lignes = out.res.rows.map(function (o) { return ligneTab(o, mil); });
+    lignes.push(ligneTab(Object.assign({}, out.res.total, { subl: '', act: '', actl: '', dom: '', obj: '', cat: '', poste: '', intrant: '' }), mil));
+    if (k === 'pdf') X.pdf('gavi_suivi_detaille.pdf', 'SUIVI DÉTAILLÉ', 'Procédure financière GAVI', tete, lignes, [out.meta]);
+    else {
+      var v = []; for (var i = 0; i < 9; i++) v.push('');
+      var grp = v.concat(['Budget', '', '', '', 'Réel', '', '', '', 'Total annuel', '', '', '']);
+      X.xlsx('gavi_suivi_detaille.xlsx', 'Suivi détaillé', tete, lignes, [['SUIVI DÉTAILLÉ'], ['Procédure financière GAVI'], [out.meta], [], grp]);
+    }
+  }
+
+  root.addEventListener('click', function (e) {
+    var t = e.target, x;
+    if (t.closest('[data-gv-open]')) ouvrir();
+    else if (t.closest('[data-gv-cancel]')) q('[data-gv-mod]').hidden = true;
+    else if (t.closest('[data-gv-go]')) executer();
+    else if (t.closest('[data-gv-xls]')) exporter('xls');
+    else if (t.closest('[data-gv-pdf]')) exporter('pdf');
+    else if ((x = t.closest('[data-gv-all]'))) { var k = x.dataset.gvAll; SEL[k].forEach(function (o) { CHO[k][o[0]] = true; }); drawMs(k); }
+    else if ((x = t.closest('[data-gv-tg]'))) { var p = x.parentElement.querySelector('.gv-ms-p'); p.classList.toggle('open'); }
+  });
+  root.addEventListener('change', function (e) {
+    var t = e.target;
+    if (t.matches('[data-gv-k=annee],[data-gv-k=num]')) bornes();
+    else if (t.matches('[data-gv-k=perio]')) numeros();
+    else if (t.matches('[data-gv-ck]')) { var k = t.dataset.gvCk; CHO[k][t.value] = t.checked; var op = true; drawMs(k); }
+  });
+  window.addEventListener('hashchange', function () { if (location.hash === '#gavisuivi' && !out && q('[data-gv-mod]').hidden) setTimeout(ouvrir, 300); });
+  if (location.hash === '#gavisuivi') setTimeout(ouvrir, 700);
+})();
+</script>

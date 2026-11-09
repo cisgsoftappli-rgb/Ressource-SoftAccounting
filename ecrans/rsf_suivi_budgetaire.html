@@ -1,0 +1,225 @@
+<!--
+  Écran « RSF › Suivi budgétaire » (Comptabilité Projets & Bailleurs) — analyse mono-critère (modèle SbAnaMonoCritere.xlsx).
+  Critères (fenêtre modale) : exercice, période du/au, budget période / exercice, intervalles Du/Au par plan (Financement, Budget, Activité, Géographique, Code comptable),
+  centre de saisie, financier, type de dépenses (Engagements / Décaissements), monnaie, source du PAD (PAD Financier / PAD Acti + Financier),
+  puis choix d'UN critère d'analyse (plan actif) et des niveaux de ce plan à afficher.
+  Lignes = plan choisi (window.PLANS_CFG[].niveaux, window.PLANS_LIGNES[code].rows) ; colonnes Période / Exercice / Projet : Réalisations, Budget, Disponible, Exécution (%).
+  Données de démonstration déterministes. Préfixe sb- / data-sb. Ne pas nommer de fonction « $$ » (build.cjs).
+-->
+<style>
+[data-sb] .sb-info{font-size:13px;color:#474C58;margin:0 0 12px;max-width:980px;line-height:1.5}[data-sb] .sb-info b{color:#0B1332}
+[data-sb] .sb-crit{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:10px 18px}
+[data-sb] .sb-crit label,[data-sb] .sb-f{display:grid;gap:4px;font-size:12px;color:#5B606D;align-content:start}
+[data-sb] .sb-sec{grid-column:1/-1;font-size:13px;font-weight:700;color:#2F6DB5;border-bottom:1px solid #2F6DB5;padding:4px 0;margin-top:6px}
+[data-sb] .sb-rg{grid-column:1/-1;display:grid;grid-template-columns:160px minmax(0,1fr) 28px minmax(0,1fr);gap:8px;align-items:center;font-size:13px;color:#0B1332}
+[data-sb] .sb-rg.off{opacity:.45}[data-sb] .sb-rg span.au{text-align:center;color:#5B606D;font-size:12px}
+[data-sb] .sb-ms{position:relative}
+[data-sb] .sb-msb{width:100%;min-height:34px;text-align:left;border:1px solid #D5D9E3;border-radius:6px;background:#fff;padding:4px 10px;font-size:13px;color:#0B1332;cursor:pointer;display:flex;justify-content:space-between;align-items:center;gap:8px}
+[data-sb] .sb-msp{position:absolute;z-index:30;left:0;right:0;top:100%;margin-top:2px;background:#fff;border:1px solid #D5D9E3;border-radius:8px;box-shadow:0 8px 24px rgba(11,19,50,.14);max-height:240px;overflow:auto;padding:6px}
+[data-sb] .sb-msp label{display:flex;align-items:center;gap:8px;padding:4px 6px;font-size:13px;color:#0B1332}[data-sb] .sb-msp label:hover{background:#F3F5FA}[data-sb] .sb-msp .sb-all{border-bottom:1px solid #E9EBF0;margin-bottom:4px;font-weight:600}
+[data-sb] .sb-pad{grid-column:1/-1;display:flex;flex-wrap:wrap;gap:8px 24px;align-items:center;font-size:13px;color:#0B1332;border:1px solid #C9D6F2;background:#F3F7FF;border-radius:10px;padding:10px 14px}
+[data-sb] .sb-pad label{display:flex;align-items:center;gap:8px;font-size:13px;color:#0B1332}
+[data-sb] .sb-cn{grid-column:1/-1;display:grid;grid-template-columns:minmax(0,1fr) 70px minmax(0,1fr);gap:14px;align-items:stretch}
+[data-sb] .sb-card{border:1px solid #E9EBF0;border-radius:10px;padding:12px 16px;background:#fff;box-shadow:0 2px 8px rgba(11,19,50,.06)}
+[data-sb] .sb-card h3{margin:0 0 8px;font-size:15px;color:#2F6DB5;font-weight:600;border-bottom:1px solid #2F6DB5;padding-bottom:6px}
+[data-sb] .sb-card label{display:flex;align-items:center;gap:10px;font-size:13px;color:#0B1332;padding:7px 2px;border-bottom:1px solid #EEF0F5}[data-sb] .sb-card label.off{opacity:.45}
+[data-sb] .sb-arr{display:flex;align-items:center;justify-content:center;border-radius:10px;box-shadow:0 2px 8px rgba(11,19,50,.08);font-size:20px;color:#3B4160}
+[data-sb] .sb-tb{border-collapse:separate;border-spacing:0;width:100%;font-size:13px}
+[data-sb] .sb-tb th,[data-sb] .sb-tb td{padding:6px 10px;border-bottom:1px solid #E9EBF0;white-space:nowrap}
+[data-sb] .sb-tb thead th{background:#EEF1F8;color:#0B1332;text-align:center;font-weight:700;border-right:1px solid #fff}
+[data-sb] .sb-tb thead tr:nth-child(2) th{background:#F6F7FB;font-weight:600}
+[data-sb] .sb-tb td.r{text-align:right;font-variant-numeric:tabular-nums}[data-sb] .sb-tb td.d{min-width:360px;text-align:left}[data-sb] .sb-tb td.m{font-family:ui-monospace,Consolas,monospace;font-size:12px}
+[data-sb] .sb-tb tr.l1 td{background:#E7EDFB;font-weight:700}[data-sb] .sb-tb tr.l2 td{background:#FAFBFE}[data-sb] .sb-tb tr.tot td{background:#E7EDFB;font-weight:700;border-top:2px solid #C9D6F2}
+[data-sb] .sb-neg{color:#B63132}[data-sb] .sb-ko{color:#B63132;font-weight:600}
+[data-sb] .sb-pg{padding:10px 4px 0;font-size:13px;color:#5B606D}
+[data-sb] .sb-ov{position:fixed;inset:0;z-index:1000;background:rgba(11,19,50,.45);display:flex;align-items:center;justify-content:center;padding:20px}[data-sb] .sb-ov[hidden]{display:none}
+[data-sb] .sb-md{background:#fff;border-radius:12px;width:min(1100px,100%);max-height:92vh;display:flex;flex-direction:column;box-shadow:0 20px 60px rgba(11,19,50,.3)}
+[data-sb] .sb-mh{display:flex;justify-content:space-between;align-items:center;padding:14px 20px;border-bottom:1px solid #E9EBF0;font-size:16px;color:#0B1332}
+[data-sb] .sb-x{border:0;background:none;font-size:24px;line-height:1;cursor:pointer;color:#5B606D}
+[data-sb] .sb-mb{padding:14px 20px;overflow:auto;flex:1}
+[data-sb] .sb-mf{display:flex;justify-content:flex-end;gap:10px;padding:12px 20px;border-top:1px solid #E9EBF0}
+[data-sb] .sb-mf button{height:36px;padding:0 18px;border-radius:8px;border:1px solid #D5D9E3;background:#fff;color:#0B1332;font-weight:600;font-size:13px;cursor:pointer}
+[data-sb] .sb-mf button[data-sb-gen]{background:#0F2A6B;border-color:#0F2A6B;color:#fff}
+@media (max-width:900px){[data-sb] .sb-crit{grid-template-columns:1fr}[data-sb] .sb-cn{grid-template-columns:1fr}[data-sb] .sb-rg{grid-template-columns:1fr}}
+</style>
+
+<div class="bp-root" data-sb>
+  <h1 style="position:absolute;width:1px;height:1px;overflow:hidden;clip-path:inset(50%);margin:0">Suivi budgétaire</h1>
+  <div class="no-print" data-sb-actions>
+    <button type="button" data-sb-crit>Critères</button>
+    <button type="button" data-sb-pdf>PDF</button>
+    <button type="button" data-sb-xlsx>Excel (XLSX)</button>
+  </div>
+  <div class="bp-grid"><section class="bp-pan" aria-label="Suivi budgétaire">
+    <p class="sb-info">Le <b>suivi budgétaire</b> analyse, selon <b>un critère</b> (plan de financement, budget, activité…) et les niveaux choisis, les <b>réalisations</b>, le <b>budget</b>, le <b>disponible</b> et le taux d’<b>exécution</b> de la période, de l’exercice et du projet.</p>
+    <div data-sb-res hidden>
+      <div style="overflow:auto"><table class="sb-tb" style="min-width:1500px"><thead data-sb-th></thead><tbody data-sb-lignes></tbody></table></div>
+      <div class="sb-pg" data-sb-pginfo></div>
+    </div>
+    <div class="bp-vide" data-sb-init>Cliquez sur « Critères » pour renseigner l’édition, puis sur « Générer ».</div>
+  </section></div>
+
+  <div class="sb-ov" data-sb-ov hidden><div class="sb-md" role="dialog" aria-modal="true" aria-label="Critères d’édition">
+    <div class="sb-mh"><b>Critères d’édition — Suivi budgétaire</b><button type="button" class="sb-x" data-sb-fermer aria-label="Fermer">×</button></div>
+    <div class="sb-mb"><div class="sb-crit">
+      <div class="sb-sec">Période et budgets</div>
+      <label>Exercice comptable<select class="bp-sel" data-sb-ex data-no-combo><option>2026</option><option>2025</option></select></label>
+      <label>Périodicité<select class="bp-sel" data-sb-perio data-no-combo><option value="1">Mois</option><option value="3" selected>Trimestre</option><option value="6">Semestre</option><option value="12">Année</option></select></label>
+      <label>Numéro<select class="bp-sel" data-sb-num data-no-combo></select></label>
+      <div class="sb-f"><span>Période</span><div style="display:grid;grid-template-columns:1fr 1fr;gap:8px"><input class="bp-in" type="date" data-sb-du readonly><input class="bp-in" type="date" data-sb-au readonly></div></div>
+      <label>Budget période<select class="bp-sel" data-sb-bp data-no-combo><option>1 - BUDGET INITIAL</option><option selected>2 - BUDGET AMENDÉ</option></select></label>
+      <label>Budget exercice<select class="bp-sel" data-sb-ba data-no-combo><option>1 - BUDGET INITIAL</option><option selected>2 - BUDGET AMENDÉ</option></select></label>
+      <label>Type de dépenses<select class="bp-sel" data-sb-typ data-no-combo><option>Décaissements</option><option selected>Engagements</option></select></label>
+      <div class="sb-sec">Intervalles par plan (Du / Au)</div>
+      <div class="sb-rgs" data-sb-rgs style="grid-column:1/-1;display:grid;gap:8px"></div>
+      <div class="sb-sec">Sélections</div>
+      <div class="sb-f"><span>Centre de saisie</span><div class="sb-ms" data-sb-ms="Siège|Antenne Menabe|Antenne Melaky"></div></div>
+      <div class="sb-f"><span>Financier</span><div class="sb-ms" data-sb-ms="IDA|FIDA|FED|FM|BAD|État malgache|Bénéficiaires"></div></div>
+      <label>Monnaie<select class="bp-sel" data-sb-dev data-no-combo><option value="1">MGA - ARIARY</option><option value="4800">EUR - EURO</option><option value="4500">USD - DOLLAR US</option></select></label>
+      <div class="sb-pad"><b>Budget du projet (colonne Projet) :</b>
+        <label><input type="radio" name="sbpad" value="fin" data-sb-pad checked> PAD Financier</label>
+        <label><input type="radio" name="sbpad" value="actfin" data-sb-pad> PAD Acti + Financier</label>
+      </div>
+      <div class="sb-sec">Analyse mono-critère</div>
+      <div class="sb-cn">
+        <div class="sb-card"><h3>Critère</h3><div data-sb-cr></div></div>
+        <div class="sb-arr" aria-hidden="true">→</div>
+        <div class="sb-card"><h3>Niveau</h3><div data-sb-nv></div></div>
+      </div>
+    </div></div>
+    <div class="sb-mf"><button type="button" data-sb-fermer>Annuler</button><button type="button" data-sb-gen>Générer</button></div>
+  </div></div>
+  <div class="bp-toast" role="status" hidden data-sb-toast></div>
+</div>
+
+<script>
+(function () {
+  var root = document.querySelector('[data-sb]'); if (!root) return;
+  function q(s) { return root.querySelector(s); } function qa(s) { return [].slice.call(root.querySelectorAll(s)); }
+  function esc(s) { return String(s == null ? '' : s).replace(/[&<>"]/g, function (c) { return { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c]; }); }
+  function toast(m) { var t = q('[data-sb-toast]'); t.textContent = m; t.hidden = false; clearTimeout(toast.t); toast.t = setTimeout(function () { t.hidden = true; }, 2600); }
+  function fr(s) { return s.split('-').reverse().join('/'); }
+  function h(s) { var x = 7; for (var i = 0; i < s.length; i++) x = (x * 31 + s.charCodeAt(i)) % 9973; return x; }
+  function nb(x) { return Math.round(x).toLocaleString('fr-FR').replace(/[  ]/g, ' '); }
+  function cfgPlan(c) { return (window.PLANS_CFG || []).filter(function (p) { return p.code === c; })[0] || null; }
+  function lignesDe(c) { var L = window.PLANS_LIGNES && window.PLANS_LIGNES[c]; return L && L.rows ? L.rows.filter(function (r) { return r.actif !== false; }) : []; }
+  function actifs() { return window.PLANS_ACTIFS ? window.PLANS_ACTIFS() : ['PLAN1', 'PLAN2', 'PLAN3', 'PLAN4']; }
+  // plans proposés : intervalles Du/Au et critère d'analyse
+  var PLANS = [['PLAN3', 'Financement'], ['PLAN2', 'Budget'], ['PLAN1', 'Activité'], ['PLAN4', 'Géographique'], ['PC', 'Code comptable']];
+  function actif(c) { return c === 'PC' || actifs().indexOf(c) >= 0; }
+  function libPlan(c, d) { var p = cfgPlan(c); return p && p.libelle ? p.libelle : d; }
+  var DEMO = [['01', 'PRÊT FIDA N°2000001263-MG', '', 1], ['011', 'Consultations', '01'], ['012', 'Travaux', '01'], ['013', 'Équipements et matériels', '01'], ['014', 'Formation', '01'], ['015', 'Salaires et indemnités', '01'], ['016', 'Coûts de fonctionnement', '01'],
+    ['02', 'DON ASAP N°2000001262-MG', ''], ['021', 'Consultations', '02'], ['022', 'Travaux', '02'], ['025', 'Salaires et indemnités', '02'], ['03', 'ÉTAT RPI FIDA', ''], ['031', 'Consultations', '03'], ['032', 'Travaux', '03'], ['036', 'Coûts de fonctionnement', '03']].map(function (r) { return { code: r[0], libelle: r[1], parent: r[2] || '' }; });
+  // ----- fenêtre de critères
+  var crit = 'PLAN3';
+  function majRanges() {
+    var cur = {}; qa('[data-sb-rg]').forEach(function (s) { cur[s.dataset.sbRg + s.dataset.sens] = s.value; });
+    q('[data-sb-rgs]').innerHTML = PLANS.map(function (p) {
+      var on = actif(p[0]), R = lignesDe(p[0]), sel = function (sens) {
+        if (p[0] === 'PC' || R.length > 300) return '<input class="bp-in" data-sb-rg="' + p[0] + '" data-sens="' + sens + '" placeholder="Code" value="' + esc(cur[p[0] + sens] || '') + '"' + (on ? '' : ' disabled') + '>';
+        return '<select class="bp-sel" data-no-combo data-sb-rg="' + p[0] + '" data-sens="' + sens + '"' + (on ? '' : ' disabled') + '><option value=""></option>' + R.map(function (r) { return '<option value="' + esc(r.code) + '"' + (cur[p[0] + sens] === r.code ? ' selected' : '') + '>' + esc(r.code + ' — ' + (r.libelle || '')) + '</option>'; }).join('') + '</select>';
+      };
+      return '<div class="sb-rg' + (on ? '' : ' off') + '"><span>' + esc(libPlan(p[0], p[1])) + '</span>' + sel('du') + '<span class="au">Au</span>' + sel('au') + '</div>';
+    }).join('');
+  }
+  function majCriteres() {
+    if (!actif(crit)) crit = 'PLAN3';
+    q('[data-sb-cr]').innerHTML = PLANS.map(function (p) { var on = actif(p[0]); return '<label class="' + (on ? '' : 'off') + '"><input type="radio" name="sbcrit" value="' + p[0] + '" data-sb-crit-r' + (p[0] === crit ? ' checked' : '') + (on ? '' : ' disabled') + '> ' + esc(libPlan(p[0], p[1])) + '</label>'; }).join('');
+    majNiveaux();
+  }
+  function niveauxDe(c) { var p = cfgPlan(c); return p && p.niveaux && p.niveaux.length ? p.niveaux.map(function (n) { return n.libelle || String(n); }) : (c === 'PLAN3' ? ['Convention', 'Catégorie'] : ['Niveau 1', 'Niveau 2']); }
+  function majNiveaux() {
+    var N = niveauxDe(crit), cur = {}; qa('[data-sb-niv]').forEach(function (c) { cur[c.dataset.sbNiv] = c.checked; });
+    q('[data-sb-nv]').innerHTML = N.map(function (n, i) { return '<label><input type="checkbox" data-sb-niv="' + (i + 1) + '"' + (cur[i + 1] === undefined ? (i < 2 ? ' checked' : '') : (cur[i + 1] ? ' checked' : '')) + '> ' + (i + 1) + ' - ' + esc(n) + '</label>'; }).join('');
+  }
+  q('[data-sb-cr]').addEventListener('change', function (e) { if (e.target.matches('[data-sb-crit-r]')) { crit = e.target.value; qa('[data-sb-niv]').forEach(function (c) { c.removeAttribute('data-sb-niv'); }); majNiveaux(); } });
+  function ouvrir(o) { if (o) { majRanges(); majCriteres(); } q('[data-sb-ov]').hidden = !o; }
+  function isoD(d) { return d.getFullYear() + '-' + ('0' + (d.getMonth() + 1)).slice(-2) + '-' + ('0' + d.getDate()).slice(-2); }
+  function bornes() { var a = Number(q('[data-sb-ex]').value), len = Number(q('[data-sb-perio]').value) || 3, n = Number(q('[data-sb-num]').value) || 1; q('[data-sb-du]').value = isoD(new Date(a, (n - 1) * len, 1)); q('[data-sb-au]').value = isoD(new Date(a, n * len, 0)); }
+  function numeros() { var len = Number(q('[data-sb-perio]').value) || 3, cur = q('[data-sb-num]').value, o = ''; for (var i = 1; i <= 12 / len; i++) o += '<option' + (String(i) === cur ? ' selected' : '') + '>' + i + '</option>'; q('[data-sb-num]').innerHTML = o; bornes(); }
+  q('[data-sb-ex]').addEventListener('change', bornes); q('[data-sb-num]').addEventListener('change', bornes); q('[data-sb-perio]').addEventListener('change', numeros); numeros();
+  // listes à cocher
+  function msInit(el) {
+    var vals = el.getAttribute('data-sb-ms').split('|'), sel = vals.slice();
+    el.innerHTML = '<button type="button" class="sb-msb"><span></span><i class="ti ti-chevron-down" aria-hidden="true"></i></button><div class="sb-msp" hidden></div>';
+    var b = el.querySelector('.sb-msb'), p = el.querySelector('.sb-msp');
+    function maj() { b.firstChild.textContent = sel.length === vals.length ? 'Tous sélectionnés (' + vals.length + ')' : sel.length ? sel.length + ' sélectionné(s) sur ' + vals.length : 'Aucun'; }
+    p.innerHTML = '<label class="sb-all"><input type="checkbox" checked> Tout sélectionner</label>' + vals.map(function (v, i) { return '<label><input type="checkbox" data-i="' + i + '" checked> ' + esc(v) + '</label>'; }).join('');
+    p.addEventListener('change', function (e) {
+      var c = e.target; if (c.closest('.sb-all')) [].forEach.call(p.querySelectorAll('input[data-i]'), function (x) { x.checked = c.checked; });
+      sel = [].filter.call(p.querySelectorAll('input[data-i]'), function (x) { return x.checked; }).map(function (x) { return vals[x.dataset.i]; });
+      p.querySelector('.sb-all input').checked = sel.length === vals.length; maj();
+    });
+    b.addEventListener('click', function (e) { e.stopPropagation(); var o = p.hidden; qa('.sb-msp').forEach(function (x) { x.hidden = true; }); p.hidden = !o; });
+    p.addEventListener('click', function (e) { e.stopPropagation(); });
+    el.__n = function () { return sel.length; }; el.__t = vals.length; maj();
+  }
+  qa('[data-sb-ms]').forEach(msInit);
+  document.addEventListener('click', function () { qa('.sb-msp').forEach(function (x) { x.hidden = true; }); });
+
+  // ----- calcul
+  var res = null;
+  function feuille(code, k, typ) {
+    var b = (h(code) % 900 + 100) * 90000 * k, vide = h(code + 'v') % 5 === 0, budget = h(code + 'b') % 6 === 0 ? 0 : Math.round(b * (1 + (h(code + 'x') % 40) / 20));
+    var r = vide ? 0 : Math.round(b * (0.2 + (h(code + 'r') % 90) / 60) * typ), re = vide ? 0 : Math.round(r * (1 + (h(code + 'e') % 30) / 10));
+    return { rp: r, bp: budget ? Math.round(budget / 3) : 0, re: r, be: budget, rj: Math.round(re * 6 + b * 2), bj: 0 };
+  }
+  function som(a, b) { var o = {}; Object.keys(a).forEach(function (x) { o[x] = a[x] + b[x]; }); return o; }
+  function generer() {
+    if (q('[data-sb-du]').value > q('[data-sb-au]').value) { toast('La date de début est postérieure à la date de fin.'); return; }
+    if (!qa('[data-sb-ms]').every(function (e) { return e.__n() > 0; })) { toast('Sélectionnez au moins un élément dans chaque liste.'); return; }
+    var niv = qa('[data-sb-niv]').filter(function (c) { return c.checked; }).map(function (c) { return Number(c.dataset.sbNiv); });
+    if (!niv.length) { toast('Cochez au moins un niveau.'); return; }
+    var k = 1 / Number(q('[data-sb-dev]').value) * qa('[data-sb-ms]').reduce(function (a, e) { return a * (e.__n() / e.__t); }, 1), typ = q('[data-sb-typ]').value === 'Engagements' ? 1.25 : 1;
+    var pad = q('[data-sb-pad]:checked').value === 'fin' ? 3.2 : 2.6;
+    var du = (qa('[data-sb-rg="' + crit + '"][data-sens="du"]')[0] || {}).value || '', au = (qa('[data-sb-rg="' + crit + '"][data-sens="au"]')[0] || {}).value || '';
+    var R = lignesDe(crit), reel = R.length > 0; if (!reel) R = DEMO;
+    if (R.length > 1500) R = R.filter(function (r) { return String(r.code).length <= 6; });
+    var ex = {}, par = {}; R.forEach(function (r) { ex[r.code] = 1; }); R.forEach(function (r) { var p = r.parent && ex[r.parent] ? r.parent : ''; (par[p] = par[p] || []).push(r); });
+    var out = [], tot = null;
+    function ok(c) { return (!du || String(c) >= du) && (!au || String(c) <= au); }
+    function visite(r, d, vu) {
+      var idx = out.length, ch = par[r.code], v = null; out.push(null);
+      if (ch && !vu[r.code]) { vu[r.code] = 1; ch.forEach(function (x) { var w = visite(x, d + 1, vu); if (w) v = v ? som(v, w) : w; }); }
+      else if (ok(r.code)) v = feuille(r.code, k, typ);
+      if (!v) { out[idx] = null; return null; }
+      v.bj = Math.round(v.be * pad); out[idx] = { code: r.code, lib: r.libelle || '', niv: d, v: v }; return v;
+    }
+    var vu = {}; (par[''] || []).forEach(function (r) { var w = visite(r, 1, vu); if (w) tot = tot ? som(tot, w) : w; });
+    var rows = out.filter(function (x) { return x && niv.indexOf(x.niv) >= 0; });
+    if (!rows.length) { toast('Aucune ligne ne correspond aux critères.'); return; }
+    res = { rows: rows, tot: tot, dev: q('[data-sb-dev]').selectedOptions[0].textContent.split(' - ')[0], plan: libPlan(crit, ''), reel: reel };
+    dessiner(); ouvrir(false); toast('Suivi budgétaire généré : ' + rows.length + ' ligne(s).');
+  }
+  function cols(v) { var e = function (r, b) { return b ? Math.round(r / b * 1000) / 10 : null; }; return [v.rp, v.bp, v.bp - v.rp, e(v.rp, v.bp), v.re, v.be, v.be - v.re, e(v.re, v.be), v.rj, v.bj, v.bj - v.rj, e(v.rj, v.bj)]; }
+  function cel(x, i) {
+    if (i % 4 === 3) return '<td class="r' + (x != null && x > 100 ? ' sb-ko' : '') + '">' + (x == null ? '' : x.toLocaleString('fr-FR', { minimumFractionDigits: 1, maximumFractionDigits: 1 })) + '</td>';
+    return '<td class="r' + (x < 0 ? ' sb-neg' : '') + '">' + (x === 0 ? '' : nb(x)) + '</td>';
+  }
+  function dessiner() {
+    var sub = ['Réalisations', 'Budget', 'Disponible', 'Exéc (%)'];
+    q('[data-sb-th]').innerHTML = '<tr><th rowspan="2">Code</th><th rowspan="2">Libellé</th><th colspan="4">Période</th><th colspan="4">Exercice</th><th colspan="4">Projet</th></tr><tr>' + [0, 1, 2].map(function () { return sub.map(function (s) { return '<th>' + s + '</th>'; }).join(''); }).join('') + '</tr>';
+    q('[data-sb-lignes]').innerHTML = res.rows.map(function (r) { return '<tr class="' + (r.niv === 1 ? 'l1' : 'l2') + '"><td class="m">' + esc(r.code) + '</td><td class="d">' + esc(r.lib) + '</td>' + cols(r.v).map(cel).join('') + '</tr>'; }).join('') +
+      '<tr class="tot"><td></td><td class="d">Total</td>' + cols(res.tot).map(cel).join('') + '</tr>';
+    q('[data-sb-res]').hidden = false; q('[data-sb-init]').hidden = true;
+    q('[data-sb-pginfo]').textContent = 'Analyse par ' + res.plan + ' — exercice ' + q('[data-sb-ex]').value + ' — période du ' + fr(q('[data-sb-du]').value) + ' au ' + fr(q('[data-sb-au]').value) + ' — ' + q('[data-sb-bp]').value + ' / ' + q('[data-sb-ba]').value + ' — ' + q('[data-sb-typ]').value + ' — montants en ' + res.dev + ' — Total : ' + res.rows.length + ' élément(s) (données de démonstration).';
+  }
+  function exporter(fmt) {
+    var X = window.EXPORT_TABLEAU; if (!X) { toast('Module d’export indisponible.'); return; } if (!res) { toast('Générez l’état : rien à exporter.'); return; }
+    var T = ['Code', 'Libellé']; ['Période', 'Exercice', 'Projet'].forEach(function (g) { ['Réalisations', 'Budget', 'Disponible', 'Exéc (%)'].forEach(function (s) { T.push(g + ' – ' + s); }); });
+    var rows = res.rows.map(function (r) { return [r.code, r.lib].concat(cols(r.v).map(function (x) { return x == null ? '' : x; })); }); rows.push(['', 'Total'].concat(cols(res.tot).map(function (x) { return x == null ? '' : x; })));
+    var sub = q('[data-sb-pginfo]').textContent;
+    if (fmt === 'pdf') X.pdf('suivi_budgetaire.pdf', 'Suivi budgétaire', sub, T, rows); else X.xlsx('suivi_budgetaire.xlsx', 'Suivi budgétaire', T, rows);
+    toast('Export ' + (fmt === 'pdf' ? 'PDF' : 'Excel (XLSX)') + ' généré.');
+  }
+  q('[data-sb-crit]').addEventListener('click', function () { ouvrir(true); });
+  qa('[data-sb-fermer]').forEach(function (b) { b.addEventListener('click', function () { ouvrir(false); }); });
+  q('[data-sb-ov]').addEventListener('mousedown', function (e) { if (e.target === this) ouvrir(false); });
+  document.addEventListener('keydown', function (e) { if (e.key === 'Escape' && !q('[data-sb-ov]').hidden) ouvrir(false); });
+  window.addEventListener('hashchange', function () { if (location.hash === '#rsfsb' && !res) ouvrir(true); });
+  if (location.hash === '#rsfsb') window.addEventListener('load', function () { if (!res) ouvrir(true); });
+  q('[data-sb-gen]').addEventListener('click', generer);
+  q('[data-sb-pdf]').addEventListener('click', function () { exporter('pdf'); });
+  q('[data-sb-xlsx]').addEventListener('click', function () { exporter('xlsx'); });
+})();
+</script>

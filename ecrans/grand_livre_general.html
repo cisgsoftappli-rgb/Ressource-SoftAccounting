@@ -36,13 +36,13 @@
       <div class="etf-bloc">
         <span class="etf-bloc-titre"><i class="ti ti-adjustments-horizontal"></i>Présentation</span>
         <div class="etf-presentation">
-          <div><span class="filter-label">Plans affichés</span>
+          <div style="display:none"><span class="filter-label">Plans affichés</span>
             <div class="etf-pastilles glg-plans">
               <label><input type="checkbox" value="tous">Tous</label>
-              <label><input type="checkbox" value="14">ACTIVITE</label>
-              <label><input type="checkbox" value="15">POSTE BUDGETAIRE</label>
-              <label><input type="checkbox" value="16">FINANCEMENT</label>
-              <label><input type="checkbox" value="17">GEOGRAPHIQUE</label>
+              <label><input type="checkbox" value="13">ACTIVITE</label>
+              <label><input type="checkbox" value="14">POSTE BUDGETAIRE</label>
+              <label><input type="checkbox" value="15">FINANCEMENT</label>
+              <label><input type="checkbox" value="16">GEOGRAPHIQUE</label>
             </div></div>
           <div><span class="filter-label">Monnaie d'édition</span>
             <div class="etf-pastilles">
@@ -51,6 +51,8 @@
             </div></div>
           <div><span class="filter-label">Totaux</span>
             <div class="etf-pastilles"><label><input type="checkbox" id="glg-mois">Total par mois</label></div></div>
+          <div><span class="filter-label">Analytique</span>
+            <div class="etf-pastilles"><label><input type="checkbox" id="glg-ana" checked>Afficher les analytiques</label></div></div>
         </div>
       </div>
       <p class="filters-erreur bx-erreur" style="display:none"></p>
@@ -68,7 +70,7 @@
     <div class="bx-bar"><h2 class="bx-titre"></h2><input type="search" class="filter-input bx-search" placeholder="Recherche..."></div>
     <div class="bx-wrap">
       <table class="bx-table glg-table">
-        <thead><tr><th>Date comptable</th><th>Date pièce</th><th>Référence</th><th>Ligne budgétaire</th><th>N° contrat</th><th>JL</th><th>N° pièce</th><th>Site</th><th>Compte</th><th>Contre partie</th><th>Libellé</th><th class="n">Débit</th><th class="n">Crédit</th><th>ACTIVITE</th><th>POSTE BUDGETAIRE</th><th>FINANCEMENT</th><th>GEOGRAPHIQUE</th><th>Plan 5</th><th>Plan 6</th><th>Plan 7</th><th>Plan 8</th><th>Plan 9</th><th>Plan 10</th><th>Plan de regroupement</th></tr></thead>
+        <thead><tr><th>Date comptable</th><th>Date pièce</th><th>Référence</th><th>N° contrat</th><th>JL</th><th>N° pièce</th><th>Site</th><th>Compte</th><th>Contre partie</th><th>Libellé</th><th class="n">Débit</th><th class="n">Crédit</th><th>ACTIVITE</th><th>POSTE BUDGETAIRE</th><th>FINANCEMENT</th><th>GEOGRAPHIQUE</th><th>Plan 5</th><th>Plan 6</th><th>Plan 7</th><th>Plan 8</th><th>Plan 9</th><th>Plan 10</th><th>Plan de regroupement</th></tr></thead>
         <tbody></tbody>
       </table>
     </div>

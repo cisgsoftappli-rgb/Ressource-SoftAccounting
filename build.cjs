@@ -42,7 +42,7 @@ const balanceJs = read('ecrans/dp_filtre.js') + '\n' + read('ecrans/balance.js')
 const balanceAnaJs = read('ecrans/balance_analytique.js') + '\n' + read('ecrans/etats_filtres.js');
 const balanceAuxJs = read('ecrans/balance_auxiliaire_donnees.js') + String.fromCharCode(10) + read('ecrans/balance_auxiliaire.js');
 const glgJs = read('ecrans/glg_donnees.js') + String.fromCharCode(10) + read('ecrans/grand_livre_general.js');
-const ecrituresJs = read('ecrans/ecritures_donnees.js') + '\n' + read('ecrans/ecritures.js') + '\n' + read('ecrans/ecritures_disposition.js') + '\n' + read('ecrans/facture_ocr.js') + '\n' + read('ecrans/ecritures_import.js') + '\n' + read('ecrans/ecritures_tresorerie.js');
+const ecrituresJs = read('ecrans/ecritures_source.js') + '\n' + read('ecrans/etats_fin.js') + '\n' + read('ecrans/etats_impression.js') + '\n' + read('ecrans/ecritures_donnees.js') + '\n' + read('ecrans/ecritures.js') + '\n' + read('ecrans/ecritures_disposition.js') + '\n' + read('ecrans/facture_ocr.js') + '\n' + read('ecrans/facture_softdocs.js') + '\n' + read('ecrans/ecritures_ventilation.js') + '\n' + read('ecrans/ecritures_modeles.js') + '\n' + read('ecrans/ecritures_contrat.js') + '\n' + read('ecrans/ecritures_import.js') + '\n' + read('ecrans/ecritures_tresorerie.js');
 // Écrans conçus pour la maquette (pas de capture de l'application)
 const dpHtml = read('ecrans/devis_programme.html');
 const dpJs = read('ecrans/devis_programme.js');
@@ -136,6 +136,8 @@ let out = base.replace(element(base, 'app-modules-admin'),
   `<div data-screen="exercices" style="display:none">${read('ecrans/exercices.html')}</div>` +
   `<div data-screen="racines" style="display:none">${read('ecrans/racines.html')}</div>` +
   `<div data-screen="taxes" style="display:none">${read('ecrans/taxes.html')}</div>` +
+  `<div data-screen="typetaxe" style="display:none">${read('ecrans/type_taxe.html')}</div>` +
+  `<div data-screen="modecr" style="display:none">${read('ecrans/modeles_ecriture.html')}</div>` +
   `<div data-screen="rapprochement" style="display:none">${read('ecrans/rapprochement_config.html')}</div>` +
   `<div data-screen="releves" style="display:none">${read('ecrans/releves.html')}</div>` +
   `<div data-screen="pointage" style="display:none">${read('ecrans/rapprochement_pointage.html')}</div>` +
@@ -150,6 +152,14 @@ let out = base.replace(element(base, 'app-modules-admin'),
   `<div data-screen="lettmanuel" style="display:none">${read('ecrans/lettrage_manuel.html')}</div>` +
   `<div data-screen="prelettrage" style="display:none">${require('./gen_prelettrage.cjs')()}</div>` +
   `<div data-screen="anouveaux" style="display:none">${read('ecrans/a_nouveaux.html')}</div>` +
+  `<div data-screen="anouvanalytique" style="display:none">${read('ecrans/a_nouveaux_analytique.html')}</div>` +
+  `<div data-screen="coursapplique" style="display:none">${read('ecrans/cours_applique.html')}</div>` +
+  `<div data-screen="rsfuf" style="display:none">${read('ecrans/rsf_utilisation_fonds.html')}</div>` +
+  `<div data-screen="rsfsb" style="display:none">${read('ecrans/rsf_suivi_budgetaire.html')}</div>` +
+  [['aicompta', 'Assistance comptable AI'], ['aifin', 'Assistance financière AI'], ['aifonc', 'Assistance fonctionnelle AI']].map(([id, t]) => `<div data-screen="${id}" style="display:none">${id === 'aicompta' ? read('ecrans/ai_referentiel_compta.html') : id === 'aifin' ? read('ecrans/ai_referentiel_finance.html') : id === 'aifonc' ? read('ecrans/ai_guides_fonctionnels.html') : ''}${read('ecrans/ai_assistance.html').replace(/AIID/g, id).replace(/AITITRE/g, t)}</div>`).join('') +
+  `<div data-screen="caissemodeles" style="display:none">${read('ecrans/caisse_modeles.html')}</div>` +
+  `<div data-screen="pvcaisse" style="display:none">${read('ecrans/pv_caisse.html')}</div>` +
+  `<div data-screen="listeecritures" style="display:none">${read('ecrans/liste_ecritures.html')}</div>` +
   `<div data-screen="clotannuelle" style="display:none">${read('ecrans/cloture_annuelle.html')}</div>` +
   `<div data-screen="situation" style="display:none">${read('ecrans/rapprochement_situation.html')}</div>` +
   `<div data-screen="dp" style="display:none">${element(dpHtml, 'app-devis-programme')}</div>` +
@@ -161,15 +171,24 @@ let out = base.replace(element(base, 'app-modules-admin'),
   `<div data-screen="designer2" style="display:none">${read('ecrans/designer_declaration.html')}</div>` +
   `<div data-screen="designer" style="display:none">${read('ecrans/designer_soe.html')}</div>` +
   `<div data-screen="budgetconv" style="display:none">${read('ecrans/budget_convention.html')}</div>` +
+  `<div data-screen="badprog" style="display:none">${read('ecrans/bad_programme.html')}</div>` +
   `<div data-screen="rfimodeles" style="display:none">${read('ecrans/rfi_modeles.html')}</div>` +
   `<div data-screen="rfiparam" style="display:none">${read('ecrans/rfi_parametres.html')}</div>` +
   `<div data-screen="rfiedit" style="display:none">${read('ecrans/rfi_edition.html')}</div>` +
   `<div data-screen="etatdep" style="display:none">${read('ecrans/etat_depense.html')}</div>` +
   `<div data-screen="regul" style="display:none">${read('ecrans/regularisation_drf.html')}</div>` +
+  `<div data-screen="rapco" style="display:none">${read('ecrans/rapprochement_co.html')}</div>` +
+  `<div data-screen="pad" style="display:none">${read('ecrans/pad.html')}</div>` +
   `<div data-screen="histdem" style="display:none">${read('ecrans/historique_demandes.html')}</div>` +
+  `<div data-screen="gavisuivi" style="display:none">${read('ecrans/gavi_suivi.html')}</div>` +
+  `<div data-screen="gavisynth" style="display:none">${read('ecrans/gavi_synthese.html')}</div>` +
+  `<div data-screen="gavisynthparam" style="display:none">${read('ecrans/gavi_synthese_param.html')}</div>` +
+  `<div data-screen="gavirapport" style="display:none">${read('ecrans/gavi_rapport.html')}</div>` +
+  `<div data-screen="gavirecap" style="display:none">${read('ecrans/gavi_recap.html')}</div>` +
   `<div data-screen="acces" style="display:none">${read('ecrans/gestion_acces.html')}</div>` +
   `<div data-screen="traces" style="display:none">${read('ecrans/traces.html')}</div>` +
   `<div data-screen="jtraces" style="display:none">${read('ecrans/journal_traces.html')}</div>` +
+  `<div data-screen="nettoyages" style="display:none">${read('ecrans/nettoyages.html')}</div>` +
   `<div data-screen="pays" style="display:none">${read('ecrans/pays.html')}</div>` +
   `<div data-screen="modereglement" style="display:none">${read('ecrans/mode_reglement.html')}</div>` +
   `<div data-screen="cloture" style="display:none">${read('ecrans/cloture.html')}</div>` +
@@ -201,8 +220,8 @@ let out = base.replace(element(base, 'app-modules-admin'),
   EF_VIDES.map(([id, t, r]) => `<div data-screen="${id}" style="display:none"><div style="padding:8px 4px"><p style="margin:0 0 4px;font-size:12px;font-weight:600;letter-spacing:.08em;text-transform:uppercase;color:#706000">États financiers · ${r}</p><h1 style="margin:0;font-family:var(--font-heading);font-size:24px;font-weight:600;color:#0B1332">${t}</h1><p style="margin:8px 0 0;color:#5B606D;font-size:14px">Écran à construire dans une prochaine étape de la maquette.</p></div></div>`).join('') +
   `<div data-screen="soemodel" style="display:none">${read('ecrans/modele_soe.html')}</div>` +
   `<div data-screen="modfisc2" style="display:none">${read('ecrans/modele_etat_drf.html')}</div>` +
-  `<div data-screen="typetaxe" style="display:none">${read('ecrans/type_taxe.html')}</div>` +
   `<div data-screen="fisctrait" style="display:none">${read('ecrans/traitement_declaration.html')}</div>` +
+  `<div data-screen="fiscannul" style="display:none">${read('ecrans/annulation_declaration.html')}</div>` +
   `<div data-screen="listing" style="display:none">${read('ecrans/modele_listing.html')}</div>` +
   `<div data-screen="listing2" style="display:none">${read('ecrans/modele_recapitulatif2.html')}</div>` +
   `<div data-screen="listedit" style="display:none">${read('ecrans/edition_liste.html')}</div>` +
@@ -218,7 +237,13 @@ let out = base.replace(element(base, 'app-modules-admin'),
   `<div data-screen="recap" style="display:none">${read('ecrans/modele_recapitulatif.html')}</div>` +
   `<div data-screen="procfin" style="display:none">${read('ecrans/procedures_financieres.html')}</div>` +
   `<div data-screen="balana" style="display:none">${inertLinks(balana)}</div>` +
+  `<div data-screen="glana" style="display:none">${read('ecrans/grand_livre_analytique.html')}</div>` +
+  `<div data-screen="detmvt" style="display:none">${read('ecrans/details_mouvements.html')}</div>` +
   `<div data-screen="balaux" style="display:none">${read('ecrans/balance_auxiliaire.html')}</div>` +
+  `<div data-screen="echeancier" style="display:none">${read('ecrans/echeancier.html')}</div>` +
+  `<div data-screen="glaux" style="display:none">${read('ecrans/grand_livre_auxiliaire.html')}</div>` +
+  `<div data-screen="circparam" style="display:none">${read('ecrans/circuit_parametre.html')}</div>` +
+  `<div data-screen="circtrait" style="display:none">${read('ecrans/circuit_traitement.html')}</div>` +
   `<div data-screen="glg" style="display:none">${read('ecrans/grand_livre_general.html')}</div>`);
 
 // Le fil d'Ariane de la capture « Saisie des plans » est vide : on reprend celui de la
@@ -249,6 +274,7 @@ out = out.slice(0, bodyAt) + out.slice(bodyAt).replace(baseCrumb,
   addAttr(baseCrumb.replace(' Paramètres généraux </a>', ' Administration </a>').replace(" Administration de l'entité </a>", ' Gestion des accès </a>'), 'data-crumb="acces" style="display:none"') +
   addAttr(baseCrumb.replace(' Paramètres généraux </a>', ' Administration </a>').replace(" Administration de l'entité </a>", ' Paramétrage des traces </a>'), 'data-crumb="traces" style="display:none"') +
   addAttr(baseCrumb.replace(' Paramètres généraux </a>', ' Administration </a>').replace(" Administration de l'entité </a>", ' Journal de traces </a>'), 'data-crumb="jtraces" style="display:none"') +
+  addAttr(baseCrumb.replace(' Paramètres généraux </a>', ' Administration </a>').replace(" Administration de l'entité </a>", ' Nettoyages </a>'), 'data-crumb="nettoyages" style="display:none"') +
   addAttr(baseCrumb.replace(" Administration de l'entité </a>", ' Pays </a>'), 'data-crumb="pays" style="display:none"') +
   addAttr(baseCrumb.replace(' Paramètres généraux </a>', ' Paramètres comptables </a>').replace(" Administration de l'entité </a>", ' Mode de règlement </a>'), 'data-crumb="modereglement" style="display:none"') +
   addAttr(baseCrumb.replace(' Paramètres généraux </a>', ' Paramètres comptables </a>').replace(" Administration de l'entité </a>", ' Clôture comptable </a>'), 'data-crumb="cloture" style="display:none"') +
@@ -273,16 +299,24 @@ out = out.slice(0, bodyAt) + out.slice(bodyAt).replace(baseCrumb,
   addAttr(persCrumb.replace(' Paramètres </a>', ' Édition </a>').replace(' Modèle Listing </a>', ' Liste </a>'), 'data-crumb="listedit" style="display:none"') +
   addAttr(persCrumb.replace(' Modèle Listing </a>', ' Modèle Récapitulatif </a>'), 'data-crumb="listing2" style="display:none"') +
   addAttr(fiscCrumb.replace(/<span[^>]*>›<\/span><a[^>]*> Paramétrages <\/a>/, '').replace(" Modèle d'état </a>", ' Traitement </a>'), 'data-crumb="fisctrait" style="display:none"') +
+  addAttr(fiscCrumb.replace(/<span[^>]*>›<\/span><a[^>]*> Paramétrages <\/a>/, '').replace(" Modèle d'état </a>", ' Annulation </a>'), 'data-crumb="fiscannul" style="display:none"') +
   addAttr(fiscCrumb.replace(" Modèle d'état </a>", ' Type de taxe </a>'), 'data-crumb="typetaxe" style="display:none"') +
+  [['aicompta', 'Assistance comptable AI'], ['aifin', 'Assistance financière AI'], ['aifonc', 'Assistance fonctionnelle AI']].map(([id, t]) => addAttr(gsCrumb.replace(/<span[^>]*>›<\/span><a[^>]*> Paramétrages <\/a>/, '').replace(/<span[^>]*>›<\/span><a[^>]*> Procédure financière <\/a>/, '').replace(' Comptabilité Projets &amp; Bailleurs </a>', ' SoftAccounting AI </a>').replace(' Gestion des sélections </a>', ' ' + t + ' </a>'), `data-crumb="${id}" style="display:none"`)).join('') +
+  [['rsfer', 'Tableau emplois ressources'], ['rsfuf', 'Utilisation de fonds'], ['rsfsb', 'Suivi budgétaire']].map(([id, t]) => addAttr(gsCrumb.replace(/<span[^>]*>›<\/span><a[^>]*> Paramétrages <\/a>/, '').replace(' IDA </a>', ' RSF </a>').replace(' Procédure financière </a>', ' RSF </a>').replace(' Gestion des sélections </a>', ' ' + t + ' </a>'), `data-crumb="${id}" style="display:none"`)).join('') +
+  addAttr(gsCrumb.replace(' Paramétrages </a>', ' Récapitulatif </a>').replace(' Gestion des sélections </a>', ' Édition </a>'), 'data-crumb="gavirecap" style="display:none"') +
   addAttr(gsCrumb.replace(' Gestion des sélections </a>', " État de dépense </a>").replace(' Paramétrages </a>', ' Traitement </a>'), 'data-crumb="etatdep" style="display:none"') +
   addAttr(gsCrumb.replace(' Gestion des sélections </a>', ' Budget de la convention </a>').replace(' Paramétrages </a>', ' Saisie </a>'), 'data-crumb="budgetconv" style="display:none"') +
+  addAttr(gsCrumb.replace(' Gestion des sélections </a>', ' Programme et budget A3 </a>').replace(' Paramétrages </a>', ' Saisie </a>'), 'data-crumb="badprog" style="display:none"') +
   addAttr(gsCrumb.replace(' IDA </a>', ' FIDA </a>').replace(' Gestion des sélections </a>', " Modèles d'état RFI </a>").replace(' Paramétrages </a>', ' États RFI </a>'), 'data-crumb="rfimodeles" style="display:none"') +
   addAttr(gsCrumb.replace(' IDA </a>', ' FIDA </a>').replace(' Gestion des sélections </a>', " Concepteur d'état RFI </a>").replace(' Paramétrages </a>', ' États RFI </a>'), 'data-crumb="rfides" style="display:none"') +
   addAttr(gsCrumb.replace(' IDA </a>', ' FIDA </a>').replace(' Gestion des sélections </a>', ' Paramètres RFI </a>').replace(' Paramétrages </a>', ' États RFI </a>'), 'data-crumb="rfiparam" style="display:none"') +
   addAttr(gsCrumb.replace(' IDA </a>', ' FIDA </a>').replace(' Gestion des sélections </a>', ' Édition des états RFI </a>').replace(' Paramétrages </a>', ' États RFI </a>'), 'data-crumb="rfiedit" style="display:none"') +
   addAttr(gsCrumb.replace(' Gestion des sélections </a>', " Modèle d'état </a>"), 'data-crumb="modfisc2" style="display:none"') +
+  [['gavisuivi', 'Suivi détaillé'], ['gavisynth', 'Synthèse'], ['gavisynthparam', 'Synthèse — Paramétrage'], ['gavirapport', 'Rapport financier']].map(([id, t]) => addAttr(gsCrumb.replace(/<span[^>]*>›<\/span><a[^>]*> Paramétrages <\/a>/, '').replace(' IDA </a>', ' GAVI </a>').replace(' Procédure financière </a>', ' GAVI </a>').replace(' Gestion des sélections </a>', ' ' + t + ' </a>'), `data-crumb="${id}" style="display:none"`)).join('') +
   addAttr(gsCrumb.replace(' Gestion des sélections </a>', ' Historique des demandes </a>').replace(' Paramétrages </a>', ' Suivi </a>'), 'data-crumb="histdem" style="display:none"') +
+  addAttr(gsCrumb.replace(/<a[^>]*> Procédure financière <\/a><span[^>]*>›<\/span>/, '').replace(/<a[^>]*> Paramétrages <\/a><span[^>]*>›<\/span>/, '').replace(' Gestion des sélections </a>', ' Saisie PAD </a>'), 'data-crumb="pad" style="display:none"') +
   addAttr(gsCrumb.replace(' Gestion des sélections </a>', ' Régularisation de la demande </a>').replace(' Paramétrages </a>', ' Traitement </a>'), 'data-crumb="regul" style="display:none"') +
+  addAttr(gsCrumb.replace(' Gestion des sélections </a>', ' Rapprochement CO </a>').replace(' Paramétrages </a>', ' Traitement </a>'), 'data-crumb="rapco" style="display:none"') +
   addAttr(gsCrumb.replace(' Gestion des sélections </a>', ' Modèle SOE </a>'), 'data-crumb="soemodel" style="display:none"') +
   addAttr(gsCrumb.replace(' Gestion des sélections </a>', ' Modèle récapitulatif </a>'), 'data-crumb="recap" style="display:none"') +
   addAttr(dpCrumb.replace(' Devis programme </a>', ' Procédures financières </a>'), 'data-crumb="procfin" style="display:none"') +
@@ -290,6 +324,7 @@ out = out.slice(0, bodyAt) + out.slice(bodyAt).replace(baseCrumb,
   addAttr(inertLinks(crumb(caps.exercices)).replace(/Exercices comptables/g, 'Racine des comptes'), 'data-crumb="racines" style="display:none"') +
   addAttr(inertLinks(crumb(caps.exercices)).replace(/Exercices comptables/g, 'Type de taxe'), 'data-crumb="taxes" style="display:none"') +
   addAttr(inertLinks(crumb(caps.ecritures)), 'data-crumb="ecritures" style="display:none"') +
+  addAttr(inertLinks(crumb(caps.ecritures)).replace(/(<a[^>]*>)\s*Saisie d'écritures\s*<\/a>/, (m, o) => o + " Saisie d'écritures </a>"), 'data-crumb="ecritures_ent" style="display:none"') +
   addAttr(inertLinks(crumb(caps.ecritures)).replace(/(<a[^>]*>)\s*Saisie d'écritures\s*<\/a>/, (m, o) => o.replace(' soft-breadcrumb-current', '') + ' Rapprochement bancaire </a><span class="mx-1">›</span>' + o + ' Configuration </a>'), 'data-crumb="rapprochement" style="display:none"') +
   addAttr(inertLinks(crumb(caps.ecritures)).replace(/(<a[^>]*>)\s*Saisie d'écritures\s*<\/a>/, (m, o) => o.replace(' soft-breadcrumb-current', '') + ' Rapprochement bancaire </a><span class="mx-1">›</span>' + o + ' Pointage </a>'), 'data-crumb="releves" style="display:none"') +
   addAttr(inertLinks(crumb(caps.ecritures)).replace(/(<a[^>]*>)\s*Saisie d'écritures\s*<\/a>/, (m, o) => o.replace(' soft-breadcrumb-current', '') + ' Rapprochement bancaire </a><span class="mx-1">›</span>' + o.replace(' soft-breadcrumb-current', '') + ' Pointage </a><span class="mx-1">›</span>' + o + ' Rapprochement du relevé </a>'), 'data-crumb="pointage" style="display:none"') +
@@ -302,17 +337,29 @@ out = out.slice(0, bodyAt) + out.slice(bodyAt).replace(baseCrumb,
   addAttr(inertLinks(crumb(caps.ecritures)).replace(/(<a[^>]*>)\s*Saisie d'écritures\s*<\/a>/, (m, o) => o.replace(' soft-breadcrumb-current', '') + ' Gestion des cours </a><span class="mx-1">›</span>' + o + ' Conversion </a>'), 'data-crumb="conversion" style="display:none"') +
   addAttr(inertLinks(crumb(caps.ecritures)).replace(/(<a[^>]*>)\s*Saisie d'écritures\s*<\/a>/, (m, o) => o.replace(' soft-breadcrumb-current', '') + ' Petite caisse </a><span class="mx-1">›</span>' + o + ' Types d\'opération </a>'), 'data-crumb="caissetypes" style="display:none"') +
   addAttr(inertLinks(crumb(caps.ecritures)).replace(/(<a[^>]*>)\s*Saisie d'écritures\s*<\/a>/, (m, o) => o.replace(' soft-breadcrumb-current', '') + ' Petite caisse </a><span class="mx-1">›</span>' + o + ' Saisie </a>'), 'data-crumb="caissesaisie" style="display:none"') +
+  addAttr(inertLinks(crumb(caps.ecritures)).replace(/(<a[^>]*>)\s*Saisie d'écritures\s*<\/a>/, (m, o) => o.replace(' soft-breadcrumb-current', '') + ' Petite caisse </a><span class="mx-1">›</span>' + o + ' Modèles de pièce </a>'), 'data-crumb="caissemodeles" style="display:none"') +
+  addAttr(inertLinks(crumb(caps.ecritures)).replace(/(<a[^>]*>)\s*Saisie d'écritures\s*<\/a>/, (m, o) => o.replace(' soft-breadcrumb-current', '') + ' Petite caisse </a><span class="mx-1">›</span>' + o + ' PV de caisse </a>'), 'data-crumb="pvcaisse" style="display:none"') +
+  addAttr(inertLinks(crumb(caps.ecritures)).replace(/(<a[^>]*>)\s*Saisie d'écritures\s*<\/a>/, (m, o) => o.replace(' soft-breadcrumb-current', '') + ' Gestion des cours </a><span class="mx-1">›</span>' + o + ' Cours appliqué </a>'), 'data-crumb="coursapplique" style="display:none"') +
+  addAttr(inertLinks(crumb(caps.ecritures)).replace(/(<a[^>]*>)\s*Saisie d'écritures\s*<\/a>/, (m, o) => o.replace(' soft-breadcrumb-current', '') + ' Travaux périodiques </a><span class="mx-1">›</span>' + o + ' À nouveau analytique </a>'), 'data-crumb="anouvanalytique" style="display:none"') +
+  addAttr(inertLinks(crumb(caps.ecritures)).replace(/(<a[^>]*>)\s*Saisie d'écritures\s*<\/a>/, (m, o) => o + ' Liste des écritures </a>'), 'data-crumb="listeecritures" style="display:none"') +
+  addAttr(inertLinks(crumb(caps.ecritures)).replace(/(<a[^>]*>)\s*Saisie d'écritures\s*<\/a>/, (m, o) => o + " Modèles d'écriture </a>"), 'data-crumb="modecr" style="display:none"') +
   addAttr(inertLinks(crumb(caps.ecritures)).replace(/(<a[^>]*>)\s*Saisie d'écritures\s*<\/a>/, (m, o) => o.replace(' soft-breadcrumb-current', '') + ' Petite caisse </a><span class="mx-1">›</span>' + o + ' Génération des écritures </a>'), 'data-crumb="caissegen" style="display:none"') +
   addAttr(inertLinks(crumb(caps.ecritures)).replace(/(<a[^>]*>)\s*Saisie d'écritures\s*<\/a>/, (m, o) => o + ' Lettrage </a>'), 'data-crumb="lettmanuel" style="display:none"') +
   addAttr(inertLinks(crumb(caps.ecritures)).replace(/(<a[^>]*>)\s*Saisie d'écritures\s*<\/a>/, (m, o) => o + ' Prélettrage </a>'), 'data-crumb="prelettrage" style="display:none"') +
   addAttr(inertLinks(crumb(caps.ecritures)).replace(/(<a[^>]*>)\s*Saisie d'écritures\s*<\/a>/, (m, o) => o.replace(' soft-breadcrumb-current', '') + ' Rapprochement bancaire </a><span class="mx-1">›</span>' + o + ' Situation </a>'), 'data-crumb="situation" style="display:none"') +
   addAttr(inertLinks(crumb(caps.bgCriteres)), 'data-crumb="balance" style="display:none"') +
   addAttr(inertLinks(crumb(caps.baCriteres)), 'data-crumb="balana" style="display:none"') +
+  addAttr(inertLinks(crumb(caps.baCriteres)).replace(/(<[^>]*soft-breadcrumb-current[^>]*>)\s*Balance\s*(<\/)/, '$1 Grand livre analytique $2'), 'data-crumb="glana" style="display:none"') +
+  addAttr(inertLinks(crumb(caps.baCriteres)).replace(/(<[^>]*soft-breadcrumb-current[^>]*>)\s*Balance\s*(<\/)/, '$1 Détails des mouvements $2'), 'data-crumb="detmvt" style="display:none"') +
   addAttr(inertLinks(crumb(caps.baCriteres)).replace(/<span[^>]*>›<\/span><a[^>]*> Analytique <\/a>/, '').replace(/<span[^>]*>›<\/span><a[^>]*> Balance <\/a>/, '').replace(/(<a[^>]*class="[^"]*)("[^>]*> États comptables <\/a>)/, '$1 soft-breadcrumb-current$2').replace(' États comptables </a>', ' Tableau de bord </a>'), 'data-crumb="dashboard" style="display:none"') +
   addAttr(inertLinks(crumb(caps.baCriteres)).replace(/<span[^>]*>›<\/span><a[^>]*> Analytique <\/a>/, '').replace(/<span[^>]*>›<\/span><a[^>]*> Balance <\/a>/, '').replace(/(<a[^>]*class="[^"]*)("[^>]*> États comptables <\/a>)/, '$1 soft-breadcrumb-current$2').replace(' États comptables </a>', ' Tchat </a>'), 'data-crumb="tchat" style="display:none"') +
   [['bilparam', 'Bilan', 'Paramétrages'], ['biledit', 'Bilan', 'Édition'], ['crparam', 'Compte de résultat', 'Paramétrages'], ['cred', 'Compte de résultat', 'Édition'], ['erparam', 'Emplois et ressources', 'Paramétrages'], ['ered', 'Emplois et ressources', 'Édition'], ['tftparam', 'Tableau de flux de trésorerie', 'Paramétrages'], ['tfted', 'Tableau de flux de trésorerie', 'Édition']]
     .map(([id, r, p]) => addAttr(inertLinks(crumb(caps.baCriteres)).replace(' États comptables </a>', ' États financiers </a>').replace(' Analytique </a>', ' ' + r + ' </a>').replace(' Balance </a>', ' ' + p + ' </a>'), 'data-crumb="' + id + '" style="display:none"')).join('') +
   addAttr(inertLinks(crumb(caps.bgCriteres)).replace(' Balance générale </a>', ' Balance auxiliaire </a>'), 'data-crumb="balaux" style="display:none"') +
+  addAttr(inertLinks(crumb(caps.bgCriteres)).replace(' Balance générale </a>', ' Échéancier et balance âgée </a>'), 'data-crumb="echeancier" style="display:none"') +
+  addAttr(inertLinks(crumb(caps.bgCriteres)).replace(' Balance générale </a>', ' Grand livre auxiliaire </a>'), 'data-crumb="glaux" style="display:none"') +
+  addAttr(inertLinks(crumb(caps.ecritures)).replace(/(<a[^>]*>)\s*Saisie d'écritures\s*<\/a>/, (m, o) => o.replace(' soft-breadcrumb-current', '') + ' Circuit de validation </a><span class="mx-1">›</span>' + o + ' Paramètre Circuit </a>'), 'data-crumb="circparam" style="display:none"') +
+  addAttr(inertLinks(crumb(caps.ecritures)).replace(/(<a[^>]*>)\s*Saisie d'écritures\s*<\/a>/, (m, o) => o.replace(' soft-breadcrumb-current', '') + ' Circuit de validation </a><span class="mx-1">›</span>' + o + ' Traitement </a>'), 'data-crumb="circtrait" style="display:none"') +
   addAttr(inertLinks(crumb(caps.bgCriteres)).replace(' Balance générale </a>', ' Grand livre général </a>'), 'data-crumb="glg" style="display:none"') +
   addAttr(inertLinks(crumb(caps.baCriteres)).replace(' États comptables </a>', ' Immobilisations </a>').replace(' Analytique </a>', ' Paramétrages </a>').replace(' Balance </a>', " Lieu d'affectation </a>"), 'data-crumb="lieuaffect" style="display:none"') +
   addAttr(inertLinks(crumb(caps.baCriteres)).replace(' États comptables </a>', ' Immobilisations </a>').replace(' Analytique </a>', ' Paramétrages </a>').replace(' Balance </a>', ' Collaborateur responsable </a>'), 'data-crumb="collabresp" style="display:none"') +
@@ -345,6 +392,7 @@ const plansBtn = finBtn.replace('data-group-toggle="financiers"', 'data-group-to
     .replace(/<a class="sidebar-child-item([^"]*)" href="#">(<span[^>]*>Pays<\/span>)/, '<a class="sidebar-child-item$1" href="#pays" data-nav="pays">$2')
     .replace(/<a class="sidebar-child-item([^"]*)" href="#">(<span[^>]*>\s*Signataires\s*<\/span>)/, '<a class="sidebar-child-item$1" href="#signataires" data-nav="signataires">$2')
     .replace(/<a class="sidebar-child-item([^"]*)" href="#">(<span[^>]*>\s*Liste des banques\s*<\/span>)/, '<a class="sidebar-child-item$1" href="#banques" data-nav="banques">$2')
+    .replace(/<a class="sidebar-child-item[^"]*" href="#">\s*<span[^>]*>\s*Unités\s*<\/span>\s*<\/a>/, '')
     .replace(/<a class="sidebar-child-item([^"]*)" href="#">(<span[^>]*>\s*Devise\s*<\/span>)/, '<a class="sidebar-child-item$1" href="#devise" data-nav="devise">$2')
     .replace(/<a class="sidebar-child-item[^"]*" href="#">\s*<span[^>]*>\s*Fonctions?\s*<\/span>[\s\S]*?<\/a>/, '') // menu « Fonctions » supprimé
     .replace(/<a class="sidebar-child-item/g, '<a data-group="generaux" class="sidebar-child-item')
@@ -372,7 +420,7 @@ let child;
   const end = out.indexOf('</soft-button>', idx) + '</soft-button>'.length;
   const inert = (label) => child('x', label, 'admin').replace(' href="#x" data-nav="x"', ' href="#" title="Écran non intégré dans la maquette"');
   out = out.slice(0, end) + child('acces', 'Gestion des accès', 'admin') +
-    child('traces', 'Paramétrage des traces', 'admin') + child('jtraces', 'Journal de traces', 'admin') + ['Nettoyages', 'Alertes'].map(inert).join('') + out.slice(end);
+    child('traces', 'Paramétrage des traces', 'admin') + child('jtraces', 'Journal de traces', 'admin') + child('nettoyages', 'Nettoyages', 'admin') + out.slice(end);
 }
 
 // 5 bis. Sidebar à deux niveaux : modules principaux, puis sous-menu « Paramétrages »
@@ -388,6 +436,7 @@ let child;
     ['etats-financiers', 'ti-chart-bar', 'États financiers', true],
     // Libellé tronqué sur la capture (« Comptabilité Projets & B… ») : complété par hypothèse
     ['projets-bailleurs', 'ti-briefcase', 'Comptabilité Projets & Bailleurs', true],
+    ['softaccounting-ai', 'ti-sparkles', 'SoftAccounting AI', true],
   ];
   const root = '<div data-sidebar-level="root" style="display:none">' + MODULES.map(([id, icon, label, sub]) =>
     `<button type="button" data-module="${id}" title="${label}" class="sidebar-item flex items-center gap-2.5 h-10 px-3 text-left border-0 bg-transparent cursor-pointer" style="color:var(--sidebar-text)">` +
@@ -412,52 +461,52 @@ let child;
     header.replace(' Paramétrages ', ' Comptabilité générale ') +
     groupBtn.replace('data-group-toggle="comptables"', 'data-group-toggle="cg"')
       .replace('>Paramètres comptables</span>', '>Comptabilité générale</span>') +
-    child('ecritures', "Saisie d'écritures", 'cg');
+    child('ecritures', "Saisie d'écritures", 'cg') + child('ecritures_ent', "Saisie d'écritures", 'cg');
   const groupe = (id, label) => groupBtn.replace('data-group-toggle="comptables"', `data-group-toggle="${id}"`)
     .replace('>Paramètres comptables</span>', `>${label}</span>`);
   const inerte = (label, g = 'etats-general') => child('x', label, g).replace(' href="#x" data-nav="x"', ' href="#" title="Écran non intégré dans la maquette"');
   const fiscaleKids = groupe('fisc-param', 'Paramétrages').replace('<soft-button', '<soft-button data-group="etats-fiscale" style="display:none"').replace('h-9 px-4', 'h-9 pl-8 pr-4') +
     child('typetaxe', 'Type de taxe', 'fisc-param').replace('pl-8 pr-4', 'pl-12 pr-4') + child('modfisc', "Modèle d'état", 'fisc-param').replace('pl-8 pr-4', 'pl-12 pr-4') +
-    child('fisctrait', 'Traitement', 'etats-fiscale') + inerte('Annulation', 'etats-fiscale');
+    child('fisctrait', 'Traitement', 'etats-fiscale') + child('fiscannul', 'Annulation', 'etats-fiscale');
   const persKids = groupe('pers-param', 'Paramètres').replace('<soft-button', '<soft-button data-group="etats-personnalises" style="display:none"').replace('h-9 px-4', 'h-9 pl-8 pr-4') +
     child('listing', 'Modèle Listing', 'pers-param').replace('pl-8 pr-4', 'pl-12 pr-4') + child('listing2', 'Modèle Récapitulatif', 'pers-param').replace('pl-8 pr-4', 'pl-12 pr-4') +
     groupe('pers-edit', 'Édition').replace('<soft-button', '<soft-button data-group="etats-personnalises" style="display:none"').replace('h-9 px-4', 'h-9 pl-8 pr-4') +
     child('listedit', 'Liste', 'pers-edit').replace('pl-8 pr-4', 'pl-12 pr-4') + child('recapexec', 'Récapitulatif', 'pers-edit').replace('pl-8 pr-4', 'pl-12 pr-4');
   const etats = '<div data-sidebar-level="etats-comptables" style="display:none">' +
     header.replace(' Paramétrages ', ' États comptables ') +
-    groupe('etats-general', 'Général') + child('balance', 'Balance générale', 'etats-general') + child('balaux', 'Balance auxiliaire', 'etats-general') + child('glg', 'Grand livre général', 'etats-general') + child('journal', 'Journaux', 'etats-general') +
+    groupe('etats-general', 'Général') + child('balance', 'Balance générale', 'etats-general') + child('balaux', 'Balance auxiliaire', 'etats-general') + child('glg', 'Grand livre général', 'etats-general') + child('glaux', 'Grand livre auxiliaire', 'etats-general') + child('journal', 'Journaux', 'etats-general') + child('echeancier', 'Échéancier & balance âgée', 'etats-general') +
     ['Grand livre auxiliaire', 'Échéancier et balance âgée'].map(inerte).join('') +
-    groupe('etats-analytique', 'Analytique') + child('balana', 'Balance', 'etats-analytique') +
-    ['Grand livre analytique', 'Détails des mouvements'].map((l) => inerte(l, 'etats-analytique')).join('') +
-    [['immobilisation', 'Immobilisation'], ['contrat', 'Contrat'],
-      ['fiscale', 'Déclaration fiscale'], ['personnalises', 'États personnalisés']]
+    groupe('etats-analytique', 'Analytique') + child('balana', 'Balance analytique', 'etats-analytique') +
+    child('glana', 'Grand livre analytique', 'etats-analytique') + child('detmvt', 'Détails des mouvements', 'etats-analytique') +
+    [['fiscale', 'Déclaration fiscale'], ['personnalises', 'États personnalisés']]
       .map(([id, l]) => groupe('etats-' + id, l) + (id === 'fiscale' ? fiscaleKids : id === 'personnalises' ? persKids : '')).join('') + '</div>';
   // Comptabilité Projets & Bailleurs › Procédure financière › Paramétrages › Gestion des sélections
   const sousGroupe = (id, label, parent) => groupe(id, label).replace('<soft-button', `<soft-button data-group="${parent}" style="display:none"`).replace('h-9 px-4', 'h-9 pl-8 pr-4');
   const enfant12 = (html) => html.replace('pl-8 pr-4', 'pl-12 pr-4');
   // Comptabilité générale : écrans non intégrés (liste des écritures, lettrage, rapprochement bancaire, circuit de validation, cours, petite caisse)
-  const cg = cg0 + inerte('Liste des écritures', 'cg') +
+  const cg = cg0 + child('listeecritures', 'Liste des écritures', 'cg') + child('modecr', "Modèles d'écriture", 'cg') +
     sousGroupe('cg-lettrage', 'Lettrage', 'cg') +
     enfant12(child('lettparam', 'Paramètre', 'cg-lettrage')) + enfant12(child('lettmanuel', 'Lettrage', 'cg-lettrage')) + enfant12(child('prelettrage', 'Prélettrage', 'cg-lettrage')) +
     sousGroupe('cg-rapprochement', 'Rapprochement bancaire', 'cg') +
     enfant12(child('rapprochement', 'Configuration', 'cg-rapprochement')) + enfant12(child('releves', 'Pointage', 'cg-rapprochement')) + enfant12(child('situation', 'Situation', 'cg-rapprochement')) +
-    sousGroupe('cg-circuit', 'Circuit de validation', 'cg') +
-    groupe('cg-cours', 'Gestion des cours') + child('cours', 'Saisie', 'cg-cours') + child('conversion', 'Conversion', 'cg-cours') + ['Cours appliqué'].map((l) => inerte(l, 'cg-cours')).join('') +
-    groupe('cg-caisse', 'Petite caisse') + child('caissetypes', "Types d'opération", 'cg-caisse') + ['Billetage'].map((l) => inerte(l, 'cg-caisse')).join('') + child('caissesaisie', 'Saisie', 'cg-caisse') + child('caissegen', 'Génération des écritures', 'cg-caisse') +
-    groupe('cg-travaux', 'Travaux périodiques') + child('clotper', 'Clôture périodique', 'cg-travaux') + child('clotmens', 'Clôture mensuelle', 'cg-travaux') + child('anouveaux', 'À nouveau', 'cg-travaux') + child('clotannuelle', 'Clôture annuelle', 'cg-travaux') + '</div>';
+    sousGroupe('cg-circuit', 'Circuit de validation', 'cg') + enfant12(child('circparam', 'Paramètre Circuit', 'cg-circuit')) + enfant12(child('circtrait', 'Traitement', 'cg-circuit')) +
+    groupe('cg-cours', 'Gestion des cours') + child('cours', 'Saisie', 'cg-cours') + child('conversion', 'Conversion', 'cg-cours') + child('coursapplique', 'Cours appliqué', 'cg-cours') +
+    groupe('cg-caisse', 'Petite caisse') + child('caissetypes', "Types d'opération", 'cg-caisse') + child('caissemodeles', 'Modèles de pièce', 'cg-caisse') + child('caissesaisie', 'Saisie', 'cg-caisse') + child('pvcaisse', 'PV de caisse', 'cg-caisse') + child('caissegen', 'Génération des écritures', 'cg-caisse') +
+    groupe('cg-travaux', 'Travaux périodiques') + child('clotper', 'Clôture périodique', 'cg-travaux') + child('clotmens', 'Clôture mensuelle', 'cg-travaux') + child('anouveaux', 'À nouveau', 'cg-travaux') + child('anouvanalytique', 'À nouveau analytique', 'cg-travaux') + child('clotannuelle', 'Clôture annuelle', 'cg-travaux') + '</div>';
   // un module par procédure financière (IDA, FIDA, FED, FM, BAD) ; l'activation se règle dans Administration de l'entité › Personnalisation
-  const PROCS = ['IDA', 'FIDA', 'FED', 'FM', 'BAD'];
+  const PROCS = ['IDA', 'FIDA', 'FED', 'FM', 'BAD', 'GAVI'];
   const marque = (html, p) => html.replace(/<soft-button /g, '<soft-button data-proc="' + p + '" ').replace(/<a /g, '<a data-proc="' + p + '" ');
   const pb = '<div data-sidebar-level="projets-bailleurs" style="display:none">' +
     header.replace(' Paramétrages ', ' Comptabilité Projets &amp; Bailleurs ') +
-    inerte('Saisie PAD', 'pb-racine').replace(' style="display:none"', '').replace('pl-8 pr-4', 'pl-4 pr-4') +
-    PROCS.map((p) => marque(
+    child('pad', 'Saisie PAD', 'pb-racine').replace(' style="display:none"', '').replace('pl-8 pr-4', 'pl-4 pr-4') +
+    PROCS.map((p) => marque(p === 'GAVI' ? groupe('drf-GAVI', 'GAVI') + child('gavisuivi', 'Suivi détaillé', 'drf-GAVI') + child('gavisynth', 'Synthèse', 'drf-GAVI') + child('gavirapport', 'Rapport financier', 'drf-GAVI') + sousGroupe('drf-param-GAVI', 'Récapitulatif', 'drf-GAVI') + enfant12(child('recap', "Concepteur d'état", 'drf-param-GAVI')) + enfant12(child('gavirecap', 'Édition', 'drf-param-GAVI')) : (
       groupe('drf-' + p, p) +
       sousGroupe('drf-param-' + p, 'Paramétrages', 'drf-' + p) + enfant12(child('recap', 'Modèle récapitulatif', 'drf-param-' + p)) + enfant12(child('soemodel', 'Modèle SOE', 'drf-param-' + p)) +
-      sousGroupe('drf-saisie-' + p, 'Saisie', 'drf-' + p) + enfant12(child('budgetconv', 'Budget de la convention', 'drf-saisie-' + p)) +
-      sousGroupe('drf-trait-' + p, 'Traitement', 'drf-' + p) + enfant12(child('etatdep', 'État de dépense', 'drf-trait-' + p)) + enfant12(child('regul', 'Régularisation de la demande', 'drf-trait-' + p)) +
+      sousGroupe('drf-saisie-' + p, 'Saisie', 'drf-' + p) + enfant12(p === 'BAD' ? child('badprog', 'Programme et budget A3', 'drf-saisie-' + p) : child('budgetconv', 'Budget de la convention', 'drf-saisie-' + p)) +
+      sousGroupe('drf-trait-' + p, 'Traitement', 'drf-' + p) + enfant12(child('etatdep', 'État de dépense', 'drf-trait-' + p)) + enfant12(child('regul', 'Régularisation de la demande', 'drf-trait-' + p)) + enfant12(child('rapco', 'Rapprochement CO', 'drf-trait-' + p)) +
       sousGroupe('drf-suivi-' + p, 'Suivi', 'drf-' + p) + enfant12(child('histdem', 'Historique des demandes', 'drf-suivi-' + p)) +
-      (p === 'FIDA' ? sousGroupe('drf-rfi-' + p, 'États RFI', 'drf-' + p) + enfant12(child('rfimodeles', 'Modèles d\'état RFI', 'drf-rfi-' + p)) + enfant12(child('rfiparam', 'Paramètres RFI', 'drf-rfi-' + p)) + enfant12(child('rfiedit', 'Édition des états RFI', 'drf-rfi-' + p)) : ''), p)).join('') + '</div>';
+      (p === 'FIDA' ? sousGroupe('drf-rfi-' + p, 'États RFI', 'drf-' + p) + enfant12(child('rfimodeles', 'Modèles d\'état RFI', 'drf-rfi-' + p)) + enfant12(child('rfiparam', 'Paramètres RFI', 'drf-rfi-' + p)) + enfant12(child('rfiedit', 'Édition des états RFI', 'drf-rfi-' + p)) : '')), p)).join('') +
+    groupe('drf-rsf', 'RSF') + child('rsfer', 'Tableau emplois ressources', 'drf-rsf').replace('pl-8 pr-4', 'pl-12 pr-4') + child('rsfuf', 'Utilisation de fonds', 'drf-rsf').replace('pl-8 pr-4', 'pl-12 pr-4') + child('rsfsb', 'Suivi budgétaire', 'drf-rsf').replace('pl-8 pr-4', 'pl-12 pr-4') + '</div>';
   const ctr = '<div data-sidebar-level="contrats" style="display:none">' +
     header.replace(' Paramétrages ', ' Gestion des contrats ') +
     groupe('contrats-param', 'Paramétrages') + child('passation', 'Type de passation', 'contrats-param') + child('typemarche', 'Type de marché', 'contrats-param') +
@@ -468,8 +517,11 @@ let child;
   const immo = '<div data-sidebar-level="immobilisations" style="display:none">' + header.replace(' Paramétrages ', ' Immobilisations ') +
     groupe('immo-param', 'Paramétrages') + child('lieuaffect', "Lieu d'affectation", 'immo-param') + child('collabresp', 'Collaborateur responsable', 'immo-param') + child('famimmo', "Famille d'immobilisations", 'immo-param') +
     groupe('immo-saisies', 'Saisies') + child('immolist', "Liste d'immobilisations", 'immo-saisies') + child('reassign', 'Réassignation', 'immo-saisies') + '</div>';
+  const aiMod = '<div data-sidebar-level="softaccounting-ai" style="display:none">' + header.replace(' Paramétrages ', ' SoftAccounting AI ') +
+    [['aicompta', 'Assistance comptable AI'], ['aifin', 'Assistance financière AI'], ['aifonc', 'Assistance fonctionnelle AI']]
+      .map(([id, l]) => child(id, l, 'ai-assist').replace(' style="display:none"', '').replace('pl-8 pr-4', 'pl-4 pr-4')).join('') + '</div>';
   const navEnd = out.indexOf('</nav>', lvl);
-  out = out.slice(0, navEnd) + cg + etats + pb + ctr + ef + immo + out.slice(navEnd);
+  out = out.slice(0, navEnd) + cg + etats + pb + ctr + ef + immo + aiMod + out.slice(navEnd);
 }
 
 // 6. En-tête
@@ -515,21 +567,23 @@ extra.push([
 // En dernier, pour primer sur les styles encapsulés des captures
 extra.push(read('ecrans/etats_filtres.css'));
 extra.push(read('ecrans/balance_auxiliaire.css'));
+extra.push(read('ecrans/echeancier.css'));
 extra.push(read('ecrans/etats_modale.css'));
 extra.push(read('ecrans/etats_boutons.css'));
 extra.push(read('ecrans/barre_actions.css'));
+extra.push(read('ecrans/boutons_modeles.css'));
 extra.push(read('ecrans/grand_livre_general.css'));
 out = out.replace('</head>', extra.map((s) => '<style>' + s + '</style>').join('') + '</head>');
 
 const script = `<script>
 (function () {
-  var TITLES = { ${PLANS.map((p) => p.id + ': ' + JSON.stringify(p.titre)).join(', ')}, journal: 'Journaux', lieuaffect: "Lieu d'affectation", collabresp: 'Collaborateur responsable', famimmo: "Famille d'immobilisation", dashboard: 'Tableau de bord', tchat: 'Tchat', pays: 'Pays', modereglement: 'Mode de règlement', cloture: 'Clôture comptable', signataires: 'Signataires', banques: 'Liste des banques', devise: 'Devise', acces: 'Gestion des accès', traces: 'Paramétrage des traces', jtraces: 'Journal de traces', histdem: 'Historique des demandes', entite: "Administration de l'entité", plans: 'Configuration des plans', exercices: 'Exercices comptables', racines: 'Racine des comptes', taxes: 'Type de taxe', rapprochement: 'Rapprochement bancaire — Configuration', pointage: 'Rapprochement bancaire — Pointage du relevé', releves: 'Rapprochement bancaire — Pointage', clotper: 'Clôture périodique', clotmens: 'Clôture mensuelle', lettparam: 'Lettrage — Paramètre', cours: 'Gestion des cours — Saisie', conversion: 'Gestion des cours — Conversion', caissetypes: "Petite caisse — Types d'opération", caissesaisie: 'Petite caisse — Saisie', caissegen: 'Petite caisse — Génération des écritures', lettmanuel: 'Lettrage', prelettrage: 'Prélettrage', anouveaux: 'À nouveau', clotannuelle: 'Clôture annuelle', situation: 'Rapprochement bancaire — Situation', dp: 'Devis programme', recap: "Modèle d'état récapitulatif", modfisc: "Modèle d'état — Déclaration fiscale", typetaxe: 'Type de taxe', listing: 'Modèle listing', listing2: "Modèle d'état récapitulatif", listedit: 'Édition — Liste', passation: 'Types de passation', typemarche: 'Types de marché', fichecontrat: 'Fiche contrat', reliquats: 'Génération des reliquats', immolist: "Liste d'immobilisations", reassign: "Réassignation d'immobilisation", suivicontrats: 'Suivi des contrats', detailcontrat: "Détail d'un contrat", recapexec: 'Exécution du modèle récapitulatif', listingdes: 'Designer modèle listing', fisctrait: "Traitement d'une déclaration", modfisc2: "Modèle d'état", regul: 'Régularisation de la demande', soemodel: "Modèle d'état SOE", budgetconv: 'Budget de la convention', rfimodeles: "Modèles d'état RFI", rfiparam: 'Paramètres RFI', rfiedit: 'Édition des états RFI', etatdep: "Confection guidée d'une demande", designer: 'Concepteur SOE', designer2: "Designer — Modèle d'état Déclaration", procfin: 'Procédures financières', ecritures: "Saisie d'écritures", balance: 'Balance générale', balaux: 'Balance auxiliaire', glg: 'Grand livre général', balana: 'Balance analytique', bilparam: 'Paramétrage du bilan', biledit: 'Édition du bilan', crparam: 'Paramétrage du compte de résultat', cred: 'Édition du compte de résultat', erparam: 'Paramétrage des emplois et ressources', ered: 'Édition des emplois et ressources', tftparam: 'Paramétrage du tableau de flux de trésorerie', tfted: 'Édition du tableau de flux de trésorerie' };
-  var GROUP = { ${PLANS.map((p) => p.id + ": 'gpc'").join(', ')}, journal: 'etats-general', lieuaffect: 'immo-param', collabresp: 'immo-param', famimmo: 'immo-param', dashboard: 'aucun', tchat: 'aucun', pays: 'generaux', modereglement: 'comptables', cloture: 'comptables', signataires: 'generaux', banques: 'generaux', devise: 'generaux', acces: 'admin', traces: 'admin', jtraces: 'admin', histdem: 'drf-suivi', rfimodeles: 'drf-rfi', rfiparam: 'drf-rfi', rfiedit: 'drf-rfi', entite: 'generaux', plans: 'gplans', exercices: 'comptables', racines: 'comptables', taxes: 'comptables', rapprochement: 'cg-rapprochement', pointage: 'cg-rapprochement', releves: 'cg-rapprochement', clotper: 'cg-travaux', clotmens: 'cg-travaux', lettparam: 'cg-lettrage', cours: 'cg-cours', conversion: 'cg-cours', caissetypes: 'cg-caisse', caissesaisie: 'cg-caisse', caissegen: 'cg-caisse', lettmanuel: 'cg-lettrage', prelettrage: 'cg-lettrage', anouveaux: 'cg-travaux', clotannuelle: 'cg-travaux', situation: 'cg-rapprochement', dp: 'financiers', recap: 'drf-param', etatdep: 'drf-trait', budgetconv: 'drf-saisie', modfisc2: 'drf-param', regul: 'drf-trait', soemodel: 'drf-param', modfisc: 'fisc-param', typetaxe: 'fisc-param', listing: 'pers-param', listing2: 'pers-param', listedit: 'pers-edit', passation: 'contrats-param', typemarche: 'contrats-param', fichecontrat: 'contrats-saisie', reliquats: 'contrats-saisie', immolist: 'immo-saisies', reassign: 'immo-saisies', suivicontrats: 'contrats-suivi', detailcontrat: 'contrats-suivi', recapexec: 'pers-edit', listingdes: 'pers-param', fisctrait: 'etats-fiscale', designer: 'fisc-param', designer2: 'fisc-param', procfin: 'financiers', ecritures: 'cg', balance: 'etats-general', balaux: 'etats-general', glg: 'etats-general', balana: 'etats-analytique', bilparam: 'ef-bil', biledit: 'ef-bil', crparam: 'ef-cr', cred: 'ef-cr', erparam: 'ef-er', ered: 'ef-er', tftparam: 'ef-tft', tfted: 'ef-tft' };
+  var TITLES = { ${PLANS.map((p) => p.id + ': ' + JSON.stringify(p.titre)).join(', ')}, journal: 'Journaux', lieuaffect: "Lieu d'affectation", collabresp: 'Collaborateur responsable', famimmo: "Famille d'immobilisation", dashboard: 'Tableau de bord', tchat: 'Tchat', pays: 'Pays', modereglement: 'Mode de règlement', cloture: 'Clôture comptable', signataires: 'Signataires', banques: 'Liste des banques', devise: 'Devise', acces: 'Gestion des accès', traces: 'Paramétrage des traces', jtraces: 'Journal de traces', nettoyages: 'Nettoyages des données', histdem: 'Historique des demandes', gavisuivi: 'GAVI — Suivi détaillé', gavisynth: 'GAVI — Synthèse', gavisynthparam: 'GAVI — Paramétrage de la synthèse', gavirapport: 'GAVI — Rapport financier', badprog: 'BAD — Programme et budget A3', gavirecap: 'GAVI — Édition du récapitulatif', entite: "Administration de l'entité", plans: 'Configuration des plans', exercices: 'Exercices comptables', racines: 'Racine des comptes', taxes: 'Type de taxe', rapprochement: 'Rapprochement bancaire — Configuration', pointage: 'Rapprochement bancaire — Pointage du relevé', releves: 'Rapprochement bancaire — Pointage', clotper: 'Clôture périodique', clotmens: 'Clôture mensuelle', lettparam: 'Lettrage — Paramètre', circparam: 'Circuit de validation — Paramètre Circuit', circtrait: 'Circuit de validation — Traitement', cours: 'Gestion des cours — Saisie', conversion: 'Gestion des cours — Conversion', caissetypes: "Petite caisse — Types d'opération", caissesaisie: 'Petite caisse — Saisie', caissegen: 'Petite caisse — Génération des écritures', lettmanuel: 'Lettrage', prelettrage: 'Prélettrage', anouveaux: 'À nouveau', anouvanalytique: 'À nouveau analytique', coursapplique: 'Cours appliqué', caissemodeles: 'Modèles de pièce de caisse', pvcaisse: 'PV de caisse', listeecritures: 'Liste des écritures', modecr: "Modèles d'écriture", clotannuelle: 'Clôture annuelle', situation: 'Rapprochement bancaire — Situation', dp: 'Devis programme', recap: "Modèle d'état récapitulatif", modfisc: "Modèle d'état — Déclaration fiscale", typetaxe: 'Type de taxe', listing: 'Modèle listing', listing2: "Modèle d'état récapitulatif", listedit: 'Édition — Liste', passation: 'Types de passation', typemarche: 'Types de marché', fichecontrat: 'Fiche contrat', reliquats: 'Génération des reliquats', immolist: "Liste d'immobilisations", reassign: "Réassignation d'immobilisation", suivicontrats: 'Suivi des contrats', detailcontrat: "Détail d'un contrat", recapexec: 'Exécution du modèle récapitulatif', listingdes: 'Designer modèle listing', fisctrait: "Traitement d'une déclaration", fiscannul: 'Annulation de la déclaration', modfisc2: "Modèle d'état", regul: 'Régularisation de la demande', rapco: 'Rapprochement CO', pad: 'Saisie du PAD', soemodel: "Modèle d'état SOE", budgetconv: 'Budget de la convention', rfimodeles: "Modèles d'état RFI", rfiparam: 'Paramètres RFI', rfiedit: 'Édition des états RFI', etatdep: "Confection guidée d'une demande", rsfer: 'RSF — Tableau emplois ressources', rsfuf: 'RSF — Utilisation de fonds', rsfsb: 'RSF — Suivi budgétaire', aicompta: 'Assistance comptable AI', aifin: 'Assistance financière AI', aifonc: 'Assistance fonctionnelle AI', designer: 'Concepteur SOE', designer2: "Designer — Modèle d'état Déclaration", procfin: 'Procédures financières', ecritures: "Saisie d'écritures", ecritures_ent: "Saisie d'écritures", balance: 'Balance générale', balaux: 'Balance auxiliaire', echeancier: 'Échéancier et balance âgée', glaux: 'Grand livre auxiliaire', glg: 'Grand livre général', balana: 'Balance analytique', glana: 'Grand livre analytique', detmvt: 'Détails des mouvements analytiques', bilparam: 'Paramétrage du bilan', biledit: 'Édition du bilan', crparam: 'Paramétrage du compte de résultat', cred: 'Édition du compte de résultat', erparam: 'Paramétrage des emplois et ressources', ered: 'Édition des emplois et ressources', tftparam: 'Paramétrage du tableau de flux de trésorerie', tfted: 'Édition du tableau de flux de trésorerie' };
+  var GROUP = { ${PLANS.map((p) => p.id + ": 'gpc'").join(', ')}, journal: 'etats-general', lieuaffect: 'immo-param', collabresp: 'immo-param', famimmo: 'immo-param', dashboard: 'aucun', tchat: 'aucun', pays: 'generaux', modereglement: 'comptables', cloture: 'comptables', signataires: 'generaux', banques: 'generaux', devise: 'generaux', acces: 'admin', traces: 'admin', jtraces: 'admin', nettoyages: 'admin', histdem: 'drf-suivi', gavisuivi: 'drf-GAVI', gavisynth: 'drf-GAVI', gavisynthparam: 'drf-GAVI', gavirapport: 'drf-GAVI', badprog: 'drf-saisie', gavirecap: 'drf-param', rsfer: 'drf-rsf', rsfuf: 'drf-rsf', rsfsb: 'drf-rsf', aicompta: 'aucun', aifin: 'aucun', aifonc: 'aucun', rfimodeles: 'drf-rfi', rfiparam: 'drf-rfi', rfiedit: 'drf-rfi', entite: 'generaux', plans: 'gplans', exercices: 'comptables', racines: 'comptables', taxes: 'comptables', rapprochement: 'cg-rapprochement', pointage: 'cg-rapprochement', releves: 'cg-rapprochement', clotper: 'cg-travaux', clotmens: 'cg-travaux', lettparam: 'cg-lettrage', circparam: 'cg-circuit', circtrait: 'cg-circuit', cours: 'cg-cours', conversion: 'cg-cours', caissetypes: 'cg-caisse', caissesaisie: 'cg-caisse', caissegen: 'cg-caisse', lettmanuel: 'cg-lettrage', prelettrage: 'cg-lettrage', anouveaux: 'cg-travaux', anouvanalytique: 'cg-travaux', coursapplique: 'cg-cours', caissemodeles: 'cg-caisse', pvcaisse: 'cg-caisse', listeecritures: 'cg', modecr: 'cg', clotannuelle: 'cg-travaux', situation: 'cg-rapprochement', dp: 'financiers', recap: 'drf-param', etatdep: 'drf-trait', budgetconv: 'drf-saisie', modfisc2: 'drf-param', regul: 'drf-trait', rapco: 'drf-trait', pad: 'pb-racine', soemodel: 'drf-param', modfisc: 'fisc-param', typetaxe: 'fisc-param', listing: 'pers-param', listing2: 'pers-param', listedit: 'pers-edit', passation: 'contrats-param', typemarche: 'contrats-param', fichecontrat: 'contrats-saisie', reliquats: 'contrats-saisie', immolist: 'immo-saisies', reassign: 'immo-saisies', suivicontrats: 'contrats-suivi', detailcontrat: 'contrats-suivi', recapexec: 'pers-edit', listingdes: 'pers-param', fisctrait: 'etats-fiscale', fiscannul: 'etats-fiscale', designer: 'fisc-param', designer2: 'fisc-param', procfin: 'financiers', ecritures: 'cg', ecritures_ent: 'cg', balance: 'etats-general', balaux: 'etats-general', echeancier: 'etats-general', glaux: 'etats-general', glg: 'etats-general', balana: 'etats-analytique', glana: 'etats-analytique', detmvt: 'etats-analytique', bilparam: 'ef-bil', biledit: 'ef-bil', crparam: 'ef-cr', cred: 'ef-cr', erparam: 'ef-er', ered: 'ef-er', tftparam: 'ef-tft', tfted: 'ef-tft' };
   // Module (et sous-menu de la sidebar) de chaque écran
   var SAME = { designer: 'modfisc', designer2: 'modfisc', listingdes: 'listing' };
   var PARENT = { 'gpc': 'gplans', 'drf-param': 'drf', 'drf-saisie': 'drf', 'drf-suivi': 'drf', 'drf-rfi': 'drf', 'fisc-param': 'etats-fiscale', 'pers-param': 'etats-personnalises', 'pers-edit': 'etats-personnalises' };
-  var MODULE = { journal: 'etats-comptables', lieuaffect: 'immobilisations', collabresp: 'immobilisations', famimmo: 'immobilisations', dashboard: 'tableau-de-bord', tchat: 'tchat', histdem: 'projets-bailleurs', recap: 'projets-bailleurs', etatdep: 'projets-bailleurs', budgetconv: 'projets-bailleurs', rfimodeles: 'projets-bailleurs', rfiparam: 'projets-bailleurs', rfiedit: 'projets-bailleurs', modfisc2: 'projets-bailleurs', regul: 'projets-bailleurs', soemodel: 'projets-bailleurs', modfisc: 'etats-comptables', typetaxe: 'etats-comptables', listing: 'etats-comptables', listing2: 'etats-comptables', listedit: 'etats-comptables', passation: 'contrats', typemarche: 'contrats', fichecontrat: 'contrats', reliquats: 'contrats', immolist: 'immobilisations', reassign: 'immobilisations', suivicontrats: 'contrats', detailcontrat: 'contrats', recapexec: 'etats-comptables', listingdes: 'etats-comptables', fisctrait: 'etats-comptables', designer: 'etats-comptables', designer2: 'etats-comptables', ecritures: 'compta-generale', rapprochement: 'compta-generale', pointage: 'compta-generale', releves: 'compta-generale', clotper: 'compta-generale', clotmens: 'compta-generale', lettparam: 'compta-generale', cours: 'compta-generale', conversion: 'compta-generale', caissetypes: 'compta-generale', caissesaisie: 'compta-generale', caissegen: 'compta-generale', lettmanuel: 'compta-generale', prelettrage: 'compta-generale', anouveaux: 'compta-generale', clotannuelle: 'compta-generale', situation: 'compta-generale', balance: 'etats-comptables', balaux: 'etats-comptables', glg: 'etats-comptables', balana: 'etats-comptables', bilparam: 'etats-financiers', biledit: 'etats-financiers', crparam: 'etats-financiers', cred: 'etats-financiers', erparam: 'etats-financiers', ered: 'etats-financiers', tftparam: 'etats-financiers', tfted: 'etats-financiers' };
-  var LEVELS = ['projets-bailleurs', 'parametrages', 'compta-generale', 'etats-comptables', 'contrats', 'etats-financiers', 'immobilisations'];
+  var MODULE = { journal: 'etats-comptables', lieuaffect: 'immobilisations', collabresp: 'immobilisations', famimmo: 'immobilisations', dashboard: 'tableau-de-bord', tchat: 'tchat', histdem: 'projets-bailleurs', gavisuivi: 'projets-bailleurs', gavisynth: 'projets-bailleurs', gavisynthparam: 'projets-bailleurs', gavirapport: 'projets-bailleurs', badprog: 'projets-bailleurs', gavirecap: 'projets-bailleurs', rsfer: 'projets-bailleurs', rsfuf: 'projets-bailleurs', rsfsb: 'projets-bailleurs', aicompta: 'softaccounting-ai', aifin: 'softaccounting-ai', aifonc: 'softaccounting-ai', recap: 'projets-bailleurs', etatdep: 'projets-bailleurs', budgetconv: 'projets-bailleurs', rfimodeles: 'projets-bailleurs', rfiparam: 'projets-bailleurs', rfiedit: 'projets-bailleurs', modfisc2: 'projets-bailleurs', regul: 'projets-bailleurs', rapco: 'projets-bailleurs', pad: 'projets-bailleurs', soemodel: 'projets-bailleurs', modfisc: 'etats-comptables', typetaxe: 'etats-comptables', listing: 'etats-comptables', listing2: 'etats-comptables', listedit: 'etats-comptables', passation: 'contrats', typemarche: 'contrats', fichecontrat: 'contrats', reliquats: 'contrats', immolist: 'immobilisations', reassign: 'immobilisations', suivicontrats: 'contrats', detailcontrat: 'contrats', recapexec: 'etats-comptables', listingdes: 'etats-comptables', fisctrait: 'etats-comptables', fiscannul: 'etats-comptables', designer: 'etats-comptables', designer2: 'etats-comptables', ecritures: 'compta-generale', ecritures_ent: 'compta-generale', rapprochement: 'compta-generale', pointage: 'compta-generale', releves: 'compta-generale', clotper: 'compta-generale', clotmens: 'compta-generale', lettparam: 'compta-generale', circparam: 'compta-generale', circtrait: 'compta-generale', cours: 'compta-generale', conversion: 'compta-generale', caissetypes: 'compta-generale', caissesaisie: 'compta-generale', caissegen: 'compta-generale', lettmanuel: 'compta-generale', prelettrage: 'compta-generale', anouveaux: 'compta-generale', anouvanalytique: 'compta-generale', coursapplique: 'compta-generale', caissemodeles: 'compta-generale', pvcaisse: 'compta-generale', listeecritures: 'compta-generale', modecr: 'compta-generale', clotannuelle: 'compta-generale', situation: 'compta-generale', balance: 'etats-comptables', balaux: 'etats-comptables', echeancier: 'etats-comptables', glaux: 'etats-comptables', glg: 'etats-comptables', balana: 'etats-comptables', glana: 'etats-comptables', detmvt: 'etats-comptables', bilparam: 'etats-financiers', biledit: 'etats-financiers', crparam: 'etats-financiers', cred: 'etats-financiers', erparam: 'etats-financiers', ered: 'etats-financiers', tftparam: 'etats-financiers', tfted: 'etats-financiers' };
+  var LEVELS = ['softaccounting-ai', 'projets-bailleurs','parametrages', 'compta-generale', 'etats-comptables', 'contrats', 'etats-financiers', 'immobilisations'];
   function moduleOf(screen) { return MODULE[screen] || 'parametrages'; }
   var TAB_ON = ['border-[#3e97ff]', 'text-[#3e97ff]'], TAB_OFF = ['border-transparent', 'text-[#888780]'];
   var $$ = function (s) { return Array.prototype.slice.call(document.querySelectorAll(s)); };
@@ -552,7 +606,7 @@ const script = `<script>
     $$('[data-tab-panel]').forEach(function (p) { p.style.display = p.dataset.tabPanel === id ? '' : 'none'; });
   }
   // Procédures financières activées (Administration de l'entité › Personnalisation) et procédure courante du menu Projets & Bailleurs
-  function procsActives() { var o = window.ENTITE_OPTIONS && window.ENTITE_OPTIONS.procedures; var l = ['IDA', 'FIDA', 'FED', 'FM', 'BAD']; return o ? l.filter(function (p) { return o[p]; }) : ['IDA', 'FIDA']; }
+  function procsActives() { var o = window.ENTITE_OPTIONS && window.ENTITE_OPTIONS.procedures; var l = ['IDA', 'FIDA', 'FED', 'FM', 'BAD', 'GAVI']; return o ? l.filter(function (p) { return o[p]; }) : ['IDA', 'FIDA']; }
   function procCourante() { var a = procsActives(); return a.indexOf(window.__proc) >= 0 ? window.__proc : (a[0] || 'IDA'); }
   function grp(e) { var g = GROUP[e]; return ['drf-param', 'drf-saisie', 'drf-trait', 'drf-suivi', 'drf-rfi'].indexOf(g) >= 0 ? g + '-' + procCourante() : g; }
   function par(g) { var k = ['drf-param-', 'drf-saisie-', 'drf-trait-', 'drf-suivi-', 'drf-rfi-'].filter(function (x) { return g && g.indexOf(x) === 0; })[0]; return k ? 'drf-' + g.slice(k.length) : PARENT[g]; }
@@ -562,12 +616,14 @@ const script = `<script>
   var premier = true;
   function route() {
     var h = location.hash.slice(1);
-    var screen = TITLES.hasOwnProperty(h) && h !== 'entite' ? h : 'entite';
+    var screen = !h ? 'dashboard' : (TITLES.hasOwnProperty(h) && h !== 'entite' ? h : 'entite');   // à l'ouverture de la maquette (sans écran choisi) : le Tableau de bord
     var eff = ((screen === 'designer' || screen === 'designer2') && (window.__designerFrom === 'modfisc2' || window.__designerFrom === 'soemodel' || window.__designerFrom === 'recap' || window.__designerFrom === 'listing2' || window.__designerFrom === 'rfimodeles')) ? window.__designerFrom : screen;
-    $$('[data-screen]').forEach(function (s) { s.style.display = s.dataset.screen === screen ? '' : 'none'; });
+    var ecran = screen === 'ecritures_ent' ? 'ecritures' : screen === 'rsfer' ? 'erparam' : screen;   // RSF › Tableau emplois ressources reprend la fenêtre États financiers › Emplois et ressources › Paramétrages   // la saisie « Entreprise » reprend l'écran de saisie d'écritures (variante repérée par data-variante)
+    if (screen === 'ecritures_ent') document.body.setAttribute('data-variante', 'entreprise'); else document.body.removeAttribute('data-variante');
+    $$('[data-screen]').forEach(function (s) { s.style.display = s.dataset.screen === ecran ? '' : 'none'; });
     $$('[data-crumb]').forEach(function (c) { c.style.display = c.dataset.crumb === (eff === 'rfimodeles' && screen !== 'rfimodeles' ? 'rfides' : (SAME[eff] || eff)) ? '' : 'none'; });
-    $$('[data-crumb] a').forEach(function (a) { if (a.hasAttribute('data-crumb-proc') || a.textContent.trim() === 'Procédure financière') { a.setAttribute('data-crumb-proc', ''); a.textContent = ' ' + (/^rfi/.test(a.closest('[data-crumb]').dataset.crumb) ? 'FIDA' : procCourante()) + ' '; } });
-    $$('[data-nav]').forEach(function (a) { a.classList.toggle('sidebar-active', a.dataset.nav === (SAME[eff] || ({ pointage: 'releves', biledit: 'bilparam', cred: 'crparam', ered: 'erparam', tfted: 'tftparam' }[eff] || eff))); });
+    $$('[data-crumb] a').forEach(function (a) { if (a.hasAttribute('data-crumb-proc') || a.textContent.trim() === 'Procédure financière') { a.setAttribute('data-crumb-proc', ''); a.textContent = ' ' + (/^rfi/.test(a.closest('[data-crumb]').dataset.crumb) ? 'FIDA' : a.closest('[data-crumb]').dataset.crumb === 'badprog' ? 'BAD' : procCourante()) + ' '; } });
+    $$('[data-nav]').forEach(function (a) { a.classList.toggle('sidebar-active', a.dataset.nav === (SAME[eff] || ({ pointage: 'releves', biledit: 'bilparam', cred: 'crparam', ered: 'erparam', tfted: 'tftparam', gavisynthparam: 'gavisynth' }[eff] || eff))); });
     $$('[data-group-toggle]').forEach(function (sb) {
       var on = sb.dataset.groupToggle === grp(eff);
       sb.classList.toggle('sidebar-active', on);
@@ -626,8 +682,8 @@ const script = `<script>
 const _du = (f) => 'data:image/png;base64,' + fs.readFileSync(f).toString('base64');
 const masqueJs = 'window.__MASQUE={logo:' + JSON.stringify(_du('ecrans/masque/logo.png')) + ',qr:' + JSON.stringify(_du('ecrans/masque/qr.png')) + ',pied:' + JSON.stringify(_du('ecrans/masque/pied.png')) + '};' + String.fromCharCode(10) + read('ecrans/masque/masque.js');
 out = out.replace(/(<a aria-label="Tchat"[^>]*?)href="#"/, (m, d) => d + 'href="#tchat" data-nav="tchat"');
-out = out.replace(/<body[^>]*>/, (m) => m + '<script>' + read('ecrans/panneau_proprietes.js') + '</script>');
-out = out.replace('</body>', () => '<script>' + masqueJs + '</script>' + script + '<script>\n' + dpJs + '</script><script>\n' + exercicesJs + '</script><script>' + String.fromCharCode(10) + tiersJs + '</script><script>' + String.fromCharCode(10) + read('ecrans/plans_pc.js') + '</script><script>' + String.fromCharCode(10) + ecrituresJs + '</script><script>' + String.fromCharCode(10) + balanceJs + '</script><script>' + String.fromCharCode(10) + balanceAnaJs + '</script><script>' + String.fromCharCode(10) + balanceAuxJs + '</script><script>' + String.fromCharCode(10) + glgJs + '</script><script>' + String.fromCharCode(10) + read('ecrans/etats_modale.js') + '</script><script>' + String.fromCharCode(10) + read('ecrans/etats_boutons.js') + '</script><script>' + String.fromCharCode(10) + read('ecrans/charte_titres.js') + '</script><script>' + String.fromCharCode(10) + read('ecrans/combo_plans.js') + '</script><script>' + String.fromCharCode(10) + read('ecrans/barre_actions.js') + String.fromCharCode(10) + read('ecrans/import_assistant.js') + String.fromCharCode(10) + read('ecrans/modale_alerte.js') + String.fromCharCode(10) + read('ecrans/epayment.js') + String.fromCharCode(10) + read('ecrans/produits.js') + String.fromCharCode(10) + read('ecrans/assistant_aide.js') + String.fromCharCode(10) + read('ecrans/assistant_recherche.js') + String.fromCharCode(10) + read('ecrans/assistant.js') + String.fromCharCode(10) + read('ecrans/tableaux.js') + String.fromCharCode(10) + read('ecrans/pagination.js') + String.fromCharCode(10) + read('ecrans/popup_modal.js') + '</script></body>');
+out = out.replace(/<body[^>]*>/, (m) => m + '<script>' + read('ecrans/panneau_proprietes.js') + '</script><script>' + read('ecrans/champs_dynamiques.js') + '</script>');
+out = out.replace('</body>', () => '<script>' + masqueJs + '</script>' + script + '<script>\n' + dpJs + '</script><script>\n' + exercicesJs + '</script><script>' + String.fromCharCode(10) + tiersJs + '</script><script>' + String.fromCharCode(10) + read('ecrans/plans_pc.js') + '</script><script>' + String.fromCharCode(10) + ecrituresJs + '</script><script>' + String.fromCharCode(10) + balanceJs + '</script><script>' + String.fromCharCode(10) + balanceAnaJs + '</script><script>' + String.fromCharCode(10) + balanceAuxJs + '</script><script>' + String.fromCharCode(10) + glgJs + '</script><script>' + String.fromCharCode(10) + read('ecrans/echeancier.js') + '</script><script>' + String.fromCharCode(10) + read('ecrans/balance_detail.js') + '</script><script>' + String.fromCharCode(10) + read('ecrans/grand_livre_auxiliaire.js') + '</script><script>' + String.fromCharCode(10) + read('ecrans/etats_modale.js') + '</script><script>' + String.fromCharCode(10) + read('ecrans/etats_boutons.js') + '</script><script>' + String.fromCharCode(10) + read('ecrans/charte_titres.js') + '</script><script>' + String.fromCharCode(10) + read('ecrans/etats_ui.js') + '</script><script>' + String.fromCharCode(10) + read('ecrans/edition_ui.js') + '</script><script>' + String.fromCharCode(10) + read('ecrans/combo_plans.js') + '</script><script>' + String.fromCharCode(10) + read('ecrans/barre_actions.js') + String.fromCharCode(10) + read('ecrans/import_assistant.js') + String.fromCharCode(10) + read('ecrans/modale_alerte.js') + String.fromCharCode(10) + read('ecrans/epayment.js') + String.fromCharCode(10) + read('ecrans/produits.js') + String.fromCharCode(10) + read('ecrans/assistant_aide.js') + String.fromCharCode(10) + read('ecrans/assistant_recherche.js') + String.fromCharCode(10) + read('ecrans/assistant.js') + String.fromCharCode(10) + read('ecrans/tableaux.js') + String.fromCharCode(10) + read('ecrans/pagination.js') + String.fromCharCode(10) + read('ecrans/popup_modal.js') + '</script></body>');
 
 
 // 7. Charte graphique Softwell v1.0 : teintes de marque -> marine, polices Outfit + Inter, couche de thème
@@ -713,7 +769,18 @@ out = out.replace('</body>', () => '<script>' + masqueJs + '</script>' + script 
   out = out.split('@page{size:landscape}').join('');   // l'impression est toujours en A4 portrait (règle @page dans charte.css)
   { const i = out.lastIndexOf('</bo' + 'dy>'); out = out.slice(0, i) + '<style id="charte-softwell">' + (() => {
     let c = read('ecrans/charte.css') + '\n' + read('ecrans/ecritures_disposition.css');
-    if (process.env.ANCIENNE_SIDEBAR) {
+    // Connexion + portail SoftAppli affichés avant l'entrée dans SoftAccounting (page autonome isolée dans un iframe plein écran)
+{
+  const b64 = Buffer.from(read('ecrans/portail.html'), 'utf8').toString('base64');
+  const bloc = '<script>(function(){var bin=atob("' + b64 + '"),u=new Uint8Array(bin.length);for(var i=0;i<bin.length;i++)u[i]=bin.charCodeAt(i);';
+  const bloc2 = 'var html=new TextDecoder("utf-8").decode(u),nom="";';
+  const bloc3 = 'function ouvrir(direct){var f=document.getElementById("sc-portail");if(f)f.remove();f=document.createElement("iframe");f.id="sc-portail";f.title="Connexion et portail SoftAppli";f.style.cssText="position:fixed;inset:0;width:100%;height:100%;border:0;z-index:2147483000;background:#fff";window.SC_ETAT={direct:!!direct,nom:nom};f.srcdoc=html;document.body.appendChild(f);document.documentElement.style.overflow="hidden";}';
+  const bloc4 = 'window.SC_PORTAIL={ouvrir:function(){ouvrir(true);}};document.addEventListener("click",function(e){var b=e.target.closest&&e.target.closest(".topbar-logout-button");if(!b)return;e.preventDefault();e.stopPropagation();nom="";try{sessionStorage.removeItem("sc_session");}catch(x){}ouvrir(false);},true);window.SC_ENTRER=function(n,p){if(n)nom=n;try{sessionStorage.setItem("sc_session",nom||"1");}catch(x){}if(p&&window.PRODUIT_API)window.PRODUIT_API.appliquer(p==="entreprise"?"entreprise":"accounting",true);var f=document.getElementById("sc-portail");if(f)f.remove();document.documentElement.style.overflow="";};';
+  const bloc5 = 'window.addEventListener("message",function(e){if(e.data&&e.data.softappli==="entrer"){if(e.data.nom)nom=e.data.nom;try{sessionStorage.setItem("sc_session",nom||"1");}catch(x){}if(e.data.produit&&window.PRODUIT_API)window.PRODUIT_API.appliquer(e.data.produit==="entreprise"?"entreprise":"accounting",true);var f=document.getElementById("sc-portail");if(f)f.remove();document.documentElement.style.overflow="";}if(e.data&&e.data.softappli==="sortie"){nom="";try{sessionStorage.removeItem("sc_session");}catch(x){}}});var s0=null;try{s0=sessionStorage.getItem("sc_session");}catch(x){}if(s0){nom=s0==="1"?"":s0;}else ouvrir(false);})();</script>';
+  const blocTotal = bloc + bloc2 + bloc3 + bloc4 + bloc5;
+  out = out.slice(0, out.lastIndexOf("</body>")) + blocTotal + out.slice(out.lastIndexOf("</body>"));
+}
+if (process.env.ANCIENNE_SIDEBAR) {
       // Copie « barre latérale d'origine » : on retire les règles de COULEUR de la charte sur la barre latérale (elles écrasaient,
       // avec !important, les couleurs d'origine : texte blanc, fond translucide, trait actif). La géométrie (largeur, repli) reste.
       c = c.replace('--sidebar-bg:#18244F;--sidebar-border:rgba(255,255,255,.10);--sidebar-active-bg:rgba(255,255,255,.08);--sidebar-active-color:#E1C340;--sidebar-text-child:rgba(255,255,255,.75);', '');

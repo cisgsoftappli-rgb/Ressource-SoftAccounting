@@ -59,6 +59,7 @@
     <button type="button" data-lm-auto>Lettrage automatique</button>
     <button type="button" data-lm-desel>Tout désélectionner</button>
     <button type="button" data-lm-delettrer>Délettrer</button>
+    <button type="button" data-lm-ecart disabled title="Générer l’écriture d’écart de règlement de la sélection">Écart de règlement</button>
     <button type="button" data-lm-lettrer>Lettrer</button>
   </div>
 
@@ -141,17 +142,25 @@
       [602, '29/08/2026', 'OD-2026-0049', 'OD', 'Régularisation avance', 'AV-0044', '', 0, 300000, '']
     ]
   };
-  var CLE = 'softcompta.lettrageManuel', etat = { lettres: {}, cnt: {} };
-  try { var sv = JSON.parse(localStorage.getItem(CLE) || 'null'); if (sv && typeof sv === 'object') etat = { lettres: sv.lettres || {}, cnt: sv.cnt || {} }; } catch (e) {}
+  var CLE = 'softcompta.lettrageManuel', etat = { lettres: {}, cnt: {}, ecarts: [] };
+  try { var sv = JSON.parse(localStorage.getItem(CLE) || 'null'); if (sv && typeof sv === 'object') etat = { lettres: sv.lettres || {}, cnt: sv.cnt || {}, ecarts: sv.ecarts || [] }; } catch (e) {}
+  etat.ecarts.forEach(function (e) { (L[e.k] = L[e.k] || []).push(e.l); });   // écritures d'écart de règlement déjà générées
   function sauver() { try { localStorage.setItem(CLE, JSON.stringify(etat)); } catch (e) {} }
   function lettreDe(l) { return etat.lettres.hasOwnProperty(l[0]) ? etat.lettres[l[0]] : l[9]; }
   var appl = { compte: '', tiers: '', du: '', au: '', statut: 'tout' };
-  function cle() { return appl.compte + '|' + appl.tiers; }
+  function syncSaisies() {   // écritures saisies sur un compte de tiers : lettrables comme les autres
+    var ES = window.ECRITURES_SAISIES; if (!ES) return;
+    ES({}).forEach(function (x) { if (!x.tiers) return; var k = x.compte + '|' + x.tiers, a = L[k] = L[k] || []; if (!COMPTES.some(function (c) { return c[0] === x.compte; })) COMPTES.push([x.compte, ES.libCompte(x.compte) || 'Compte de tiers']); var TT = TIERS[x.compte] = TIERS[x.compte] || []; if (!TT.some(function (t) { return t[0] === x.tiers; })) TT.push([x.tiers, ES.nomTiers(x.tiers)]);
+      if (a.some(function (l) { return l[0] === x.id; })) return; a.push([x.id, ES.fr(x.date), x.piece, x.journal, x.libelle, x.reference, ES.fr(x.echeance), x.debit, x.credit]); });
+  }
+  function cle() { syncSaisies(); return appl.compte + '|' + appl.tiers; }
   function statutSaisi() { var r = q('[data-lm-st]:checked'); return r ? r.value : 'tout'; }
   function saisis() { return { compte: q('[data-lm-compte]').value, tiers: q('[data-lm-tiers]').value, du: q('[data-lm-du]').value, au: q('[data-lm-au]').value, statut: statutSaisi() }; }
   function enAttente() {}   // les critères ne s'appliquent qu'au clic sur Rechercher (ou Entrée)
   function rechercher() { appl = saisis(); sel = {}; qa('[data-lm-corps] tr.let').forEach(function (r) { r.style.outline = ''; }); dessiner(); }
-  function cfg() { return window.LETTRAGE_CFG || { format: 'alpha', ecart: 500, compteEcart: '658000', critere: 'ref_montant' }; }
+  // écart de règlement : débit > crédit = perte (compte de charge) ; crédit > débit = gain (compte de produit)
+  function compteEcartDe(d, c) { var g = d > c; return { code: g ? (cfg().compteEcart || '658000') : (cfg().compteGain || '758000'), nature: g ? 'perte' : 'gain' }; }
+  function cfg() { return window.LETTRAGE_CFG || { format: 'alpha', ecart: 500, compteEcart: '658000', compteGain: '758000', critere: 'ref_montant' }; }
   var sel = {};
 
   function remplirCompte() { q('[data-lm-compte]').innerHTML = COMPTES.map(function (c) { return '<option value="' + c[0] + '">' + esc(c[0] + ' — ' + c[1]) + '</option>'; }).join(''); }
@@ -184,8 +193,9 @@
     var e = q('[data-lm-etat]'), ec = Math.abs(d - c), tol = cfg().ecart;
     if (!s.length) { e.textContent = ''; e.className = 'lm-etat'; }
     else if (ec < 0.005) { e.textContent = 'Sélection équilibrée : prête à être lettrée.'; e.className = 'lm-etat ok'; }
-    else if (ec <= tol) { e.textContent = 'Écart de ' + nb(ec, 2) + ' Ar, dans l’écart toléré (' + nb(tol) + ' Ar) : il sera passé au compte ' + cfg().compteEcart + '.'; e.className = 'lm-etat att'; }
-    else { e.textContent = 'Écart de ' + nb(ec, 2) + ' Ar : supérieur à l’écart toléré (' + nb(tol) + ' Ar).'; e.className = 'lm-etat ko'; }
+    else if (ec <= tol) { e.textContent = 'Sélection déséquilibrée : écart de ' + nb(ec, 2) + ' Ar, dans l’écart toléré (' + nb(tol) + ' Ar). Générez l’écriture d’écart de règlement (compte ' + compteEcartDe(d, c).code + ', ' + compteEcartDe(d, c).nature + ') pour pouvoir lettrer.'; e.className = 'lm-etat att'; }
+    else { e.textContent = 'Sélection déséquilibrée : écart de ' + nb(ec, 2) + ' Ar, supérieur à l’écart toléré (' + nb(tol) + ' Ar). Lettrage impossible.'; e.className = 'lm-etat ko'; }
+    var be = q('[data-lm-ecart]'); if (be) be.disabled = !(s.length > 1 && ec >= 0.005 && ec <= tol + 0.005);
   }
   function toast(m) { var t = q('[data-lm-toast]'); t.textContent = m; t.hidden = false; clearTimeout(toast.t); toast.t = setTimeout(function () { t.hidden = true; }, 3200); }
   function lettreAt(n) {
@@ -237,7 +247,7 @@
     q('[data-lm-omb]').innerHTML = propositions.map(function (g, i) {
       var d = 0, k = 0; g.lignes.forEach(function (l) { d += l[7]; k += l[8]; }); var ec = Math.abs(d - k);
       return '<section class="lm-pr" data-p="' + i + '"><div class="lm-ph"><input type="checkbox" data-lm-pck checked aria-label="Inclure la proposition ' + (i + 1) + '"><span class="lm-nl">Lettre <input type="text" maxlength="4" value="' + esc(g.lettre) + '" data-lm-plt aria-label="Numéro de lettrage proposé"></span>' +
-        '<span class="lm-rs">Débit <b>' + nb(d) + '</b> · Crédit <b>' + nb(k) + '</b> · ' + (ec < 0.005 ? '<span class="lm-ec" style="color:#047857">équilibré</span>' : '<span class="lm-ec">écart ' + nb(ec, 2) + ' Ar → ' + esc(c.compteEcart) + '</span>') + '</span></div>' +
+        '<span class="lm-rs">Débit <b>' + nb(d) + '</b> · Crédit <b>' + nb(k) + '</b> · ' + (ec < 0.005 ? '<span class="lm-ec" style="color:#047857">équilibré</span>' : '<span class="lm-ec">écart ' + nb(ec, 2) + ' Ar → écriture d’écart (' + esc(compteEcartDe(d, k).code) + ', ' + compteEcartDe(d, k).nature + ') générée à la validation</span>') + '</span></div>' +
         '<table><tbody>' + g.lignes.map(function (l) { return '<tr><td>' + l[1] + '</td><td class="lm-pc">' + esc(l[2]) + '</td><td>' + esc(l[4]) + '</td><td>' + esc(l[5]) + '</td><td class="r">' + (l[7] ? nb(l[7]) : '—') + '</td><td class="r">' + (l[8] ? nb(l[8]) : '—') + '</td></tr>'; }).join('') + '</tbody></table></section>';
     }).join('');
     compterProp();
@@ -262,9 +272,14 @@
     });
     if (erreur) { toast(erreur); return; }
     if (!choisies.length) return;
-    choisies.forEach(function (c) { c.g.forEach(function (l) { etat.lettres[l[0]] = c.lt; delete sel[l[0]]; }); });
+    var nEc = 0, jr = journalEcart();
+    choisies.forEach(function (c) {
+      var d = 0, k = 0; c.g.forEach(function (l) { d += l[7]; k += l[8]; });
+      if (Math.abs(d - k) > 0.005) { var dts = c.g.map(function (l) { return iso(l[1]); }).sort(); var r = creerEcart(c.g, { jnl: jr, dateEcr: dts[dts.length - 1], lib: 'Écart de règlement — lettrage ' + c.lt + ' — ' + c.g.map(function (l) { return l[2]; }).slice(0, 3).join(', '), ref: 'ECART-' + c.lt }); c.g = c.g.concat([r.ligne]); nEc++; }
+      c.g.forEach(function (l) { etat.lettres[l[0]] = c.lt; delete sel[l[0]]; });
+    });
     etat.cnt[appl.compte] = (etat.cnt[appl.compte] || 1) + choisies.length;
-    sauver(); fermerAuto(); dessiner(); toast(choisies.length + ' lettrage(s) appliqué(s) : ' + choisies.map(function (c) { return c.lt; }).join(', ') + '.');
+    sauver(); fermerAuto(); dessiner(); toast(choisies.length + ' lettrage(s) appliqué(s) : ' + choisies.map(function (c) { return c.lt; }).join(', ') + (nEc ? ' — ' + nEc + ' écriture(s) d’écart de règlement générée(s).' : '.'));
   }
   function lettrer() {
     var s = selection().filter(function (l) { return !lettreDe(l); });
@@ -272,11 +287,89 @@
     var d = 0, c = 0; s.forEach(function (l) { d += l[7]; c += l[8]; });
     if (!d || !c) { toast('La sélection doit comporter au moins une écriture au débit et une au crédit.'); return; }
     var ec = Math.abs(d - c), tol = cfg().ecart;
-    if (ec > tol + 0.005) { toast('Lettrage refusé : écart de ' + nb(ec, 2) + ' Ar supérieur à l’écart toléré (' + nb(tol) + ' Ar).'); return; }
+    if (ec > 0.005) {   // un lettrage n'est possible que si débit = crédit : le système propose l'écriture d'écart si l'écart est toléré
+      if (ec <= tol + 0.005) { toast('Sélection déséquilibrée (écart de ' + nb(ec, 2) + ' Ar, dans l’écart toléré) : générez l’écriture d’écart de règlement pour pouvoir lettrer.'); ouvrirEcart(); }
+      else toast('Lettrage impossible : écart de ' + nb(ec, 2) + ' Ar supérieur à l’écart toléré (' + nb(tol) + ' Ar).');
+      return;
+    }
     var lt = lettreSuivante(appl.compte);
     s.forEach(function (l) { etat.lettres[l[0]] = lt; delete sel[l[0]]; });
     sauver(); dessiner();
-    toast('Écritures lettrées avec la lettre ' + lt + (ec > 0.005 ? ' (écart de ' + nb(ec, 2) + ' Ar passé au compte ' + cfg().compteEcart + ').' : '.'));
+    toast('Écritures lettrées avec la lettre ' + lt + '.');
+  }
+  // ---------- écriture d'écart de règlement : en-tête de la pièce + schéma comptable ; la ligne passée sur le compte du tiers équilibre la sélection ----------
+  function journalEcart() { var J = ((window.ECRITURES_REF || {}).journaux || []); return (J.filter(function (j) { return j.code === 'OD'; })[0] || J.filter(function (j) { return /\bOD\b|DIVERS/i.test(j.code + ' ' + (j.label || '')); })[0] || J[0] || {}).code || ''; }
+  function creerEcart(g, h) {
+    var d = 0, c = 0; g.forEach(function (l) { d += l[7]; c += l[8]; });
+    var ec = Math.round(Math.abs(d - c) * 100) / 100, perte = d > c, j = (window.JOURNAUX_PLAN || []).filter(function (x) { return x.code === h.jnl; })[0];
+    var piece = j && j.auto && window.JOURNAUX_PROCHAIN ? window.JOURNAUX_PROCHAIN(j, { date: h.dateEcr }) : (h.jnl || 'OD') + '-ECART';
+    if (j && j.auto && window.JOURNAUX_AVANCER) window.JOURNAUX_AVANCER(j, { date: h.dateEcr });
+    var ligne = ['E' + Date.now().toString(36) + Math.floor(Math.random() * 1000), h.dateEcr.split('-').reverse().join('/'), piece, h.jnl || 'OD', h.lib, h.ref || '', '', perte ? 0 : ec, perte ? ec : 0, ''];
+    (L[cle()] = L[cle()] || []).push(ligne); etat.ecarts.push({ k: cle(), l: ligne });
+    return { ligne: ligne, ec: ec, piece: piece, nature: perte ? 'perte' : 'gain', compte: compteEcartDe(d, c).code };
+  }
+  function exercicesListe() { return (window.EXERCICES_API ? window.EXERCICES_API.liste() : []).filter(function (x) { return !x.cloture; }); }
+  function bornes(x) { return { a: x.debut ? x.debut.split('/').reverse().join('-') : '', b: x.fin ? x.fin.split('/').reverse().join('-') : '' }; }
+  function ouvrirEcart() {
+    var s = selection().filter(function (l) { return !lettreDe(l); }), d = 0, c = 0; s.forEach(function (l) { d += l[7]; c += l[8]; });
+    var ec = Math.round(Math.abs(d - c) * 100) / 100, tol = cfg().ecart;
+    if (s.length < 2 || ec < 0.005) { toast('Sélectionnez des écritures présentant un écart de règlement.'); return; }
+    if (ec > tol + 0.005) { toast('Écart de ' + nb(ec, 2) + ' Ar supérieur à l’écart toléré (' + nb(tol) + ' Ar) : aucune écriture à générer.'); return; }
+    var O = window.FACTURE_OCR, REF = window.ECRITURES_REF || {}; if (!O || !O.fenetre) { toast('Génération d’écriture indisponible.'); return; }
+    var ce = compteEcartDe(d, c), perte = ce.nature === 'perte', coll = appl.compte, tcode = appl.tiers, pc = window.PLAN_COMPTABLE || [];
+    function lib(code) { var r = pc.filter(function (x) { return x.code === code; })[0]; return r ? (r.libelle || r.label || '') : ''; }
+    var cl = COMPTES.filter(function (x) { return x[0] === coll; })[0], tl = (TIERS[coll] || []).filter(function (x) { return x[0] === tcode; })[0];
+    var dates = s.map(function (l) { return iso(l[1]); }).sort(), dernier = dates[dates.length - 1], pieces = s.map(function (l) { return l[2]; });
+    var J = (REF.journaux || []).slice(), jdef = (J.filter(function (j) { return j.code === 'OD'; })[0] || J.filter(function (j) { return /\bOD\b|DIVERS/i.test(j.code + ' ' + (j.label || '')); })[0] || J[0] || {}).code || '';
+    var libelle = 'Écart de règlement ' + (perte ? '(perte)' : '(gain)') + ' — ' + (tl ? tl[1] : tcode) + ' — ' + pieces.slice(0, 3).join(', ') + (pieces.length > 3 ? '…' : '');
+    var w = O.fenetre('Écart de règlement — génération de l’écriture', true, 'scale', 'Écart de règlement');
+    w.b.innerHTML = '<div class="fo-sec" style="margin-top:0">En-tête de la pièce</div><div class="fo-fl">' +
+      '<label>Site<select class="fo-in" data-eg="site">' + (REF.sites || []).map(function (x, i) { return '<option value="' + esc(x.code) + '"' + (i === 0 ? ' selected' : '') + '>' + esc(x.code + (x.label ? ' — ' + x.label : '')) + '</option>'; }).join('') + '</select></label>' +
+      '<label>Code du journal<select class="fo-in" data-eg="jnl">' + J.map(function (j) { return '<option value="' + esc(j.code) + '"' + (j.code === jdef ? ' selected' : '') + '>' + esc(j.code + (j.label ? ' — ' + j.label : '')) + '</option>'; }).join('') + '</select></label>' +
+      '<label>Exercice<select class="fo-in" data-eg="ex">' + exercicesListe().map(function (x) { return '<option value="' + esc(x.annee) + '">' + esc(x.annee + (x.cours ? ' (en cours)' : '')) + '</option>'; }).join('') + '</select></label>' +
+      '<label>Date de l’écriture<input class="fo-in" type="date" data-eg="dateEcr" value="' + esc(dernier) + '"></label>' +
+      '<label>Date de la pièce<input class="fo-in" type="date" data-eg="date" value="' + esc(dernier) + '"></label>' +
+      '<label>Numéro de pièce<input class="fo-in" data-eg="piece" readonly></label>' +
+      '<label>Référence<input class="fo-in" data-eg="ref" maxlength="40" value="' + esc('ECART-' + coll + '-' + tcode) + '"></label>' +
+      '<label class="w" style="grid-column:1/-1">Libellé<input class="fo-in" data-eg="lib" maxlength="120" value="' + esc(libelle) + '"></label>' +
+      '<label style="grid-column:1/-1;display:flex;flex-direction:row;align-items:center;gap:8px;cursor:pointer"><input type="checkbox" data-eg="lettrer" checked style="width:auto;height:auto"> Lettrer la sélection après la génération (l’écriture d’écart équilibre le débit et le crédit)</label></div>' +
+      '<div class="fo-sec">Schéma comptable</div><div data-eg-sch></div><div data-eg-ctl></div>';
+    w.f.innerHTML = '<button type="button" data-eg-x>Annuler</button><button type="button" class="p" data-eg-g><i class="ti ti-wand"></i> Générer l’écriture</button>';
+    var Q = function (k) { return w.b.querySelector('[data-eg="' + k + '"]'); };
+    function lignesEcr() {
+      var l = Q('lib').value.trim(), cpE = { code: ce.code, label: lib(ce.code) }, cpT = { code: coll, label: cl ? cl[1] : lib(coll), collectif: true }, tiers = { code: tcode, label: tl ? tl[1] : tcode, collectif: coll };
+      return perte ? [{ compte: cpE, tiers: null, libelle: l, montant: ec, sens: 'DEBIT', echeance: '', axes: {} }, { compte: cpT, tiers: tiers, libelle: l, montant: ec, sens: 'CREDIT', echeance: '', axes: {} }]
+        : [{ compte: cpT, tiers: tiers, libelle: l, montant: ec, sens: 'DEBIT', echeance: '', axes: {} }, { compte: cpE, tiers: null, libelle: l, montant: ec, sens: 'CREDIT', echeance: '', axes: {} }];
+    }
+    function majEntete() {
+      var j = (window.JOURNAUX_PLAN || []).filter(function (x) { return x.code === Q('jnl').value; })[0], dt = Q('dateEcr').value;
+      Q('piece').value = j && j.auto && window.JOURNAUX_PROCHAIN ? window.JOURNAUX_PROCHAIN(j, { date: dt }) : 'Proposé à l’ouverture de la pièce';
+      var ex = (window.EXERCICES_API ? window.EXERCICES_API.liste() : []).filter(function (x) { var a = x.debut ? x.debut.split('/').reverse().join('-') : '', b = x.fin ? x.fin.split('/').reverse().join('-') : ''; return a && dt >= a && dt <= b; })[0];
+      if (ex && [].some.call(Q('ex').options, function (o) { return o.value === String(ex.annee); })) Q('ex').value = String(ex.annee);
+    }
+    function schema() {
+      var L = lignesEcr(), D = 0, K = 0;
+      w.b.querySelector('[data-eg-sch]').innerHTML = '<table class="fo-t"><thead><tr><th>Compte</th><th>Tiers</th><th>Libellé</th><th style="width:120px;text-align:right">Débit</th><th style="width:120px;text-align:right">Crédit</th></tr></thead><tbody>' +
+        L.map(function (x) { var dd = x.sens === 'DEBIT'; if (dd) D += x.montant; else K += x.montant; return '<tr><td><b>' + esc(x.compte.code) + '</b> <span style="color:#5B606D">' + esc(x.compte.label) + '</span></td><td>' + esc(x.tiers ? x.tiers.code + ' ' + x.tiers.label : '') + '</td><td>' + esc(x.libelle) + '</td><td style="text-align:right">' + (dd ? nb(x.montant, 2) : '') + '</td><td style="text-align:right">' + (dd ? '' : nb(x.montant, 2)) + '</td></tr>'; }).join('') +
+        '<tr style="font-weight:700"><td colspan="3">Total — équilibré</td><td style="text-align:right">' + nb(D, 2) + '</td><td style="text-align:right">' + nb(K, 2) + '</td></tr></tbody></table>';
+      w.b.querySelector('[data-eg-ctl]').innerHTML = '<div class="fo-note">Écart ' + (perte ? 'débiteur (débit ' + nb(d, 2) + ' &gt; crédit ' + nb(c, 2) + ')' : 'créditeur (crédit ' + nb(c, 2) + ' &gt; débit ' + nb(d, 2) + ')') + ' : comptabilisé au compte de ' + ce.nature + ' ' + esc(ce.code) + ' (Lettrage › Paramètre).</div>';
+    }
+    ['jnl', 'dateEcr', 'date', 'ref', 'lib'].forEach(function (k) { Q(k).addEventListener('input', function () { majEntete(); schema(); }); Q(k).addEventListener('change', function () { majEntete(); schema(); }); });
+    Q('ex').addEventListener('change', function () {   // l'exercice choisi ramène les dates dans ses bornes
+      var x = exercicesListe().filter(function (y) { return String(y.annee) === Q('ex').value; })[0]; if (!x) return; var bn = bornes(x);
+      ['dateEcr', 'date'].forEach(function (k) { var v = Q(k).value; if (bn.a && v < bn.a) Q(k).value = bn.a; else if (bn.b && v > bn.b) Q(k).value = bn.b; });
+      majEntete(); schema();
+    });
+    majEntete(); schema();
+    w.f.querySelector('[data-eg-x]').addEventListener('click', O.fermer);
+    w.f.querySelector('[data-eg-g]').addEventListener('click', function () {
+      var ko = []; if (!Q('jnl').value) ko.push('le journal'); if (!Q('dateEcr').value) ko.push('la date de l’écriture'); if (!Q('date').value) ko.push('la date de la pièce'); if (!Q('lib').value.trim()) ko.push('le libellé');
+      if (ko.length) { w.b.querySelector('[data-eg-ctl]').innerHTML = '<div class="fo-ko">Complétez : ' + ko.join(', ') + '.</div>'; return; }
+      var h = { jnl: Q('jnl').value, ref: Q('ref').value.trim(), dateEcr: Q('dateEcr').value, lib: Q('lib').value.trim() }, lettrerApres = Q('lettrer').checked;
+      var r = creerEcart(s, h); O.fermer(); sel[r.ligne[0]] = 1; sauver(); dessiner();
+      toast('Écriture d’écart de règlement générée (pièce ' + r.piece + ', journal ' + (h.jnl || '—') + ') : ' + nb(r.ec, 2) + ' Ar au compte ' + r.compte + ' (' + r.nature + '). La sélection est équilibrée.');
+      if (lettrerApres) lettrer();
+    });
   }
   function delettrer() {
     var lettres = {};
@@ -313,6 +406,7 @@
     else if (b.hasAttribute('data-lm-oval')) validerAuto();
     else if (b.hasAttribute('data-lm-auto')) ouvrirAuto();
     else if (b.hasAttribute('data-lm-rech')) rechercher();
+    else if (b.hasAttribute('data-lm-ecart')) ouvrirEcart();
     else if (b.hasAttribute('data-lm-lettrer')) lettrer();
     else if (b.hasAttribute('data-lm-delettrer')) delettrer();
     else if (b.hasAttribute('data-lm-desel')) { sel = {}; dessiner(); qa('[data-lm-corps] tr.let').forEach(function (r) { r.style.outline = ''; }); }
@@ -321,5 +415,7 @@
   var auj = new Date(), p2 = function (n) { return ('0' + n).slice(-2); };
   q('[data-lm-du]').value = auj.getFullYear() + '-01-01'; q('[data-lm-au]').value = auj.getFullYear() + '-' + p2(auj.getMonth() + 1) + '-' + p2(auj.getDate());
   remplirCompte(); q('[data-lm-compte]').value = '411000'; remplirTiers(); q('[data-lm-tiers]').value = 'C0002'; rechercher();
+  // comptes et tiers mouvementés par les écritures saisies : ajoutés aux listes
+  window.addEventListener('ecritures-pieces-changed', function () { var c0 = q('[data-lm-compte]').value, t0 = q('[data-lm-tiers]').value; syncSaisies(); remplirCompte(); q('[data-lm-compte]').value = c0; remplirTiers(); q('[data-lm-tiers]').value = t0; });
 })();
 </script>

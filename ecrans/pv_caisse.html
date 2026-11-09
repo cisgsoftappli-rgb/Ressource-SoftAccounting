@@ -1,0 +1,148 @@
+<!--
+  Écran « Petite caisse › PV de caisse » — procès-verbal de caisse d'un lot FERMÉ (bouton « Fermer le lot » de Petite caisse › Saisie, qui renvoie ici).
+  Récapitulatif du lot (solde initial, recettes, dépenses, solde théorique), COMPTAGE PHYSIQUE par billetage (coupures et pièces de la devise du lot, paramétrées dans Devise),
+  écart = espèces comptées − solde théorique (conforme / excédent / manquant, justification obligatoire en cas d'écart), signataires, validation puis impression.
+  Données : stockées dans le lot (window.CAISSE_LOTS[i].pv = { billetage:{ « Type|valeur » : quantité }, caissier, controleur, justification, obs, valide, date }), copie localStorage softcompta.caisseLots.
+  Préfixe pv- / data-pv. Ne pas nommer de fonction « $$ » (build.cjs).
+-->
+<style>
+[data-pv] .pv-bar{display:flex;flex-wrap:wrap;align-items:end;gap:16px;margin:0 0 14px}[data-pv] .pv-bar label{display:grid;gap:4px;font-size:12px;color:#5B606D;min-width:220px}
+[data-pv] .pv-kpi{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:12px;margin:0 0 14px}
+[data-pv] .pv-k{border:1px solid #E3E7EE;border-left:3px solid var(--c);border-radius:10px;background:#fff;padding:10px 14px}[data-pv] .pv-k span{display:block;font-size:12px;color:#5B606D}[data-pv] .pv-k b{font-size:18px;color:#0B1332}
+[data-pv] .pv-g{display:grid;grid-template-columns:minmax(0,1.2fr) minmax(0,1fr);gap:16px;align-items:start}
+[data-pv] .pv-c{border:1px solid #E3E7EE;border-radius:10px;background:#fff;padding:14px}[data-pv] .pv-c h3{margin:0 0 10px;font-size:13px;color:#2E427B;text-transform:uppercase;letter-spacing:.04em}
+[data-pv] .pv-tb{width:100%;border-collapse:collapse;font-size:13px}[data-pv] .pv-tb th{text-align:left;padding:7px 8px;font-size:11.5px;text-transform:uppercase;color:#5B606D;border-bottom:1px solid #E3E7EE}
+[data-pv] .pv-tb td{padding:5px 8px;border-bottom:1px solid #EEF1F5}[data-pv] .pv-tb td.r,[data-pv] .pv-tb th.r{text-align:right;font-variant-numeric:tabular-nums}[data-pv] .pv-tb tfoot td{font-weight:700;border-top:2px solid #D6D9E0}
+[data-pv] .pv-q{width:90px;height:30px;text-align:right;border:1px solid #D6D9E0;border-radius:6px;padding:0 8px}[data-pv] .pv-q:disabled{background:#F5F7F9}
+[data-pv] .pv-fl{display:grid;gap:10px}[data-pv] .pv-fl label{display:grid;gap:4px;font-size:12px;color:#5B606D}[data-pv] .pv-fl textarea{min-height:64px;border:1px solid #D6D9E0;border-radius:6px;padding:8px;font:inherit}
+[data-pv] .pv-ec{display:flex;justify-content:space-between;align-items:center;padding:12px 14px;border-radius:10px;margin:0 0 12px;font-weight:600}
+[data-pv] .pv-ec.ok{background:#E3F3EA;color:#1E7B4B}[data-pv] .pv-ec.ex{background:#FDF1D8;color:#8A5A12}[data-pv] .pv-ec.ma{background:#FDE8E8;color:#B63132}
+[data-pv] .pv-st{display:inline-block;padding:2px 10px;border-radius:999px;font-size:12px;font-weight:600;background:#E8ECF6;color:#2E427B}
+@media (max-width:1000px){[data-pv] .pv-g{grid-template-columns:1fr}[data-pv] .pv-kpi{grid-template-columns:repeat(2,minmax(0,1fr))}}
+</style>
+
+<div class="bp-root" data-pv>
+  <h1 style="position:absolute;width:1px;height:1px;overflow:hidden;clip-path:inset(50%);margin:0">PV de caisse</h1>
+  <div class="no-print" data-pv-actions>
+    <button type="button" data-pv-enreg>Enregistrer</button>
+    <button type="button" data-pv-valider>Valider le PV</button>
+    <button type="button" data-pv-imprimer>Imprimer le PV</button>
+  </div>
+  <div class="bp-grid"><section class="bp-pan" aria-label="Procès-verbal de caisse">
+    <div class="pv-bar">
+      <label>Lot de caisse<select class="bp-sel" data-pv-lot data-no-combo></select></label>
+      <span>Statut : <span class="pv-st" data-pv-statut>—</span></span>
+    </div>
+    <div class="bp-vide" data-pv-vide hidden>Aucun lot fermé : fermez un lot depuis « Petite caisse › Saisie » pour établir son PV de caisse.</div>
+    <div data-pv-corps hidden>
+      <div class="pv-kpi" data-pv-kpi></div>
+      <div class="pv-g">
+        <div class="pv-c"><h3>Comptage physique — billetage <span data-pv-dev></span></h3>
+          <div style="overflow:auto;max-height:520px"><table class="pv-tb"><thead><tr><th>Type</th><th class="r">Valeur</th><th class="r">Quantité</th><th class="r">Montant</th></tr></thead><tbody data-pv-bil></tbody><tfoot><tr><td colspan="3">Total espèces comptées</td><td class="r" data-pv-total></td></tr></tfoot></table></div>
+          <p class="bp-vide" data-pv-nobil hidden>Aucun billetage paramétré pour cette devise (Paramètres généraux › Devise) : saisissez directement le montant compté.</p>
+          <label style="display:grid;gap:4px;font-size:12px;color:#5B606D;margin-top:8px" data-pv-directl hidden>Montant compté<input class="bp-in" type="number" min="0" step="any" data-pv-direct style="text-align:right"></label>
+        </div>
+        <div>
+          <div class="pv-ec ok" data-pv-ecart><span data-pv-ecl>Écart</span><span data-pv-ecv></span></div>
+          <div class="pv-c"><h3>Constat et signataires</h3>
+            <div class="pv-fl">
+              <label>Justification de l’écart<textarea data-pv-just maxlength="400"></textarea></label>
+              <label>Signataire 1 <b>*</b><select class="bp-sel" data-pv-sig1></select></label>
+              <label>Signataire 2 <b>*</b><select class="bp-sel" data-pv-sig2></select></label>
+              <label>Observations<textarea data-pv-obs maxlength="400"></textarea></label>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section></div>
+  <div class="bp-toast" role="status" hidden data-pv-toast></div>
+</div>
+
+<script>
+(function () {
+  var root = document.querySelector('[data-pv]'); if (!root) return;
+  function q(s) { return root.querySelector(s); } function qa(s) { return [].slice.call(root.querySelectorAll(s)); }
+  function esc(s) { return String(s == null ? '' : s).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;'); }
+  function nb(n) { return Number(n || 0).toLocaleString('fr-FR', { minimumFractionDigits: 2, maximumFractionDigits: 2 }).replace(/[  ]/g, ' '); }
+  function dt(d) { return d ? new Date(d).toLocaleString('fr-FR') : ''; }
+  function toast(m) { var t = q('[data-pv-toast]'); t.textContent = m; t.hidden = false; clearTimeout(toast.t); toast.t = setTimeout(function () { t.hidden = true; }, 3000); }
+  function lots() { return (window.CAISSE_LOTS || []).filter(function (l) { return l.ferme; }); }
+  function sauver() { try { localStorage.setItem('softcompta.caisseLots', JSON.stringify(window.CAISSE_LOTS || [])); } catch (e) {} window.dispatchEvent(new Event('caisse-lots-changed')); }
+  function theorique(l) { var s = Number(l.solde) || 0; (l.ops || []).forEach(function (o) { s += (o.rec || 0) - (o.dep || 0); }); return s; }
+  function recettes(l) { return (l.ops || []).reduce(function (s, o) { return s + (o.rec || 0); }, 0); }
+  function depenses(l) { return (l.ops || []).reduce(function (s, o) { return s + (o.dep || 0); }, 0); }
+  function billetage(l) { var d = (window.DEVISES || []).filter(function (x) { return x.code === l.devise; })[0]; return d ? (d.billetage || []).filter(function (b) { return b.actif !== false; }) : []; }
+  function cle(b) { return b.type + '|' + b.valeur; }
+  var cur = null;
+  function lotCourant() { return lots().filter(function (l) { return l.num === q('[data-pv-lot]').value; })[0] || null; }
+  function sigs() { return (window.SIGNATAIRES || []).filter(function (s) { return s.actif !== false; }); }
+  function sigOpts() {
+    var o = '<option value="">— Sélectionner un signataire —</option>' + sigs().map(function (s) { return '<option value="' + esc(s.code) + '">' + esc(s.code + ' — ' + s.nom + (s.libelle ? ' (' + s.libelle + ')' : '')) + '</option>'; }).join('');
+    ['sig1', 'sig2'].forEach(function (k) { var e = q('[data-pv-' + k + ']'), v = e.value; e.innerHTML = o; e.value = v; });
+  }
+  function sigLib(code) { var s = sigs().filter(function (x) { return x.code === code; })[0]; return s ? { nom: s.nom, fonction: s.fonction || s.libelle || '' } : { nom: '', fonction: '' }; }
+  function pv(l) { return l.pv = l.pv || { billetage: {}, direct: 0, sig1: '', sig2: '', justification: '', obs: '', valide: false }; }
+  function compte(l) { var p = pv(l), bs = billetage(l); if (!bs.length) return Number(p.direct) || 0; return bs.reduce(function (s, b) { return s + (Number(p.billetage[cle(b)]) || 0) * b.valeur; }, 0); }
+  function remplirLots(pre) {
+    var L = lots(), s = q('[data-pv-lot]'), v = pre || s.value;
+    s.innerHTML = L.map(function (l) { return '<option value="' + esc(l.num) + '">' + esc(l.num + ' — ' + l.journal + ' — ' + nb(theorique(l)) + ' ' + l.devise) + '</option>'; }).join('');
+    if (v && s.querySelector('option[value="' + v.replace(/"/g, '') + '"]')) s.value = v;
+    q('[data-pv-vide]').hidden = L.length > 0; q('[data-pv-corps]').hidden = !L.length;
+  }
+  function dessiner() {
+    var l = cur = lotCourant(); if (!l) { q('[data-pv-statut]').textContent = '—'; return; }
+    var p = pv(l), bs = billetage(l), th = theorique(l), verrou = !!p.valide;
+    q('[data-pv-statut]').textContent = p.valide ? 'PV validé' : 'Lot fermé — PV à établir'; q('[data-pv-dev]').textContent = '(' + l.devise + ')';
+    q('[data-pv-kpi]').innerHTML = [['Solde initial', Number(l.solde) || 0, '#7B8190'], ['Total recettes', recettes(l), '#1E7B4B'], ['Total dépenses', depenses(l), '#B63132'], ['Solde théorique', th, '#C9861A']].map(function (k) { return '<div class="pv-k" style="--c:' + k[2] + '"><span>' + k[0] + '</span><b>' + nb(k[1]) + ' ' + esc(l.devise) + '</b></div>'; }).join('');
+    q('[data-pv-bil]').innerHTML = bs.map(function (b, i) { var qte = Number(p.billetage[cle(b)]) || 0; return '<tr><td>' + esc(b.type) + '</td><td class="r">' + nb(b.valeur) + '</td><td class="r"><input class="pv-q" type="number" min="0" step="1" data-pv-b="' + i + '" value="' + (qte || '') + '"' + (verrou ? ' disabled' : '') + '></td><td class="r" data-pv-m="' + i + '">' + nb(qte * b.valeur) + '</td></tr>'; }).join('');
+    q('[data-pv-nobil]').hidden = bs.length > 0; q('[data-pv-directl]').hidden = bs.length > 0; q('[data-pv-direct]').value = p.direct || ''; q('[data-pv-direct]').disabled = verrou;
+    q('[data-pv-just]').value = p.justification || ''; sigOpts(); q('[data-pv-sig1]').value = p.sig1 || ''; q('[data-pv-sig2]').value = p.sig2 || ''; q('[data-pv-obs]').value = p.obs || '';
+    ['just', 'sig1', 'sig2', 'obs'].forEach(function (k) { q('[data-pv-' + k + ']').disabled = verrou; });
+    q('[data-pv-valider]').disabled = verrou; q('[data-pv-enreg]').disabled = verrou; maj();
+  }
+  function maj() {
+    var l = cur; if (!l) return; var tot = compte(l), ec = tot - theorique(l), bs = billetage(l);
+    bs.forEach(function (b, i) { var c = q('[data-pv-m="' + i + '"]'); if (c) c.textContent = nb((Number(pv(l).billetage[cle(b)]) || 0) * b.valeur); });
+    q('[data-pv-total]').textContent = nb(tot) + ' ' + l.devise;
+    var e = q('[data-pv-ecart]'); e.className = 'pv-ec ' + (Math.abs(ec) < 0.005 ? 'ok' : ec > 0 ? 'ex' : 'ma');
+    q('[data-pv-ecl]').textContent = Math.abs(ec) < 0.005 ? 'Caisse conforme (aucun écart)' : ec > 0 ? 'Excédent de caisse' : 'Manquant de caisse'; q('[data-pv-ecv]').textContent = (ec > 0 ? '+' : '') + nb(ec) + ' ' + l.devise;
+  }
+  function lire() {
+    var l = cur, p = pv(l); p.justification = q('[data-pv-just]').value.trim(); p.sig1 = q('[data-pv-sig1]').value; p.sig2 = q('[data-pv-sig2]').value; p.obs = q('[data-pv-obs]').value.trim(); p.direct = Number(q('[data-pv-direct]').value) || 0;
+    qa('[data-pv-b]').forEach(function (i) { p.billetage[cle(billetage(l)[+i.dataset.pvB])] = Number(i.value) || 0; });
+  }
+  function html(l) {
+    var p = pv(l), bs = billetage(l), tot = compte(l), th = theorique(l), ec = tot - th;
+    var T = function (a, b) { return '<tr><td>' + a + '</td><td style="text-align:right">' + b + '</td></tr>'; };
+    return '<div style="text-align:center"><h2>PROCÈS-VERBAL DE CAISSE</h2><p>Lot <b>' + esc(l.num) + '</b> — Site ' + esc(l.site) + ' — Journal ' + esc(l.journal) + ' — Devise ' + esc(l.devise) + '</p><p>Établi le ' + dt(p.date || new Date().toISOString()) + '</p></div><hr>' +
+      '<h3>Situation théorique</h3><table>' + T('Solde initial', nb(l.solde) + ' ' + esc(l.devise)) + T('Total recettes', nb(recettes(l)) + ' ' + esc(l.devise)) + T('Total dépenses', nb(depenses(l)) + ' ' + esc(l.devise)) + T('<b>Solde théorique</b>', '<b>' + nb(th) + ' ' + esc(l.devise) + '</b>') + '</table>' +
+      '<h3>Comptage physique (billetage)</h3>' + (bs.length ? '<table><tr><th>Type</th><th>Valeur</th><th>Quantité</th><th>Montant</th></tr>' + bs.filter(function (b) { return Number(p.billetage[cle(b)]); }).map(function (b) { var qt = Number(p.billetage[cle(b)]); return '<tr><td>' + esc(b.type) + '</td><td style="text-align:right">' + nb(b.valeur) + '</td><td style="text-align:right">' + qt + '</td><td style="text-align:right">' + nb(qt * b.valeur) + '</td></tr>'; }).join('') + '</table>' : '') +
+      '<table>' + T('<b>Total espèces comptées</b>', '<b>' + nb(tot) + ' ' + esc(l.devise) + '</b>') + T('<b>Écart (comptées − théorique)</b>', '<b>' + (ec > 0 ? '+' : '') + nb(ec) + ' ' + esc(l.devise) + '</b> — ' + (Math.abs(ec) < 0.005 ? 'caisse conforme' : ec > 0 ? 'excédent' : 'manquant')) + '</table>' +
+      (p.justification ? '<p><b>Justification de l’écart :</b> ' + esc(p.justification) + '</p>' : '') + (p.obs ? '<p><b>Observations :</b> ' + esc(p.obs) + '</p>' : '') +
+      '<p>&nbsp;</p><table><tr><td style="width:50%">Signataire 1<br>' + esc(sigLib(p.sig1).fonction) + '<br><br><br>' + esc(sigLib(p.sig1).nom) + '</td><td>Signataire 2<br>' + esc(sigLib(p.sig2).fonction) + '<br><br><br>' + esc(sigLib(p.sig2).nom) + '</td></tr></table>';
+  }
+  function imprimer() {
+    var l = cur; if (!l) return; lire(); var M = window.CAISSE_MODELES, f = document.createElement('iframe'); f.style.cssText = 'position:fixed;right:0;bottom:0;width:0;height:0;border:0'; document.body.appendChild(f);
+    var d = f.contentWindow.document; d.open(); d.write(M && M.document ? M.document([html(l)]) : html(l)); d.close();
+    setTimeout(function () { try { f.contentWindow.focus(); f.contentWindow.print(); } catch (e) {} setTimeout(function () { f.remove(); }, 1500); }, 250);
+  }
+  q('[data-pv-lot]').addEventListener('change', dessiner);
+  root.addEventListener('input', function (e) { if (!cur) return; if (e.target.matches('[data-pv-b],[data-pv-direct]')) { lire(); maj(); } });
+  q('[data-pv-enreg]').addEventListener('click', function () { if (!cur) return; lire(); sauver(); toast('PV de caisse enregistré.'); });
+  q('[data-pv-valider]').addEventListener('click', function () {
+    if (!cur) return; lire(); var p = pv(cur), ec = compte(cur) - theorique(cur);
+    if (!p.sig1) { toast('Choisissez le signataire 1.'); q('[data-pv-sig1]').focus(); return; }
+    if (!p.sig2) { toast('Choisissez le signataire 2.'); q('[data-pv-sig2]').focus(); return; }
+    if (p.sig1 === p.sig2) { toast('Les deux signataires doivent être différents.'); q('[data-pv-sig2]').focus(); return; }
+    if (Math.abs(ec) >= 0.005 && !p.justification) { toast('Un écart de caisse doit être justifié.'); q('[data-pv-just]').focus(); return; }
+    if (!window.confirm('Valider le PV de caisse du lot ' + cur.num + ' ? Il ne sera plus modifiable.')) return;
+    p.valide = true; p.date = new Date().toISOString(); sauver(); dessiner(); toast('PV de caisse validé.');
+  });
+  q('[data-pv-imprimer]').addEventListener('click', imprimer);
+  function ouvrir() { var pre = window.CAISSE_PV_LOT; window.CAISSE_PV_LOT = null; remplirLots(pre); dessiner(); }
+  window.addEventListener('hashchange', function () { if (location.hash === '#pvcaisse') ouvrir(); });
+  window.addEventListener('signataires-changed', function () { if (cur) { var a = q('[data-pv-sig1]').value, b = q('[data-pv-sig2]').value; sigOpts(); q('[data-pv-sig1]').value = a; q('[data-pv-sig2]').value = b; } });
+  window.addEventListener('load', ouvrir); ouvrir();
+})();
+</script>

@@ -69,6 +69,8 @@
   if (bal) modaliser({ id: 'balance', res: 'app-bg-resultat', crit: bal, hote: bal.querySelector('main.bg-page') || bal });
   var aux = document.querySelector('app-balance-auxiliaire .bx-crit'); if (aux) modaliser({ id: 'balaux', res: 'app-balance-auxiliaire .bx-res', crit: aux });
   var glg = document.querySelector('app-grand-livre-general .bx-crit'); if (glg) modaliser({ id: 'glg', res: 'app-grand-livre-general .bx-res', crit: glg });
+  var gla = document.querySelector('app-grand-livre-auxiliaire .bx-crit'); if (gla) modaliser({ id: 'glaux', res: 'app-grand-livre-auxiliaire .bx-res', crit: gla });
+  var ech = document.querySelector('app-echeancier .bx-crit'); if (ech) modaliser({ id: 'echeancier', res: 'app-echeancier .bx-res', crit: ech });
   // « Monnaie d'édition » : liste déroulante (les boutons radio d'origine restent dans le DOM, masqués, et suivent le choix)
   function monnaie(racine) {
     if (!racine) return;
@@ -86,5 +88,5 @@
     [].slice.call(champ.children).forEach(function (c) { if (c !== lab) c.style.display = 'none'; });
     champ.appendChild(sel);
   }
-  monnaie(bal); monnaie(aux); monnaie(glg);
+  monnaie(bal); monnaie(aux); monnaie(glg); monnaie(ech); monnaie(gla);
 })();

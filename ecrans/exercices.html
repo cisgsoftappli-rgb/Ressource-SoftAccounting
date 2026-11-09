@@ -84,7 +84,7 @@
   function q(s) { return root.querySelector(s); } function qa(s) { return [].slice.call(root.querySelectorAll(s)); }
   
   function byAnnee(x, y) { return +x.annee - +y.annee; }
-  var data = [2021, 2022, 2023, 2024, 2025, 2026, 2027].map(function (a) { return { annee: String(a), debut: '01/01/' + a, fin: '31/12/' + a, cloture: '', cours: a === 2021 }; });
+  var data = [2021, 2022, 2023, 2024, 2025, 2026, 2027].map(function (a) { return { annee: String(a), debut: '01/01/' + a, fin: '31/12/' + a, cloture: '', cours: a === 2026 }; });
   var sel = -1, mode = 'consultation';
   function esc(s) { return String(s == null ? '' : s).replace(/[&<>"]/g, function (c) { return { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c]; }); }
   function toast(m) { var t = q('[data-ex-toast]'); t.textContent = m; t.hidden = false; clearTimeout(toast.t); toast.t = setTimeout(function () { t.hidden = true; }, 2800); }

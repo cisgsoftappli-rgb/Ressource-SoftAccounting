@@ -25,3 +25,17 @@
 .bx-vide{text-align:center;color:#64748b;padding:24px!important;white-space:normal!important}
 .bx-hint{margin:8px 0 0;font-size:12px;color:#64748b}
 @media print{.bx-crit,.bx-toolbar,.bx-search,.bx-hint{display:none!important}.bx-wrap{max-height:none;overflow:visible}}
+
+/* Grand livre auxiliaire : regroupement par tiers */
+.gla-table{min-width:0;width:max-content;max-width:none}
+.gla-table tbody tr:not(.g):not(.t):not(.s):not(.m):not(.plus):not(.gl-grp):not(.gl-tot):not(.gl-mois) > td{white-space:nowrap}
+.gla-table tbody tr:not(.g):not(.t):not(.s):not(.m):not(.plus):not(.gl-grp):not(.gl-tot):not(.gl-mois) > td:nth-child(4),.gla-table tbody tr:not(.g):not(.t):not(.s):not(.m):not(.plus):not(.gl-grp):not(.gl-tot):not(.gl-mois) > td:nth-child(6){max-width:150px;overflow:hidden;text-overflow:ellipsis}
+.gla-table tbody tr:not(.g):not(.t):not(.s):not(.m):not(.plus):not(.gl-grp):not(.gl-tot):not(.gl-mois) > td:nth-child(10){max-width:320px;overflow:hidden;text-overflow:ellipsis}
+.gla-table .l{white-space:normal;min-width:280px}
+.gla-table tr.gl-grp td,.gla-table tr.gl-tot td,.gla-table tr.gl-mois td{background:#FBF1DC;color:#7A5B12;font-weight:700}
+.gla-table tr.gl-mois td{background:#FDF8EE;font-weight:600}
+.gla-table tbody tr{cursor:default}
+.gla-table tbody tr:hover td{background-color:#F1F5FB}.gla-table tr.gl-grp:hover td,.gla-table tr.gl-tot:hover td{background:#FBF1DC}
+
+.bx-multi .pop .pop-h{display:grid;grid-template-columns:18px minmax(60px,34%) 1fr;gap:8px;padding:4px 8px;font-size:11px;font-weight:700;color:#5B606D;text-transform:uppercase;border-bottom:1px solid #E3E7EE;position:sticky;top:-4px;background:#fff}
+.bx-multi .pop label.deux{display:grid;grid-template-columns:18px minmax(60px,34%) 1fr;gap:8px;align-items:center}.bx-multi .pop label.deux span:first-of-type{font-weight:600}

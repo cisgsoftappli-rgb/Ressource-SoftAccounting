@@ -70,7 +70,7 @@
   exo.addEventListener('change', initDates);
   function reinitialiser() {
     exo.value = EXERCICE_DONNEES; dp.reset(); initDates(); duS.value = auS.value = '';
-    multis.forEach(function (m) { m.reset(); }); plansIn.forEach(function (x) { x.checked = false; }); colonnes(); parMois.checked = false; root.querySelector('input[name="glg-monnaie"]').checked = true; erreur.style.display = 'none';
+    multis.forEach(function (m) { m.reset(); }); plansIn.forEach(function (x) { x.checked = false; }); if (root.querySelector('#glg-ana')) root.querySelector('#glg-ana').checked = true; colonnes(); parMois.checked = false; root.querySelector('input[name="glg-monnaie"]').checked = true; erreur.style.display = 'none';
   }
   q('.bx-reset').addEventListener('click', reinitialiser);
 
@@ -82,12 +82,16 @@
   // Plan de regroupement : colonnes Plan 1 à 4 affichées (aucune case = toutes) ; « Tous » coche l'ensemble
   var plansBox = root.querySelector('.glg-plans'), plansIn = Array.prototype.slice.call(plansBox.querySelectorAll('input'));
   var styleCol = document.createElement('style'); root.appendChild(styleCol);
+  var ana = root.querySelector('#glg-ana');   // « Afficher les analytiques » : décoché, toutes les colonnes analytiques (plans 1 à 10 et plan de regroupement) sont masquées
   function colonnes() {
+    plansBox.style.opacity = ana && !ana.checked ? '.45' : ''; plansIn.forEach(function (x) { x.disabled = !!(ana && !ana.checked); });
+    if (ana && !ana.checked) { styleCol.textContent = 'app-grand-livre-general .glg-table tr:not(.g):not(.t):not(.s):not(.m):not(.plus) > :nth-child(n+13){display:none}'; return 0; }
     var c = plansIn.slice(1).filter(function (x) { return x.checked; }).map(function (x) { return x.value; });
     var cache = c.length ? plansIn.slice(1).filter(function (x) { return !x.checked; }).map(function (x) { return x.value; }) : [];
     styleCol.textContent = cache.map(function (n) { return 'app-grand-livre-general .glg-table tr:not(.g):not(.t):not(.s):not(.m):not(.plus) > :nth-child(' + n + '){display:none}'; }).join('');
     return c.length;
   }
+  if (ana) ana.addEventListener('change', colonnes);
   plansBox.addEventListener('change', function (e) {
     var actifs = plansIn.slice(1).filter(function (x) { return !x.parentNode.classList.contains('plan-off'); }); // plans non activés exclus
     if (e.target === plansIn[0]) actifs.forEach(function (x) { x.checked = plansIn[0].checked; });
@@ -108,7 +112,7 @@
       return rg.some(function (p) { return v.indexOf(p) === 0; });
     }
     plat = []; var gD = 0, gC = 0;
-    COMPTES.forEach(function (c) {
+    (window.ECRITURES_SAISIES ? window.ECRITURES_SAISIES.glg(COMPTES) : COMPTES).forEach(function (c) {   // + écritures saisies
       if ((iDu && c.code < iDu) || (iAu && c.code > iAu)) return;
       var l = c.lignes.filter(function (x) {
         return x.date >= deb.value && x.date <= fin.value && (!j.length || j.indexOf(x.f[5]) >= 0) && (!mot || x.txt.indexOf(mot) >= 0) && dansRg(x, c);
@@ -133,28 +137,28 @@
   }
   function devise() { return root.querySelector('input[name="glg-monnaie"]:checked').value; }
   function tr(t) {
-    if (t.t === 'g') return '<tr class="g"><td>01/01/' + exo.value + '</td><td colspan="7"></td><td class="mono">' + t.c.code + '</td><td></td><td>' + esc(t.c.libelle) + '</td><td class="n"></td><td class="n"></td><td colspan="11"></td></tr>';
-    if (t.t === 'm') return '<tr class="m"><td colspan="11">Total ' + t.mois.split('-').reverse().join('/') + ' — ' + '</td><td class="n">' + fmt(t.d) + '</td><td class="n">' + fmt(t.cr) + '</td><td colspan="11"></td></tr>';
+    if (t.t === 'g') return '<tr class="g"><td>01/01/' + exo.value + '</td><td colspan="6"></td><td class="mono">' + t.c.code + '</td><td></td><td>' + esc(t.c.libelle) + '</td><td class="n"></td><td class="n"></td><td colspan="11"></td></tr>';
+    if (t.t === 'm') return '<tr class="m"><td colspan="10">Total ' + t.mois.split('-').reverse().join('/') + ' — ' + '</td><td class="n">' + fmt(t.d) + '</td><td class="n">' + fmt(t.cr) + '</td><td colspan="11"></td></tr>';
     if (t.t === 't') {
       var s = t.d - t.cr;
-      return '<tr class="t"><td colspan="11">Total — ' + t.c.code + '</td><td class="n">' + fmt(t.d) + '</td><td class="n">' + fmt(t.cr) + '</td><td colspan="11"></td></tr>' +
-        '<tr class="s"><td colspan="11">Solde — ' + t.c.code + '</td><td colspan="2" class="n">' + fmt(Math.abs(s)) + ' (' + (s >= 0 ? 'D' : 'C') + ')</td><td colspan="11"></td></tr>';
+      return '<tr class="t"><td colspan="10">Total — ' + t.c.code + '</td><td class="n">' + fmt(t.d) + '</td><td class="n">' + fmt(t.cr) + '</td><td colspan="11"></td></tr>' +
+        '<tr class="s"><td colspan="10">Solde — ' + t.c.code + '</td><td colspan="2" class="n">' + fmt(Math.abs(s)) + ' (' + (s >= 0 ? 'D' : 'C') + ')</td><td colspan="11"></td></tr>';
     }
-    var f = t.x.f, p = f[11].split('|'), h = '<tr data-ref="' + esc(f[6]) + '"><td>' + f[0] + '</td><td>' + (f[1] || f[0]) + '</td><td>' + esc(f[2]) + '</td><td>' + esc(f[3]) + '</td><td>' + esc(f[4]) + '</td><td>' + esc(f[5]) +
+    var f = t.x.f, p = f[11].split('|'), h = '<tr data-ref="' + esc(f[6]) + '"><td>' + f[0] + '</td><td>' + (f[1] || f[0]) + '</td><td>' + esc(f[2]) + '</td><td>' + esc(f[4]) + '</td><td>' + esc(f[5]) +
       '</td><td class="mono">' + esc(f[6]) + '</td><td>Siège</td><td class="mono">' + t.c.code + '</td><td class="mono">' + esc(f[7]) + '</td><td>' + esc(f[8]) + '</td><td class="n">' + (f[9] || '0,00') + '</td><td class="n">' + (f[10] || '0,00') + '</td>';
     for (var i = 0; i < 10; i++) h += '<td>' + esc(p[i] || '') + '</td>';
     return h + '<td>' + esc(f[12]) + '</td></tr>';
   }
   function suite() {
     var an = tbody.querySelector('tr.plus'); if (an) an.remove();
-    if (!plat.length) { tbody.innerHTML = '<tr><td colspan="24" class="bx-vide">' + (deb.value > EXERCICE_DONNEES + '-12-31' || fin.value < EXERCICE_DONNEES + '-01-01'
+    if (!plat.length) { tbody.innerHTML = '<tr><td colspan="23" class="bx-vide">' + (deb.value > EXERCICE_DONNEES + '-12-31' || fin.value < EXERCICE_DONNEES + '-01-01'
       ? "Aucune écriture sur la période dans la maquette (seul l'exercice " + EXERCICE_DONNEES + ' est alimenté).' : 'Aucune écriture ne correspond aux critères.') + '</td></tr>'; return; }
     var fin2 = Math.min(plat.length, affiche + TRANCHE), h = '';
     // Ne pas couper un compte avant son total : on prolonge jusqu'à la ligne « t »
     while (fin2 < plat.length && plat[fin2 - 1].t !== 't') fin2++;
     for (var i = affiche; i < fin2; i++) h += tr(plat[i]);
     affiche = fin2;
-    if (affiche < plat.length) h += '<tr class="plus"><td colspan="24"><button type="button">Afficher la suite (' + (plat.length - affiche) + ' lignes restantes)</button></td></tr>';
+    if (affiche < plat.length) h += '<tr class="plus"><td colspan="23"><button type="button">Afficher la suite (' + (plat.length - affiche) + ' lignes restantes)</button></td></tr>';
     tbody.insertAdjacentHTML('beforeend', h);
   }
   tbody.addEventListener('click', function (e) {
@@ -179,11 +183,11 @@
   var minuteur; rech.addEventListener('input', function () { clearTimeout(minuteur); minuteur = setTimeout(construire, 250); });
   q('.bx-pdf').addEventListener('click', function () { while (affiche < plat.length) suite(); window.print(); });
   q('.bx-csv').addEventListener('click', function () {
-    var rows = [['Date comptable', 'Date pièce', 'Référence', 'Ligne budgétaire', 'N° contrat', 'JL', 'N° pièce', 'Site', 'Compte', 'Contre partie', 'Libellé', 'Débit', 'Crédit',
+    var rows = [['Date comptable', 'Date pièce', 'Référence', 'N° contrat', 'JL', 'N° pièce', 'Site', 'Compte', 'Contre partie', 'Libellé', 'Débit', 'Crédit',
       'ACTIVITE', 'POSTE BUDGETAIRE', 'FINANCEMENT', 'GEOGRAPHIQUE', 'Plan 5', 'Plan 6', 'Plan 7', 'Plan 8', 'Plan 9', 'Plan 10', 'Plan de regroupement']];
     plat.forEach(function (t) {
       if (t.t !== 'l') return; var f = t.x.f, p = f[11].split('|');
-      rows.push([f[0], f[1] || f[0], f[2], f[3], f[4], f[5], f[6], 'Siège', t.c.code, f[7], f[8], f[9] || '0,00', f[10] || '0,00'].concat([0, 1, 2, 3, 4, 5, 6, 7, 8, 9].map(function (i) { return p[i] || ''; }), [f[12]]));
+      rows.push([f[0], f[1] || f[0], f[2], f[4], f[5], f[6], 'Siège', t.c.code, f[7], f[8], f[9] || '0,00', f[10] || '0,00'].concat([0, 1, 2, 3, 4, 5, 6, 7, 8, 9].map(function (i) { return p[i] || ''; }), [f[12]]));
     });
     var csv = rows.map(function (r) { return r.map(function (c) { return '"' + String(c).replace(/"/g, '""') + '"'; }).join(';'); }).join('\r\n');
     var a = document.createElement('a'); a.href = URL.createObjectURL(new Blob(['﻿' + csv], { type: 'text/csv;charset=utf-8' }));

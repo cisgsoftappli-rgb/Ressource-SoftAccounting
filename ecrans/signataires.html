@@ -1,6 +1,6 @@
 <!--
   Écran « Signataires » (Paramètres généraux › Signataires) — onglets Saisie / Liste : liste filtrable des signataires, saisie
-  (Code *, Libellé *, Nom du signataire *, Fonction, Type de document). Boutons dans la barre d'actions (Ajouter, Modifier, Supprimer,
+  (Code *, Libellé *, Nom du signataire *, Fonction). Boutons dans la barre d'actions (Ajouter, Modifier, Supprimer,
   Enregistrer, Annuler, Imprimer, PDF, Excel). Données d'exemple fictives, en mémoire ; liste exposée en window.SIGNATAIRES
   (événement « signataires-changed »). S'appuie sur les styles bp-* de l'écran « Paramétrage du bilan ». Ne pas nommer de fonction « $$ » (build.cjs).
 -->
@@ -37,10 +37,10 @@
       <h2>Signataires <small>Double-clic ou « Modifier » pour ouvrir la ligne en saisie</small></h2>
       <div style="overflow:auto;max-height:560px">
         <table class="bp-tb" style="min-width:760px"><thead>
-          <tr><th>Code</th><th>Libellé</th><th>Nom du signataire</th><th>Fonction</th><th>Type de document</th><th>Statut</th></tr>
+          <tr><th>Code</th><th>Libellé</th><th>Nom du signataire</th><th>Fonction</th><th>Statut</th></tr>
           <tr class="flt"><th><input class="bp-in" data-fc="0" aria-label="Filtrer Code"></th><th><input class="bp-in" data-fc="1" aria-label="Filtrer Libellé"></th>
             <th><input class="bp-in" data-fc="2" aria-label="Filtrer Nom du signataire"></th><th><input class="bp-in" data-fc="3" aria-label="Filtrer Fonction"></th>
-            <th><select class="bp-sel" data-fc="4" aria-label="Filtrer Type de document"></select></th><th><select class="bp-sel" data-fc="5" aria-label="Filtrer Statut"><option value=""></option><option value="actif">Actif</option><option value="inactif">Inactif</option></select></th></tr>
+            <th><select class="bp-sel" data-fc="4" aria-label="Filtrer Statut"><option value=""></option><option value="actif">Actif</option><option value="inactif">Inactif</option></select></th></tr>
         </thead><tbody data-sg-lignes></tbody></table>
       </div>
       <div class="bp-vide" data-sg-vide hidden>Aucun signataire : utilisez « Ajouter ».</div>
@@ -53,7 +53,6 @@
           <label class="bp-champ"><span>Libellé <b>*</b></span><input class="bp-in" data-f="lib" maxlength="80" autocomplete="off" placeholder="Directeur financier"><span class="sg-er" data-er="lib"></span></label>
           <label class="bp-champ"><span>Nom du signataire <b>*</b></span><input class="bp-in" data-f="nom" maxlength="80" autocomplete="off" placeholder="Nom et prénom"><span class="sg-er" data-er="nom"></span></label>
           <label class="bp-champ"><span>Fonction</span><input class="bp-in" data-f="fonction" maxlength="80" autocomplete="off" placeholder="Directeur administratif et financier"><span class="sg-help">Fonction imprimée sous la signature.</span></label>
-          <label class="bp-champ"><span>Type de document</span><select class="bp-sel" data-f="doc"></select><span class="sg-help">Document sur lequel ce signataire peut apposer sa signature.</span></label>
           <div class="bp-chk" style="align-self:end"><label><input type="checkbox" data-f="actif" checked>Actif</label><span class="sg-help" style="display:block">Un signataire inactif n'est plus proposé.</span></div>
         </div>
       </form>
@@ -66,22 +65,18 @@
 (function () {
   var root = document.querySelector('[data-sg]'); if (!root) return;
   function q(s) { return root.querySelector(s); } function qa(s) { return [].slice.call(root.querySelectorAll(s)); }
-  var DOCS = ['Tous les documents', 'Bilan', 'Compte de résultat', 'Tableau de flux de trésorerie', 'Balance générale', 'Balance auxiliaire', 'Grand livre général', 'Journal', 'Écriture comptable (pièce)', 'État de rapprochement bancaire', 'Déclaration fiscale', 'Demande de remboursement'];
   var data = [
-    { code: 'SIG01', lib: 'Directeur financier', nom: 'Nom Prénom (exemple 1)', fonction: 'Directeur administratif et financier', doc: 'Bilan' },
-    { code: 'SIG02', lib: 'Comptable principal', nom: 'Nom Prénom (exemple 2)', fonction: 'Chef comptable', doc: 'Balance générale' },
-    { code: 'SIG03', lib: 'Coordonnateur de projet', nom: 'Nom Prénom (exemple 3)', fonction: 'Coordonnateur du projet', doc: 'Demande de remboursement' },
-    { code: 'SIG04', lib: 'Trésorier', nom: 'Nom Prénom (exemple 4)', fonction: 'Responsable de la trésorerie', doc: 'État de rapprochement bancaire' }
+    { code: 'SIG01', lib: 'Directeur financier', nom: 'Nom Prénom (exemple 1)', fonction: 'Directeur administratif et financier' },
+    { code: 'SIG02', lib: 'Comptable principal', nom: 'Nom Prénom (exemple 2)', fonction: 'Chef comptable' },
+    { code: 'SIG03', lib: 'Coordonnateur de projet', nom: 'Nom Prénom (exemple 3)', fonction: 'Coordonnateur du projet' },
+    { code: 'SIG04', lib: 'Trésorier', nom: 'Nom Prénom (exemple 4)', fonction: 'Responsable de la trésorerie' }
   ];
   data.forEach(function (s) { s.actif = true; });
   var sel = -1, mode = 'consultation';
   function esc(s) { return String(s == null ? '' : s).replace(/[&<>"]/g, function (c) { return { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c]; }); }
   function toast(m) { var t = q('[data-sg-toast]'); t.textContent = m; t.hidden = false; clearTimeout(toast.t); toast.t = setTimeout(function () { t.hidden = true; }, 2500); }
   function err(k, m) { var e = q('[data-er="' + k + '"]'); e.textContent = m || ''; e.classList.toggle('show', !!m); }
-  var optDocs = DOCS.map(function (d) { return '<option value="' + esc(d) + '">' + esc(d) + '</option>'; }).join('');
-  q('[data-f=doc]').innerHTML = '<option value="">— Sélectionner un type de document —</option>' + optDocs;
-  q('[data-fc="4"]').innerHTML = '<option value=""></option>' + optDocs;
-  function publier() { window.SIGNATAIRES = data.map(function (s) { return { code: s.code, libelle: s.lib, nom: s.nom, fonction: s.fonction, typeDocument: s.doc, actif: s.actif }; }); window.dispatchEvent(new Event('signataires-changed')); }
+  function publier() { window.SIGNATAIRES = data.map(function (s) { return { code: s.code, libelle: s.lib, nom: s.nom, fonction: s.fonction, actif: s.actif }; }); window.dispatchEvent(new Event('signataires-changed')); }
   function filtrer() {
     var F = []; qa('[data-fc]').forEach(function (e) { F[+e.dataset.fc] = e.value.trim().toLowerCase(); });
     qa('[data-sg-lignes] tr').forEach(function (tr) { tr.hidden = F.some(function (v, k) { if (!v) return false; var t = tr.children[k].textContent.trim().toLowerCase(); return k >= 4 ? t !== v : t.indexOf(v) < 0; }); });
@@ -91,12 +86,12 @@
     q('[data-sg-compte]').textContent = data.length ? data.length + (data.length > 1 ? ' lignes' : ' ligne') : '';
     q('[data-sg-vide]').hidden = data.length > 0;
     q('[data-sg-lignes]').innerHTML = data.map(function (s, i) {
-      return '<tr data-i="' + i + '"' + (i === sel ? ' class="sel"' : '') + '><td><span class="sg-code">' + esc(s.code) + '</span></td><td>' + esc(s.lib) + '</td><td>' + esc(s.nom) + '</td><td>' + (s.fonction ? esc(s.fonction) : '—') + '</td><td>' + (s.doc ? '<span class="sg-tag">' + esc(s.doc) + '</span>' : '—') + '</td><td class="c" data-v="' + (s.actif ? 'actif' : 'inactif') + '"><span class="sg-badge ' + (s.actif ? 'on' : 'off') + '">' + (s.actif ? 'Actif' : 'Inactif') + '</span></td></tr>';
+      return '<tr data-i="' + i + '"' + (i === sel ? ' class="sel"' : '') + '><td><span class="sg-code">' + esc(s.code) + '</span></td><td>' + esc(s.lib) + '</td><td>' + esc(s.nom) + '</td><td>' + (s.fonction ? esc(s.fonction) : '—') + '</td><td class="c" data-v="' + (s.actif ? 'actif' : 'inactif') + '"><span class="sg-badge ' + (s.actif ? 'on' : 'off') + '">' + (s.actif ? 'Actif' : 'Inactif') + '</span></td></tr>';
     }).join(''); filtrer();
   }
   function form(s) {
-    s = s || { code: '', lib: '', nom: '', fonction: '', doc: '', actif: true };
-    q('[data-f=code]').value = s.code; q('[data-f=lib]').value = s.lib; q('[data-f=nom]').value = s.nom; q('[data-f=fonction]').value = s.fonction; q('[data-f=doc]').value = s.doc; q('[data-f=actif]').checked = s.actif !== false;
+    s = s || { code: '', lib: '', nom: '', fonction: '', actif: true };
+    q('[data-f=code]').value = s.code; q('[data-f=lib]').value = s.lib; q('[data-f=nom]').value = s.nom; q('[data-f=fonction]').value = s.fonction; q('[data-f=actif]').checked = s.actif !== false;
     ['code', 'lib', 'nom'].forEach(function (k) { err(k); q('[data-f=' + k + ']').classList.remove('err'); });
   }
   function etat() {
@@ -123,11 +118,11 @@
     if (!lib) ko('lib', 'Le libellé est obligatoire.');
     if (!nom) ko('nom', 'Le nom du signataire est obligatoire.');
     if (!ok) return;
-    var rec = { code: code, lib: lib, nom: nom, fonction: q('[data-f=fonction]').value.trim(), doc: q('[data-f=doc]').value, actif: q('[data-f=actif]').checked };
+    var rec = { code: code, lib: lib, nom: nom, fonction: q('[data-f=fonction]').value.trim(), actif: q('[data-f=actif]').checked };
     if (mode === 'creation') { data.push(rec); sel = data.length - 1; } else data[sel] = rec;
     mode = 'consultation'; liste(); form(data[sel]); etat(); onglet('liste'); publier(); toast(ancien ? 'Signataire modifié.' : 'Signataire enregistré.');
   }
-  function table() { var L = data.filter(function (s, i) { var tr = tb.children[i]; return !tr || !tr.hidden; }); return { tete: ['Code', 'Libellé', 'Nom du signataire', 'Fonction', 'Type de document', 'Statut'], lignes: L.map(function (s) { return [s.code, s.lib, s.nom, s.fonction || '—', s.doc || '—', s.actif ? 'Actif' : 'Inactif']; }) }; }
+  function table() { var L = data.filter(function (s, i) { var tr = tb.children[i]; return !tr || !tr.hidden; }); return { tete: ['Code', 'Libellé', 'Nom du signataire', 'Fonction', 'Statut'], lignes: L.map(function (s) { return [s.code, s.lib, s.nom, s.fonction || '—', s.actif ? 'Actif' : 'Inactif']; }) }; }
   function exporter(k) {
     var X = window.EXPORT_TABLEAU, t = table(); if (!X) { toast('Module d’export indisponible.'); return; } if (!t.lignes.length) { toast('Rien à exporter.'); return; }
     if (k === 'pdf') X.pdf('signataires.pdf', 'Signataires', t.lignes.length + ' ligne(s)', t.tete, t.lignes); else X.xlsx('signataires.xlsx', 'Signataires', t.tete, t.lignes);

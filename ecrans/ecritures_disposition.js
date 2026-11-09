@@ -50,7 +50,7 @@
     if (window.__renderLignes) window.__renderLignes();
   }
   ['regroupement-changed', 'plans-changed', 'plans-actifs'].forEach(function (ev) { window.addEventListener(ev, majRegr); });
-  window.addEventListener('hashchange', function () { if (location.hash === '#ecritures') setTimeout(majRegr, 300); });
+  window.addEventListener('hashchange', function () { if (location.hash === '#ecritures' || location.hash === '#ecritures_ent') setTimeout(majRegr, 300); });
   setTimeout(majRegr, 600); setTimeout(majRegr, 2500);
   var h3 = R.querySelector('.entry-general > div > h3'); if (h3) h3.parentElement.style.display = 'none';
   var sensLab = cl('.entry-field-sens label'); if (sensLab) sensLab.style.display = 'none';
@@ -81,6 +81,19 @@
       function set(n, v) { var e = dr.querySelector('[data-t="' + n + k + '"]'); if (e) e.textContent = fmt(v); }
       set('d', x[1]); set('c', x[2]); set('s', s);
       var se = dr.querySelector('[data-t="s' + k + '"]'); if (se) se.classList.toggle('ec-ko', !!s);
+    });
+    // équilibre par élément du plan de regroupement (monnaie locale) : obligatoire avant de valider la pièce
+    var tbd = dr.querySelector('tbody'); [].forEach.call(tbd.querySelectorAll('tr[data-rg]'), function (r) { r.remove(); });
+    (window.__ecRegr || []).forEach(function (x) {
+      var tr = document.createElement('tr'); tr.setAttribute('data-rg', x.code); tr.title = 'Équilibre du regroupement ' + (x.code || 'non renseigné');
+      tr.innerHTML = '<th>' + (x.code ? 'Regr. ' + x.code : 'Sans regr.') + '</th><td>' + fmt(x.d) + '</td><td>' + fmt(x.c) + '</td><td' + (x.s || !x.code ? ' class="ec-ko"' : '') + '>' + fmt(x.s) + '</td>';
+      tbd.appendChild(tr);
+    });
+    [].forEach.call(tbd.querySelectorAll('tr[data-ct]'), function (r) { r.remove(); });
+    (window.__ecContrat || []).forEach(function (x) {
+      var tr = document.createElement('tr'); tr.setAttribute('data-ct', x.code); tr.title = 'Équilibre du contrat ' + x.code;
+      tr.innerHTML = '<th>Contrat ' + x.code + '</th><td>' + fmt(x.d) + '</td><td>' + fmt(x.c) + '</td><td' + (x.s ? ' class="ec-ko"' : '') + '>' + fmt(x.s) + '</td>';
+      tbd.appendChild(tr);
     });
   }
   window.addEventListener('ecritures-totaux', totaux); totaux();

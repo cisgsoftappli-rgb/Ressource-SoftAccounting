@@ -57,6 +57,47 @@
 .rg-t input[type=radio]{width:16px;height:16px;cursor:pointer}
 .rg-t .r-paye{accent-color:var(--rg-paye)}.rg-t .r-litige{accent-color:var(--rg-lit)}.rg-t .r-apure{accent-color:var(--rg-apu)}.rg-t .r-rejete{accent-color:var(--rg-rej)}
 @media(max-width:900px){.rg-g4,.rg-sum{grid-template-columns:repeat(2,1fr)}}
+
+/* ===== Mise en charte : primaire #2E427B, neutres, remplissages sobres ===== */
+.rg{--rg-brd:#dbdfe9;--rg-mar:#1f2a4d;font-family:inherit}
+.rg-h{font-size:20px;font-weight:700;color:#1f2a4d}.rg-sub{color:#667085}
+.rg .rg-btn{background:#2E427B;color:#fff;border:1px solid #2E427B;border-radius:8px;min-height:40px;padding:0 16px;font-size:13px;font-weight:700}
+.rg .rg-btn:hover{background:#243564;border-color:#243564}
+.rg .rg-btn:disabled,.rg .rg-btn:disabled:hover{background:#2E427B;border-color:#2E427B;opacity:.45}
+.rg .rg-btn.ghost,.rg .rg-btn.out{background:#fff;color:#4b5675;border:1px solid #dbdfe9;min-height:40px;font-size:13px;padding:0 16px}
+.rg .rg-btn.ghost:hover,.rg .rg-btn.out:hover{background:#f8fafc}
+.rg-md{max-width:480px;border-radius:12px;border:0;box-shadow:0 20px 60px #0000002e}
+.rg-md.wide{max-width:1020px}
+.rg-mh{background:#fff;color:#1f2a4d;border-bottom:1px solid #edf1f5;padding:16px 22px}
+.rg-mh h2{color:#1f2a4d;font-size:16px;font-weight:700}
+.rg-x{color:#667085}.rg-x:hover{color:#1f2a4d}
+.rg-mf{background:#F5F7F9;border-top:1px solid #edf1f5}
+.rg-lab{font-size:11px;font-weight:600;letter-spacing:.04em;color:#78829d}
+.rg-in{border:1px solid #dbdfe9;border-radius:8px;min-height:40px;padding:0 12px;font-size:13px;color:#1f2a4d}
+.rg-in:focus{outline:2px solid #2E427B33;border-color:#2E427B}
+.rg-in:disabled{background:#F5F7F9;color:#9aa3b5}
+.rg-ro{border:1px solid #dbdfe9;background:#F5F7F9;border-radius:8px;min-height:40px;display:flex;align-items:center;padding:0 12px;font-size:13px;color:#4b5675}
+.rg-hint{font-size:12px;color:#78829d}
+.rg-fs,.rg-card{border:1px solid #edf1f5;border-radius:12px;box-shadow:0 1px 2px #1f2a4d0a;background:#fff}
+.rg-fi span{font-size:11px;font-weight:600;letter-spacing:.04em;color:#78829d}.rg-fi b{font-size:13px;color:#1f2a4d}
+.rg-card h3{font-size:14px;color:#1f2a4d}.rg-card h3:before{background:#2E427B}
+.rg-cur{background:#F5F7F9;border:1px solid #edf1f5}.rg-cur span{color:#667085}.rg-cur b{color:#1f2a4d}
+/* cartes de statut : fond neutre, filet et pastille de couleur seulement */
+.rg-st{background:#F5F7F9!important;border:1px solid #edf1f5;border-radius:12px}
+.rg-st span{color:#4b5675!important;font-weight:600}.rg-st b{color:#1f2a4d!important}
+.rg-st i{height:3px}
+.rg-st.paye span:first-letter{color:var(--rg-paye)}.rg-st.litige span:first-letter{color:var(--rg-lit)}.rg-st.apure span:first-letter{color:var(--rg-apu)}.rg-st.rejete span:first-letter{color:var(--rg-rej)}
+.rg-note{color:#78829d}
+.rg-tw{border:1px solid #edf1f5;border-radius:12px}
+.rg-t thead th{background:#F5F7F9;color:#78829d;font-size:11px;font-weight:600;letter-spacing:.04em;border-bottom:1px solid #dbdfe9}
+.rg-t td{border-bottom:1px solid #edf1f5;color:#1f2a4d}
+.rg-t tbody tr:hover{background:#F5F7F9}
+.rg-t tr.fl td{background:#fff}
+.rg-t tr.fl input,.rg-t tr.fl select{border:1px solid #dbdfe9;border-radius:8px;min-height:32px}
+.rg-t tr.sa td{background:#F5F7F9;color:#4b5675;font-size:12px;font-weight:600}
+.rg-sab{border:1px solid #dbdfe9;color:#2E427B;background:#fff;font-weight:600;border-radius:8px;padding:4px 12px}
+.rg-sab:hover{background:#2E427B;color:#fff;border-color:#2E427B}
+.rg-act{gap:8px}
 </style>
 <app-regularisation-drf>
 <div class="rg" data-rg-root>
@@ -70,11 +111,22 @@
       <div class="rg-fi"><span>Monnaie du pointage</span><b data-rg-s="mon"></b></div>
       <button type="button" class="rg-btn out" data-rg-change>Changer la sélection</button>
     </div>
-    <div class="rg-card"><h3>Montant demandé (multi-monnaies)</h3><div class="rg-g4" data-rg-curs></div></div>
     <div class="rg-card"><h3>Montants par statut</h3>
       <div class="rg-g4" data-rg-stat></div>
       <div class="rg-note">Solde restant à régulariser : <strong data-rg-solde></strong></div>
-      <div class="rg-act"><button type="button" class="rg-btn" data-rg-open>Pointage des mouvements</button></div>
+    </div>
+    <div class="rg-card"><h3 data-rg-ptitle>Pointage des mouvements</h3>
+        <div class="rg-tw"><table class="rg-t">
+          <thead>
+            <tr><th style="width:9%">Date comptable</th><th style="width:11%">N° de pièce</th><th style="width:19%">Libellé du mouvement</th><th style="width:10%">Catégorie</th><th class="c" style="width:12%">Montant (<span data-rg-th></span>)</th><th class="c">Payé</th><th class="c">Litige</th><th class="c">Apuré</th><th class="c">Rejeté</th></tr>
+            <tr class="fl"><td><input data-rg-f="date" placeholder="jj/mm/aaaa"></td><td><input data-rg-f="num" placeholder="N° pièce"></td><td><input data-rg-f="lib" placeholder="Rechercher…"></td><td><select data-rg-f="cat"><option value="">Toutes</option></select></td><td><input data-rg-f="mont" placeholder="Montant"></td>
+              <td colspan="4"><select data-rg-f="stat"><option value="">Tous les statuts</option><option value="paye">Payé</option><option value="litige">Litige</option><option value="apure">Apuré</option><option value="rejete">Rejeté</option><option value="none">Non pointé</option></select></td></tr>
+            <tr class="sa"><td colspan="4">Sélectionner tout par statut (lignes visibles)</td><td></td><td class="c"><button type="button" class="rg-sab" data-rg-sa="paye">Tout</button></td><td class="c"><button type="button" class="rg-sab" data-rg-sa="litige">Tout</button></td><td class="c"><button type="button" class="rg-sab" data-rg-sa="apure">Tout</button></td><td class="c"><button type="button" class="rg-sab" data-rg-sa="rejete">Tout</button></td></tr>
+          </thead>
+          <tbody data-rg-rows></tbody>
+        </table></div>
+      <div class="rg-note">Choix unique par ligne. Les filtres par colonne réduisent la liste affichée ; le bouton « Tout » applique le statut uniquement aux lignes visibles. Litige : réapparaît sur la prochaine demande. Rejeté : marqué non facturable dans les prochaines Demande. Apuré : disparaît du prochain tri.</div>
+      <div class="rg-act"><button type="button" class="rg-btn ghost" data-rg-pcancel style="margin-right:8px">Annuler les modifications</button><button type="button" class="rg-btn" data-rg-psave>Enregistrer le pointage</button></div>
     </div>
   </div>
 
@@ -94,26 +146,6 @@
     </div>
   </div>
 
-  <!-- Fenêtre 2 : pointage des mouvements -->
-  <div class="rg-ov" data-rg-pov role="presentation" style="display:none">
-    <div class="rg-md wide" role="dialog" aria-modal="true" aria-label="Pointage des mouvements">
-      <div class="rg-mh"><h2 data-rg-ptitle>Pointage des mouvements</h2><button type="button" class="rg-x" data-rg-pclose aria-label="Fermer">&times;</button></div>
-      <div class="rg-mb">
-        <div class="rg-sum" data-rg-psum></div>
-        <div class="rg-tw"><table class="rg-t">
-          <thead>
-            <tr><th style="width:9%">Date comptable</th><th style="width:11%">N° de pièce</th><th style="width:19%">Libellé du mouvement</th><th style="width:10%">Catégorie</th><th class="c" style="width:12%">Montant (<span data-rg-th></span>)</th><th class="c">Payé</th><th class="c">Litige</th><th class="c">Apuré</th><th class="c">Rejeté</th></tr>
-            <tr class="fl"><td><input data-rg-f="date" placeholder="jj/mm/aaaa"></td><td><input data-rg-f="num" placeholder="N° pièce"></td><td><input data-rg-f="lib" placeholder="Rechercher…"></td><td><select data-rg-f="cat"><option value="">Toutes</option></select></td><td><input data-rg-f="mont" placeholder="Montant"></td>
-              <td colspan="4"><select data-rg-f="stat"><option value="">Tous les statuts</option><option value="paye">Payé</option><option value="litige">Litige</option><option value="apure">Apuré</option><option value="rejete">Rejeté</option><option value="none">Non pointé</option></select></td></tr>
-            <tr class="sa"><td colspan="4">Sélectionner tout par statut (lignes visibles)</td><td></td><td class="c"><button type="button" class="rg-sab" data-rg-sa="paye">Tout</button></td><td class="c"><button type="button" class="rg-sab" data-rg-sa="litige">Tout</button></td><td class="c"><button type="button" class="rg-sab" data-rg-sa="apure">Tout</button></td><td class="c"><button type="button" class="rg-sab" data-rg-sa="rejete">Tout</button></td></tr>
-          </thead>
-          <tbody data-rg-rows></tbody>
-        </table></div>
-        <div class="rg-note">Choix unique par ligne. Les filtres par colonne réduisent la liste affichée ; le bouton « Tout » applique le statut uniquement aux lignes visibles. Litige : réapparaît sur la prochaine demande. Rejeté : marqué non facturable dans les prochaines Demande. Apuré : disparaît du prochain tri.</div>
-      </div>
-      <div class="rg-mf"><button type="button" class="rg-btn ghost" data-rg-pclose>Annuler</button><button type="button" class="rg-btn" data-rg-psave>Enregistrer le pointage</button></div>
-    </div>
-  </div>
 </div>
 <script>
 (function () {
@@ -132,7 +164,7 @@
     { id: 7, date: '29/05/2026', num: 'PC-2026-0149', lib: 'Achat groupe électrogène chantier', cat: 'Équipement', m: 15964.69, s: '' },
     { id: 8, date: '06/06/2026', num: 'PC-2026-0156', lib: 'Assurance chantier – 2e trimestre', cat: 'Services', m: 5400.00, s: '' }
   ];
-  var conv = q('[data-rg-conv]'), drf = q('[data-rg-drf]'), per = q('[data-rg-per]'), mon = q('[data-rg-mon]'), ok = q('[data-rg-ok]'), ov = q('[data-rg-ov]'), pov = q('[data-rg-pov]');
+  var conv = q('[data-rg-conv]'), drf = q('[data-rg-drf]'), per = q('[data-rg-per]'), mon = q('[data-rg-mon]'), ok = q('[data-rg-ok]'), ov = q('[data-rg-ov]');
   var cur = 'USD', sel = null;
   function fmt(n) { var p = Math.abs(n).toFixed(2).split('.'); p[0] = p[0].replace(/\B(?=(\d{3})+(?!\d))/g, ' '); return (n < 0 ? '-' : '') + p.join(','); }
   function conv$(u) { return u * (RATES[cur] || 1); }
@@ -166,14 +198,10 @@
   function drawDash() {
     var x = totals();
     q('[data-rg-s="conv"]').textContent = sel.conv; q('[data-rg-s="drf"]').textContent = sel.drf; q('[data-rg-s="per"]').textContent = sel.per; q('[data-rg-s="mon"]').textContent = cur;
-    q('[data-rg-curs]').innerHTML = [['USD', '106 464,69'], ['EUR', '98 210,15'], ['DTS', '79 640,02'], ['MGA', '487 322 940']].map(function (c) { return '<div class="rg-cur"><span>' + c[0] + '</span><b>' + c[1] + '</b></div>'; }).join('');
     q('[data-rg-stat]').innerHTML = Object.keys(LAB).map(function (k) { return '<div class="rg-st ' + k + '"><i></i><span>● ' + LAB[k] + '</span><b>' + fmt(conv$(x.t[k])) + ' ' + cur + '</b><em>' + x.c[k] + (x.c[k] > 1 ? ' mouvements' : ' mouvement') + '</em></div>'; }).join('');
     q('[data-rg-solde]').textContent = fmt(conv$(TOTAL_USD - (x.t.paye + x.t.apure))) + ' ' + cur;
   }
-  function drawSum() {
-    var x = totals(), bg = { paye: ['--rg-paye-bg', '--rg-paye'], litige: ['--rg-lit-bg', '--rg-lit'], apure: ['--rg-apu-bg', '--rg-apu'], rejete: ['--rg-rej-bg', '--rg-rej'] };
-    q('[data-rg-psum]').innerHTML = Object.keys(LAB).map(function (k) { return '<div class="rg-mini" style="background:var(' + bg[k][0] + ');color:var(' + bg[k][1] + ')"><div class="l">' + LAB[k] + '</div><div class="v">' + fmt(conv$(x.t[k])) + ' ' + cur + '</div></div>'; }).join('');
-  }
+  function drawSum() { drawDash(); }   // les cartes « Montants par statut » suivent le pointage en direct
   function flt(k) { return (q('[data-rg-f="' + k + '"]').value || '').trim().toLowerCase(); }
   function visibles() {
     var d = flt('date'), n = flt('num'), l = flt('lib'), c = q('[data-rg-f="cat"]').value, m = flt('mont'), s = q('[data-rg-f="stat"]').value;
@@ -197,23 +225,33 @@
         ['paye', 'litige', 'apure', 'rejete'].map(function (k) { return '<td class="c"><input type="radio" class="r-' + k + '" name="rg-s' + m.id + '" value="' + k + '" data-rg-id="' + m.id + '"' + (m.s === k ? ' checked' : '') + '></td>'; }).join('') + '</tr>';
     }).join('');
   }
-  function openP() {
+  var snap = null, tst = null;
+  function instantane() { return MV.map(function (m) { return m.s; }); }
+  function initP() {
     qa('[data-rg-f]').forEach(function (e) { e.value = ''; });
     var cats = []; MV.forEach(function (m) { if (cats.indexOf(m.cat) < 0) cats.push(m.cat); }); cats.sort();
     q('[data-rg-f="cat"]').innerHTML = '<option value="">Toutes</option>' + cats.map(function (c) { return '<option>' + c + '</option>'; }).join('');
     q('[data-rg-ptitle]').textContent = 'Pointage des mouvements — Demande N°' + sel.drf;
-    drawRows(); drawSum(); pov.style.display = '';
+    snap = instantane(); drawRows(); drawDash();
   }
   ok.addEventListener('click', function () {
     cur = mon.value; sel = { conv: conv.value, drf: drf.value, per: per.textContent };
-    ov.style.display = 'none'; q('[data-rg-work]').style.display = ''; drawDash();
+    ov.style.display = 'none'; q('[data-rg-work]').style.display = ''; drawDash(); initP();
   });
   q('[data-rg-change]').addEventListener('click', function () { ov.style.display = ''; q('[data-rg-close]').style.display = ''; });
   q('[data-rg-close]').addEventListener('click', function () { ov.style.display = 'none'; });
-  q('[data-rg-open]').addEventListener('click', openP);
-  qa('[data-rg-pclose]').forEach(function (b) { b.addEventListener('click', function () { pov.style.display = 'none'; }); });
-  q('[data-rg-psave]').addEventListener('click', function () { drawDash(); pov.style.display = 'none'; });
-  pov.addEventListener('click', function (e) { if (e.target === pov) pov.style.display = 'none'; });
+  function msg(t) { var n = q('[data-rg-psave]'); n.textContent = t; clearTimeout(tst); tst = setTimeout(function () { n.textContent = 'Enregistrer le pointage'; }, 1800); }
+  // Régularisation complète (tous les mouvements pointés) : le statut de la demande passe de « Confectionnée » à Payée / En litige / Apurée / Rejetée ;
+  // elle sort alors de la liste des demandes confirmées non régularisées (ligne 8 du formulaire 104 FIDA). Un pointage incomplet la remet « Confectionnée ».
+  function majStatutDemande() {
+    if (!sel) return; var S = window.__selectionsDRF || [], s = S.filter(function (x) { return x.num === sel.drf && String(sel.conv).indexOf(x.conv) === 0; })[0]; if (!s) return;
+    var tous = MV.length && MV.every(function (m) { return m.s; }), nb = function (k) { return MV.filter(function (m) { return m.s === k; }).length; }, avant = s.st;
+    if (tous && (s.st === 'Confectionnée' || s.reg)) { s.st = nb('litige') ? 'En litige' : nb('apure') ? 'Apurée' : (nb('rejete') === MV.length ? 'Rejetée' : 'Payée'); s.reg = true; }
+    else if (!tous && s.reg) { s.st = 'Confectionnée'; s.reg = false; }
+    if (s.st !== avant) window.dispatchEvent(new CustomEvent('selections-change'));
+  }
+  q('[data-rg-psave]').addEventListener('click', function () { snap = instantane(); drawDash(); majStatutDemande(); msg('✓ Pointage enregistré'); });
+  q('[data-rg-pcancel]').addEventListener('click', function () { MV.forEach(function (m, i) { m.s = snap[i]; }); drawRows(); drawDash(); });
   q('[data-rg-rows]').addEventListener('change', function (e) { var id = e.target.dataset.rgId; if (!id) return; MV.filter(function (m) { return m.id === +id; })[0].s = e.target.value; drawSum(); });
   qa('[data-rg-f]').forEach(function (e) { e.addEventListener(e.tagName === 'SELECT' ? 'change' : 'input', drawRows); });
   qa('[data-rg-sa]').forEach(function (b) { b.addEventListener('click', function () { visibles().forEach(function (m) { m.s = b.dataset.rgSa; }); drawRows(); drawSum(); }); });

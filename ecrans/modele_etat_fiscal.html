@@ -26,7 +26,7 @@
 .mf-name{display:flex;align-items:center;gap:8px;flex-wrap:wrap}
 .mf-name b{font-weight:600;color:#0f172a}
 .mf-tag{border-radius:999px;padding:2px 8px;font-size:12px;font-weight:600}
-.mf-tag.annexe{background:#f0f9ff;color:#0369a1}.mf-tag.decl{background:#eef2ff;color:#4338ca}.mf-tag.def{background:#fffbeb;color:#b45309}
+.mf-tag.annexe{background:#f0f9ff;color:#0369a1}.mf-tag.decl{background:#eef2ff;color:#4338ca}.mf-tag.tx{background:#EEF1FA;color:#2E427B}.mf-tag.def{background:#fffbeb;color:#b45309}
 .mf-meta{margin:2px 0 0;font-size:12px;color:#64748b}
 .mf-acts{display:flex;align-items:center;gap:8px}
 .mf-a{border:1px solid #cbd5e1;border-radius:6px;background:#fff;color:#334155;padding:6px 12px;font:inherit;font-size:12px;font-weight:600;cursor:pointer}
@@ -64,21 +64,66 @@
     <div data-mf-toast class="mf-toast" style="display:none;margin-top:16px"></div>
 
     <div data-mf-sec="ANNEXE">
-      <div class="mf-sec-h"><h2>Annexe</h2><span class="mf-count" data-mf-count>3</span></div>
+      <div class="mf-sec-h"><h2>Annexe</h2><span class="mf-count" data-mf-count>12</span></div>
       <div data-mf-list>
         <div class="mf-row" data-mf-item data-def="1">
           <div><div class="mf-name"><b data-mf-title>Annexes</b><span class="mf-tag annexe">Annexe</span><span class="mf-tag def">Par défaut</span></div>
             <p class="mf-meta">N° FISCAL_ANNEXES · Fichier : annexes</p></div>
           <div class="mf-acts"><button type="button" class="mf-a" data-mf-edit>Modifier</button><button type="button" class="mf-a mf-or" data-mf-design>Ouvrir le designer</button><button type="button" class="mf-trash" disabled title="Suppression interdite : modèle officiel par défaut" aria-label="Supprimer"><i class="ti ti-trash"></i></button></div>
         </div>
-        <div class="mf-row" data-mf-item data-def="1">
-          <div><div class="mf-name"><b data-mf-title>Annexe IRSA</b><span class="mf-tag annexe">Annexe</span><span class="mf-tag def">Par défaut</span></div>
+        <div class="mf-row" data-mf-item data-def="1" data-taxtype="IRSA">
+          <div><div class="mf-name"><b data-mf-title>Annexe IRSA</b><span class="mf-tag annexe">Annexe</span><span class="mf-tag tx">Type : IRSA</span><span class="mf-tag def">Par défaut</span></div>
             <p class="mf-meta">N° FISCAL_ANNEXE_IRSA · Fichier : DGI_Annexe_IRSA</p></div>
           <div class="mf-acts"><button type="button" class="mf-a" data-mf-edit>Modifier</button><button type="button" class="mf-a mf-or" data-mf-design>Ouvrir le designer</button><button type="button" class="mf-trash" disabled title="Suppression interdite : modèle officiel par défaut" aria-label="Supprimer"><i class="ti ti-trash"></i></button></div>
         </div>
-        <div class="mf-row" data-mf-item data-def="1">
-          <div><div class="mf-name"><b data-mf-title>Annexe TVA</b><span class="mf-tag annexe">Annexe</span><span class="mf-tag def">Par défaut</span></div>
+        <div class="mf-row" data-mf-item data-def="1" data-taxtype="TVA">
+          <div><div class="mf-name"><b data-mf-title>Annexe TVA</b><span class="mf-tag annexe">Annexe</span><span class="mf-tag tx">Type : TVA</span><span class="mf-tag def">Par défaut</span></div>
             <p class="mf-meta">N° FISCAL_ANNEXE_TVA · Fichier : DGI_Annexe_TVA</p></div>
+          <div class="mf-acts"><button type="button" class="mf-a" data-mf-edit>Modifier</button><button type="button" class="mf-a mf-or" data-mf-design>Ouvrir le designer</button><button type="button" class="mf-trash" disabled title="Suppression interdite : modèle officiel par défaut" aria-label="Supprimer"><i class="ti ti-trash"></i></button></div>
+        </div>
+        <div class="mf-row" data-mf-item data-def="1" data-taxtype="DCOM">
+          <div><div class="mf-name"><b data-mf-title>Droit de communication — Achats de marchandises destinées à la revente (ADR)</b><span class="mf-tag annexe">Annexe</span><span class="mf-tag tx">Type : DCOM</span><span class="mf-tag def">Par défaut</span></div>
+            <p class="mf-meta">N° DCOM_ADR · Fichier : DGI_DCOM_ADR</p></div>
+          <div class="mf-acts"><button type="button" class="mf-a" data-mf-edit>Modifier</button><button type="button" class="mf-a mf-or" data-mf-design>Ouvrir le designer</button><button type="button" class="mf-trash" disabled title="Suppression interdite : modèle officiel par défaut" aria-label="Supprimer"><i class="ti ti-trash"></i></button></div>
+        </div>
+        <div class="mf-row" data-mf-item data-def="1" data-taxtype="DCOM">
+          <div><div class="mf-name"><b data-mf-title>Droit de communication — Achats immobilisés (AI)</b><span class="mf-tag annexe">Annexe</span><span class="mf-tag tx">Type : DCOM</span><span class="mf-tag def">Par défaut</span></div>
+            <p class="mf-meta">N° DCOM_AI · Fichier : DGI_DCOM_AI</p></div>
+          <div class="mf-acts"><button type="button" class="mf-a" data-mf-edit>Modifier</button><button type="button" class="mf-a mf-or" data-mf-design>Ouvrir le designer</button><button type="button" class="mf-trash" disabled title="Suppression interdite : modèle officiel par défaut" aria-label="Supprimer"><i class="ti ti-trash"></i></button></div>
+        </div>
+        <div class="mf-row" data-mf-item data-def="1" data-taxtype="DCOM">
+          <div><div class="mf-name"><b data-mf-title>Droit de communication — Achats non destinés à la revente (AC)</b><span class="mf-tag annexe">Annexe</span><span class="mf-tag tx">Type : DCOM</span><span class="mf-tag def">Par défaut</span></div>
+            <p class="mf-meta">N° DCOM_AC · Fichier : DGI_DCOM_AC</p></div>
+          <div class="mf-acts"><button type="button" class="mf-a" data-mf-edit>Modifier</button><button type="button" class="mf-a mf-or" data-mf-design>Ouvrir le designer</button><button type="button" class="mf-trash" disabled title="Suppression interdite : modèle officiel par défaut" aria-label="Supprimer"><i class="ti ti-trash"></i></button></div>
+        </div>
+        <div class="mf-row" data-mf-item data-def="1" data-taxtype="DCOM">
+          <div><div class="mf-name"><b data-mf-title>Droit de communication — Débours (DEB)</b><span class="mf-tag annexe">Annexe</span><span class="mf-tag tx">Type : DCOM</span><span class="mf-tag def">Par défaut</span></div>
+            <p class="mf-meta">N° DCOM_DEB · Fichier : DGI_DCOM_DEB</p></div>
+          <div class="mf-acts"><button type="button" class="mf-a" data-mf-edit>Modifier</button><button type="button" class="mf-a mf-or" data-mf-design>Ouvrir le designer</button><button type="button" class="mf-trash" disabled title="Suppression interdite : modèle officiel par défaut" aria-label="Supprimer"><i class="ti ti-trash"></i></button></div>
+        </div>
+        <div class="mf-row" data-mf-item data-def="1" data-taxtype="DCOM">
+          <div><div class="mf-name"><b data-mf-title>Droit de communication — Marchandises vendues (MV)</b><span class="mf-tag annexe">Annexe</span><span class="mf-tag tx">Type : DCOM</span><span class="mf-tag def">Par défaut</span></div>
+            <p class="mf-meta">N° DCOM_MV · Fichier : DGI_DCOM_MV</p></div>
+          <div class="mf-acts"><button type="button" class="mf-a" data-mf-edit>Modifier</button><button type="button" class="mf-a mf-or" data-mf-design>Ouvrir le designer</button><button type="button" class="mf-trash" disabled title="Suppression interdite : modèle officiel par défaut" aria-label="Supprimer"><i class="ti ti-trash"></i></button></div>
+        </div>
+        <div class="mf-row" data-mf-item data-def="1" data-taxtype="DCOM">
+          <div><div class="mf-name"><b data-mf-title>Droit de communication — Prestations de services vendues (PSV)</b><span class="mf-tag annexe">Annexe</span><span class="mf-tag tx">Type : DCOM</span><span class="mf-tag def">Par défaut</span></div>
+            <p class="mf-meta">N° DCOM_PSV · Fichier : DGI_DCOM_PSV</p></div>
+          <div class="mf-acts"><button type="button" class="mf-a" data-mf-edit>Modifier</button><button type="button" class="mf-a mf-or" data-mf-design>Ouvrir le designer</button><button type="button" class="mf-trash" disabled title="Suppression interdite : modèle officiel par défaut" aria-label="Supprimer"><i class="ti ti-trash"></i></button></div>
+        </div>
+        <div class="mf-row" data-mf-item data-def="1" data-taxtype="DCOM">
+          <div><div class="mf-name"><b data-mf-title>Droit de communication — Produits locaux (PL)</b><span class="mf-tag annexe">Annexe</span><span class="mf-tag tx">Type : DCOM</span><span class="mf-tag def">Par défaut</span></div>
+            <p class="mf-meta">N° DCOM_PL · Fichier : DGI_DCOM_PL</p></div>
+          <div class="mf-acts"><button type="button" class="mf-a" data-mf-edit>Modifier</button><button type="button" class="mf-a mf-or" data-mf-design>Ouvrir le designer</button><button type="button" class="mf-trash" disabled title="Suppression interdite : modèle officiel par défaut" aria-label="Supprimer"><i class="ti ti-trash"></i></button></div>
+        </div>
+        <div class="mf-row" data-mf-item data-def="1" data-taxtype="DCOM">
+          <div><div class="mf-name"><b data-mf-title>Droit de communication — Produits locaux par produit (récapitulation) (PLP)</b><span class="mf-tag annexe">Annexe</span><span class="mf-tag tx">Type : DCOM</span><span class="mf-tag def">Par défaut</span></div>
+            <p class="mf-meta">N° DCOM_PLP · Fichier : DGI_DCOM_PLP</p></div>
+          <div class="mf-acts"><button type="button" class="mf-a" data-mf-edit>Modifier</button><button type="button" class="mf-a mf-or" data-mf-design>Ouvrir le designer</button><button type="button" class="mf-trash" disabled title="Suppression interdite : modèle officiel par défaut" aria-label="Supprimer"><i class="ti ti-trash"></i></button></div>
+        </div>
+        <div class="mf-row" data-mf-item data-def="1" data-taxtype="DCOM">
+          <div><div class="mf-name"><b data-mf-title>Droit de communication — Sommes versées à des tiers (SVT)</b><span class="mf-tag annexe">Annexe</span><span class="mf-tag tx">Type : DCOM</span><span class="mf-tag def">Par défaut</span></div>
+            <p class="mf-meta">N° DCOM_SVT · Fichier : DGI_DCOM_SVT</p></div>
           <div class="mf-acts"><button type="button" class="mf-a" data-mf-edit>Modifier</button><button type="button" class="mf-a mf-or" data-mf-design>Ouvrir le designer</button><button type="button" class="mf-trash" disabled title="Suppression interdite : modèle officiel par défaut" aria-label="Supprimer"><i class="ti ti-trash"></i></button></div>
         </div>
       </div>
@@ -91,8 +136,8 @@
             <p class="mf-meta">N° DECLARATION · Fichier : Declaration_Fiscale</p></div>
           <div class="mf-acts"><button type="button" class="mf-a" data-mf-edit>Modifier</button><button type="button" class="mf-a mf-or" data-mf-design>Ouvrir le designer</button><button type="button" class="mf-trash" disabled title="Suppression interdite : modèle officiel par défaut" aria-label="Supprimer"><i class="ti ti-trash"></i></button></div>
         </div>
-        <div class="mf-row" data-mf-item data-def="1">
-          <div><div class="mf-name"><b data-mf-title>Déclaration TMP</b><span class="mf-tag decl">Déclaration</span><span class="mf-tag def">Par défaut</span></div>
+        <div class="mf-row" data-mf-item data-def="1" data-taxtype="IMP">
+          <div><div class="mf-name"><b data-mf-title>Déclaration TMP</b><span class="mf-tag decl">Déclaration</span><span class="mf-tag tx">Type : IMP</span><span class="mf-tag def">Par défaut</span></div>
             <p class="mf-meta">N° TMP_DECLARATION · Fichier : Declaration_TMP</p></div>
           <div class="mf-acts"><button type="button" class="mf-a" data-mf-edit>Modifier</button><button type="button" class="mf-a mf-or" data-mf-design>Ouvrir le designer</button><button type="button" class="mf-trash" disabled title="Suppression interdite : modèle officiel par défaut" aria-label="Supprimer"><i class="ti ti-trash"></i></button></div>
         </div>
@@ -108,6 +153,7 @@
       <div class="mf-field"><label class="mf-label">Nom du modèle *</label><input class="mf-ctl" data-mf-f="nom" placeholder="Ex. Listing standard des mouvements"></div>
       <div class="mf-field"><label class="mf-label">Type d'état *</label>
         <select class="mf-ctl" data-mf-f="type"><option value="ANNEXE">Annexe</option><option value="DÉCLARATION">Déclaration</option></select></div>
+      <div class="mf-field" data-mf-taxfield><label class="mf-label">Type de taxe</label><select class="mf-ctl" data-mf-tax><option value="">Tous les types de taxe</option></select><p class="mf-help">Le modèle sera proposé uniquement pour les déclarations de ce type. Non modifiable après la création.</p></div>
       <div class="mf-field"><label class="mf-label">Nom du fichier RepX créé après enregistrement *</label><input class="mf-ctl" data-mf-f="file" placeholder="Ex. listing_modele_04"><p class="mf-help">L'extension .repx sera ajoutée automatiquement.</p></div>
       <div class="mf-foot">
         <button type="button" class="mf-btn mf-sec" data-mf-cancel>Annuler</button>
@@ -132,8 +178,11 @@
     q('[data-mf-none]').style.display = shown ? 'none' : '';
   }
   function say(t) { toast.textContent = t; toast.style.display = ''; clearTimeout(say.t); say.t = setTimeout(function () { toast.style.display = 'none'; }, 3500); }
+  function familles() { return window.__taxFamilles || [['IR', 'IR'], ['IRSA', 'IRSA'], ['IMP', 'IMP'], ['TVA', 'TVA'], ['DCOM', 'DCOM'], ['AUTRE', 'Autre']]; }
   function open(item) {
     editing = item || null;
+    var st = q('[data-mf-tax]'); st.innerHTML = '<option value="">Tous les types de taxe</option>' + familles().map(function (x) { return '<option value="' + esc(x[0]) + '">' + esc(x[1]) + '</option>'; }).join('');
+    st.value = item ? (item.dataset.taxtype || '') : ''; st.disabled = !!item;
     F.forEach(function (k) { f(k).value = ''; f(k).disabled = false; f(k).classList.remove('mf-bad'); });
     q('[data-mf-mtitle]').textContent = item ? 'Modifier le modèle' : 'Nouveau modèle listing';
     if (!item) f('type').value = 'ANNEXE';
@@ -153,14 +202,14 @@
     if (q('[data-mf-save]').disabled) return;
     if (editing) { editing.querySelector('[data-mf-title]').textContent = f('nom').value.trim(); close(); refresh(); return; }
     var annexe = f('type').value === 'ANNEXE', row = document.createElement('div');
-    row.className = 'mf-row'; row.setAttribute('data-mf-item', '');
-    row.innerHTML = '<div><div class="mf-name"><b data-mf-title>' + esc(f('nom').value.trim()) + '</b><span class="mf-tag ' + (annexe ? 'annexe">Annexe' : 'decl">Déclaration') + '</span></div>' +
+    row.className = 'mf-row'; row.setAttribute('data-mf-item', ''); var tx = q('[data-mf-tax]').value; if (tx) row.setAttribute('data-taxtype', tx);
+    row.innerHTML = '<div><div class="mf-name"><b data-mf-title>' + esc(f('nom').value.trim()) + '</b><span class="mf-tag ' + (annexe ? 'annexe">Annexe' : 'decl">Déclaration') + '</span>' + (tx ? '<span class="mf-tag tx">Type : ' + esc(tx) + '</span>' : '') + '</div>' +
       '<p class="mf-meta">N° ' + esc(f('code').value.trim()) + ' · Fichier : ' + esc(f('file').value.trim()) + '</p></div>' +
       '<div class="mf-acts"><button type="button" class="mf-a" data-mf-edit>Modifier</button><button type="button" class="mf-a mf-or" data-mf-design>Ouvrir le designer</button>' +
       '<button type="button" class="mf-trash mf-on" data-mf-del aria-label="Supprimer"><i class="ti ti-trash"></i></button></div>';
     q('[data-mf-sec="' + f('type').value + '"] [data-mf-list]').appendChild(row); close(); addDup(); refresh();
   });
-  function addDup(root0) { qa('.mf-acts').forEach(function (a) { if (!a.querySelector('[data-mf-dup]')) { var b = document.createElement('button'); b.type = 'button'; b.className = 'mf-a'; b.setAttribute('data-mf-dup', ''); b.textContent = '⧉ Dupliquer'; var t = a.querySelector('.mf-trash'); a.insertBefore(b, t || null); } }); }
+  function addDup(root0) { qa('.mf-acts').forEach(function (a) { if (!a.querySelector('[data-mf-dup]')) { var b = document.createElement('button'); b.type = 'button'; b.className = 'mf-a'; b.setAttribute('data-mf-dup', ''); b.textContent = 'Dupliquer'; var t = a.querySelector('.mf-trash'); a.insertBefore(b, t || null); } }); }
   function dupItem(item, code, nom, file) {
     var c = item.cloneNode(true); c.removeAttribute('data-def'); c.removeAttribute('data-code');
     var df = c.querySelector('.mf-tag.def'); if (df) df.remove();

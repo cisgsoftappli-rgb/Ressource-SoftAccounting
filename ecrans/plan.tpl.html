@@ -8,6 +8,8 @@
   S'appuie sur les styles bp-* de l'écran « Paramétrage du bilan » (présents dans la page). Ne pas nommer de fonction « $$ » (build.cjs).
 -->
 <style>
+.pl-new1 td{height:30px;padding:0 10px;text-align:center;color:#98A2B3;font-size:12px;cursor:pointer;border-bottom:1px dashed #D6D9E0;background:#FCFCFD}.pl-new1:hover td{background:#EEF2FB;color:#23408E}
+
 .pl-aide{display:block;font-size:12px;color:#5B606D;margin-top:2px}.pl-aide.err{color:#B63132}
 .pl-cw{position:relative;display:block}.pl-tirets{position:absolute;inset:0;display:flex;align-items:center;white-space:pre;pointer-events:none;overflow:hidden;box-sizing:border-box}.pl-tirets i{font-style:normal;color:transparent}.pl-tirets b{font-weight:400;color:#9AA0AE}
 .pl-sec{margin:18px 0 8px;padding-bottom:4px;border-bottom:1px solid #E9EBF0;font-size:12px;font-weight:600;letter-spacing:.04em;text-transform:uppercase;color:#2E427B}
@@ -166,11 +168,11 @@
     // axes analytiques : plans activés ET ventilés par la racine de compte (superclasse) ; indisponibles si « Sans analytique »
     var parent = mode === 'consultation' && sel >= 0 ? rows[sel].parent : q('[data-f=parent]').value, sc = parent ? superclasse(parent) : '', ro = sc ? racineObj(sc) : null;
     var sans = draft.comp.indexOf('sans') >= 0, note = q('[data-pl-ana-note]');
-    q('[data-pl-ana-titre]').textContent = 'Comportements analytiques' + (sc ? ' — superclasse ' + sc : '');
+    q('[data-pl-ana-titre]').textContent = 'Comportements analytiques' + (sc ? ' — racine des comptes ' + sc : '');
     var ouverts = ro ? plansActifs().filter(function (c) { return ro.plans && ro.plans[c]; }) : [];
-    if (!parent) { note.textContent = 'La superclasse sera déterminée par le code parent.'; note.hidden = false; }
-    else if (!ro) { note.textContent = 'Aucune racine de compte n\'est rattachée à la superclasse de ce compte.'; note.hidden = false; }
-    else if (!ouverts.length) { note.textContent = 'La superclasse « ' + sc + ' » ne prévoit aucun axe analytique.'; note.hidden = false; }
+    if (!parent) { note.textContent = 'La racine des comptes sera déterminée par le code parent.'; note.hidden = false; }
+    else if (!ro) { note.textContent = 'Aucune racine des comptes n\'est rattachée à ce compte.'; note.hidden = false; }
+    else if (!ouverts.length) { note.textContent = 'La racine des comptes « ' + sc + ' » ne prévoit aucun axe analytique.'; note.hidden = false; }
     else if (sans) { note.textContent = '« Sans analytique » est coché : aucun axe analytique pour ce compte.'; note.hidden = false; }
     else note.hidden = true;
     q('[data-pl-ana]').innerHTML = plansActifs().map(function (c) {
@@ -198,7 +200,7 @@
     cols.map(function (c, i) { return c[1] === 'statut' ? '<th><select class="bp-sel" data-fc="' + i + '" aria-label="Filtrer Statut"><option value=""></option><option value="actif">Actif</option><option value="inactif">Inactif</option></select></th>' : '<th><input class="bp-in" data-fc="' + i + '" aria-label="Filtrer ' + c[0] + '"></th>'; }).join('') + '</tr>';
   function filtrer() {
     var F = qa('[data-fc]').map(function (e) { return e.value.trim().toLowerCase(); }), last = cols.length - 1;
-    qa('[data-pl-lignes] tr').forEach(function (tr) { tr.hidden = F.some(function (v, k) { if (!v) return false; var td = tr.children[k]; var t = (td.dataset.v || td.textContent).toLowerCase(); return k === last ? t !== v : t.indexOf(v) < 0; }); });
+    qa('[data-pl-lignes] tr[data-i]').forEach(function (tr) { tr.hidden = F.some(function (v, k) { if (!v) return false; var td = tr.children[k]; var t = (td.dataset.v || td.textContent).toLowerCase(); return k === last ? t !== v : t.indexOf(v) < 0; }); });
   }
   qa('[data-fc]').forEach(function (e) { e.addEventListener('input', filtrer); e.addEventListener('change', filtrer); });
 
@@ -206,7 +208,7 @@
     idxN = -1; // données modifiées : l'index est reconstruit
     q('[data-pl-compte]').textContent = rows.length ? rows.length + ' ligne' + (rows.length > 1 ? 's' : '') : '';
     q('[data-pl-vide]').hidden = rows.length > 0;
-    q('[data-pl-lignes]').innerHTML = rows.map(function (r, i) {
+    q('[data-pl-lignes]').innerHTML = '<tr class="pl-new1" data-new1 title="Cliquer pour ajouter un élément de niveau 1"><td colspan="' + cols.length + '">+ Nouvel élément de niveau 1</td></tr>' + rows.map(function (r, i) {
       return '<tr data-i="' + i + '"' + (i === sel ? ' class="sel"' : '') + '><td>' + esc(r.code) + '</td><td>' + esc(r.libelle) + '</td><td class="c">' + niveau(r.code) + '</td><td>' + esc(r.parent) + '</td>' +
         (CFG.extra ? '<td>' + esc(r.extra) + '</td>' : '') + '<td class="c" data-v="' + (r.actif ? 'actif' : 'inactif') + '">' + (r.actif ? 'Actif' : 'Inactif') + '</td></tr>';
     }).join(''); filtrer();
@@ -253,7 +255,10 @@
   function choisir(i) { if (mode !== 'consultation') return; sel = i; liste(); form(rows[i]); etat(); }
   qa('[data-pl-tab]').forEach(function (t) { t.addEventListener('click', function () { onglet(t.dataset.plTab); }); });
   var tb = q('[data-pl-lignes]');
-  tb.addEventListener('click', function (e) { var tr = e.target.closest('tr[data-i]'); if (tr) choisir(+tr.dataset.i); });
+  tb.addEventListener('click', function (e) {
+    if (e.target.closest('tr[data-new1]')) { if (mode !== 'consultation') return; sel = -1; q('[data-pl-ajouter]').click(); q('[data-f=niveau]').value = 1; remplirParents(''); q('[data-f=code]').focus(); return; }
+    var tr = e.target.closest('tr[data-i]'); if (tr) choisir(+tr.dataset.i);
+  });
   tb.addEventListener('dblclick', function (e) { var tr = e.target.closest('tr[data-i]'); if (tr) { choisir(+tr.dataset.i); onglet('saisie'); } });
 
   function enregistrer() {
@@ -327,7 +332,7 @@
     if (COMPTABLE) {
       ch.push({ col: 'Racine de compte', oblig: false, format: 'Niveau 1 uniquement : code d\'une racine (Racine des comptes). Par défaut : C + 1er caractère du code.', exemple: 'C' + c1.charAt(0) }); ex.push('C' + c1.charAt(0)); ex2.push('');
       ch.push({ col: 'Comportements', oblig: false, format: 'Dernier niveau uniquement : Sans analytique, Tiers, Immobilisations, Lettrage (séparés par « ; »).', exemple: 'Tiers' }); ex.push(''); ex2.push('');
-      ch.push({ col: 'Axes analytiques', oblig: false, format: 'Dernier niveau uniquement : plans ouverts pour la superclasse du compte (ex. PLAN1 ; PLAN2), incompatible avec « Sans analytique ».', exemple: 'PLAN1' }); ex.push(''); ex2.push('');
+      ch.push({ col: 'Axes analytiques', oblig: false, format: 'Dernier niveau uniquement : plans ouverts pour la racine des comptes du compte (ex. PLAN1 ; PLAN2), incompatible avec « Sans analytique ».', exemple: 'PLAN1' }); ex.push(''); ex2.push('');
     }
     return {
       titre: '%%TITRE%%', fichier: 'modele_%%ID%%.xlsx', champs: ch, exemples: [ex, ex2],

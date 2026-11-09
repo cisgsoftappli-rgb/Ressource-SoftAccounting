@@ -73,10 +73,11 @@
   var F = ['nom', 'src', 'bail'];
   var f = function (k) { return q('[data-rc-f="' + k + '"]'); };
   function esc(s) { var d = document.createElement('div'); d.textContent = s; return d.innerHTML; }
+  function pn() { return window.__procNow ? window.__procNow() : ''; }
   function refresh() {
     var t = search.value.trim().toLowerCase(), shown = 0;
     Array.prototype.slice.call(rows.querySelectorAll('tr')).forEach(function (r) {
-      var on = !t || r.textContent.toLowerCase().indexOf(t) >= 0; r.style.display = on ? '' : 'none'; if (on) shown++;
+      var on = (!t || r.textContent.toLowerCase().indexOf(t) >= 0) && (!r.dataset.rcProcof || !pn() || r.dataset.rcProcof === pn()); r.style.display = on ? '' : 'none'; if (on) shown++;
     });
     q('[data-rc-empty]').style.display = shown ? 'none' : '';
     q('[data-rc-list]').style.display = shown ? '' : 'none';
@@ -89,7 +90,7 @@
   q('[data-rc-save]').addEventListener('click', function () {
     var ko = 0; F.forEach(function (k) { var b = !f(k).value.trim(); f(k).classList.toggle('rc-bad', b); if (b) ko++; });
     if (ko) { msg.textContent = 'Renseignez les champs obligatoires.'; return; }
-    var tr = document.createElement('tr');
+    var tr = document.createElement('tr'); tr.setAttribute('data-rc-procof', pn());
     tr.innerHTML = '<td><b>' + esc(f('nom').value.trim()) + '</b></td><td>' + esc(f('src').value) + '</td><td>' + esc(f('bail').value) + '</td>' +
       '<td><div style="display:flex;justify-content:flex-end;gap:6px"><button type="button" class="rc-btn rc-sec" data-rc-dup>Dupliquer</button><button type="button" class="rc-del" data-rc-del aria-label="Supprimer"><i class="ti ti-trash"></i></button></div></td>';
     rows.appendChild(tr); close(); refresh();
@@ -97,7 +98,7 @@
   function rowInfo(tr) { var td = tr.querySelectorAll('td'); return { nom: td[0].textContent.trim(), src: td[1].textContent.trim(), bail: td[2].textContent.trim(), code: tr.dataset.rcCode || '', base: tr.dataset.rcBase || td[0].textContent.trim() }; }
   function codes() { return Array.prototype.map.call(rows.querySelectorAll('tr[data-rc-code]'), function (t) { return t.dataset.rcCode.toLowerCase(); }); }
   function addDup(src, code, nom) {
-    var tr = document.createElement('tr'); tr.setAttribute('data-rc-code', code); tr.setAttribute('data-rc-base', src.base);
+    var tr = document.createElement('tr'); tr.setAttribute('data-rc-procof', pn()); tr.setAttribute('data-rc-code', code); tr.setAttribute('data-rc-base', src.base);
     tr.innerHTML = '<td><b>' + esc(nom) + '</b></td><td>' + esc(src.src) + '</td><td>' + esc(src.bail) + '</td>' +
       '<td><div style="display:flex;justify-content:flex-end;gap:6px"><button type="button" class="rc-btn rc-sec" data-rc-dup>Dupliquer</button><button type="button" class="rc-btn rc-sec" data-rc-open data-rc-name="' + esc(nom) + '" data-rc-code="' + esc(code) + '" data-rc-base="' + esc(src.base) + '">Ouvrir le designer</button><button type="button" class="rc-del" data-rc-del aria-label="Supprimer"><i class="ti ti-trash"></i></button></div></td>';
     rows.appendChild(tr); refresh();
@@ -108,28 +109,31 @@
     if (tr) addDup(rowInfo(tr), d.code, d.nom);
   });
   rows.addEventListener('click', function (e) {
+    var pv = e.target.closest('[data-rc-prev]'); if (pv && window.__open104) { window.__open104(pv.dataset.rcName, 'prev'); return; }
     var du = e.target.closest('[data-rc-dup]');
     if (du) { var src = rowInfo(du.closest('tr')); window.__dupModele({ source: { code: src.code, nom: src.nom }, exists: function (c) { return codes().indexOf(c.toLowerCase()) >= 0; }, onOk: function (c, n) { addDup(src, c, n); } }); return; }
     var b = e.target.closest('[data-rc-del]'); if (b) { b.closest('tr').remove(); refresh(); return; }
     var o = e.target.closest('[data-rc-open]'); if (!o) return;
-    var nom = o.dataset.rcName, base = o.dataset.rcBase || nom, ejcd = /EJCD/i.test(base), rcat = /r.capitulatif par cat/i.test(base), rfi = /^RFI ([IV]+) —/.exec(base), decl = ejcd || rcat || !!rfi || /déclaration/i.test(base);
-    window.__mfDesigner = { code: o.dataset.rcCode || (rfi ? 'RFI_' + rfi[1] : ejcd ? 'EJCD' : rcat ? 'RECAPCAT' : decl ? 'DECLARATION' : 'SOE'), nom: nom, base: base, def: false }; if (rcat) { window.__mfDesigner.type = 'Récapitulatif'; window.__mfDesigner.src = 'Demande de remboursement'; }
+    var nom = o.dataset.rcName, base = o.dataset.rcBase || nom, ejcd = /EJCD/i.test(base), rcat = /r.capitulatif par cat/i.test(base), rfi = /^RFI ([IV]+) —/.exec(base), f104 = /^104/.test(base), gavi = /^Récapitulatif GAVI/i.test(base), decl = ejcd || rcat || !!rfi || f104 || gavi || /déclaration/i.test(base);
+    window.__mfDesigner = { code: o.dataset.rcCode || (gavi ? 'RECAPGAVI' : rfi ? 'RFI_' + rfi[1] : f104 ? 'F104' : ejcd ? 'EJCD' : rcat ? 'RECAPCAT' : decl ? 'DECLARATION' : 'SOE'), nom: nom, base: base, def: false }; if (rcat) { window.__mfDesigner.type = 'Récapitulatif'; window.__mfDesigner.src = 'Demande de remboursement'; }
     window.__designerFrom = 'recap'; location.hash = decl ? 'designer2' : 'designer';
   });
-  var RECAP = /EJCD|récapitulatif|déclaration/i;
+  var RECAP = /EJCD|récapitulatif|déclaration|^104/i;
   function buildProc() {
     Array.prototype.slice.call(rows.querySelectorAll('tr[data-rc-proc]')).forEach(function (r) { r.remove(); });
     var map = {}, order = [];
     (window.__pfProcs || []).forEach(function (p) { p.models.forEach(function (m) {
-      if (!RECAP.test(m)) return; var k = p.proc + '|' + m;
+      if (!RECAP.test(m) || /^A[23]/.test(m)) return; var k = p.proc + '|' + m;
       if (!map[k]) { map[k] = { proc: p.proc, model: m, convs: [] }; order.push(k); } map[k].convs.push(p.conv);
     }); });
     var html = order.map(function (k) { var r = map[k];
-      return '<tr data-rc-proc><td><b>' + esc(r.model) + '</b></td><td>Procédure ' + esc(r.proc) + '</td><td>' + esc(r.convs.join(', ')) + '</td>' +
-        '<td><div style="display:flex;justify-content:flex-end;gap:6px"><button type="button" class="rc-btn rc-sec" data-rc-dup>Dupliquer</button><button type="button" class="rc-btn rc-sec" data-rc-open data-rc-name="' + esc(r.model) + '">Ouvrir le designer</button></div></td></tr>'; }).join('');
+      return '<tr data-rc-proc data-rc-procof="' + esc(r.proc) + '"><td><b>' + esc(r.model) + '</b></td><td>Procédure ' + esc(r.proc) + '</td><td>' + esc(r.convs.join(', ')) + '</td>' +
+        '<td><div style="display:flex;justify-content:flex-end;gap:6px">' + (/^104/.test(r.model) ? '<button type="button" class="rc-btn rc-sec" data-rc-prev data-rc-name="' + esc(r.model) + '">Aperçu</button>' : '') + '<button type="button" class="rc-btn rc-sec" data-rc-dup>Dupliquer</button><button type="button" class="rc-btn rc-sec" data-rc-open data-rc-name="' + esc(r.model) + '">Ouvrir le designer</button></div></td></tr>'; }).join('');
     rows.insertAdjacentHTML('afterbegin', html); refresh();
   }
   window.addEventListener('pf-change', buildProc); buildProc();
+  window.addEventListener('hashchange', function () { if (location.hash === '#recap') refresh(); }); window.addEventListener('load', refresh); setTimeout(refresh, 600);
+  document.addEventListener('click', function (e) { if (e.target.closest && e.target.closest('[data-proc]')) setTimeout(refresh, 0); });
 })();
 </script>
 </app-modeles-etat-reporting-list>

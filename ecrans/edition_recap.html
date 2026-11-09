@@ -133,6 +133,18 @@
   function gen() {
     var A = [['PROJET', 'Projet DECIM'], ['BAILLEUR', 'Banque mondiale (IDA)'], ['CC', 'Centre de coûts — Siège'], ['ACT', 'Activités — Composante 1'], ['ACT', 'Activités — Composante 2'], ['ZONE', 'Zone — Analamanga'], ['ZONE', 'Zone — Atsinanana'], ['TYPE', 'Fonctionnement']], out = [];
     A.forEach(function (a, i) { var d = Math.round((900000 + i * 371000) * (1 + (i % 3) * 0.4)), c = Math.round(d * (0.35 + (i % 4) * 0.15)); out.push({ axe: a[0], libelle: a[1], debit: d, credit: c, solde: d - c }); });
+    // + écritures saisies de la période portant une imputation analytique : cumul par axe et par valeur
+    var ES = window.ECRITURES_SAISIES, du = fld('[data-el-du]').value, au = fld('[data-el-au]').value;
+    if (ES) {
+      var K = {};
+      ES({ du: du || '', au: au || '' }).forEach(function (x) {
+        Object.keys(x.axes || {}).forEach(function (ax) {
+          var v = x.axes[ax]; if (!v) return; var k = ax + '|' + v; K[k] = K[k] || { axe: ax, libelle: v, debit: 0, credit: 0, solde: 0 };
+          K[k].debit += x.debit; K[k].credit += x.credit; K[k].solde = K[k].debit - K[k].credit;
+        });
+      });
+      out = Object.keys(K).sort().map(function (k) { return K[k]; }).concat(out);
+    }
     return out;
   }
   function render() {
@@ -153,7 +165,7 @@
       var tp = fld('[data-el-tpl]').value; if (!tp) { fld('[data-el-tpl]').style.borderColor = '#ef4444'; return; } fld('[data-el-tpl]').style.borderColor = '';
       var l = window.__recapModelsList2 || [], m = l.filter(function (x) { return x.code === tp; })[0] || { code: tp, nom: tp };
       cur = { code: m.code, nom: m.nom, site: '', du: fld('[data-el-du]').value, au: fld('[data-el-au]').value, ex: fld('[data-el-ex]').value };
-      rows = gen(cur.du, cur.au); q('[data-el-mod]').style.display = 'none';
+      rows = gen(); q('[data-el-mod]').style.display = 'none';
       q('[data-el-sum]').textContent = ' ' + m.nom + (cur.ex ? ' · ' + cur.ex : '') + (cur.du ? ' · ' + fmt(cur.du) + ' → ' + fmt(cur.au) : '');
       q('[data-el-hint]').style.display = 'none'; q('[data-el-expw]').style.display = ''; q('[data-el-prev]').style.display = ''; q('[data-el-ptitle]').textContent = m.nom + ' — État récapitulatif'; render();
     }

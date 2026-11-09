@@ -1,0 +1,551 @@
+<!--
+  Écran « Petite caisse › Modèles de pièce » — modèles d'état de la pièce de caisse, imprimés depuis « Petite caisse › Saisie » (bouton « Imprimer la pièce de caisse »).
+  Un modèle est un document à champs FIGÉS (texte, mise en forme, tableaux saisis dans le modèle) et à champs DYNAMIQUES insérés par publipostage, notés {{champ}}
+  (date, libellé, montant, montant en lettres, tiers décharge…). Création : modèle intégré, dupliqué, saisi dans l'éditeur ou IMPORTÉ depuis un fichier Word (.docx) ou RTF :
+  les champs de fusion du fichier (MERGEFIELD / « champ » / {{champ}} / <<champ>>) sont reconnus et rattachés aux champs dynamiques de la caisse ; les autres sont signalés.
+  Le .docx est lu avec JSZip (CDN, chargé à la demande) : paragraphes, gras/italique, alignement, tableaux et champs de fusion sont conservés ; images et pagination ne le sont pas.
+  Données : window.CAISSE_MODELES = { liste(), parDefaut(), rendre(modele, ctx), contexte(lot, op, i), imprimer(lot, ops, modeleId), champs }, copie localStorage softcompta.caisseModeles.
+  Préfixe cmd- / data-cmd. Ne pas nommer de fonction « $$ » (build.cjs).
+-->
+<style>
+[data-cmd] .cmd-tb td.r,[data-cmd] .cmd-tb th.r{text-align:right}[data-cmd] .cmd-tb tbody tr{cursor:pointer}[data-cmd] .cmd-tb tbody tr.on td{background:#E8ECF6}[data-cmd] .cmd-tb tbody tr:hover td{background:#F5F7F9}[data-cmd] .cmd-tb tbody tr.on:hover td{background:#E8ECF6}
+[data-cmd] .cmd-tools .cmd-ph{border-color:#2E427B;color:#2E427B;font-weight:600}[data-cmd] .cmd-hint{margin:0 0 8px;font-size:12px;color:#5B606D}
+.cmd-mf{display:grid;gap:10px}.cmd-mf input[type=search]{height:34px;padding:0 10px;border:1px solid #D6D9E0;border-radius:6px;font-size:13px}.cmd-mt{width:100%;border-collapse:collapse;font-size:13px}.cmd-mt th{position:sticky;top:0;background:#F5F7F9;text-align:left;padding:8px 10px;font-size:11.5px;text-transform:uppercase;color:#5B606D;border-bottom:1px solid #E3E7EE}.cmd-mt td{padding:7px 10px;border-bottom:1px solid #EEF1F5;vertical-align:middle}.cmd-mt tr.g td{background:#FAFAF9;font-size:11.5px;font-weight:700;color:#2E427B;text-transform:uppercase;letter-spacing:.05em}.cmd-mt code{font-family:ui-monospace,Consolas,monospace;font-size:12px;background:#F4F7FE;color:#2E427B;padding:2px 6px;border-radius:4px}.cmd-mt button{height:28px;padding:0 12px;border:1px solid #2E427B;border-radius:6px;background:#fff;color:#2E427B;font-size:12px;font-weight:600;cursor:pointer}.cmd-mt button:hover{background:#2E427B;color:#fff}
+[data-cmd] .cmd-g{display:grid;grid-template-columns:300px minmax(0,1fr);gap:16px;align-items:start}
+[data-cmd] .cmd-l{border:1px solid #E3E7EE;border-radius:10px;background:#fff;overflow:hidden}
+[data-cmd] .cmd-l h2{margin:0;padding:12px 14px;font-size:14px;border-bottom:1px solid #E3E7EE}
+[data-cmd] .cmd-it{display:grid;gap:2px;padding:10px 14px;border-bottom:1px solid #EEF1F5;cursor:pointer;font-size:13px}
+[data-cmd] .cmd-it:hover{background:#F5F7F9}[data-cmd] .cmd-it.on{background:#E8ECF6;box-shadow:inset 3px 0 #2E427B}
+[data-cmd] .cmd-it small{color:#5B606D;font-size:11.5px}
+[data-cmd] .cmd-def{display:inline-block;margin-left:6px;padding:1px 8px;border-radius:999px;background:#E3F3EA;color:#1E7B4B;font-size:11px;font-weight:600}
+[data-cmd] .cmd-r{display:grid;gap:14px}
+[data-cmd] .cmd-c{border:1px solid #E3E7EE;border-radius:10px;background:#fff;padding:14px}
+[data-cmd] .cmd-c h3{margin:0 0 10px;font-size:13px;color:#2E427B;text-transform:uppercase;letter-spacing:.04em}
+[data-cmd] .cmd-fl{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:12px}
+[data-cmd] .cmd-fl label{display:grid;gap:4px;font-size:12px;color:#5B606D}[data-cmd] .cmd-fl .w{grid-column:1/-1}
+[data-cmd] .cmd-tools{display:flex;flex-wrap:wrap;gap:6px;margin:0 0 8px}
+[data-cmd] .cmd-tools button{height:30px;padding:0 10px;border:1px solid #D6D9E0;border-radius:6px;background:#fff;font-size:12px;cursor:pointer}
+[data-cmd] .cmd-ed{min-height:260px;max-height:460px;overflow:auto;padding:16px;border:1px solid #D6D9E0;border-radius:8px;background:#fff;font:13px/1.5 Georgia,serif;color:#0B1332}
+[data-cmd] .cmd-ed:focus{outline:2px solid #2E427B33;border-color:#2E427B}
+[data-cmd] .cmd-ch{display:flex;flex-wrap:wrap;gap:6px;margin:0 0 10px}
+[data-cmd] .cmd-ch button{height:26px;padding:0 9px;border:1px solid #B8C4E4;border-radius:999px;background:#F4F7FE;color:#2E427B;font-size:12px;cursor:pointer}
+[data-cmd] .cmd-ch button:hover{background:#E3EBFE}
+[data-cmd] .cmd-gr{margin:8px 0 4px;font-size:11.5px;font-weight:700;color:#5B606D;text-transform:uppercase}
+[data-cmd] .cmd-al{margin:8px 0 0;padding:8px 12px;border-radius:8px;background:#FFF8E6;border:1px solid #F1E2B8;font-size:12px;color:#6B4A0F}
+[data-cmd] .cmd-pv{border:1px dashed #B8C4E4;border-radius:8px;background:#fff;padding:0;overflow:hidden}[data-cmd] .cmd-pv iframe{width:100%;height:420px;border:0;display:block}
+[data-cmd] .cmd-vide{padding:16px;text-align:center;font-size:12px;color:#7B8190}
+@media (max-width:1000px){[data-cmd] .cmd-g{grid-template-columns:1fr}}
+</style>
+
+<div class="bp-root" data-cmd>
+  <h1 style="position:absolute;width:1px;height:1px;overflow:hidden;clip-path:inset(50%);margin:0">Modèles de pièce de caisse</h1>
+  <div class="no-print" data-cmd-actions>
+    <button type="button" data-cmd-nouveau>Nouveau modèle</button>
+    <button type="button" data-cmd-modifier>Modifier</button>
+    <button type="button" data-cmd-importer>Importer Word / RTF</button>
+    <button type="button" data-cmd-exporter-docx>Exporter en Word</button>
+    <button type="button" data-cmd-exporter-rtf>Exporter en RTF</button>
+    <button type="button" data-cmd-dupliquer>Dupliquer</button>
+    <button type="button" data-cmd-enreg>Enregistrer</button>
+    <button type="button" data-cmd-defaut>Définir par défaut</button>
+    <button type="button" data-cmd-suppr>Supprimer</button>
+    <input type="file" data-cmd-fichier accept=".docx,.rtf,.txt,.html,.htm" hidden>
+  </div>
+  <div class="bp-tabs" role="tablist">
+    <button type="button" role="tab" class="on" data-cmd-onglet="liste">Liste <span class="bp-n" data-cmd-n></span></button>
+    <button type="button" role="tab" data-cmd-onglet="conception">Conception</button>
+    <button type="button" role="tab" data-cmd-onglet="apercu">Aperçu</button>
+  </div>
+  <div class="bp-grid">
+    <section class="bp-pan" aria-label="Liste des modèles de pièce de caisse" data-cmd-pan="liste">
+      <h2>Modèles d'état <small>Cliquez pour sélectionner, double-clic ou « Modifier » pour ouvrir la conception</small></h2>
+      <div style="overflow:auto"><table class="bp-tb cmd-tb" style="min-width:820px"><thead><tr><th>Nom du modèle</th><th>Description</th><th>Source</th><th class="r">Champs dynamiques</th><th>Statut</th></tr></thead><tbody data-cmd-liste></tbody></table></div>
+      <div class="bp-vide" data-cmd-vide hidden>Aucun modèle : utilisez « Nouveau modèle » ou « Importer Word / RTF ».</div>
+    </section>
+    <section class="bp-pan" aria-label="Conception du modèle" data-cmd-pan="conception" hidden>
+      <div class="cmd-r" data-cmd-edit>
+        <div class="cmd-c"><h3>Modèle</h3>
+          <div class="cmd-fl">
+            <label>Nom du modèle <b>*</b><input class="bp-in" data-cmd-f="nom" maxlength="60"></label>
+            <label>Source<input class="bp-in" data-cmd-f="source" readonly></label>
+            <label class="w">Description<input class="bp-in" data-cmd-f="desc" maxlength="160"></label>
+          </div>
+        </div>
+        <div class="cmd-c" data-cmd-word hidden><h3>Fichier Word d’origine — mise en page conservée</h3>
+          <p class="cmd-hint">Le publipostage s’effectue directement dans le fichier Word : la mise en page, les polices, le logo et les tableaux sont conservés. Associez chaque zone à remplir (pointillés, date, nom de l’organisation, champs de fusion) à un champ dynamique ; les cases « Entrée / Sortie de caisse » sont cochées automatiquement selon le sens de l’opération. Pour modifier le texte figé ou la mise en page, retouchez le fichier dans Word puis réimportez-le.</p>
+          <div class="cmd-tools"><button type="button" data-cmd-dlorig><i class="ti ti-download"></i> Télécharger le fichier d’origine</button><button type="button" data-cmd-auto><i class="ti ti-wand"></i> Proposer les champs automatiquement</button><span data-cmd-winfo style="align-self:center;font-size:12px;color:#5B606D"></span></div>
+          <div style="overflow:auto;max-height:420px"><table class="cmd-mt"><thead><tr><th style="width:44px">N°</th><th>Intitulé précédant la zone</th><th>Zone</th><th style="width:300px">Remplacée par</th></tr></thead><tbody data-cmd-zones></tbody></table></div>
+        </div>
+        <div class="cmd-c" data-cmd-htmlcard><h3>Contenu du modèle — texte figé et champs dynamiques</h3>
+          <p class="cmd-hint">Saisissez le texte figé directement dans le modèle. Placez le curseur à l'endroit voulu puis cliquez sur « Champs dynamiques » pour insérer un champ de publipostage : il sera remplacé par les données de la pièce à l'impression.</p>
+          <div class="cmd-tools"><button type="button" class="cmd-ph" data-cmd-champs><i class="ti ti-braces"></i> Champs dynamiques</button><button type="button" data-cmd-c="bold"><b>G</b></button><button type="button" data-cmd-c="italic"><i>I</i></button><button type="button" data-cmd-c="underline"><u>S</u></button><button type="button" data-cmd-c="justifyLeft">Gauche</button><button type="button" data-cmd-c="justifyCenter">Centré</button><button type="button" data-cmd-c="justifyRight">Droite</button><button type="button" data-cmd-c="insertUnorderedList">Liste</button><button type="button" data-cmd-hr>Ligne</button><button type="button" data-cmd-tab>Tableau</button></div>
+          <div class="cmd-ed" contenteditable="true" data-cmd-ed spellcheck="false"></div>
+          <div class="cmd-al" data-cmd-alerte hidden></div>
+        </div>
+      </div>
+    </section>
+    <section class="bp-pan" aria-label="Aperçu du modèle" data-cmd-pan="apercu" hidden>
+      <h2>Aperçu avec des données d'exemple <small data-cmd-apnom></small></h2>
+      <div class="cmd-pv"><iframe data-cmd-pv title="Aperçu du modèle"></iframe></div><div data-cmd-pvw hidden style="height:620px;overflow:auto;background:#E9EBF0;padding:12px;border:1px dashed #B8C4E4;border-radius:8px"></div>
+    </section>
+  </div>
+  <div class="bp-toast" role="status" hidden data-cmd-toast></div>
+</div>
+
+<script>
+(function () {
+  var root = document.querySelector('[data-cmd]'); if (!root) return;
+  function q(s) { return root.querySelector(s); } function qa(s) { return [].slice.call(root.querySelectorAll(s)); }
+  function esc(s) { return String(s == null ? '' : s).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;'); }
+  function toast(m) { var t = q('[data-cmd-toast]'); t.textContent = m; t.hidden = false; clearTimeout(toast.t); toast.t = setTimeout(function () { t.hidden = true; }, 3200); }
+  var CLE = 'softcompta.caisseModeles';
+  // champs dynamiques : [clé, libellé, groupe, exemple]
+  var CHAMPS = [
+    ['entite', 'Entité', 'Entité et lot', 'SoftWell Madagascar'], ['lot', 'N° du lot', 'Entité et lot', 'PC-2026-001'], ['site', 'Site', 'Entité et lot', '01'], ['journal', 'Journal caisse', 'Entité et lot', '01CAISSE'], ['devise', 'Devise', 'Entité et lot', 'MGA'],
+    ['numeroPiece', 'N° de la pièce', 'Pièce', 'PC-2026-001/01'], ['date', 'Date de l’opération', 'Pièce', '03/11/2026'], ['datePiece', 'Date de la pièce', 'Pièce', '03/11/2026'], ['reference', 'N° pièce de référence', 'Pièce', 'FA-2026-0412'], ['libelle', 'Libellé', 'Pièce', 'Achat carburant véhicule de service'],
+    ['typeOperation', 'Type d’opération', 'Pièce', 'Carburant'], ['sens', 'Sens (Recette / Dépense)', 'Pièce', 'Dépense'], ['montant', 'Montant', 'Montants', '85 000,00'], ['montantLettres', 'Montant en lettres', 'Montants', 'quatre-vingt-cinq mille ariary'], ['recette', 'Recette (débit)', 'Montants', ''], ['depense', 'Dépense (crédit)', 'Montants', '85 000,00'], ['soldeFinal', 'Solde final du lot', 'Montants', '215 000,00'],
+    ['nomPersonne', 'Nom de la personne', 'Décharge', 'RAKOTO Jean'], ['typeIdentite', 'Type de pièce d’identité', 'Décharge', 'CIN'], ['numIdentite', 'N° pièce d’identité', 'Décharge', '101 234 567 890'], ['dateIdentite', 'Date pièce d’identité', 'Décharge', '12/03/2015'], ['modePaiement', 'Mode de paiement', 'Décharge', 'Espèces'],
+    ['utilisateur', 'Utilisateur (caissier)', 'Édition', 'Super Administrateur'], ['dateImpression', 'Date d’impression', 'Édition', new Date().toLocaleDateString('fr-FR')]
+  ];
+  var CLES = {}; CHAMPS.forEach(function (c) { CLES[c[0]] = c; });
+  function norm(t) { return String(t == null ? '' : t).normalize('NFD').replace(/[\u0300-\u036f]/g, '').toLowerCase().replace(/[^a-z0-9]/g, ''); }
+  var ALIAS = {}; CHAMPS.forEach(function (c) { ALIAS[norm(c[0])] = c[0]; ALIAS[norm(c[1])] = c[0]; });
+  [['montanten lettres', 'montantLettres'], ['montantlettres', 'montantLettres'], ['numpiece', 'numeroPiece'], ['numerodepiece', 'numeroPiece'], ['piece', 'numeroPiece'], ['nom', 'nomPersonne'], ['beneficiaire', 'nomPersonne'], ['caissier', 'utilisateur'], ['societe', 'entite'], ['raisonsociale', 'entite'], ['numerolot', 'lot'], ['nlot', 'lot'], ['objet', 'libelle'], ['motif', 'libelle'], ['imputation', 'typeOperation'], ['cin', 'numIdentite']].forEach(function (a) { ALIAS[norm(a[0])] = a[1]; });
+
+  // ---------- publipostage ----------
+  var UN = ['zéro', 'un', 'deux', 'trois', 'quatre', 'cinq', 'six', 'sept', 'huit', 'neuf', 'dix', 'onze', 'douze', 'treize', 'quatorze', 'quinze', 'seize', 'dix-sept', 'dix-huit', 'dix-neuf'], DIZ = ['', '', 'vingt', 'trente', 'quarante', 'cinquante', 'soixante'];
+  function moins100(n) {
+    if (n < 20) return UN[n]; var d = Math.floor(n / 10), u = n % 10;
+    if (d === 7 || d === 9) { var b = d === 7 ? 'soixante' : 'quatre-vingt', r = 10 + u; return b + (d === 7 && u === 1 ? ' et ' : '-') + UN[r]; }
+    if (d === 8) return u ? 'quatre-vingt-' + UN[u] : 'quatre-vingts';
+    return DIZ[d] + (u === 1 ? ' et un' : u ? '-' + UN[u] : '');
+  }
+  function moins1000(n, fin) { var c = Math.floor(n / 100), r = n % 100, s = ''; if (c) s = (c > 1 ? UN[c] + ' ' : '') + 'cent' + (c > 1 && !r && fin ? 's' : ''); if (r) s += (s ? ' ' : '') + (r === 80 && !fin ? 'quatre-vingt' : moins100(r)); return s; }
+  function enLettres(n) {
+    n = Math.floor(Math.abs(n)); if (!n) return 'zéro';
+    var parts = [], g = [[1e9, 'milliard'], [1e6, 'million']], s = '';
+    g.forEach(function (x) { var k = Math.floor(n / x[0]); if (k) { s += (s ? ' ' : '') + moins1000(k, false) + ' ' + x[1] + (k > 1 ? 's' : ''); n %= x[0]; } });
+    var m = Math.floor(n / 1000), r = n % 1000;
+    if (m) { s += (s ? ' ' : '') + (m === 1 ? '' : moins1000(m, false) + ' ') + 'mille'; }
+    if (r) s += (s ? ' ' : '') + moins1000(r, true);
+    return s.replace(/\s+/g, ' ').trim();
+  }
+  function nb(n) { return Number(n || 0).toLocaleString('fr-FR', { minimumFractionDigits: 2, maximumFractionDigits: 2 }).replace(/[  ]/g, ' '); }
+  function dt(d) { return d ? String(d).split('-').reverse().join('/') : ''; }
+  function monnaie(dev) { return { MGA: 'ariary', USD: 'dollars US', EUR: 'euros' }[dev] || dev || ''; }
+  function ig(re) { var v = ''; [].slice.call(document.querySelectorAll('.ig-f')).forEach(function (f) { var l = f.querySelector('.ig-l'), i = f.querySelector('input,select'); if (!v && l && i && re.test(l.textContent.trim()) && i.value) v = i.value; }); return v; }
+  function contexte(lot, op, i) {
+    var m = (op.rec || 0) + (op.dep || 0), u = ''; try { var e = document.querySelector('[data-user-name]'); u = e ? e.textContent.trim() : ''; } catch (x) {}
+    return {
+      entite: ig(/raison sociale|nom de l.entit|d[ée]nomination/i) || 'SoftWell Madagascar', lot: lot.num, site: lot.site, journal: lot.journal, devise: lot.devise,
+      numeroPiece: op.ref || (lot.num + '/' + ('0' + (i + 1)).slice(-2)), date: dt(op.date), datePiece: dt(op.datePiece), reference: op.ref || '', libelle: op.libelle, typeOperation: op.type, sens: op.rec ? 'Recette' : 'Dépense',
+      montant: nb(m), montantLettres: enLettres(m) + ' ' + monnaie(lot.devise), recette: op.rec ? nb(op.rec) : '', depense: op.dep ? nb(op.dep) : '',
+      soldeFinal: nb((Number(lot.solde) || 0) + (lot.ops || []).reduce(function (s, x) { return s + (x.rec || 0) - (x.dep || 0); }, 0)),
+      nomPersonne: op.nom || '', typeIdentite: op.typeId || '', numIdentite: op.numId || '', dateIdentite: dt(op.dateId), modePaiement: op.mode || '', utilisateur: op.user || u || 'Super Administrateur', dateImpression: new Date().toLocaleDateString('fr-FR')
+    };
+  }
+  function exemple() { var o = {}; CHAMPS.forEach(function (c) { o[c[0]] = c[3]; }); return o; }
+  function rendre(modele, ctx) {
+    return String(modele.html || '').replace(/\{\{\s*([^{}]+?)\s*\}\}/g, function (m, k) { var c = ALIAS[norm(k)] || k; return ctx[c] != null ? esc(ctx[c]) : ''; });
+  }
+  var STYLE_IMP = 'body{font:13px/1.5 Georgia,"Times New Roman",serif;color:#000;margin:0}.pc{box-sizing:border-box;padding:18mm 16mm;page-break-after:always}.pc:last-child{page-break-after:auto}table{border-collapse:collapse;width:100%}td,th{border:1px solid #444;padding:6px 8px;vertical-align:top}h1,h2,h3{margin:.2em 0}hr{border:0;border-top:1px solid #000}@page{size:A4;margin:0}';
+  function document_(pieces) { return '<!doctype html><html><head><meta charset="utf-8"><title>Pièce de caisse</title><' + 'style>' + STYLE_IMP + '<' + '/style><' + '/head><' + 'body>' + pieces.map(function (p) { return '<div class="pc">' + p + '</div>'; }).join('') + '<' + '/body><' + '/html>'; }
+
+  // ---------- modèles ----------
+  var BASE = '<div style="text-align:center"><h2>{{entite}}</h2><h3>PIÈCE DE CAISSE</h3></div><p style="text-align:center">N° <b>{{numeroPiece}}</b> — {{sens}}</p><hr>' +
+    '<table><tr><td style="width:30%">Date</td><td>{{date}}</td></tr><tr><td>Lot / Site / Journal</td><td>{{lot}} / {{site}} / {{journal}}</td></tr><tr><td>Type d’opération</td><td>{{typeOperation}}</td></tr><tr><td>Libellé</td><td>{{libelle}}</td></tr><tr><td>Référence pièce</td><td>{{reference}}</td></tr><tr><td>Montant</td><td><b>{{montant}} {{devise}}</b></td></tr><tr><td>Arrêté à la somme de</td><td><i>{{montantLettres}}</i></td></tr></table>' +
+    '<p>&nbsp;</p><table><tr><td style="width:50%">Le caissier<br><br><br>{{utilisateur}}</td><td>Le bénéficiaire<br><br><br>{{nomPersonne}}</td></tr></table><p style="font-size:11px;text-align:right">Édité le {{dateImpression}}</p>';
+  var DECH = '<div style="text-align:center"><h2>{{entite}}</h2><h3>DÉCHARGE DE CAISSE</h3></div><hr>' +
+    '<p>Je soussigné(e) <b>{{nomPersonne}}</b>, titulaire de la pièce d’identité <b>{{typeIdentite}}</b> n° <b>{{numIdentite}}</b> délivrée le {{dateIdentite}}, reconnais avoir reçu de la caisse <b>{{journal}}</b> (site {{site}}) la somme de <b>{{montant}} {{devise}}</b>, soit <i>{{montantLettres}}</i>, au titre de : {{libelle}}.</p>' +
+    '<p>Mode de paiement : {{modePaiement}} — Pièce n° {{numeroPiece}} du {{date}}.</p><p>&nbsp;</p><table><tr><td style="width:50%">Le caissier<br><br><br>{{utilisateur}}</td><td>Signature du bénéficiaire<br><br><br>&nbsp;</td></tr></table>';
+  var modeles = [], cur = null, dirty = false;
+  function charger() {
+    try { modeles = JSON.parse(localStorage.getItem(CLE) || 'null') || []; } catch (e) { modeles = []; }
+    if (!modeles.length) modeles = [{ id: 'm1', nom: 'Pièce de caisse', desc: 'Pièce de caisse standard (recette ou dépense).', source: 'Intégré', html: BASE, defaut: true }, { id: 'm2', nom: 'Décharge de caisse', desc: 'Décharge signée par le bénéficiaire.', source: 'Intégré', html: DECH, defaut: false }];
+  }
+  function sauver() { var ok = true; try { localStorage.setItem(CLE, JSON.stringify(modeles)); } catch (e) { ok = false; } publier(); return ok; }
+  function parDefaut() { return modeles.filter(function (m) { return m.defaut; })[0] || modeles[0]; }
+  function imprimer(lot, ops, modeleId) {
+    var m = modeles.filter(function (x) { return x.id === modeleId; })[0] || parDefaut(); if (!m) return false;
+    if (m.docx) { imprimerWord(m, ops.map(function (o) { return contexte(lot, o, (lot.ops || []).indexOf(o)); })); return true; }
+    var pages = ops.map(function (o) { return rendre(m, contexte(lot, o, (lot.ops || []).indexOf(o))); });
+    var f = document.createElement('iframe'); f.style.cssText = 'position:fixed;right:0;bottom:0;width:0;height:0;border:0'; document.body.appendChild(f);
+    var d = f.contentWindow.document; d.open(); d.write(document_(pages)); d.close();
+    setTimeout(function () { try { f.contentWindow.focus(); f.contentWindow.print(); } catch (e) {} setTimeout(function () { f.remove(); }, 1500); }, 250);
+    return true;
+  }
+  function publier() { window.CAISSE_MODELES = { liste: function () { return modeles; }, parDefaut: parDefaut, rendre: rendre, contexte: contexte, imprimer: imprimer, champs: CHAMPS, exemple: exemple, document: document_, afficher: afficher, telechargerDocx: telechargerDocx, contextes: function (lot, ops) { return ops.map(function (o) { return contexte(lot, o, (lot.ops || []).indexOf(o)); }); } }; window.dispatchEvent(new Event('caisse-modeles-changed')); }
+
+  // ---------- éditeur ----------
+  function nbChamps(m) { var s = {}; String(m.html).replace(/\{\{\s*([^{}]+?)\s*\}\}/g, function (x, k) { s[k] = 1; return x; }); return Object.keys(s).length; }
+  function rendreListe() {
+    q('[data-cmd-n]').textContent = '(' + modeles.length + ')';
+    q('[data-cmd-liste]').innerHTML = modeles.map(function (m) { return '<tr data-id="' + esc(m.id) + '"' + (cur && cur.id === m.id ? ' class="on"' : '') + '><td><b>' + esc(m.nom) + '</b></td><td>' + esc(m.desc || '') + '</td><td>' + esc(m.source) + (m.fichier ? ' — ' + esc(m.fichier) : '') + '</td><td class="r">' + nbChamps(m) + '</td><td>' + (m.defaut ? '<span class="cmd-def" style="margin:0">Par défaut</span>' : '') + '</td></tr>'; }).join('');
+    q('[data-cmd-vide]').hidden = modeles.length > 0;
+  }
+  var onglet_ = 'liste', rng = null;
+  function onglet(n) {
+    onglet_ = n; qa('[data-cmd-onglet]').forEach(function (b) { b.classList.toggle('on', b.dataset.cmdOnglet === n); });
+    qa('[data-cmd-pan]').forEach(function (p) { p.hidden = p.dataset.cmdPan !== n; });
+    if (n === 'apercu') apercu();
+  }
+  // fenêtre des champs dynamiques : un champ par ligne (libellé, code de fusion, exemple), insertion à l'endroit du curseur de l'éditeur
+  function inserer(cle) {
+    var ed = q('[data-cmd-ed]'); ed.focus(); var sel = window.getSelection();
+    if (rng) { sel.removeAllRanges(); sel.addRange(rng); } else { var r = document.createRange(); r.selectNodeContents(ed); r.collapse(false); sel.removeAllRanges(); sel.addRange(r); }
+    document.execCommand('insertText', false, '{{' + cle + '}}'); if (sel.rangeCount) rng = sel.getRangeAt(0).cloneRange();
+    dirty = true; alertes(html_());
+  }
+  function ouvrirChamps() {
+    var O = window.FACTURE_OCR; if (!O || !O.fenetre) { toast('Fenêtre indisponible.'); return; }
+    var w = O.fenetre('Champs dynamiques (publipostage)', true, 'braces', 'Champs dynamiques');
+    function lignes(f) {
+      var g = '', h = ''; f = norm(f);
+      CHAMPS.forEach(function (c) {
+        if (f && norm(c[0] + c[1] + c[2]).indexOf(f) < 0) return;
+        if (c[2] !== g) { g = c[2]; h += '<tr class="g"><td colspan="4">' + esc(g) + '</td></tr>'; }
+        h += '<tr data-k="' + esc(c[0]) + '"><td>' + esc(c[1]) + '</td><td><code>{{' + esc(c[0]) + '}}</code></td><td style="color:#5B606D">' + esc(c[3]) + '</td><td style="text-align:right"><button type="button" data-ins="' + esc(c[0]) + '">Insérer</button></td></tr>';
+      });
+      return h || '<tr><td colspan="4" style="text-align:center;color:#7B8190;padding:16px">Aucun champ ne correspond.</td></tr>';
+    }
+    // panneau flottant (≈ 36 % de la largeur, à droite) : l'éditeur reste accessible derrière, la fenêtre se déplace en saisissant son titre
+    var ovx = w.b.closest('.fo-ov'), md = w.b.closest('.fo-md'), tt = md.querySelector('h2');
+    ovx.style.cssText += ';background:transparent;pointer-events:none;display:block;backdrop-filter:none';
+    md.style.cssText += ';pointer-events:auto;position:fixed;margin:0;top:12vh;left:45vw;width:clamp(520px,36vw,760px);max-width:calc(100vw - 16px);max-height:76vh;display:flex;flex-direction:column;box-shadow:0 18px 50px rgba(11,19,50,.35);border:1px solid #D6D9E0';
+    w.b.style.cssText += ';overflow:auto;flex:1;min-height:0';
+    tt.style.cursor = 'move'; tt.style.userSelect = 'none'; tt.title = 'Glissez pour déplacer la fenêtre';
+    tt.addEventListener('mousedown', function (e) {
+      if (e.button) return; var r = md.getBoundingClientRect(), dx = e.clientX - r.left, dy = e.clientY - r.top;
+      function mv(ev) { md.style.left = Math.max(0, Math.min(window.innerWidth - 120, ev.clientX - dx)) + 'px'; md.style.top = Math.max(0, Math.min(window.innerHeight - 60, ev.clientY - dy)) + 'px'; }
+      function up() { document.removeEventListener('mousemove', mv); document.removeEventListener('mouseup', up); }
+      document.addEventListener('mousemove', mv); document.addEventListener('mouseup', up); e.preventDefault();
+    });
+    w.b.innerHTML = '<div class="cmd-mf"><p class="cmd-hint" style="margin:0">Le champ est inséré à l’endroit du curseur dans le modèle (double-clic sur une ligne ou « Insérer »). Cliquez dans le modèle pour changer l’emplacement, insérez autant de champs que nécessaire, puis fermez. La fenêtre se déplace en glissant son titre.</p><input type="search" placeholder="Rechercher un champ…" data-mf autocomplete="off"><div><table class="cmd-mt"><thead><tr><th>Champ</th><th>Code de fusion</th><th>Exemple</th><th></th></tr></thead><tbody data-mt>' + lignes('') + '</tbody></table></div></div>';
+    w.f.innerHTML = '<button type="button" class="p" data-mx>Fermer</button>';
+    var tb = w.b.querySelector('[data-mt]');
+    w.b.querySelector('[data-mf]').addEventListener('input', function () { tb.innerHTML = lignes(this.value); });
+    tb.addEventListener('click', function (e) { var b = e.target.closest('[data-ins]'); if (b) { inserer(b.dataset.ins); toast('Champ {{' + b.dataset.ins + '}} inséré.'); } });
+    tb.addEventListener('dblclick', function (e) { var tr = e.target.closest('tr[data-k]'); if (tr && !e.target.closest('button')) { inserer(tr.dataset.k); toast('Champ {{' + tr.dataset.k + '}} inséré.'); } });
+    w.f.querySelector('[data-mx]').addEventListener('click', function () { O.fermer(); q('[data-cmd-ed]').focus(); });
+  }
+  function ouvrir(m) {
+    cur = m; q('[data-cmd-f="nom"]').value = m.nom; q('[data-cmd-f="desc"]').value = m.desc || ''; q('[data-cmd-f="source"]').value = m.source + (m.fichier ? ' — ' + m.fichier : '');
+    q('[data-cmd-ed]').innerHTML = m.html; dirty = false; rng = null; q('[data-cmd-apnom]').textContent = '— ' + m.nom; rendreListe(); zonesUI(); apercu(); alertes(m.html, m.inconnus);
+  }
+  function html_() { return q('[data-cmd-ed]').innerHTML; }
+  function apercu() {
+    var w = q('[data-cmd-pvw]'), f = q('[data-cmd-pv]'), word = !!(cur && cur.docx); w.hidden = !word; f.hidden = word;
+    if (word) { if (onglet_ === 'apercu') afficher(w, cur, [exemple()]); return; }
+    var d = f.contentWindow.document; d.open(); d.write(document_([rendre({ html: html_() }, exemple())])); d.close();
+  }
+  function zonesUI() {
+    var m = cur, word = !!(m && m.docx); q('[data-cmd-word]').hidden = !word; qa('[data-cmd-htmlcard]').forEach(function (c) { c.hidden = word; });
+    if (!word) return; var opts = '<option value="">Laisser tel quel</option><option value="-">Effacer la zone</option>' + CHAMPS.map(function (c) { return '<option value="' + esc(c[0]) + '">' + esc(c[1] + ' — ex. ' + c[3]) + '</option>'; }).join('');
+    q('[data-cmd-zones]').innerHTML = (m.zones || []).map(function (z, k) { return '<tr><td>' + (k + 1) + '</td><td>' + esc(z.ctx) + '</td><td><code>' + esc(z.txt) + '</code></td><td><select class="bp-sel" data-zi="' + k + '" data-no-combo>' + opts.replace('value="' + esc(z.champ) + '"', 'value="' + esc(z.champ) + '" selected') + '</select></td></tr>'; }).join('') || '<tr><td colspan="4" class="cmd-vide">Aucune zone à remplir détectée dans ce fichier (pointillés, date, champs de fusion).</td></tr>';
+    var n = (m.zones || []).filter(function (z) { return z.champ && z.champ !== '-'; }).length; q('[data-cmd-winfo]').textContent = (m.zones || []).length + ' zone(s) détectée(s), ' + n + ' associée(s) à un champ dynamique.';
+  }
+  function alertes(h, inconnus) {
+    var inc = inconnus || [], seen = {}; String(h).replace(/\{\{\s*([^{}]+?)\s*\}\}/g, function (m, k) { if (!ALIAS[norm(k)] && !seen[k]) { seen[k] = 1; if (inc.indexOf(k) < 0) inc.push(k); } return m; });
+    var a = q('[data-cmd-alerte]'); a.hidden = !inc.length;
+    a.innerHTML = inc.length ? '<b>Champs non reconnus</b> : ' + inc.map(function (k) { return '{{' + esc(k) + '}}'; }).join(', ') + ' — ils seront laissés vides à l’impression. Remplacez-les par un champ dynamique de la liste.' : '';
+  }
+  function lireForm() { cur.nom = q('[data-cmd-f="nom"]').value.trim(); cur.desc = q('[data-cmd-f="desc"]').value.trim(); cur.html = html_(); }
+  function nouvelId() { return 'm' + Date.now().toString(36); }
+
+  // ---------- import Word / RTF ----------
+  function champImport(k) { var c = ALIAS[norm(k)]; return c ? '{{' + c + '}}' : '{{' + k.trim() + '}}'; }
+  function motifsTexte(t) {   // « champ », <<champ>>, {{champ}} dans le texte d'un fichier
+    return t.replace(/(?:«|&lt;&lt;)\s*([^»&{}\n]{1,60}?)\s*(?:»|&gt;&gt;)/g, function (m, k) { return champImport(k); }).replace(/\{\{\s*([^{}]+?)\s*\}\}/g, function (m, k) { return champImport(k); });
+  }
+  function instr(t) { var m = /MERGEFIELD\s+"?([^\s"\\]+)"?/i.exec(t || ''); return m ? m[1] : ''; }
+  function docxVersHtml(xml) {
+    var d = new DOMParser().parseFromString(xml, 'application/xml'), W = 'http://schemas.openxmlformats.org/wordprocessingml/2006/main';
+    function el(n, tag) { return [].slice.call(n.getElementsByTagNameNS(W, tag)); }
+    function para(p) {
+      var jc = (el(p, 'jc')[0] || {}).getAttributeNS ? el(p, 'jc')[0].getAttributeNS(W, 'val') : '', out = '', etat = 0, champ = '', saute = false;
+      [].slice.call(p.getElementsByTagNameNS(W, 'r')).forEach(function (r) {
+        if (r.parentNode.localName === 'fldSimple') return;
+        var fc = el(r, 'fldChar')[0], it = el(r, 'instrText')[0];
+        if (fc) { var ty = fc.getAttributeNS(W, 'fldCharType'); if (ty === 'begin') { etat = 1; champ = ''; saute = false; } else if (ty === 'separate') { etat = 2; if (champ) { out += champImport(champ); saute = true; } } else if (ty === 'end') { etat = 0; saute = false; } return; }
+        if (it && etat === 1) { var f = instr(it.textContent); if (f) champ = f; return; }
+        if (saute) return;
+        var t = '', b = el(r, 'b')[0] && el(r, 'b')[0].getAttributeNS(W, 'val') !== '0', i = el(r, 'i')[0] && el(r, 'i')[0].getAttributeNS(W, 'val') !== '0';
+        [].slice.call(r.childNodes).forEach(function (n) { if (n.localName === 't') t += esc(n.textContent); else if (n.localName === 'tab') t += '&emsp;'; else if (n.localName === 'br') t += '<br>'; });
+        t = motifsTexte(t); if (!t) return; if (b) t = '<b>' + t + '</b>'; if (i) t = '<i>' + t + '</i>'; out += t;
+      });
+      el(p, 'fldSimple').forEach(function (s) { var f = instr(s.getAttributeNS(W, 'instr')); if (f) out += champImport(f); });
+      var al = jc === 'center' ? 'center' : jc === 'right' ? 'right' : jc === 'both' ? 'justify' : 'left';
+      return '<p style="margin:0 0 6px;text-align:' + al + '">' + (out || '&nbsp;') + '</p>';
+    }
+    function bloc(n) {
+      if (n.localName === 'p') return para(n);
+      if (n.localName === 'tbl') return '<table>' + [].slice.call(n.childNodes).filter(function (r) { return r.localName === 'tr'; }).map(function (tr) { return '<tr>' + [].slice.call(tr.childNodes).filter(function (c) { return c.localName === 'tc'; }).map(function (tc) { return '<td>' + [].slice.call(tc.childNodes).map(bloc).join('') + '</td>'; }).join('') + '</tr>'; }).join('') + '</table>';
+      return '';
+    }
+    var body = el(d, 'body')[0]; return [].slice.call(body.childNodes).map(bloc).join('');
+  }
+  function rtfVersHtml(r) {
+    // champs de fusion : groupes « {\field … MERGEFIELD nom … } » (accolades équilibrées), remplacés par un repère
+    var deb;
+    while ((deb = r.indexOf('{\\field')) >= 0) {
+      var niv = 0, fin = deb;
+      for (; fin < r.length; fin++) { if (r[fin] === '{' && r[fin - 1] !== '\\') niv++; else if (r[fin] === '}' && r[fin - 1] !== '\\') { niv--; if (!niv) break; } }
+      var g = r.slice(deb, fin + 1), mm = /MERGEFIELD\s+"?([^\s"\\}]+)"?/i.exec(g);
+      r = r.slice(0, deb) + (mm ? '\u0001' + mm[1] + '\u0002' : '') + r.slice(fin + 1);
+    }
+    r = r.replace(/\{\\(fonttbl|colortbl|stylesheet|info|\*)[^{}]*(\{[^{}]*\}[^{}]*)*\}/g, '');
+    r = r.replace(/\\'([0-9a-f]{2})/gi, function (m, h) { return String.fromCharCode(parseInt(h, 16)); }).replace(/\\u(-?\d+)\??/g, function (m, n) { return String.fromCharCode(n < 0 ? +n + 65536 : +n); });
+    r = r.replace(/\\(par|line)\b ?/g, '\n').replace(/\\tab\b ?/g, '\t').replace(/\\[a-z]+-?\d* ?/gi, '').replace(/[{}]/g, '').replace(/\\([\\{}])/g, '$1');
+    var t = esc(r).replace(/\u0001([^\u0002]+)\u0002/g, function (m, k) { return champImport(k); });
+    t = motifsTexte(t);
+    return t.split(/\n/).map(function (l) { return '<p style="margin:0 0 6px">' + (l.trim() ? l.replace(/\t/g, '&emsp;') : '&nbsp;') + '</p>'; }).join('');
+  }
+  function chargerJSZip() {
+    return new Promise(function (ok, ko) {
+      if (window.JSZip) { ok(window.JSZip); return; }
+      var s = document.createElement('script'); s.src = 'https://cdnjs.cloudflare.com/ajax/libs/jszip/3.10.1/jszip.min.js'; s.onload = function () { ok(window.JSZip); }; s.onerror = function () { ko(new Error('JSZip indisponible')); }; document.head.appendChild(s);
+    });
+  }
+  function importer(file) {
+    var nom = file.name, ext = (nom.split('.').pop() || '').toLowerCase(), base = nom.replace(/\.[^.]+$/, '');
+    function creer(html, source, extra) {
+      var m = { id: nouvelId(), nom: base, desc: 'Importé depuis ' + nom, source: source, fichier: nom, html: html, defaut: false }; if (extra) Object.keys(extra).forEach(function (k) { m[k] = extra[k]; });
+      modeles.push(m); var ok = sauver(); ouvrir(m); onglet('conception');
+      if (m.docx) toast('Modèle Word importé : ' + m.zones.length + ' zone(s) à remplir détectée(s), mise en page conservée.' + (ok ? '' : ' Fichier trop volumineux pour être conservé après rechargement.'));
+      else toast('Modèle importé : ' + (html.match(/\{\{/g) || []).length + ' champ(s) dynamique(s) détecté(s).');
+    }
+    if (ext === 'docx') {
+      var buf; chargerJSZip().then(function (Z) { return file.arrayBuffer().then(function (b) { buf = b; return Z.loadAsync(b); }); }).then(function (z) { var f = z.file('word/document.xml'); if (!f) throw new Error('document.xml introuvable'); return f.async('string'); })
+        .then(function (xml) { creer(docxVersHtml(xml), 'Word', { docx: versB64(buf), zones: detecterZones(xml) }); }).catch(function (e) { toast('Import impossible : ' + e.message + (/JSZip/.test(e.message) ? ' (connexion requise pour lire un fichier .docx)' : '')); });
+    } else {
+      var rd = new FileReader(); rd.onload = function () {
+        var t = String(rd.result);
+        if (ext === 'rtf' || /^\{\\rtf/.test(t)) creer(rtfVersHtml(t), 'RTF');
+        else if (ext === 'html' || ext === 'htm') creer(motifsTexte(t.replace(/<script[\s\S]*?<\/script>/gi, '')), 'HTML');
+        else creer(motifsTexte(esc(t)).split(/\n/).map(function (l) { return '<p style="margin:0 0 6px">' + (l || '&nbsp;') + '</p>'; }).join(''), 'Texte');
+      }; rd.readAsText(file, ext === 'rtf' ? 'windows-1252' : 'utf-8');
+    }
+  }
+
+  // ---------- modèles Word fidèles : le publipostage se fait directement dans le fichier .docx d'origine (mise en page, polices, logo, tableaux conservés) ----------
+  // Zones à remplir détectées dans le texte : pointillés / tirets bas, date « .. / .. / .. », « NOM DE L'ORGANISATION », champs de fusion « champ » ou {{champ}}.
+  // Chaque zone est associée à un champ dynamique (suggestion automatique d'après l'intitulé qui la précède) ; les cases « Entrée / Sortie de caisse » sont cochées selon le sens.
+  var W_NS = 'http://schemas.openxmlformats.org/wordprocessingml/2006/main';
+  var MOTIF = /([.…]{2,}\s*\/\s*[.…]{2,}\s*\/\s*[.…]{2,})|(NOM DE L['’]ORGANISATION)|(«[^»]{1,60}»|\{\{[^{}]{1,60}\}\})|([.…]{4,}|_{4,})/gi;
+  var REGLES = [[/montant.*lettre/, 'montantLettres'], [/montant/, 'montant'], [/numerodepiece|ndepiece|npiece|numeropiece/, 'numeroPiece'], [/date/, 'date'], [/devise/, 'devise'], [/caisse/, 'journal'],
+    [/paye|recude|beneficiaire|nomde|nom$/, 'nomPersonne'], [/motif|objet|libelle/, 'libelle'], [/reference|justificat/, 'reference'], [/typedoperation|typeoperation/, 'typeOperation'], [/site/, 'site'], [/lot/, 'lot']];
+  function suggestion(avant, zone, prec) {
+    if (/^NOM DE L/i.test(zone)) return 'entite';
+    var m = /^(?:«|\{\{)\s*([^»}]+?)\s*(?:»|\}\})$/.exec(zone); if (m) return ALIAS[norm(m[1])] || '';
+    if (/^[.…]{2,}\s*\//.test(zone)) return 'date';
+    var n = norm(avant.slice(-45)); if (!n) return prec ? '-' : '';   // ligne de suite d'une zone précédente : effacée
+    for (var i = 0; i < REGLES.length; i++) if (REGLES[i][0].test(n)) return REGLES[i][1];
+    return '';
+  }
+  function atomes(p) {
+    var out = [], pos = 0;
+    [].slice.call(p.getElementsByTagNameNS(W_NS, '*')).forEach(function (n) {
+      if (n.localName === 't') { out.push({ n: n, k: 't', s: pos, l: n.textContent.length }); pos += n.textContent.length; }
+      else if (n.localName === 'sym' && /^F0A8$/i.test(n.getAttributeNS(W_NS, 'char') || '')) { out.push({ n: n, k: 'sym', s: pos, l: 1 }); pos += 1; }
+    });
+    return out;
+  }
+  function parcourir(doc, cb) {
+    var i = 0, prec = false;
+    [].slice.call(doc.getElementsByTagNameNS(W_NS, 'p')).forEach(function (p) {
+      var at = atomes(p); if (!at.length) return;
+      var t = at.map(function (a) { return a.k === 't' ? a.n.textContent : '□'; }).join(''), re = new RegExp(MOTIF.source, 'gi'), m, dernier = 0, res = [];
+      while ((m = re.exec(t))) { res.push({ i: i++, s: m.index, e: m.index + m[0].length, txt: m[0], avant: t.slice(dernier, m.index) }); dernier = m.index + m[0].length; }
+      cb(p, at, t, res, prec && p.parentNode.localName !== 'tc'); prec = res.length > 0;
+    });
+  }
+  function detecterZones(xml) {
+    var doc = new DOMParser().parseFromString(xml, 'application/xml'), Z = [];
+    parcourir(doc, function (p, at, t, res, prec) {
+      res.forEach(function (r, k) { Z.push({ i: r.i, ctx: r.avant.replace(/\s+/g, ' ').trim().slice(-48) || (/^NOM DE L/i.test(r.txt) ? '(en-tête)' : '(suite de la ligne précédente)'), txt: r.txt.length > 24 ? r.txt.slice(0, 24) + '…' : r.txt, champ: suggestion(r.avant, r.txt, prec && k === 0) }); });
+    });
+    return Z;
+  }
+  function remplacer(at, s, e, val, sym) {
+    var prem = true;
+    at.forEach(function (a) {
+      if (a.s + a.l <= s || a.s >= e) return;
+      if (a.k === 'sym') { if (sym) a.n.setAttributeNS(W_NS, 'w:char', sym); return; }
+      var t = a.n.textContent, de = Math.max(s, a.s) - a.s, a_ = Math.min(e, a.s + a.l) - a.s;
+      a.n.textContent = t.slice(0, de) + (prem ? val : '') + t.slice(a_); a.n.setAttribute('xml:space', 'preserve'); prem = false;
+    });
+  }
+  function remplirDoc(doc, zones, ctx) {
+    var par = {}; (zones || []).forEach(function (z) { par[z.i] = z.champ; });
+    parcourir(doc, function (p, at, t, res) {
+      var ops = [];
+      res.forEach(function (r) { var c = par[r.i]; if (c === '' || c == null) return; ops.push({ s: r.s, e: r.e, v: c === '-' ? '' : (ctx[c] != null ? String(ctx[c]) : '') }); });
+      var re = /[☐□]/g, m; while ((m = re.exec(t))) {
+        var suite = t.slice(m.index + 1, m.index + 14), coche = (/^\s*ENTR/i.test(suite) && ctx.sens === 'Recette') || (/^\s*SORT/i.test(suite) && ctx.sens === 'Dépense');
+        if (coche) ops.push({ s: m.index, e: m.index + 1, v: '☒', sym: 'F0FE' });
+      }
+      ops.sort(function (a, b) { return b.s - a.s; }).forEach(function (o) { remplacer(at, o.s, o.e, o.v, o.sym); });
+    });
+  }
+  function versB64(buf) { var b = new Uint8Array(buf), s = '', k = 0; for (; k < b.length; k += 8192) s += String.fromCharCode.apply(null, b.subarray(k, k + 8192)); return btoa(s); }
+  function construireDocx(m, ctxs) {
+    return chargerJSZip().then(function (Z) { return Z.loadAsync(m.docx, { base64: true }); }).then(function (z) {
+      return z.file('word/document.xml').async('string').then(function (xml) {
+        var doc0 = new DOMParser().parseFromString(xml, 'application/xml'), body0 = doc0.getElementsByTagNameNS(W_NS, 'body')[0], sect = [].slice.call(body0.childNodes).filter(function (n) { return n.localName === 'sectPr'; })[0];
+        var pieces = ctxs.map(function (c) { var d = new DOMParser().parseFromString(xml, 'application/xml'); remplirDoc(d, m.zones, c); return [].slice.call(d.getElementsByTagNameNS(W_NS, 'body')[0].childNodes).filter(function (n) { return n.localName !== 'sectPr'; }); });
+        while (body0.firstChild) body0.removeChild(body0.firstChild);
+        pieces.forEach(function (nodes, i) {
+          if (i) { var p = doc0.createElementNS(W_NS, 'w:p'), r = doc0.createElementNS(W_NS, 'w:r'), br = doc0.createElementNS(W_NS, 'w:br'); br.setAttributeNS(W_NS, 'w:type', 'page'); r.appendChild(br); p.appendChild(r); body0.appendChild(p); }
+          nodes.forEach(function (n) { body0.appendChild(doc0.importNode(n, true)); });
+        });
+        if (sect) body0.appendChild(sect);
+        z.file('word/document.xml', new XMLSerializer().serializeToString(doc0));
+        return z.generateAsync({ type: 'blob', mimeType: 'application/vnd.openxmlformats-officedocument.wordprocessingml.document' });
+      });
+    });
+  }
+  function chargerPreview() {
+    return new Promise(function (ok, ko) {
+      if (window.docx && window.docx.renderAsync) { ok(window.docx); return; }
+      chargerJSZip().then(function () { var s = document.createElement('script'); s.src = 'https://cdn.jsdelivr.net/npm/docx-preview@0.3.3/dist/docx-preview.min.js'; s.onload = function () { ok(window.docx); }; s.onerror = function () { ko(new Error('Visionneuse Word indisponible')); }; document.head.appendChild(s); }, ko);
+    });
+  }
+  // affiche le(s) pièce(s) dans un conteneur : modèle Word → rendu fidèle du .docx rempli ; autre modèle → HTML. Renvoie { blob } (Word) ou {}.
+  function afficher(zone, m, ctxs) {
+    zone.innerHTML = '<div class="cmd-vide">Préparation de l’aperçu…</div>';
+    if (m.docx) {
+      return construireDocx(m, ctxs).then(function (blob) {
+        return chargerPreview().then(function (D) { zone.innerHTML = ''; return D.renderAsync(blob, zone, null, { className: 'cmd-docx', inWrapper: false, ignoreWidth: false }); }).then(function () { return { blob: blob }; }, function (e) { zone.innerHTML = '<div class="cmd-vide">Aperçu indisponible hors connexion (' + esc(e.message) + '). Utilisez « Télécharger Word » pour ouvrir le document rempli dans Word.</div>'; return { blob: blob }; });
+      }, function (e) { zone.innerHTML = '<div class="cmd-vide">Document Word illisible : ' + esc(e.message) + '</div>'; return {}; });
+    }
+    zone.innerHTML = ''; var f = document.createElement('iframe'); f.style.cssText = 'width:100%;height:100%;min-height:420px;border:0;background:#fff'; zone.appendChild(f);
+    var d = f.contentWindow.document; d.open(); d.write(document_(ctxs.map(function (c) { return rendre(m, c); }))); d.close(); return Promise.resolve({});
+  }
+  function telechargerDocx(m, ctxs, nom) { return construireDocx(m, ctxs).then(function (b) { telecharger(nom || ((m.nom || 'piece').replace(/[^A-Za-z0-9_-]+/g, '_') + '.docx'), b); }); }
+  function imprimerWord(m, ctxs) {
+    var z = document.createElement('div'); z.className = 'cmd-impzone'; z.style.cssText = 'position:fixed;left:-99999px;top:0;width:210mm'; document.body.appendChild(z);
+    if (!document.getElementById('cmd-imp-css')) { var st = document.createElement('style'); st.id = 'cmd-imp-css'; st.textContent = '@media print{body.cmd-imp>*:not(.cmd-impzone){display:none!important}body.cmd-imp .cmd-impzone{position:static!important;left:auto!important;width:auto!important}body.cmd-imp .cmd-impzone section.cmd-docx{margin:0!important;box-shadow:none!important}}'; document.head.appendChild(st); }
+    return afficher(z, m, ctxs).then(function () {
+      document.body.classList.add('cmd-imp'); setTimeout(function () { window.print(); setTimeout(function () { document.body.classList.remove('cmd-imp'); z.remove(); }, 800); }, 300);
+    });
+  }
+
+  // ---------- événements ----------
+  q('[data-cmd-liste]').addEventListener('click', function (e) { var it = e.target.closest('[data-id]'); if (!it) return; if (dirty && cur) { lireForm(); } ouvrir(modeles.filter(function (m) { return m.id === it.dataset.id; })[0]); });
+  q('[data-cmd-liste]').addEventListener('dblclick', function (e) { if (e.target.closest('[data-id]')) onglet('conception'); });
+  qa('[data-cmd-onglet]').forEach(function (b) { b.addEventListener('click', function () { if (b.dataset.cmdOnglet !== 'liste' && !cur) ouvrir(parDefaut()); if (onglet_ === 'conception' && cur) { lireForm(); rendreListe(); } onglet(b.dataset.cmdOnglet); }); });
+  q('[data-cmd-champs]').addEventListener('click', ouvrirChamps);
+  q('[data-cmd-zones]').addEventListener('change', function (e) { var s = e.target.closest('[data-zi]'); if (!s || !cur) return; cur.zones[+s.dataset.zi].champ = s.value; dirty = true; zonesUI(); });
+  q('[data-cmd-dlorig]').addEventListener('click', function () {
+    if (!cur || !cur.docx) return; var b = atob(cur.docx), u = new Uint8Array(b.length); for (var i = 0; i < b.length; i++) u[i] = b.charCodeAt(i);
+    telecharger(cur.fichier || 'modele.docx', new Blob([u], { type: 'application/vnd.openxmlformats-officedocument.wordprocessingml.document' }));
+  });
+  q('[data-cmd-auto]').addEventListener('click', function () {
+    if (!cur || !cur.docx) return; chargerJSZip().then(function (Z) { return Z.loadAsync(cur.docx, { base64: true }); }).then(function (z) { return z.file('word/document.xml').async('string'); }).then(function (xml) { cur.zones = detecterZones(xml); dirty = true; zonesUI(); toast('Champs proposés d’après les intitulés du document.'); });
+  });
+  q('[data-cmd-modifier]').addEventListener('click', function () { if (!cur) { toast('Sélectionnez un modèle dans la liste.'); return; } onglet('conception'); });
+  document.addEventListener('selectionchange', function () { var s = window.getSelection(), ed = q('[data-cmd-ed]'); if (s.rangeCount && ed.contains(s.anchorNode)) rng = s.getRangeAt(0).cloneRange(); });
+  root.addEventListener('click', function (e) {
+    var c = e.target.closest('[data-cmd-c]'); if (c) { q('[data-cmd-ed]').focus(); document.execCommand(c.dataset.cmdC, false, null); dirty = true; apercu(); }
+    if (e.target.closest('[data-cmd-hr]')) { q('[data-cmd-ed]').focus(); document.execCommand('insertHorizontalRule'); dirty = true; apercu(); }
+    if (e.target.closest('[data-cmd-tab]')) { q('[data-cmd-ed]').focus(); document.execCommand('insertHTML', false, '<table><tr><td>&nbsp;</td><td>&nbsp;</td></tr><tr><td>&nbsp;</td><td>&nbsp;</td></tr></table><p>&nbsp;</p>'); dirty = true; apercu(); }
+  });
+  q('[data-cmd-ed]').addEventListener('input', function () { dirty = true; clearTimeout(q('[data-cmd-ed]').__t); q('[data-cmd-ed]').__t = setTimeout(function () { apercu(); alertes(html_()); }, 250); });
+  q('[data-cmd-nouveau]').addEventListener('click', function () { var m = { id: nouvelId(), nom: 'Nouveau modèle', desc: '', source: 'Saisi', html: '<h2 style="text-align:center">{{entite}}</h2><p>Pièce n° {{numeroPiece}} du {{date}}</p><p>{{libelle}} — {{montant}} {{devise}}</p>', defaut: false }; modeles.push(m); sauver(); ouvrir(m); onglet('conception'); toast('Nouveau modèle créé : complétez-le puis enregistrez.'); });
+  q('[data-cmd-importer]').addEventListener('click', function () { q('[data-cmd-fichier]').value = ''; q('[data-cmd-fichier]').click(); });
+  q('[data-cmd-fichier]').addEventListener('change', function () { if (this.files[0]) importer(this.files[0]); });
+  q('[data-cmd-enreg]').addEventListener('click', function () {
+    if (!cur) return; lireForm(); if (!cur.nom) { toast('Le nom du modèle est obligatoire.'); return; }
+    if (modeles.some(function (m) { return m !== cur && m.nom.toLowerCase() === cur.nom.toLowerCase(); })) { toast('Un modèle porte déjà ce nom.'); return; }
+    sauver(); dirty = false; rendreListe(); q('[data-cmd-apnom]').textContent = '— ' + cur.nom; toast('Modèle « ' + cur.nom + ' » enregistré.');
+  });
+  q('[data-cmd-defaut]').addEventListener('click', function () { if (!cur) return; modeles.forEach(function (m) { m.defaut = m === cur; }); sauver(); rendreListe(); toast('« ' + cur.nom + ' » est le modèle par défaut.'); });
+  q('[data-cmd-suppr]').addEventListener('click', function () {
+    if (!cur) return; if (modeles.length < 2) { toast('Conservez au moins un modèle.'); return; }
+    if (!window.confirm('Supprimer le modèle « ' + cur.nom + ' » ?')) return;
+    var was = cur.defaut; modeles = modeles.filter(function (m) { return m !== cur; }); if (was) modeles[0].defaut = true; sauver(); ouvrir(modeles[0]); toast('Modèle supprimé.');
+  });
+  // ---------- export : le modèle est rendu en Word (.docx) ou RTF avec de vrais champs de fusion (MERGEFIELD), réimportables ici ou utilisables dans Word ----------
+  function blocs(html) {
+    var d = document.createElement('div'), out = []; d.innerHTML = html;
+    function runs(n, st, acc) {
+      [].slice.call(n.childNodes).forEach(function (c) {
+        if (c.nodeType === 3) { c.textContent.replace(/\u00a0/g, ' ').split(/(\{\{\s*[^{}]+?\s*\}\})/).forEach(function (t) { if (!t) return; var m = /^\{\{\s*([^{}]+?)\s*\}\}$/.exec(t); acc.push(m ? { f: ALIAS[norm(m[1])] || m[1], b: st.b, i: st.i, u: st.u } : { t: t, b: st.b, i: st.i, u: st.u }); }); }
+        else if (c.nodeType === 1) {
+          var tg = c.tagName.toLowerCase(), s2 = { b: st.b || tg === 'b' || tg === 'strong' || /bold|[6-9]00/.test(c.style.fontWeight), i: st.i || tg === 'i' || tg === 'em', u: st.u || tg === 'u' };
+          if (tg === 'br') acc.push({ br: 1 }); else runs(c, s2, acc);
+        }
+      });
+    }
+    function bloc(n, ctx, al0) {
+      if (n.nodeType === 3) { if (n.textContent.trim()) { var a = []; runs({ childNodes: [n] }, {}, a); ctx.push({ al: al0 || 'left', runs: a }); } return; }
+      if (n.nodeType !== 1) return; var tg = n.tagName.toLowerCase();
+      if (tg === 'table') { var rows = []; [].slice.call(n.rows).forEach(function (tr) { rows.push([].slice.call(tr.cells).map(function (td) { var c2 = []; var has = [].slice.call(td.children).some(function (x) { return /^(p|div|h[1-6])$/i.test(x.tagName); }); if (has) [].slice.call(td.childNodes).forEach(function (x) { bloc(x, c2); }); else { var a = []; runs(td, {}, a); c2.push({ al: 'left', runs: a }); } return c2.length ? c2 : [{ al: 'left', runs: [] }]; })); }); ctx.push({ table: rows }); return; }
+      if (tg === 'hr') { ctx.push({ al: 'left', runs: [{ t: '________________________________________' }] }); return; }
+      if (/^(p|h[1-6]|li)$/.test(tg) || (tg === 'div' && ![].slice.call(n.children).some(function (x) { return /^(p|div|table|h[1-6])$/i.test(x.tagName); }))) {
+        var a2 = [], al = n.style.textAlign || n.getAttribute('align') || al0 || 'left'; runs(n, { b: /^h[1-6]$/.test(tg) }, a2); ctx.push({ al: al, runs: a2, h: /^h[1-6]$/.test(tg) }); return;
+      }
+      [].slice.call(n.childNodes).forEach(function (x) { bloc(x, ctx, n.style.textAlign || al0); });
+    }
+    [].slice.call(d.childNodes).forEach(function (x) { bloc(x, out); }); return out;
+  }
+  function rtfT(s) { return String(s).replace(/[\\{}]/g, function (c) { return '\\' + c; }).replace(/[^\x00-\x7f]/g, function (c) { var n = c.charCodeAt(0); return '\\u' + (n > 32767 ? n - 65536 : n) + '?'; }); }
+  function rtfPar(p) {
+    var al = p.al === 'center' ? '\\qc' : p.al === 'right' ? '\\qr' : p.al === 'justify' ? '\\qj' : '\\ql', s = '';
+    p.runs.forEach(function (r) {
+      if (r.br) { s += '\\line '; return; }
+      var o = (r.b ? '\\b ' : '') + (r.i ? '\\i ' : '') + (r.u ? '\\ul ' : ''), c = (r.b ? '\\b0 ' : '') + (r.i ? '\\i0 ' : '') + (r.u ? '\\ulnone ' : '');
+      s += '{' + o + (r.f ? '{\\field{\\*\\fldinst MERGEFIELD ' + r.f + ' }{\\fldrslt \\\'ab' + rtfT(r.f) + '\\\'bb}}' : rtfT(r.t)) + '}';
+    }); return '\\pard' + al + ' ' + s + '\\par\n';
+  }
+  function versRtf(html) {
+    var s = '{\\rtf1\\ansi\\ansicpg1252\\deff0{\\fonttbl{\\f0 Georgia;}}\\fs24\n';
+    blocs(html).forEach(function (b) {
+      if (b.table) b.table.forEach(function (row) {
+        var n = row.length, w = Math.floor(9000 / n), x = '\\trowd\\trgaph108';
+        for (var i = 1; i <= n; i++) x += '\\clbrdrt\\brdrs\\clbrdrl\\brdrs\\clbrdrb\\brdrs\\clbrdrr\\brdrs\\cellx' + (w * i);
+        s += x + '\n'; row.forEach(function (c) { s += c.map(function (p) { return rtfPar(p).replace('\\pard', '\\pard\\intbl').replace('\\par\n', ''); }).join('\\line ') + '\\cell\n'; }); s += '\\row\n';
+      }); else s += rtfPar(b);
+    });
+    return s + '}';
+  }
+  function xmlT(s) { return String(s).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;'); }
+  function docxPar(p) {
+    var jc = p.al === 'center' ? 'center' : p.al === 'right' ? 'right' : p.al === 'justify' ? 'both' : 'left', s = '<w:p><w:pPr><w:jc w:val="' + jc + '"/></w:pPr>';
+    p.runs.forEach(function (r) {
+      var rp = '<w:rPr>' + (r.b ? '<w:b/>' : '') + (r.i ? '<w:i/>' : '') + (r.u ? '<w:u w:val="single"/>' : '') + '</w:rPr>';
+      if (r.br) s += '<w:r><w:br/></w:r>';
+      else if (r.f) s += '<w:r>' + rp + '<w:fldChar w:fldCharType="begin"/></w:r><w:r>' + rp + '<w:instrText xml:space="preserve"> MERGEFIELD ' + xmlT(r.f) + ' </w:instrText></w:r><w:r>' + rp + '<w:fldChar w:fldCharType="separate"/></w:r><w:r>' + rp + '<w:t>«' + xmlT(r.f) + '»</w:t></w:r><w:r>' + rp + '<w:fldChar w:fldCharType="end"/></w:r>';
+      else s += '<w:r>' + rp + '<w:t xml:space="preserve">' + xmlT(r.t) + '</w:t></w:r>';
+    }); return s + '</w:p>';
+  }
+  function versDocx(html) {
+    var body = '';
+    blocs(html).forEach(function (b) {
+      if (b.table) body += '<w:tbl><w:tblPr><w:tblW w:w="5000" w:type="pct"/><w:tblBorders>' + ['top', 'left', 'bottom', 'right', 'insideH', 'insideV'].map(function (k) { return '<w:' + k + ' w:val="single" w:sz="4" w:space="0" w:color="444444"/>'; }).join('') + '</w:tblBorders></w:tblPr>' + b.table.map(function (row) { return '<w:tr>' + row.map(function (c) { return '<w:tc><w:tcPr><w:tcW w:w="' + Math.floor(5000 / row.length) + '" w:type="pct"/></w:tcPr>' + c.map(docxPar).join('') + '</w:tc>'; }).join('') + '</w:tr>'; }).join('') + '</w:tbl><w:p/>';
+      else body += docxPar(b);
+    });
+    return '<?xml version="1.0" encoding="UTF-8" standalone="yes"?><w:document xmlns:w="http://schemas.openxmlformats.org/wordprocessingml/2006/main"><w:body>' + body + '<w:sectPr><w:pgSz w:w="11906" w:h="16838"/><w:pgMar w:top="1134" w:right="1134" w:bottom="1134" w:left="1134" w:header="708" w:footer="708" w:gutter="0"/></w:sectPr></w:body></w:document>';
+  }
+  function telecharger(nom, blob) { var a = document.createElement('a'); a.href = URL.createObjectURL(blob); a.download = nom; document.body.appendChild(a); a.click(); setTimeout(function () { URL.revokeObjectURL(a.href); a.remove(); }, 1500); }
+  function nomFichier() { return (cur.nom || 'modele').normalize('NFD').replace(/[\u0300-\u036f]/g, '').replace(/[^A-Za-z0-9_-]+/g, '_'); }
+  q('[data-cmd-exporter-rtf]').addEventListener('click', function () {
+    if (!cur) return; lireForm(); telecharger(nomFichier() + '.rtf', new Blob([versRtf(cur.html)], { type: 'application/rtf' })); toast('Modèle exporté en RTF (champs de fusion Word inclus).');
+  });
+  q('[data-cmd-exporter-docx]').addEventListener('click', function () {
+    if (!cur) return; lireForm(); var h = cur.html, nom = nomFichier() + '.docx';
+    chargerJSZip().then(function (Z) {
+      var z = new Z();
+      z.file('[Content_Types].xml', '<?xml version="1.0" encoding="UTF-8"?><Types xmlns="http://schemas.openxmlformats.org/package/2006/content-types"><Default Extension="rels" ContentType="application/vnd.openxmlformats-package.relationships+xml"/><Default Extension="xml" ContentType="application/xml"/><Override PartName="/word/document.xml" ContentType="application/vnd.openxmlformats-officedocument.wordprocessingml.document.main+xml"/></Types>');
+      z.file('_rels/.rels', '<?xml version="1.0" encoding="UTF-8"?><Relationships xmlns="http://schemas.openxmlformats.org/package/2006/relationships"><Relationship Id="rId1" Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/officeDocument" Target="word/document.xml"/></Relationships>');
+      z.file('word/document.xml', versDocx(h));
+      return z.generateAsync({ type: 'blob', mimeType: 'application/vnd.openxmlformats-officedocument.wordprocessingml.document' });
+    }).then(function (b) { telecharger(nom, b); toast('Modèle exporté en Word (champs de fusion inclus).'); }).catch(function () { toast('Export Word impossible hors connexion : utilisez « Exporter en RTF ».'); });
+  });
+  q('[data-cmd-dupliquer]').addEventListener('click', function () {
+    if (!cur) return; lireForm(); var base = cur.nom, k = 1, nom; do { nom = base + ' (copie' + (k > 1 ? ' ' + k : '') + ')'; k++; } while (modeles.some(function (m) { return m.nom === nom; }));
+    var m = { id: nouvelId(), nom: nom, desc: cur.desc, source: 'Saisi', html: cur.html, defaut: false }; modeles.push(m); sauver(); ouvrir(m); onglet('conception'); toast('Modèle dupliqué : modifiez-le puis enregistrez.');
+  });
+  charger(); publier(); ouvrir(parDefaut()); onglet('liste');
+})();
+</script>

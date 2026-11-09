@@ -1,0 +1,245 @@
+<!--
+  Écran « Paramètre Circuit » (Comptabilité générale › Circuit de validation › Paramètre Circuit) — onglets Saisie / Liste : étapes du circuit de validation
+  (Numéro, Nom, État, Action, Modification impossible, Suppression impossible) et utilisateurs autorisés à exécuter l'étape (panneau « Utilisateur(s) »).
+  Pour chaque étape : CHECKLIST (points de contrôle à confirmer avant d'exécuter l'action, chacun obligatoire ou non) et option « Commentaire obligatoire à la validation » (lues par l'écran Traitement : window.CIRCUIT_ETAPES[].checklist / .cmt).
+  Boutons dans la barre d'actions (Ajouter, Modifier, Supprimer, Enregistrer, Annuler, Imprimer, PDF, Excel). Les étapes protégées (case cochée) ne peuvent
+  être ni modifiées ni supprimées. Données en mémoire ; liste exposée en window.CIRCUIT_ETAPES. S'appuie sur les styles bp-* de l'écran « Paramétrage du bilan ».
+  Ne pas nommer de fonction « $$ » (build.cjs).
+-->
+<style>
+.cvp-code{font-family:ui-monospace,Consolas,monospace;font-weight:600}
+.cvp-help{font-size:12px;color:#5B606D}
+.cvp-er{display:none;font-size:12px;color:#B63132}.cvp-er.show{display:block}
+.cvp-wrap{display:grid;grid-template-columns:minmax(0,1fr);gap:20px;align-items:start}.cvp-wrap>form{max-width:1400px}.cvp-row2{display:grid;grid-template-columns:minmax(0,1.2fr) minmax(340px,1fr);gap:28px;align-items:start}.cvp-ctr{margin:0;padding:6px 16px 14px;border:1px solid #D6D9E0;border-radius:10px;background:#fff}.cvp-ctr legend{padding:0 8px;font-weight:700;font-size:14px;color:#2E427B}.cvp-cf{display:grid;grid-template-columns:minmax(0,1fr) auto;gap:14px 16px;align-items:center;font-size:13px;color:#474C58}.cvp-cf .cvp-chk input{width:20px;height:20px}@media(max-width:1100px){.cvp-row2{grid-template-columns:1fr}}.cvp-ub,.cvp-zub{padding:8px 14px 14px}.cvp-ut{width:100%;border-collapse:collapse;font-size:13px}.cvp-ut th{text-align:left;font-size:11px;text-transform:uppercase;color:#5B606D;padding:6px 10px;border-bottom:1px solid #E1E5EE}.cvp-ut td{padding:8px 10px;border-bottom:1px solid #EEF0F5;color:#0B1332}.cvp-ut td.c{text-align:right;width:60px}.cvp-ut td i{margin-right:6px;color:#474C58}.cvp-del{width:30px;height:30px;border:1px solid #D6D9E0;border-radius:6px;background:#fff;color:#B63132;cursor:pointer}.cvp-del:hover{background:#FDE8E8}.cvp-addbar{display:flex;gap:10px;align-items:center;margin:0 0 14px;padding:10px 12px;border:1px solid #C9D6F2;border-radius:10px;background:#F3F7FF}.cvp-addbar select{flex:1;max-width:620px;height:36px}.cvp-addbar .cb-box{flex:1;max-width:620px;height:36px}.cvp-addbar .cvp-addu{height:36px;padding:0 16px;display:inline-flex;align-items:center;gap:6px}.cvp-pick{margin:0 0 12px;padding:10px 12px;border:1px solid #C9D6F2;border-radius:10px;background:#F3F7FF}.cvp-pick b{display:block;margin-bottom:6px;font-size:12px;color:#2E427B}.cvp-addu{height:28px;padding:0 10px;border:1px solid #2E427B;border-radius:6px;background:#fff;color:#2E427B;font-weight:600;font-size:12px;cursor:pointer}.cvp-addu:hover{background:#2E427B;color:#fff}.cvp-side [data-cvp-ck]{max-width:1000px}
+@media(max-width:900px){.cvp-wrap{grid-template-columns:1fr}}
+.cvp-ti{margin:0 0 14px;padding-bottom:8px;border-bottom:2px solid #4A7FBF;color:#4A7FBF;font:600 20px var(--font-heading,Outfit,sans-serif)}
+.cvp-f{display:grid;grid-template-columns:190px minmax(0,1fr);gap:12px 16px;align-items:center}
+.cvp-f>label{font-size:13px;color:#474C58}
+.cvp-f .bp-in{font-weight:700;background:#F1F2F4;text-transform:uppercase}.cvp-f .bp-in:not(:disabled){background:#fff}
+.cvp-chk{display:inline-flex;align-items:center}.cvp-chk input{width:20px;height:20px}
+.cvp-us{border:1px solid #E1E5EE;border-radius:10px;background:#fff;overflow:hidden}
+.cvp-us-h{padding:14px 18px;background:#2E427B!important;color:#fff!important;font-weight:600;font-size:14px}
+.cvp-us ul{list-style:none;margin:0;padding:6px 0;max-height:300px;overflow:auto}
+.cvp-us li{display:flex;align-items:center;gap:12px;padding:10px 18px;font-size:14px;color:#0B1332}
+.cvp-us li i{font-size:20px;color:#474C58}
+.cvp-us li label{display:flex;align-items:center;gap:12px;width:100%;cursor:pointer}
+.cvp-us-v{padding:18px;color:#6B7080;font-size:13px}
+.bp-in.err{border-color:#B63132}
+.cvp-side{display:grid;gap:16px;align-content:start}.cvp-th{display:flex;align-items:center;justify-content:space-between;gap:12px;padding:6px 12px 0!important}.cvp-rt{display:flex;gap:4px}.cvp-rt button{height:40px;padding:0 14px;border:0;border-bottom:3px solid transparent;background:transparent;color:#C9D1EA;font-weight:600;font-size:14px;cursor:pointer}.cvp-rt button.on{color:#fff;border-bottom-color:#fff}.cvp-n{display:inline-block;min-width:18px;padding:0 6px;margin-left:4px;border-radius:999px;background:rgba(255,255,255,.25);font-size:11px;line-height:18px;text-align:center}.cvp-th .cvp-add{height:30px;margin-bottom:4px;padding:0 12px;border:1px solid rgba(255,255,255,.5);border-radius:8px;background:rgba(255,255,255,.12);color:#fff;font-weight:600;font-size:12px;cursor:pointer;align-items:center;gap:6px}.cvp-th .cvp-add:hover{background:rgba(255,255,255,.25)}.cvp-ckb{padding:12px 14px}.cvp-zl{display:flex;align-items:center;gap:10px;font-size:14px;color:#0B1332;font-weight:600}.cvp-zl input{width:18px;height:18px}.cvp-ck ul{list-style:none;margin:10px 0 0;padding:0;display:grid;gap:6px;max-height:none}
+.cvp-ck li{display:grid;grid-template-columns:22px minmax(0,1fr) auto auto;gap:8px;align-items:center;padding:6px 8px;border:1px solid #E1E5EE;border-radius:8px;background:#fff}.cvp-ck li .n{width:22px;height:22px;border-radius:50%;background:#E8ECF6;color:#2E427B;font-size:11px;font-weight:700;display:flex;align-items:center;justify-content:center}
+.cvp-ck li .bp-in{height:30px;font-weight:400;text-transform:none;background:#fff}.cvp-ck li label{display:inline-flex;align-items:center;gap:6px;font-size:12px;color:#474C58;white-space:nowrap}.cvp-ck li label input{width:16px;height:16px}
+.cvp-ck .btns{display:inline-flex;gap:4px}.cvp-ck .btns button{height:30px;min-width:30px;padding:0 8px;border:1px solid #D6D9E0;border-radius:6px;background:#fff;cursor:pointer;font-size:13px}.cvp-ck .btns button:disabled{opacity:.4;cursor:default}
+.cvp-ck-v{padding:10px;color:#6B7080;font-size:13px;border:1px dashed #D6D9E0;border-radius:8px}
+</style>
+
+<div class="bp-root" data-cvp>
+  <h1 style="position:absolute;width:1px;height:1px;overflow:hidden;clip-path:inset(50%);margin:0">Paramètre Circuit</h1>
+
+  <div class="no-print" data-cvp-actions>
+    <button type="button" data-cvp-ajouter>Ajouter</button>
+    <button type="button" data-cvp-modifier>Modifier</button>
+    <button type="button" data-cvp-supprimer>Supprimer</button>
+    <button type="button" data-cvp-enregistrer>Enregistrer</button>
+    <button type="button" data-cvp-annuler>Annuler</button>
+    <button type="button" data-cvp-imprimer>Imprimer</button>
+    <button type="button" data-cvp-pdf>PDF</button>
+    <button type="button" data-cvp-xlsx>Excel (XLSX)</button>
+  </div>
+
+  <div class="bp-tabs" role="tablist">
+    <button type="button" role="tab" class="on" data-cvp-tab="saisie">Saisie</button>
+    <button type="button" role="tab" data-cvp-tab="liste">Liste <span class="bp-n" data-cvp-compte></span></button>
+  </div>
+
+  <div class="bp-grid">
+    <section class="bp-pan" aria-label="Liste des étapes du circuit" data-cvp-pan="liste" hidden>
+      <h2>Étapes du circuit de validation <small>Double-clic ou « Modifier » pour ouvrir la ligne en saisie</small></h2>
+      <div style="overflow:auto;max-height:560px">
+        <table class="bp-tb" style="min-width:960px"><thead>
+          <tr><th>Numéro</th><th>Nom</th><th>État</th><th>Action</th><th class="c">Modification impossible</th><th class="c">Suppression impossible</th><th class="c">Checklist</th><th class="c">Commentaire obligatoire</th><th class="c">Validation du brouillon</th></tr>
+          <tr class="flt"><th><input class="bp-in" data-fc="0" aria-label="Filtrer Numéro"></th><th><input class="bp-in" data-fc="1" aria-label="Filtrer Nom"></th><th><input class="bp-in" data-fc="2" aria-label="Filtrer État"></th><th><input class="bp-in" data-fc="3" aria-label="Filtrer Action"></th>
+            <th><select class="bp-sel" data-fc="4" aria-label="Filtrer Modification impossible"><option value="">(tous)</option><option value="oui">Oui</option><option value="non">Non</option></select></th>
+            <th><select class="bp-sel" data-fc="5" aria-label="Filtrer Suppression impossible"><option value="">(tous)</option><option value="oui">Oui</option><option value="non">Non</option></select></th><th><input class="bp-in" data-fc="6" aria-label="Filtrer Checklist"></th><th><select class="bp-sel" data-fc="7" aria-label="Filtrer Commentaire obligatoire"><option value="">(tous)</option><option value="oui">Oui</option><option value="non">Non</option></select></th><th><select class="bp-sel" data-fc="8" aria-label="Filtrer Validation du brouillon"><option value="">(tous)</option><option value="oui">Oui</option><option value="non">Non</option></select></th></tr>
+        </thead><tbody data-cvp-lignes></tbody></table>
+      </div>
+      <div class="bp-vide" data-cvp-vide hidden>Aucune étape : utilisez « Ajouter ».</div>
+    </section>
+
+    <section class="bp-pan" aria-label="Saisie d'une étape du circuit" data-cvp-pan="saisie">
+      <div class="cvp-wrap">
+        <form data-cvp-form onsubmit="return false" novalidate>
+          <h2 class="cvp-ti">Saisie</h2>
+          <div class="cvp-row2">
+          <div class="cvp-f">
+            <label>Numéro</label><input class="bp-in" data-f="num" readonly>
+            <label for="cvp-nom">Nom <b style="color:#B63132">*</b></label><div><input class="bp-in" id="cvp-nom" data-f="nom" maxlength="40" autocomplete="off" placeholder="VALIDATION"><span class="cvp-er" data-er="nom"></span></div>
+            <label for="cvp-etat">Etat <b style="color:#B63132">*</b></label><div><input class="bp-in" id="cvp-etat" data-f="etat" maxlength="40" autocomplete="off" placeholder="VALIDE"><span class="cvp-er" data-er="etat"></span></div>
+            <label for="cvp-action">Action <b style="color:#B63132">*</b></label><div><input class="bp-in" id="cvp-action" data-f="action" maxlength="40" autocomplete="off" placeholder="VALIDER"><span class="cvp-er" data-er="action"></span></div>
+          </div>
+            <fieldset class="cvp-ctr"><legend>Contraintes</legend><div class="cvp-cf">
+              <label for="cvp-mi">Modification impossible</label><span class="cvp-chk"><input type="checkbox" id="cvp-mi" data-f="mi"></span>
+              <label for="cvp-si">Suppression impossible</label><span class="cvp-chk"><input type="checkbox" id="cvp-si" data-f="si"></span>
+              <label for="cvp-cmt">Commentaire obligatoire à la validation</label><span class="cvp-chk"><input type="checkbox" id="cvp-cmt" data-f="cmt"></span>
+              <label for="cvp-vb">Validation du brouillon<small class="cvp-help" style="display:block;font-weight:400">Sort les écritures du statut brouillon (étape zéro). Une seule étape.</small></label><span class="cvp-chk"><input type="checkbox" id="cvp-vb" data-f="vb"></span>
+            </div></fieldset>
+          </div>
+          <p class="cvp-help" style="margin-top:14px" data-cvp-note></p>
+        </form>
+        <div class="cvp-side"><aside class="cvp-us cvp-tabs" aria-label="Utilisateurs et checklist de l'étape"><div class="cvp-us-h cvp-th"><div class="cvp-rt" role="tablist"><button type="button" role="tab" class="on" aria-selected="true" data-cvp-rt="users">Utilisateur(s)</button><button type="button" role="tab" aria-selected="false" data-cvp-rt="ck">Checklist <span class="cvp-n" data-cvp-ckn></span></button><button type="button" role="tab" aria-selected="false" data-cvp-rt="zero">Étape zéro</button></div><span style="display:inline-flex;gap:8px"><button type="button" class="cvp-add" data-ck-add style="display:none"><i class="ti ti-plus" aria-hidden="true"></i> Ajouter un point</button></span></div><div data-cvp-rp="users" role="tabpanel"><div class="cvp-ub" data-cvp-users></div></div><div data-cvp-rp="ck" role="tabpanel" class="cvp-ck cvp-ckb" hidden><p class="cvp-help">Points de contrôle présentés à l'utilisateur avant d'exécuter l'action « <span data-cvp-act>…</span> » : un point obligatoire doit être coché pour poursuivre.</p><ul data-cvp-ck></ul></div><div data-cvp-rp="zero" role="tabpanel" class="cvp-ckb" hidden><p class="cvp-help" style="margin:0 0 10px"><b>Étape zéro — écriture en statut brouillon.</b> Les écritures sont d'abord enregistrées en statut <b>BROUILLON</b> avec leur utilisateur créateur ; elles n'entrent dans le circuit qu'après l'étape cochée « Validation du brouillon ».</p><label class="cvp-zl"><input type="checkbox" data-zero-actif> Activer le statut brouillon (étape zéro)</label><p class="cvp-help" style="margin:10px 0 4px"><b>Utilisateurs créateurs</b> (nomination des utilisateurs autorisés à créer des écritures en brouillon) :</p><div class="cvp-zub" style="padding:0" data-cvp-zusers></div><p class="cvp-help" style="margin:6px 0 0">Aucun utilisateur coché : tous les utilisateurs peuvent créer des brouillons.</p><p class="cvp-help" style="margin:6px 0 0" data-cvp-zvb></p></div></aside></div>
+      </div>
+    </section>
+  </div>
+  <div class="bp-toast" role="status" hidden data-cvp-toast></div>
+</div>
+
+<script>
+(function () {
+  var root = document.querySelector('[data-cvp]'); if (!root) return;
+  function q(s) { return root.querySelector(s); } function qa(s) { return [].slice.call(root.querySelectorAll(s)); }
+  var data = [
+    { num: 1, nom: 'VALIDATION', etat: 'VALIDE', action: 'VALIDER', mi: false, si: true, cmt: false, users: ['admin'], checklist: [{ lib: 'Pièce justificative jointe et lisible', ob: true }, { lib: 'Imputation comptable et analytique contrôlée', ob: true }, { lib: 'Montant conforme au bon de commande / contrat', ob: false }] }
+  ];
+  var sel = -1, mode = 'consultation', coches = [], ck = [], zero = { actif: false, createurs: [] }, zeroUI = { actif: false, createurs: [] };
+  function esc(s) { return String(s == null ? '' : s).replace(/[&<>"]/g, function (c) { return { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c]; }); }
+  function toast(m) { var t = q('[data-cvp-toast]'); t.textContent = m; t.hidden = false; clearTimeout(toast.t); toast.t = setTimeout(function () { t.hidden = true; }, 2500); }
+  function err(k, m) { var e = q('[data-er="' + k + '"]'); if (e) { e.textContent = m || ''; e.classList.toggle('show', !!m); } var f = q('[data-f=' + k + ']'); if (f) f.classList.toggle('err', !!m); }
+  function utilisateurs() { var L = (window.GA_USERS || []).map(function (u) { return u.id; }); if (L.indexOf('admin') < 0) L.unshift('admin'); return L; }
+  function publier() { window.CIRCUIT_ETAPES = data.map(function (d) { return { num: d.num, nom: d.nom, etat: d.etat, action: d.action, mi: d.mi, si: d.si, cmt: !!d.cmt, vb: !!d.vb, users: d.users.slice(), checklist: (d.checklist || []).map(function (c) { return { lib: c.lib, ob: !!c.ob }; }) }; });
+    var vbe = data.filter(function (d) { return d.vb; })[0]; window.CIRCUIT_ZERO = { actif: !!zero.actif, createurs: zero.createurs.slice(), etapeValidation: vbe ? vbe.nom : '' };
+    window.dispatchEvent(new Event('circuit-changed')); }
+  function oui(b) { return b ? 'oui' : 'non'; }
+  function filtrer() {
+    var F = []; qa('[data-fc]').forEach(function (e) { F[+e.dataset.fc] = e.value.trim().toLowerCase(); });
+    qa('[data-cvp-lignes] tr').forEach(function (tr) { tr.hidden = F.some(function (v, k) { if (!v) return false; var td = tr.children[k]; var t = (td.dataset.v || td.textContent).toLowerCase(); return (k === 4 || k === 5 || k === 7 || k === 8) ? t !== v : t.indexOf(v) < 0; }); });
+  }
+  qa('[data-fc]').forEach(function (e) { e.addEventListener('input', filtrer); e.addEventListener('change', filtrer); });
+  function coche(b) { return b ? '<i class="ti ti-square-check-filled" style="color:#4A7FBF;font-size:18px" aria-label="Oui"></i>' : '<span style="color:#B4B7C0">—</span>'; }
+  function liste() {
+    q('[data-cvp-compte]').textContent = data.length ? data.length + (data.length > 1 ? ' lignes' : ' ligne') : '';
+    q('[data-cvp-vide]').hidden = data.length > 0;
+    q('[data-cvp-lignes]').innerHTML = data.map(function (d, i) {
+      return '<tr data-i="' + i + '"' + (i === sel ? ' class="sel"' : '') + '><td><span class="cvp-code">' + d.num + '</span></td><td><b>' + esc(d.nom) + '</b></td><td>' + esc(d.etat) + '</td><td>' + esc(d.action) + '</td>' +
+        '<td class="c" data-v="' + oui(d.mi) + '">' + coche(d.mi) + '</td><td class="c" data-v="' + oui(d.si) + '">' + coche(d.si) + '</td><td class="c">' + (d.checklist || []).length + ' point' + ((d.checklist || []).length > 1 ? 's' : '') + ' (' + (d.checklist || []).filter(function (c) { return c.ob; }).length + ' oblig.)</td><td class="c" data-v="' + oui(d.cmt) + '">' + coche(d.cmt) + '</td><td class="c" data-v="' + oui(d.vb) + '">' + coche(d.vb) + '</td></tr>';
+    }).join(''); filtrer();
+  }
+  var FONC = { admin: 'Administrateur applicatif' };
+  function infoU(id) { var u = (window.GA_USERS || []).filter(function (x) { return x.id === id; })[0] || {}; return { id: id, nom: u.nom || id, fonction: u.fonction || FONC[id] || '—' }; }
+  function tableU(list, ed, att) {
+    if (!list.length) return '<p class="cvp-us-v" style="padding:10px 0">Aucun utilisateur.</p>';
+    return '<table class="cvp-ut"><thead><tr><th>Utilisateur</th><th>Nom</th><th>Fonction</th>' + (ed ? '<th></th>' : '') + '</tr></thead><tbody>' + list.map(function (u) { var i = infoU(u); return '<tr><td><i class="ti ti-user" aria-hidden="true"></i>' + esc(i.id) + '</td><td>' + esc(i.nom) + '</td><td>' + esc(i.fonction) + '</td>' + (ed ? '<td class="c"><button type="button" class="cvp-del" ' + att + '="' + esc(u) + '" aria-label="Retirer ' + esc(u) + '" title="Retirer">✕</button></td>' : '') + '</tr>'; }).join('') + '</tbody></table>';
+  }
+  // zone d'ajout, séparée de la liste : liste déroulante des utilisateurs non encore retenus + bouton « Ajouter »
+  function addBar(dispo, id, lib) {
+    return '<div class="cvp-addbar"><select class="bp-sel" data-combo data-combo-cols="Utilisateur|Nom|Fonction" data-add-sel="' + id + '" aria-label="' + esc(lib) + '"' + (dispo.length ? '' : ' disabled') + '><option value="">' + (dispo.length ? '— ' + esc(lib) + ' —' : 'Tous les utilisateurs ont déjà été ajoutés') + '</option>' + dispo.map(function (u) { var i = infoU(u); return '<option value="' + esc(u) + '">' + esc(i.id + ' — ' + i.nom + ' — ' + i.fonction) + '</option>'; }).join('') + '</select><button type="button" class="cvp-addu" data-add-btn="' + id + '"' + (dispo.length ? '' : ' disabled') + '><i class="ti ti-plus" aria-hidden="true"></i> Ajouter</button></div>';
+  }
+  function users(d) {
+    var ed = mode !== 'consultation', box = q('[data-cvp-users]');
+    if (!ed && !d) { box.innerHTML = '<p class="cvp-us-v" style="padding:10px 0">Sélectionnez une étape.</p>'; return; }
+    var L = ed ? coches : d.users;
+    box.innerHTML = (ed ? addBar(utilisateurs().filter(function (u) { return L.indexOf(u) < 0; }), 'us', 'Sélectionner un utilisateur') : '') + tableU(L, ed, 'data-us-del');
+  }
+  q('[data-cvp-users]').addEventListener('click', function (e) {
+    var p = e.target.closest('[data-add-btn]'), x = e.target.closest('[data-us-del]');
+    if (p) { var v = q('[data-cvp-users] [data-add-sel]').value; if (!v) { toast('Sélectionnez un utilisateur dans la liste.'); return; } if (coches.indexOf(v) < 0) coches.push(v); users({ users: coches }); } else if (x) { var k = coches.indexOf(x.dataset.usDel); if (k >= 0) coches.splice(k, 1); users({ users: coches }); }
+  });
+  function zrender() {
+    var ed = mode !== 'consultation', Z = ed ? zeroUI : zero, vbe = data.filter(function (d) { return d.vb; })[0];
+    q('[data-zero-actif]').checked = !!Z.actif; q('[data-zero-actif]').disabled = !ed;
+    q('[data-cvp-zusers]').innerHTML = (ed && Z.actif ? addBar(utilisateurs().filter(function (u) { return Z.createurs.indexOf(u) < 0; }), 'zu', 'Sélectionner un utilisateur créateur') : '') + tableU(Z.createurs, ed && Z.actif, 'data-zu-del'); majAjout();
+    q('[data-cvp-zvb]').innerHTML = Z.actif ? (vbe ? 'Étape de validation du brouillon : <b>' + esc(vbe.nom) + '</b> (' + esc(vbe.action) + ').' : '<b style="color:#B63132">Aucune étape n’est marquée « Validation du brouillon » : cochez l’option sur l’étape qui valide les brouillons.</b>') : 'Statut brouillon désactivé : les écritures entrent directement dans le circuit.';
+  }
+  q('[data-zero-actif]').addEventListener('change', function () { zeroUI.actif = this.checked; zrender(); });
+  q('[data-cvp-zusers]').addEventListener('click', function (e) {
+    var p = e.target.closest('[data-add-btn]'), x = e.target.closest('[data-zu-del]');
+    if (p) { var v = q('[data-cvp-zusers] [data-add-sel]').value; if (!v) { toast('Sélectionnez un utilisateur dans la liste.'); return; } if (zeroUI.createurs.indexOf(v) < 0) zeroUI.createurs.push(v); zrender(); } else if (x) { var k = zeroUI.createurs.indexOf(x.dataset.zuDel); if (k >= 0) zeroUI.createurs.splice(k, 1); zrender(); }
+  });
+  var rtab = 'users';
+  function majAjout() { var ed = mode !== 'consultation'; q('[data-ck-add]').style.display = rtab === 'ck' && ed ? 'inline-flex' : 'none'; }
+  function ongletDroit(t) { rtab = t; qa('[data-cvp-rt]').forEach(function (b) { var on = b.dataset.cvpRt === t; b.classList.toggle('on', on); b.setAttribute('aria-selected', on ? 'true' : 'false'); }); qa('[data-cvp-rp]').forEach(function (p) { p.hidden = p.dataset.cvpRp !== t; }); if (t === 'zero') zrender(); majAjout(); }
+  qa('[data-cvp-rt]').forEach(function (b) { b.addEventListener('click', function () { ongletDroit(b.dataset.cvpRt); }); });
+  function renderCk() {
+    var ed = mode !== 'consultation', ul = q('[data-cvp-ck]');
+    ul.innerHTML = ck.length ? ck.map(function (c, i) {
+      return '<li><span class="n">' + (i + 1) + '</span><input class="bp-in" data-ck-lib="' + i + '" maxlength="120" value="' + esc(c.lib) + '"' + (ed ? '' : ' disabled') + '><label><input type="checkbox" data-ck-ob="' + i + '"' + (c.ob ? ' checked' : '') + (ed ? '' : ' disabled') + '> Obligatoire</label><span class="btns"><button type="button" data-ck-up="' + i + '"' + (ed && i > 0 ? '' : ' disabled') + ' aria-label="Monter">↑</button><button type="button" data-ck-down="' + i + '"' + (ed && i < ck.length - 1 ? '' : ' disabled') + ' aria-label="Descendre">↓</button><button type="button" data-ck-del="' + i + '"' + (ed ? '' : ' disabled') + ' aria-label="Supprimer le point" style="color:#B63132">✕</button></span></li>';
+    }).join('') : '<li class="cvp-ck-v" style="display:block">Aucun point de contrôle : l\u2019action s\u2019exécute sans checklist.</li>';
+    majAjout(); q('[data-cvp-ckn]').textContent = ck.length || ''; q('[data-cvp-act]').textContent = q('[data-f=action]').value || 'ACTION';
+  }
+  q('[data-cvp-ck]').addEventListener('input', function (e) { var i = e.target.getAttribute('data-ck-lib'); if (i !== null) ck[+i].lib = e.target.value; });
+  q('[data-cvp-ck]').addEventListener('change', function (e) { var i = e.target.getAttribute('data-ck-ob'); if (i !== null) ck[+i].ob = e.target.checked; });
+  q('[data-cvp-ck]').addEventListener('click', function (e) {
+    var b = e.target.closest('button'); if (!b || b.disabled) return;
+    var u = b.getAttribute('data-ck-up'), d = b.getAttribute('data-ck-down'), x = b.getAttribute('data-ck-del');
+    if (u !== null) { var i = +u, t = ck[i]; ck[i] = ck[i - 1]; ck[i - 1] = t; } else if (d !== null) { var j = +d, t2 = ck[j]; ck[j] = ck[j + 1]; ck[j + 1] = t2; } else if (x !== null) ck.splice(+x, 1);
+    renderCk();
+  });
+  function ajouterPoint() { if (rtab !== 'ck') ongletDroit('ck'); ck.push({ lib: '', ob: true }); renderCk(); var f = q('[data-ck-lib="' + (ck.length - 1) + '"]'); if (f) f.focus(); }
+  q('[data-ck-add]').addEventListener('click', ajouterPoint);
+  q('[data-f=action]').addEventListener('input', function () { q('[data-cvp-act]').textContent = this.value || 'ACTION'; });
+  function suivant() { return data.reduce(function (m, d) { return Math.max(m, d.num); }, 0) + 1; }
+  function form(d) {
+    d = d || { num: '', nom: '', etat: '', action: '', mi: false, si: false, cmt: false, vb: false, users: [], checklist: [] };
+    q('[data-f=num]').value = d.num; q('[data-f=nom]').value = d.nom; q('[data-f=etat]').value = d.etat; q('[data-f=action]').value = d.action; q('[data-f=mi]').checked = !!d.mi; q('[data-f=si]').checked = !!d.si; q('[data-f=cmt]').checked = !!d.cmt; q('[data-f=vb]').checked = !!d.vb; ck = (d.checklist || []).map(function (c) { return { lib: c.lib, ob: !!c.ob }; });
+    ['nom', 'etat', 'action'].forEach(function (k) { err(k); }); coches = d.users.slice(); users(sel >= 0 || mode !== 'consultation' ? d : null);
+    q('[data-cvp-note]').textContent = d.mi || d.si ? 'Étape protégée : ' + [d.mi ? 'modification impossible' : '', d.si ? 'suppression impossible' : ''].filter(Boolean).join(' et ') + '.' : '';
+  }
+  function etat() {
+    if (mode === 'consultation') zeroUI = { actif: zero.actif, createurs: zero.createurs.slice() };
+    var ed = mode !== 'consultation', d = data[sel], a = q('[data-cvp-actions]');
+    qa('[data-cvp-form] input').forEach(function (e) { e.disabled = !ed; }); q('[data-f=num]').disabled = true;
+    a.querySelector('[data-cvp-ajouter]').disabled = ed; a.querySelector('[data-cvp-modifier]').disabled = ed || sel < 0 || !!(d && d.mi); a.querySelector('[data-cvp-supprimer]').disabled = ed || sel < 0 || !!(d && d.si);
+    a.querySelector('[data-cvp-modifier]').title = d && d.mi ? 'Étape protégée : modification impossible' : ''; a.querySelector('[data-cvp-supprimer]').title = d && d.si ? 'Étape protégée : suppression impossible' : '';
+    a.querySelector('[data-cvp-enregistrer]').disabled = !ed; a.querySelector('[data-cvp-annuler]').disabled = !ed;
+    ['imprimer', 'pdf', 'xlsx'].forEach(function (k) { a.querySelector('[data-cvp-' + k + ']').disabled = !data.length; });
+    users(mode === 'consultation' ? (sel >= 0 ? d : null) : { users: coches }); renderCk(); zrender(); q('[data-zero-actif]').disabled = !ed;
+  }
+  function onglet(n) { qa('[data-cvp-pan]').forEach(function (p) { p.hidden = p.dataset.cvpPan !== n; }); qa('[data-cvp-tab]').forEach(function (t) { var on = t.dataset.cvpTab === n; t.classList.toggle('on', on); t.setAttribute('aria-selected', on); }); }
+  function choisir(i) { if (mode !== 'consultation') return; sel = i; liste(); form(data[i]); etat(); }
+  qa('[data-cvp-tab]').forEach(function (t) { t.addEventListener('click', function () { onglet(t.dataset.cvpTab); }); });
+  var tb = q('[data-cvp-lignes]');
+  tb.addEventListener('click', function (e) { var tr = e.target.closest('tr[data-i]'); if (tr) choisir(+tr.dataset.i); });
+  tb.addEventListener('dblclick', function (e) { var tr = e.target.closest('tr[data-i]'); if (tr) { choisir(+tr.dataset.i); onglet('saisie'); } });
+  ['nom', 'etat', 'action'].forEach(function (k) { q('[data-f=' + k + ']').addEventListener('input', function () { this.value = this.value.toUpperCase(); }); });
+  function enregistrer() {
+    var nom = q('[data-f=nom]').value.trim(), etat_ = q('[data-f=etat]').value.trim(), act = q('[data-f=action]').value.trim(), ok = true, ancien = mode === 'edition' ? data[sel] : null;
+    ['nom', 'etat', 'action'].forEach(function (k) { err(k); });
+    if (!nom) { err('nom', 'Le nom est obligatoire.'); ok = false; } else if (data.some(function (x) { return x.nom === nom && x !== ancien; })) { err('nom', 'Ce nom existe déjà.'); ok = false; }
+    if (!etat_) { err('etat', "L'état est obligatoire."); ok = false; }
+    if (!act) { err('action', "L'action est obligatoire."); ok = false; }
+    if (!ok) return;
+    var pts = ck.map(function (c) { return { lib: String(c.lib || '').trim(), ob: !!c.ob }; }).filter(function (c) { return c.lib; });
+    var rec = { num: ancien ? ancien.num : suivant(), nom: nom, etat: etat_, action: act, mi: q('[data-f=mi]').checked, si: q('[data-f=si]').checked, cmt: q('[data-f=cmt]').checked, vb: q('[data-f=vb]').checked, users: coches.slice(), checklist: pts };
+    if (rec.vb) data.forEach(function (x) { if (x !== ancien) x.vb = false; });
+    zero = { actif: !!zeroUI.actif, createurs: zeroUI.createurs.slice() };
+    if (mode === 'creation') { data.push(rec); sel = data.length - 1; } else data[sel] = rec;
+    mode = 'consultation'; liste(); form(data[sel]); etat(); onglet('liste'); publier(); toast(ancien ? 'Étape du circuit modifiée.' : 'Étape du circuit enregistrée.');
+  }
+  function table() { var L = data.filter(function (m, i) { var tr = tb.children[i]; return !tr || !tr.hidden; }); return { tete: ['Numéro', 'Nom', 'État', 'Action', 'Modification impossible', 'Suppression impossible', 'Checklist', 'Commentaire obligatoire', 'Validation du brouillon'], lignes: L.map(function (d) { return [d.num, d.nom, d.etat, d.action, d.mi ? 'Oui' : 'Non', d.si ? 'Oui' : 'Non', (d.checklist || []).map(function (c) { return c.lib + (c.ob ? ' *' : ''); }).join(' ; '), d.cmt ? 'Oui' : 'Non', d.vb ? 'Oui' : 'Non']; }) }; }
+  function exporter(k) {
+    var X = window.EXPORT_TABLEAU, t = table(); if (!X) { toast('Module d’export indisponible.'); return; } if (!t.lignes.length) { toast('Rien à exporter.'); return; }
+    if (k === 'pdf') X.pdf('parametre_circuit.pdf', 'Paramètre Circuit', t.lignes.length + ' ligne(s)', t.tete, t.lignes); else X.xlsx('parametre_circuit.xlsx', 'Paramètre Circuit', t.tete, t.lignes);
+    toast('Export ' + (k === 'pdf' ? 'PDF' : 'Excel (XLSX)') + ' généré : ' + t.lignes.length + ' ligne(s).');
+  }
+  function imprimer() {
+    var t = table(), w = window.open('', '_blank'); if (!w) { toast('Autorisez les fenêtres pop-up pour imprimer.'); return; }
+    w.document.write('<!doctype html><meta charset="utf-8"><title>Paramètre Circuit</title><style>body{font:13px system-ui,sans-serif;color:#0B1332;margin:24px}h1{font-size:18px}table{border-collapse:collapse;width:100%}th{background:#2E427B;color:#fff;text-align:left;padding:8px 10px;font-size:11px;text-transform:uppercase}td{padding:7px 10px;border-bottom:1px solid #E9EBF0}</style><h1>Paramètre Circuit</h1><table><thead><tr>' +
+      t.tete.map(function (h) { return '<th>' + esc(h) + '</th>'; }).join('') + '</tr></thead><tbody>' + t.lignes.map(function (r) { return '<tr>' + r.map(function (c) { return '<td>' + esc(c) + '</td>'; }).join('') + '</tr>'; }).join('') + '</tbody></table>');
+    w.document.close(); w.focus(); setTimeout(function () { w.print(); }, 300);
+  }
+  root.addEventListener('click', function (e) {
+    var b = e.target.closest('button'); if (!b || b.disabled) return;
+    if (b.hasAttribute('data-cvp-ajouter')) { onglet('saisie'); mode = 'creation'; sel = -1; liste(); form(null); q('[data-f=num]').value = suivant(); etat(); q('[data-f=nom]').focus(); return; }
+    if (b.hasAttribute('data-cvp-modifier')) { onglet('saisie'); mode = 'edition'; coches = data[sel].users.slice(); etat(); q('[data-f=nom]').focus(); return; }
+    if (b.hasAttribute('data-cvp-annuler')) { mode = 'consultation'; liste(); form(sel >= 0 ? data[sel] : null); etat(); return; }
+    if (b.hasAttribute('data-cvp-enregistrer')) { enregistrer(); return; }
+    if (b.hasAttribute('data-cvp-supprimer')) {
+      var d = data[sel]; if (!d) return;
+      if (!window.confirm('Supprimer l’étape « ' + d.nom + ' » du circuit ? Cette action est définitive.')) return;
+      data.splice(sel, 1); sel = -1; liste(); form(null); etat(); publier(); toast('Étape du circuit supprimée.'); return;
+    }
+    if (b.hasAttribute('data-cvp-imprimer')) { imprimer(); return; }
+    if (b.hasAttribute('data-cvp-pdf')) { exporter('pdf'); return; }
+    if (b.hasAttribute('data-cvp-xlsx')) { exporter('xlsx'); return; }
+  });
+  liste(); form(null); etat(); onglet('liste'); publier();
+})();
+</script>

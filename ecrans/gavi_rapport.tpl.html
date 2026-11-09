@@ -1,0 +1,240 @@
+<!--
+  Écran « Rapport financier » de la procédure financière GAVI (Comptabilité Projets & Bailleurs › GAVI › Rapport financier).
+  Même charte que les éditions des états financiers : barre d'actions (Critères, Imprimer, Exporter), fenêtre de critères, état édité dans un panneau.
+  Critères : année en cours (de … au …), périodicité, budget dépenses, type de dépenses, centre de saisie, subvention, journal, milliers, monnaie.
+  Résultat (fichier rapport-financier-….xlsx) : Effets / Convention / Bénéficiaires / Géo / Activité / Domaines / Objectifs / Catégories / Postes,
+  puis, par période : Budget, Dépenses, Exécution % ; en-tête : type de subvention, dates, budget, dépenses GAVI, % budget, déboursement GAVI (par période).
+  Dépenses : « Engagements » = lignes du rapport de démonstration (par semestre) ; « Décaissements » = réel du Suivi détaillé (par trimestre) ; l'un et l'autre
+  complétés par les écritures saisies (imputation FINANCEMENT / ACTIVITE / CATEGORIE DE DEPENSE / POSTE BUDGETAIRE, règle « type de dépenses »).
+  Le déboursement GAVI est toujours le réel décaissé (Suivi détaillé). Une donnée connue par semestre ou trimestre est répartie à parts égales sur des périodes plus fines.
+-->
+/*CSS*/
+<div class="be-root" data-gr>
+  <h1 style="position:absolute;width:1px;height:1px;overflow:hidden;clip-path:inset(50%);margin:0">Rapport financier</h1>
+  <div class="no-print" data-gr-actions>
+    <button type="button" data-gr-open>Critères</button>
+    <button type="button" data-gr-pdf disabled>Imprimer</button>
+    <button type="button" data-gr-xls disabled>Exporter</button>
+  </div>
+  <div class="be-ov" data-gr-mod hidden>
+    <div class="be-dlg" role="dialog" aria-modal="true" aria-labelledby="gr-dt">
+      <div class="be-dh"><div><p class="be-eyebrow">Critères d'édition</p><h2 id="gr-dt">Rapport financier — GAVI</h2><p class="be-dsub">Choisissez les critères puis éditez l'état.</p></div>
+        <button type="button" class="be-x" data-gr-cancel aria-label="Fermer"><i class="ti ti-x"></i></button></div>
+      <div class="be-db"><section class="be-pan" aria-label="Critères"><h2>Critères de sélection</h2><div class="be-g">
+        <label class="be-c"><span>Année en cours *</span><select class="be-sel" data-gr-k="a1"></select></label>
+        <label class="be-c"><span>Au *</span><select class="be-sel" data-gr-k="a2"></select></label>
+        <label class="be-c"><span>Périodicité *</span><select class="be-sel" data-gr-k="perio"><option value="1">Mois</option><option value="3">Trimestre</option><option value="6" selected>Semestre</option><option value="12">Année</option></select></label>
+        <label class="be-c"><span>Type de dépenses *</span><select class="be-sel" data-gr-k="depense" title="Décaissements : mouvements des racines C2, C4, C6 dans les journaux de trésorerie, avec imputation analytique. Engagements : mouvements des racines C2, C6 dans tous les journaux, avec imputation analytique."><option value="decaissement">Décaissements</option><option value="engagement" selected>Engagements</option></select></label>
+        <label class="be-c"><span>Budget dépenses</span><select class="be-sel" data-gr-k="budget"><option value=""></option><option>1 - BUDGET INITIAL</option><option>2 - BUDGET AMENDE</option><option>3 - BUDGET FORMATION</option><option>4 - Budget RFI</option></select></label>
+        <label class="be-c"><span>Monnaie *</span><select class="be-sel" data-gr-k="monnaie"></select></label>
+        <div class="be-c be-span2"><span>Centre de saisie</span><div class="gv-ms" data-gr-ms="centre"></div></div>
+        <div class="be-c be-span2" data-regr><span>Plan de regroupement</span><div class="gv-ms" data-gr-ms="sub"></div></div>
+        <div class="be-c be-span2"><span>Journal</span><div class="gv-ms" data-gr-ms="jnl"></div></div>
+        <div class="be-c be-span2"><div class="be-sites"><label><input type="checkbox" data-gr-k="milliers">État exprimé en milliers</label></div></div>
+      </div></section></div>
+      <p class="gv-er" data-gr-er hidden></p>
+      <div class="be-df"><button type="button" class="be-b" data-gr-cancel>Annuler</button><button type="button" class="be-b pri" data-gr-go><i class="ti ti-file-text"></i>Éditer</button></div>
+    </div>
+  </div>
+  <div class="be-vide" data-gr-hint>Aucun rapport financier édité. Utilisez « Critères » pour lancer l'édition.</div>
+  <section class="be-pan be-res" aria-label="Résultat" data-gr-res hidden>
+    <h2>Rapport financier édité <small data-gr-info></small></h2>
+    <div data-gr-sc><table class="be-tb ter gv-w" data-gr-t></table></div>
+  </section>
+</div>
+<script>
+(function () {
+  var root = document.querySelector('[data-gr]'); if (!root) return;
+  function q(s) { return root.querySelector(s); }
+  function K(k) { return q('[data-gr-k="' + k + '"]'); }
+  function esc(s) { var d = document.createElement('div'); d.textContent = s == null ? '' : s; return d.innerHTML; }
+  var RF = /*RF*/[];
+  var SV = /*SV*/[];
+  var MOIS = ['Janvier', 'Février', 'Mars', 'Avril', 'Mai', 'Juin', 'Juillet', 'Août', 'Septembre', 'Octobre', 'Novembre', 'Décembre'];
+  var ORG = 'UCP/GAVI/FM - UNITE DE COORDINATION DES PROJETS GAVI ET FONDS MONDIAL - MADAGASCAR';
+  var DATA_AN = 2026;
+  var out = null;
+
+  // ---------- libellés des plans
+  function plans() { var P = window.PLANS_LIGNES || {}; return Object.keys(P).filter(function (k) { return /^PLAN\d+$/.test(k); }).map(function (k) { return (P[k] && P[k].rows) || []; }); }
+  function ligne(code) { var L = plans(), i, r; for (i = 0; i < L.length; i++) { r = L[i].filter(function (x) { return x.code === code; })[0]; if (r) return { r: r, rows: L[i] }; } return null; }
+  function lib(code) { var l = ligne(code); return l ? l.r.libelle : ''; }
+  function ancetres(code) { var l = ligne(code), ch = [], p, g = 0; if (!l) return ch; p = l.r.parent; while (p && g++ < 10) { ch.unshift(p); var x = l.rows.filter(function (y) { return y.code === p; })[0]; p = x ? x.parent : ''; } return ch; }
+
+  // ---------- listes des critères (listes à choix multiple)
+  var SEL = { centre: [['01', 'Siège']], sub: [], jnl: [] };
+  var CHO = { centre: {}, sub: {}, jnl: {} };
+  function journaux() { return (window.JOURNAUX_PLAN || []).map(function (j) { return [j.code, j.code + (j.libelle ? ' — ' + j.libelle : '')]; }); }
+  // plan de regroupement : éléments proposés, axe analytique du plan, appartenance d'une valeur à un élément
+  function subventions() { var R = window.REGROUPEMENT ? window.REGROUPEMENT() : null; return R ? R.elements.map(function (e) { return [e.code, e.code + ' — ' + e.libelle]; }) : []; }
+  function axeRegr() { var R = window.REGROUPEMENT ? window.REGROUPEMENT() : null, AX = (window.ECRITURES_SAISIES && window.ECRITURES_SAISIES.AXES) || []; return R ? (AX[parseInt(String(R.plan).slice(4), 10) - 1] || '') : ''; }
+  function dansElt(v, code) { return v === code || v.indexOf(code) === 0 || ancetres(v).indexOf(code) >= 0; }
+  function okDemo(code) { var R = window.REGROUPEMENT ? window.REGROUPEMENT() : null; if (!R || !R.elements.some(function (e) { return e.code === code; })) return true; return !!CHO.sub[code]; }
+  function okAxe(ax) {
+    var R = window.REGROUPEMENT ? window.REGROUPEMENT() : null; if (!R) return true; var a = axeRegr(), v = a ? (ax[a] || '') : '';
+    if (!v) return R.elements.every(function (e) { return CHO.sub[e.code]; });
+    return R.elements.some(function (e) { return CHO.sub[e.code] && dansElt(v, e.code); });
+  }
+  function subventionsFichier() {
+    var m = {}, o = [];
+    RF.forEach(function (r) { if (!m[r[2]]) { m[r[2]] = 1; o.push([r[2], r[2] + ' — ' + r[3]]); } });
+    SV.forEach(function (r) { if (!m[r[0]]) { m[r[0]] = 1; o.push([r[0], r[0] + ' — ' + r[1]]); } });
+    var S = window.ECRITURES_SAISIES; if (S) S({}).forEach(function (x) { var c = (x.axes || {}).FINANCEMENT; if (c && !m[c]) { m[c] = 1; o.push([c, c + (lib(c) ? ' — ' + lib(c) : '')]); } });
+    return o.sort(function (a, b) { return a[0] < b[0] ? -1 : 1; });
+  }
+  function initMs() {
+    SEL.sub = subventions(); SEL.jnl = journaux();
+    ['centre', 'sub', 'jnl'].forEach(function (k) { var keep = CHO[k], all = {}; SEL[k].forEach(function (o) { all[o[0]] = (o[0] in keep) ? !!keep[o[0]] : true; }); CHO[k] = all; drawMs(k); });
+  }
+  function drawMs(k) {
+    var box = q('[data-gr-ms="' + k + '"]'), n = SEL[k].length, c = SEL[k].filter(function (o) { return CHO[k][o[0]]; }).length, open = box.querySelector('.gv-ms-p') && box.querySelector('.gv-ms-p').classList.contains('open');
+    var txt = c === n ? 'Tous sélectionnés (' + n + ')' : c === 0 ? 'Aucune sélection' : c + ' sélectionné(s) sur ' + n;
+    box.innerHTML = '<div class="gv-ms-b" data-gr-tg="' + k + '"><span class="gv-ms-c">' + esc(txt) + '</span><button type="button" class="gv-ms-x" data-gr-all="' + k + '" aria-label="Tout sélectionner" title="Tout sélectionner">×</button></div>' +
+      '<div class="gv-ms-p' + (open ? ' open' : '') + '">' + SEL[k].map(function (o) { return '<label><input type="checkbox" data-gr-ck="' + k + '" value="' + esc(o[0]) + '"' + (CHO[k][o[0]] ? ' checked' : '') + '> ' + esc(o[1]) + '</label>'; }).join('') + '</div>';
+  }
+  function devises() { var d = (window.DEVISES || []).filter(function (x) { return x.actif !== false && x.code !== 'MGA'; }).map(function (x) { return [x.code, x.code + (x.libelle ? ' - ' + x.libelle : '')]; }); return [['MGA', 'MGA - Ariary']].concat(d); }
+  function ouvrir() {
+    var a = K('a1'); if (!a.options.length) { var o = '<option>2028</option><option>2027</option><option selected>2026</option><option>2025</option><option>2024</option><option>2023</option>'; a.innerHTML = o; K('a2').innerHTML = o; }
+    K('monnaie').innerHTML = devises().map(function (d) { return '<option value="' + esc(d[0]) + '">' + esc(d[1]) + '</option>'; }).join('');
+    initMs(); q('[data-gr-er]').hidden = true; q('[data-gr-mod]').hidden = false;
+  }
+
+  // ---------- périodes et calcul
+  function iso(d) { return d.getFullYear() + '-' + ('0' + (d.getMonth() + 1)).slice(-2) + '-' + ('0' + d.getDate()).slice(-2); }
+  function fr(s) { return s ? s.split('-').reverse().join('/') : ''; }
+  function periodes(a1, a2, p) {
+    var o = [], y, i;
+    for (y = a1; y <= a2; y++) for (i = 0; i < 12 / p; i++) o.push({ y: y, ms: y * 12 + i * p, me: y * 12 + i * p + p, du: iso(new Date(y, i * p, 1)), au: iso(new Date(y, i * p + p, 0)), lib: p === 12 ? 'Année' : p === 6 ? 'Semestre ' + (i + 1) : p === 3 ? 'Trimestre ' + (i + 1) : MOIS[i] });
+    return o;
+  }
+  function part(ps, pe, bs, be) { return Math.max(0, Math.min(pe, be) - Math.max(ps, bs)) / (be - bs); }
+  function ven(r, k) { return typeof r[k] === 'number' ? r[k] : 0; }
+  function tauxCours(m, d) { if (!m || m === 'MGA') return 1; var C = window.COURS_API, t = C && C.taux(m, d); if (!t && Array.isArray(window.COURS)) { var l = window.COURS.filter(function (x) { return x.devise === m; }).sort(function (a, b) { return a.date < b.date ? -1 : 1; })[0]; t = l && l.parite; } return t || 0; }
+  function calculer(c) {
+    var P = periodes(c.a1, c.a2, c.perio), n = P.length, R = {}, ordre = [], LK = { dom: {}, obj: {}, cat: {}, poste: {} };
+    function vec() { var v = [], i; for (i = 0; i < n; i++) v.push(0); return v; }
+    function cle(conv, ref, dom, obj, cat, po) { return [conv, ref, dom, obj, cat, po].join('|'); }
+    var PREM = {};   // première ligne du rapport pour chaque clé sans bénéficiaire ni géographie : y sont rattachés le réel du Suivi détaillé et les écritures saisies
+    function ligneDe(a, rf) {
+      var k2 = cle(a[2], a[8], a[10], a[12], a[14], a[16]), k = rf ? k2 + '|' + a[4] + '|' + a[6] + '|' + ordre.length : (PREM[k2] || k2 + '||');
+      if (rf && !PREM[k2]) PREM[k2] = k;
+      if (!R[k]) { R[k] = { a: a, bud: vec(), eng: vec(), dec: vec() }; ordre.push(k); }
+      return R[k];
+    }
+    RF.forEach(function (r) { LK.dom[r[10]] = r[11]; LK.obj[r[12]] = r[13]; LK.cat[r[14]] = r[15]; LK.poste[r[16]] = r[17]; });
+    function lk(t, code) { return LK[t][code] || lib(code) || ''; }
+    function ajout(ra, key, val, ps, pe) { P.forEach(function (p, i) { ra[key][i] += val * part(p.ms, p.me, ps, pe); }); }
+    var b0 = DATA_AN * 12;
+    RF.forEach(function (r) {
+      if (!okDemo(r[2])) return; var ra = ligneDe(r, true);
+      ajout(ra, 'bud', ven(r, 18), b0, b0 + 6); ajout(ra, 'bud', ven(r, 21), b0 + 6, b0 + 12);
+      ajout(ra, 'eng', ven(r, 19), b0, b0 + 6); ajout(ra, 'eng', ven(r, 22), b0 + 6, b0 + 12);
+    });
+    SV.forEach(function (r) {
+      var conv = r[0]; if (!okDemo(conv)) return; var ref = r[2].indexOf(conv) === 0 ? r[2].slice(conv.length) : r[2];
+      var a = ['', '', conv, r[1], '', '', '', '', ref, r[3], r[4], lk('dom', r[4]), r[5], lk('obj', r[5]), r[6], lk('cat', r[6]), r[7], lk('poste', r[7])];
+      var ra = ligneDe(a);
+      [12, 13, 14, 15].forEach(function (k, qi) { ajout(ra, 'dec', ven(r, k), b0 + qi * 3, b0 + qi * 3 + 3); });
+    });
+    // écritures saisies, selon la règle du type de dépenses
+    var E = window.ETATS_FIN && window.ETATS_FIN.depense, d1 = iso(new Date(c.a1, 0, 1)), d2 = iso(new Date(c.a2, 11, 31));
+    ['decaissement', 'engagement'].forEach(function (g) {
+      (E ? E(d1, d2, g) : []).forEach(function (e) {
+        var ax = e.ax || {}, conv = ax.FINANCEMENT || '', act = ax.ACTIVITE || '', cat = ax['CATEGORIE DE DEPENSE'] || '', po = ax['POSTE BUDGETAIRE'] || '';
+        if (!CHO.centre[e.site || '01'] || !okAxe(ax) || (e.jnl && CHO.jnl[e.jnl] === false)) return;
+        var ref = act.indexOf(conv) === 0 && conv ? act.slice(conv.length) : act, an = ancetres(act), dom = an.length > 1 ? an[0] : '', obj = an.length ? an[an.length - 1] : '';
+        var a = ['', '', conv || '—', lib(conv), '', '', '', '', ref, lib(act), dom, lk('dom', dom), obj, lk('obj', obj), cat, lk('cat', cat), po, lk('poste', po)];
+        var ra = ligneDe(a), m = +e.dt.slice(0, 4) * 12 + (+e.dt.slice(5, 7) - 1), v = (e.d - e.cr) / 100;
+        P.forEach(function (p, i) { if (m >= p.ms && m < p.me) ra[g === 'decaissement' ? 'dec' : 'eng'][i] += v; });
+      });
+    });
+    var rows = ordre.map(function (k) { return R[k]; });
+    rows.sort(function (x, y) { var a = x.a, b = y.a, ka = [a[0], a[2], a[8], a[10], a[12], a[14], a[16]].join('|'), kb = [b[0], b[2], b[8], b[10], b[12], b[14], b[16]].join('|'); return ka < kb ? -1 : ka > kb ? 1 : 0; });
+    var tx = tauxCours(c.monnaie, iso(new Date(c.a2, 11, 31)));   // monnaie d'édition : montants divisés par le cours
+    if (tx && tx !== 1) rows.forEach(function (r) { for (var i = 0; i < n; i++) { r.bud[i] /= tx; r.eng[i] /= tx; r.dec[i] /= tx; } });
+    var T = { bud: vec(), dep: vec(), dec: vec() };
+    rows.forEach(function (r) { r.dep = c.depense === 'engagement' ? r.eng : r.dec; for (var i = 0; i < n; i++) { T.bud[i] += r.bud[i]; T.dep[i] += r.dep[i]; T.dec[i] += r.dec[i]; } });
+    var sum = function (v) { return v.reduce(function (a, x) { return a + x; }, 0); };
+    return { P: P, rows: rows, T: T, kpi: { bud: sum(T.bud), dep: sum(T.dep), dec: sum(T.dec) } };
+  }
+  function nf(v, mil) {
+    if (v === null || v === undefined) return '';
+    var x = mil ? v / 1000 : v, d = mil ? 0 : 2, s = Math.abs(x).toFixed(d).split('.'); s[0] = s[0].replace(/\B(?=(\d{3})+(?!\d))/g, ' ');
+    return (x < 0 && +Math.abs(x).toFixed(d) !== 0 ? '-' : '') + s.join(',');
+  }
+  function ex(b, d) { return b ? nf(d / b * 100) : nf(0); }
+  var ATT = ['Effets', 'Effets - Libellé', 'CONVENTION', 'CONVENTION - Libellé', 'Bénéficiaires', 'Bénéficiaires - Libellé', 'Géo - Niv 2', 'Géo - Niv 2 - Libellé', 'Réf', 'Activité - Libellé', 'Domaines', 'Domaines - Libellé', 'Objectifs', 'Objectifs - Libellé', 'Catégories de dépenses', 'Catégories de dépenses - Libellé', 'Postes de dépenses', 'Postes de dépenses - Libellé'];
+  function plat(res, mil) {
+    var rows = res.rows.map(function (r) { return r.a.slice(0, 18).concat([].concat.apply([], res.P.map(function (p, i) { return [nf(r.bud[i], mil), nf(r.dep[i], mil), ex(r.bud[i], r.dep[i])]; }))); });
+    rows.push(['Total'].concat(new Array(17).fill('')).concat([].concat.apply([], res.P.map(function (p, i) { return [nf(res.T.bud[i], mil), nf(res.T.dep[i], mil), ex(res.T.bud[i], res.T.dep[i])]; }))));
+    return rows;
+  }
+  function rendre() {
+    var c = out.c, R = out.res, mil = c.milliers, P = R.P, i;
+    var h = '<thead><tr><th colspan="18" rowspan="4"></th>';
+    // ligne des années
+    var ys = [], cur = null; P.forEach(function (p) { if (!cur || cur.y !== p.y) { cur = { y: p.y, n: 0 }; ys.push(cur); } cur.n++; });
+    h += ys.map(function (y) { return '<th class="g" colspan="' + (y.n * 3) + '">' + y.y + '</th>'; }).join('') + '</tr><tr>' + P.map(function (p) { return '<th class="g" colspan="3">' + esc(p.lib) + '</th>'; }).join('') + '</tr>';
+    h += '<tr>' + P.map(function (p, j) { return '<th class="g" colspan="3">GAVI Déboursement ' + nf(R.T.dec[j], mil) + '</th>'; }).join('') + '</tr><tr>';
+    h = h.replace('<th colspan="18" rowspan="4"></th>', ATT.map(function (t) { return '<th rowspan="4">' + esc(t) + '</th>'; }).join(''));
+    h += P.map(function () { return '<th>Budget</th><th>Dépenses</th><th>Exécution %</th>'; }).join('') + '</tr></thead>';
+    var b = R.rows.map(function (r) {
+      return '<tr>' + r.a.slice(0, 18).map(function (v, k) { return '<td class="' + (k === 9 ? 'l' : '') + '" title="' + (k === 9 ? esc(v) : '') + '">' + esc(v) + '</td>'; }).join('') +
+        P.map(function (p, j) { return '<td class="r">' + nf(r.bud[j], mil) + '</td><td class="r">' + nf(r.dep[j], mil) + '</td><td class="r">' + ex(r.bud[j], r.dep[j]) + '</td>'; }).join('') + '</tr>';
+    }).join('');
+    b += '<tr class="total"><td>Total</td>' + new Array(18).join('<td></td>') + P.map(function (p, j) { return '<td class="r">' + nf(R.T.bud[j], mil) + '</td><td class="r">' + nf(R.T.dep[j], mil) + '</td><td class="r">' + ex(R.T.bud[j], R.T.dep[j]) + '</td>'; }).join('') + '</tr>';
+    q('[data-gr-t]').innerHTML = h + '<tbody>' + b + '</tbody>';
+    q('[data-gr-info]').textContent = enteteMeta(c, R);
+  }
+  function enteteMeta(c, R) { return 'Exercice ' + (c.a1 === c.a2 ? c.a1 : c.a1 + ' → ' + c.a2) + ' · ' + c.perioLib + ' · ' + c.depenseLib + (c.budget ? ' · ' + c.budget : '') + ' · ' + c.monnaie + (c.milliers ? ' · en milliers' : '') + ' · ' + R.rows.length + ' ligne(s)'; }
+  // en-tête des éditions PDF / Excel : informations générales du rapport
+  function entete(c, R) {
+    var mil = c.milliers, subs = R.rows.map(function (r) { return r.a[2]; }).filter(function (v, i, a) { return v && a.indexOf(v) === i; }).join(' / ');
+    return [['Type de subvention', subs], ['Descriptif de la subvention', ''], ['Date de début prévue', fr(iso(new Date(c.a1, 0, 1)))], ['Date de fin prévue', fr(iso(new Date(c.a2, 11, 31)))],
+      ['Budget', nf(R.kpi.bud, mil)], ['Gavi dépenses', nf(R.kpi.dep, mil)], ['% Gavi budget dépenses', ex(R.kpi.bud, R.kpi.dep)], ['Gavi déboursement', nf(R.kpi.dec, mil)]];
+  }
+  function lire() {
+    var p = K('perio');
+    return { a1: +K('a1').value, a2: +K('a2').value, perio: +p.value, perioLib: p.options[p.selectedIndex].text, budget: K('budget').value, depense: K('depense').value, depenseLib: K('depense').options[K('depense').selectedIndex].text, milliers: K('milliers').checked, monnaie: K('monnaie').value };
+  }
+  function executer() {
+    var er = q('[data-gr-er]'); er.hidden = true; var c = lire();
+    if (c.a2 < c.a1) { er.textContent = 'L’année de fin doit être postérieure ou égale à l’année de début.'; er.hidden = false; return; }
+    if (!tauxCours(c.monnaie, iso(new Date(c.a2, 11, 31)))) { er.textContent = 'Aucun cours n’est enregistré pour ' + c.monnaie + ' (écran Cours).'; er.hidden = false; return; }
+    if (SEL.sub.length && !SEL.sub.some(function (o) { return CHO.sub[o[0]]; })) { er.textContent = 'Sélectionnez au moins un élément du plan de regroupement.'; er.hidden = false; return; }
+    out = { c: c, res: calculer(c) }; q('[data-gr-mod]').hidden = true; q('[data-gr-hint]').hidden = true; q('[data-gr-res]').hidden = false;
+    q('[data-gr-xls]').disabled = false; q('[data-gr-pdf]').disabled = false; rendre();
+  }
+  function exporter(k) {
+    if (!out) return; var X = window.EXPORT_TABLEAU; if (!X) return;
+    var c = out.c, R = out.res, P = R.P, mil = c.milliers, info = entete(c, R), lignes = plat(R, mil), vides = ATT.map(function () { return ''; });
+    if (k === 'pdf') {
+      var tete = ATT.slice(); P.forEach(function (p) { ['Budget', 'Dépenses', 'Exécution %'].forEach(function (t) { tete.push(p.y + ' ' + p.lib + ' - ' + t); }); });
+      var av = [enteteMeta(c, R), info[0][0] + ' : ' + info[0][1] + '   ' + info[2][0] + ' : ' + info[2][1] + '   ' + info[3][0] + ' : ' + info[3][1],
+        info[4][0] + ' : ' + info[4][1] + '   ' + info[5][0] + ' : ' + info[5][1] + '   ' + info[6][0] + ' : ' + info[6][1] + '   ' + info[7][0] + ' : ' + info[7][1],
+        'GAVI Déboursement : ' + P.map(function (p, j) { return p.y + ' ' + p.lib + ' ' + nf(R.T.dec[j], mil); }).join('   ')];
+      X.pdf('gavi_rapport_financier.pdf', 'RAPPORT FINANCIER', ORG, tete, lignes, av);
+    } else {
+      var tete2 = ATT.slice(); P.forEach(function () { tete2.push('Budget', 'Dépenses', 'Exécution %'); });
+      var grp = function (f) { return [].concat.apply([], P.map(function (p, j) { return f(p, j); })); };
+      var avant = [[ORG], ['Page 1/1'], [], ['Rapport Financier']].concat(info.map(function (x) { return [x[0], x[1]]; }), [[enteteMeta(c, R)], []],
+        [vides.concat(grp(function (p) { return [p.y, '', '']; }))], [vides.concat(grp(function (p) { return [p.lib, '', '']; }))][0] ? [vides.concat(grp(function (p) { return [p.lib, '', '']; }))] : [],
+        [vides.concat(grp(function (p, j) { return ['GAVI Déboursement', nf(R.T.dec[j], mil), '']; }))]);
+      X.xlsx('gavi_rapport_financier.xlsx', 'Rapport Financier', tete2, lignes, avant);
+    }
+  }
+  root.addEventListener('click', function (e) {
+    var t = e.target, x;
+    if (t.closest('[data-gr-open]')) ouvrir();
+    else if (t.closest('[data-gr-cancel]')) q('[data-gr-mod]').hidden = true;
+    else if (t.closest('[data-gr-go]')) executer();
+    else if (t.closest('[data-gr-xls]')) exporter('xls');
+    else if (t.closest('[data-gr-pdf]')) exporter('pdf');
+    else if ((x = t.closest('[data-gr-all]'))) { var k = x.dataset.grAll; SEL[k].forEach(function (o) { CHO[k][o[0]] = true; }); drawMs(k); }
+    else if ((x = t.closest('[data-gr-tg]'))) { x.parentElement.querySelector('.gv-ms-p').classList.toggle('open'); }
+  });
+  root.addEventListener('change', function (e) { var t = e.target; if (t.matches('[data-gr-ck]')) { var k = t.dataset.grCk; CHO[k][t.value] = t.checked; drawMs(k); } });
+  window.addEventListener('hashchange', function () { if (location.hash === '#gavirapport' && !out && q('[data-gr-mod]').hidden) setTimeout(ouvrir, 300); });
+  if (location.hash === '#gavirapport') setTimeout(ouvrir, 700);
+})();
+</script>

@@ -1,0 +1,399 @@
+<!--
+  Écran « Paramétrage de la synthèse » de la procédure financière GAVI (Comptabilité Projets & Bailleurs › GAVI › Synthèse › Paramétrage), accessible par le bouton « Paramétrage »
+  de la synthèse. Même écran que « Emplois et ressources › Paramétrages » (sélection du modèle, onglets Saisie / Liste, nature, fourchettes de comptes et d'axes),
+  avec les types de ligne GAVI : Ressources, Emplois - 1, Emplois - 2, Emplois - 3, Trésorerie, Avances non liquidés. Généré par gen-gavi-synthese-param.cjs.
+  Le modèle est partagé avec l'édition par window.GAVI_SYNTH_MODELES. Les valeurs de démonstration (ExploitationGaviSynthese.xlsx) restent portées par les lignes (propriété demo) ;
+  les fourchettes servent aux écritures saisies. Fourchettes de la démonstration à confirmer.
+-->
+<style>
+.bp-root{width:100%;color:#353944;font-size:12px}
+.bp-eyebrow{margin:0 0 4px;font-size:12px;font-weight:600;letter-spacing:.08em;text-transform:uppercase;color:#706000}
+.bp-h1{margin:0;font-family:var(--font-heading);font-size:24px;font-weight:600;line-height:1.2;color:#0B1332}
+.bp-sub{margin:4px 0 16px;color:#5B606D;font-size:14px}
+.bp-modele{display:flex;align-items:flex-end;gap:8px;flex-wrap:wrap;padding:12px 0 16px;border-top:1px solid #E9EBF0}
+.bp-champ{display:flex;flex-direction:column;gap:4px;min-width:0}
+.bp-champ>span,.bp-lab{font-size:12px;font-weight:600;color:#474C58}
+.bp-champ>span b,.bp-lab b{color:#B63132;font-weight:600}
+.bp-in,.bp-sel,.bp-ta{width:100%;box-sizing:border-box;border:1px solid #878D9A;border-radius:8px;background:#fff;color:#353944;font:inherit;font-size:12px;padding:0 12px}
+.bp-in,.bp-sel{height:36px}
+.bp-ta{padding:8px 12px;min-height:64px;resize:vertical}
+.bp-in:disabled,.bp-sel:disabled,.bp-ta:disabled{background:#F5F7F9;border-color:#D6D9E0;color:#747A88;cursor:not-allowed}
+.bp-in:focus-visible,.bp-sel:focus-visible,.bp-ta:focus-visible,.bp-b:focus-visible{outline:3px solid #2E427B;outline-offset:2px}
+.bp-b{display:inline-flex;align-items:center;justify-content:center;gap:6px;height:36px;padding:0 14px;border:1px solid #D6D9E0;border-radius:8px;background:#fff;color:#474C58;font:inherit;font-size:12px;font-weight:700;cursor:pointer;white-space:nowrap}
+.bp-b:hover:not(:disabled){background:#E9EBF0}.bp-b:disabled{opacity:.5;cursor:not-allowed}
+.bp-b.ico{width:36px;padding:0}
+.bp-grid{display:block}
+.bp-pan[hidden]{display:none}
+.bp-pan[data-gsp-pan=saisie]>h2{display:none}
+.bp-tabs{display:flex;gap:4px;border-bottom:1px solid #E9EBF0;margin-bottom:16px}
+.bp-tabs button{height:36px;padding:0 16px;border:0;border-bottom:2px solid transparent;background:none;font:inherit;font-size:12px;font-weight:600;color:#5B606D;cursor:pointer}
+.bp-tabs button.on{color:#2E427B;border-bottom-color:#2E427B}
+.bp-tabs button:focus-visible{outline:3px solid #2E427B;outline-offset:-3px}
+.bp-n{display:inline-block;margin-left:4px;padding:0 6px;border-radius:6px;background:#E9EBF0;color:#474C58;font-weight:600}
+.bp-n:empty{display:none}
+.bp-pan{background:#fff;border:1px solid #E9EBF0;border-radius:12px;overflow:hidden}
+.bp-pan>h2{margin:0;padding:12px 16px;border-bottom:1px solid #E9EBF0;font-family:var(--font-heading);font-size:14px;font-weight:600;color:#0B1332;display:flex;justify-content:space-between;align-items:center}
+.bp-pan>h2 small{font:400 12px var(--font-sans);color:#5B606D}
+.bp-tb{width:100%;border-collapse:collapse}
+.bp-tb th{padding:8px 12px;background:#F5F7F9;border-bottom:1px solid #E9EBF0;text-align:left;font-size:12px;font-weight:600;letter-spacing:.05em;text-transform:uppercase;color:#5B606D;white-space:nowrap}
+.bp-tb td{padding:8px 12px;border-bottom:1px solid #E9EBF0}
+.bp-tb tbody tr{cursor:pointer}.bp-tb tbody tr:hover td{background:#F4F7FE}
+.bp-tb tbody tr.sel td{background:#E3EBFE;box-shadow:inset 3px 0 0 #2E427B}
+.bp-tb tbody tr.sel td:not(:first-child){box-shadow:none}
+.bp-tb{min-width:1200px}
+.bp-tb th:nth-child(2),.bp-tb td:nth-child(2){min-width:280px}
+.bp-tb th:nth-child(1),.bp-tb td:nth-child(1){min-width:70px}
+.bp-tb th{text-align:center;text-transform:none;letter-spacing:0;font-size:12px;color:#0B1332}
+.bp-tb td{text-align:left}
+.bp-tb td.c,.bp-tb th.c{text-align:center}
+.bp-tb tr.flt th{padding:4px;background:#F5F7F9;font-weight:400}
+.bp-tb tr.flt input,.bp-tb tr.flt select{width:100%;min-width:0;border-color:#D6D9E0;padding:0 6px}
+.bp-tb tr.t-titre td:nth-child(2),.bp-tb tr.t-total td:nth-child(2){font-weight:700}
+.bp-tb input[type=checkbox]{width:16px;height:16px;accent-color:#2E427B;margin:0;pointer-events:none}
+.bp-pill{display:inline-block;padding:2px 8px;border-radius:6px;background:#E9EBF0;color:#474C58;font-size:12px;font-weight:600}
+.bp-pill.actif{background:#E3EBFE;color:#243569}.bp-pill.passif{background:#F9F8E7;color:#706000}
+.bp-vide{padding:32px 16px;text-align:center;color:#5B606D}
+.bp-form{padding:16px;display:grid;gap:16px}
+.bp-l3{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:12px}
+.bp-l3 .bp-span2{grid-column:span 2}
+@media (max-width:700px){.bp-l3{grid-template-columns:1fr}.bp-l3 .bp-span2{grid-column:auto}}
+.bp-2{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:16px;align-items:start}
+@media (max-width:900px){.bp-2{grid-template-columns:1fr}}
+.bp-2[hidden],.bp-champ[hidden]{display:none!important}
+.bp-gr{display:grid;gap:8px;min-width:0}
+.bp-gr h3{margin:0;font-size:12px;font-weight:700;color:#0B1332}
+.bp-gb{display:flex;align-items:center;justify-content:space-between;gap:8px}
+.bp-gtools{display:flex;gap:4px}.bp-fl.sel-fl td{background:#E3EBFE}
+.bp-gw{border:1px solid #D6D9E0;min-height:220px;background:#fff}
+.bp-gt{width:100%;border-collapse:collapse;table-layout:fixed}
+.bp-gt td .bp-in,.bp-gt td .bp-sel{border-color:transparent;background:transparent;text-align:center;padding:0 4px}
+.bp-gt td .bp-in:hover:not(:disabled),.bp-gt td .bp-sel:hover:not(:disabled),.bp-gt td .bp-in:focus,.bp-gt td .bp-sel:focus{border-color:#878D9A;background:#fff}
+.bp-gt td .bp-in:disabled,.bp-gt td .bp-sel:disabled{background:transparent;border-color:transparent;color:#353944}
+.bp-gt td .bp-sel{appearance:none;-webkit-appearance:none}
+.bp-gt td .bp-b.ico{border-color:transparent;color:#2E427B}
+.bp-gt th{padding:8px;border:1px solid #E9EBF0;background:#fff;font-size:12px;font-weight:700;text-align:center;color:#0B1332}
+.bp-gt td{padding:4px;border:1px solid #E9EBF0}
+.bp-gt th:last-child,.bp-gt td:last-child{width:44px;text-align:center}
+.bp-gt th:nth-child(3),.bp-gt td:nth-child(3){width:72px}
+.bp-gt .bp-in,.bp-gt .bp-sel{border-color:#D6D9E0}
+.gsp-ax{display:grid;grid-template-columns:150px minmax(0,1fr);border:1px solid #D6D9E0;border-radius:8px;background:#fff;overflow:hidden}
+.gsp-ax[hidden]{display:none!important}
+.gsp-axt{display:flex;flex-direction:column;gap:6px;padding:8px;background:#F6F7FA;border-right:1px solid #E9EBF0}
+.gsp-axt button{height:36px;padding:0 10px;border:1px solid #E9EBF0;border-radius:8px;background:#fff;color:#353944;font:600 12px var(--font-sans);text-align:left;cursor:pointer}
+.gsp-axt button:hover{background:#E9EBF0}.gsp-axt button.on{background:#2E427B;border-color:#2E427B;color:#fff}.gsp-axt button:focus-visible{outline:3px solid #2E427B;outline-offset:2px}
+.gsp-axp{display:grid;gap:8px;padding:8px 12px;min-width:0;align-content:start}.gsp-axp .bp-gw{border:0;min-height:120px}
+.gsp-axp .bp-gt td .bp-sel{appearance:auto;-webkit-appearance:auto;text-align:left;background:#fff;border-color:#D6D9E0}
+.gsp-axp .bp-gt td .bp-sel:disabled{background:transparent;border-color:transparent;appearance:none;-webkit-appearance:none}
+@media (max-width:700px){.gsp-ax{grid-template-columns:1fr}.gsp-axt{flex-direction:row;flex-wrap:wrap;border-right:0;border-bottom:1px solid #E9EBF0}}
+.bp-ge{min-height:150px;display:flex;align-items:center;justify-content:center;color:#747A88;font-size:16px}
+.bp-ge[hidden]{display:none}
+.bp-aide{margin:0;padding:10px 12px;border-left:3px solid #2E427B;background:#F5F7F9;color:#474C58;font-size:12px}
+.bp-radios{display:flex;flex-wrap:wrap;gap:6px 16px}
+.bp-radios label,.bp-chk label{display:inline-flex;align-items:center;gap:6px;font-size:12px;cursor:pointer}
+.bp-radios input,.bp-chk input{width:16px;height:16px;accent-color:#2E427B;margin:0}
+.bp-sect{border:1px solid #E9EBF0;border-radius:8px;padding:12px;display:grid;gap:8px}
+.bp-sect>.hd{display:flex;align-items:center;justify-content:space-between;gap:8px}
+.bp-sect>.hd strong{font-size:12px;font-weight:700;color:#0B1332}
+.bp-note{margin:0;font-size:12px;color:#5B606D}
+.bp-opt-t{display:inline-flex;align-items:center;gap:6px;border:0;background:none;padding:0;font:inherit;font-size:12px;font-weight:700;color:#2E427B;cursor:pointer;height:36px}
+.bp-opt{display:grid;gap:12px;padding-top:4px}
+.bp-chk{display:flex;flex-wrap:wrap;gap:8px 16px}
+.bp-ov{position:fixed;inset:0;z-index:50;background:rgba(11,19,50,.5);display:flex;align-items:center;justify-content:center;padding:16px}
+.bp-ov[hidden]{display:none}
+.bp-dlg{width:100%;max-width:420px;background:#fff;border-radius:12px;padding:20px;display:grid;gap:12px;box-shadow:0 12px 32px -8px rgba(11,19,50,.3)}
+.bp-dlg h3{margin:0;font-family:var(--font-heading);font-size:16px;font-weight:600;color:#0B1332}
+.bp-dlg .ft{display:flex;justify-content:flex-end;gap:8px}
+.bp-b.pri{background:#2E427B;border-color:#2E427B;color:#fff}.bp-b.pri:hover:not(:disabled){background:#243569}
+.bp-toast{position:fixed;top:16px;right:16px;z-index:50;background:#0B1332;color:#fff;border-radius:8px;padding:10px 16px;font-size:12px;font-weight:600}
+.bp-toast[hidden]{display:none}
+</style>
+
+<div class="bp-root" data-gsp>
+  <h1 style="position:absolute;width:1px;height:1px;overflow:hidden;clip-path:inset(50%);margin:0">Paramétrage de la synthèse GAVI</h1>
+
+  <div class="bp-modele">
+    <label class="bp-champ" style="flex:1;max-width:420px"><span>Sélection du modèle</span>
+      <select class="bp-sel" data-gsp-modele><option value="">— Sélectionner un modèle —</option></select></label>
+  </div>
+
+  <div class="no-print" data-gsp-actions>
+    <button type="button" data-gsp-ajouter>Ajouter</button>
+    <button type="button" data-gsp-nouveau>Nouveau modèle</button>
+    <button type="button" data-gsp-dupliquer disabled>Dupliquer</button>
+    <button type="button" data-gsp-supprimer-modele disabled>Supprimer</button>
+    <button type="button" data-gsp-modifier>Modifier</button>
+    <button type="button" data-gsp-enregistrer>Enregistrer</button>
+    <button type="button" data-gsp-annuler>Annuler</button>
+    <button type="button" data-gsp-imprimer>Imprimer</button>
+    <button type="button" data-gsp-exporter>Exporter</button>
+    <button type="button" data-bil-vers="gavisynth">Édition</button>
+  </div>
+
+  <div class="bp-tabs" role="tablist">
+    <button type="button" role="tab" class="on" data-gsp-tab="saisie">Saisie</button>
+    <button type="button" role="tab" data-gsp-tab="liste">Liste <span class="bp-n" data-gsp-compte></span></button>
+  </div>
+  <div class="bp-grid">
+    <section class="bp-pan" aria-label="Lignes de la synthèse GAVI" data-gsp-pan="liste" hidden>
+      <h2>Lignes de la synthèse GAVI <small>Double-clic ou « Modifier » pour ouvrir la ligne en saisie</small></h2>
+      <div style="overflow:auto;max-height:560px">
+        <table class="bp-tb"><thead>
+          <tr><th>Code</th><th>Libellé</th><th>Type</th><th>Résultat</th><th>Brut(mini)</th><th>Brut(maxi)</th><th>S</th><th>Axe</th><th>Axe(mini)</th><th>Axe(maxi)</th><th>Nature</th><th>Formule</th></tr>
+          <tr class="flt" data-gsp-flt>
+            <th><input class="bp-in" data-fc="0" aria-label="Filtrer Code"></th><th><input class="bp-in" data-fc="1" aria-label="Filtrer Libellé"></th><th><input class="bp-in" data-fc="2" aria-label="Filtrer Type"></th>
+            <th><select class="bp-sel" data-fc="3" aria-label="Filtrer Résultat"><option value=""></option><option value="oui">Oui</option><option value="non">Non</option></select></th>
+            <th><input class="bp-in" data-fc="4" aria-label="Filtrer Brut mini"></th><th><input class="bp-in" data-fc="5" aria-label="Filtrer Brut maxi"></th><th><input class="bp-in" data-fc="6" aria-label="Filtrer S"></th>
+            <th><input class="bp-in" data-fc="7" aria-label="Filtrer Axe"></th><th><input class="bp-in" data-fc="8" aria-label="Filtrer Axe mini"></th><th><input class="bp-in" data-fc="9" aria-label="Filtrer Axe maxi"></th>
+            <th><input class="bp-in" data-fc="10" aria-label="Filtrer Nature"></th><th><input class="bp-in" data-fc="11" aria-label="Filtrer Formule"></th>
+          </tr></thead><tbody data-gsp-lignes></tbody></table>
+      </div>
+      <div class="bp-vide" data-gsp-vide>Sélectionnez ou créez un modèle pour afficher ses lignes.</div>
+    </section>
+
+    <section class="bp-pan" aria-label="Ligne sélectionnée" data-gsp-pan="saisie">
+      <h2>Ligne sélectionnée <small data-gsp-mode>Consultation</small></h2>
+      <form class="bp-form" data-gsp-form onsubmit="return false">
+        <div class="bp-l3">
+          <label class="bp-champ"><span>Code <b>*</b></span><input class="bp-in" data-f="code" maxlength="12"></label>
+          <label class="bp-champ"><span>Ordre</span><input class="bp-in" data-f="ordre" inputmode="numeric"></label>
+          <label class="bp-champ"><span>Référence</span><input class="bp-in" data-f="reference" maxlength="40"></label>
+          <label class="bp-champ bp-span2"><span>Libellé <b>*</b></span><input class="bp-in" data-f="libelle"></label>
+          <label class="bp-champ"><span>Note</span><input class="bp-in" data-f="note" maxlength="120"></label>
+        </div>
+        <div class="bp-chk">
+          <label><input type="checkbox" data-c="gras">Gras</label><label><input type="checkbox" data-c="italique">Italique</label>
+          <label><input type="checkbox" data-c="vide">Ligne vide</label><label><input type="checkbox" data-c="fond">Fond gris</label>
+          <label><input type="checkbox" data-c="imprimer">À imprimer</label><label><input type="checkbox" data-c="afficher">À afficher</label>
+        </div>
+        <div><div class="bp-lab">Type de la ligne <b>*</b></div>
+          <div class="bp-radios" data-r="type"><label><input type="radio" name="gsp-type" value="ressources">Ressources</label><label><input type="radio" name="gsp-type" value="emp1">Emplois - 1</label><label><input type="radio" name="gsp-type" value="emp2">Emplois - 2</label><label><input type="radio" name="gsp-type" value="emp3">Emplois - 3</label><label><input type="radio" name="gsp-type" value="treso">Trésorerie</label><label><input type="radio" name="gsp-type" value="avances">Avances non liquidés</label></div></div>
+        <div><div class="bp-lab">Nature <b>*</b></div>
+          <div class="bp-radios" data-r="nature">
+            <label><input type="radio" name="gsp-nature" value="titre">Titre</label><label><input type="radio" name="gsp-nature" value="soustitre">Sous-titre</label>
+            <label><input type="radio" name="gsp-nature" value="ligne">Ligne comptable</label><label><input type="radio" name="gsp-nature" value="soustotal">Sous-total</label>
+            <label><input type="radio" name="gsp-nature" value="total">Total</label>
+            <label><input type="radio" name="gsp-nature" value="formule">Formule</label><label><input type="radio" name="gsp-nature" value="constante">Constante</label>
+          </div></div>
+
+        <label class="bp-champ" data-gsp-formule hidden><span>Formule / Constante</span><input class="bp-in" data-f="formule" placeholder="Ex : AZ + CZ"></label>
+
+        <div class="gsp-ax" data-gsp-grilles>
+          <div class="gsp-axt" data-gsp-axt role="tablist" aria-label="Compte et axes analytiques"></div>
+          <div class="gsp-axp">
+            <div class="bp-gb"><h3 data-gsp-axh>Axe : Compte</h3><span class="bp-gtools"><button type="button" class="bp-b ico" title="Ajouter une fourchette" aria-label="Ajouter une fourchette" data-add-f="cur"><i class="ti ti-plus"></i></button><button type="button" class="bp-b ico" title="Valider la grille" aria-label="Valider la grille" data-g-save="cur"><i class="ti ti-device-floppy"></i></button><button type="button" class="bp-b ico" title="Annuler les modifications de la grille" aria-label="Annuler les modifications de la grille" data-g-undo="cur"><i class="ti ti-arrow-back-up"></i></button><button type="button" class="bp-b ico" title="Retirer la fourchette sélectionnée" aria-label="Retirer la fourchette sélectionnée" data-rm-sel><i class="ti ti-trash"></i></button></span></div>
+            <div class="bp-gw"><table class="bp-gt" data-no-pg><thead><tr><th>Min</th><th>Max</th><th>Sens</th></tr></thead><tbody data-rows="cur"></tbody></table><div class="bp-ge" data-vide="cur">Aucun enregistrement</div></div>
+            <p class="bp-aide" data-gsp-aide></p>
+          </div>
+        </div>
+
+      </form>
+    </section>
+  </div>
+
+  <div class="bp-ov" hidden data-gsp-ov>
+    <div class="bp-dlg" role="dialog" aria-modal="true" aria-labelledby="gsp-dt">
+      <h3 id="gsp-dt">Nouveau modèle</h3>
+      <label class="bp-champ"><span>Code <b>*</b></span><input class="bp-in" data-n="code" maxlength="12"></label>
+      <label class="bp-champ"><span>Libellé <b>*</b></span><input class="bp-in" data-n="libelle"></label>
+      <p class="bp-note" data-n-err style="color:#B63132" hidden></p>
+      <div class="ft"><button type="button" class="bp-b" data-n-annuler>Annuler</button><button type="button" class="bp-b pri" data-n-ok>Créer</button></div>
+    </div>
+  </div>
+  <div class="bp-toast" role="status" hidden data-gsp-toast></div>
+</div>
+
+<script>
+(function () {
+  var root = document.querySelector('[data-gsp]'); if (!root) return;
+  function q(s) { return root.querySelector(s); } function qa(s) { return [].slice.call(root.querySelectorAll(s)); }
+  var TYPELIB = { ressources: 'Ressources', emp1: 'Emplois - 1', emp2: 'Emplois - 2', emp3: 'Emplois - 3', treso: 'Trésorerie', avances: 'Avances non liquidés' };
+  var NAT = { titre: 'Titre', soustitre: 'Sous-titre', ligne: 'Ligne comptable', soustotal: 'Sous-total', total: 'Total', resultat: 'Résultat', formule: 'Formule', constante: 'Constante' };
+  window.GAVI_SYNTH_MODELES = function () { return modeles; };
+  function L(code, ordre, libelle, type, nature, f, a) { return { code: code, ordre: ordre, libelle: libelle, type: type, nature: nature, fourchettes: f || [], axes: a || [], reference: '', note: '', gras: nature !== 'ligne', italique: false, vide: false, fond: nature === 'total', imprimer: true, afficher: true }; }
+  var modeles = [{ id: '1', libelle: 'Paramètre N° 1', lignes: [{"code":"R","ordre":10,"libelle":"REVENUS","type":"ressources","nature":"titre","fourchettes":[],"axes":[],"reference":"","note":"","gras":true,"italique":false,"vide":false,"fond":false,"imprimer":true,"afficher":true},{"code":"R1","ordre":20,"libelle":"Décaissements reçus du GAVI","type":"ressources","nature":"ligne","fourchettes":[{"d":"741","f":"741","s":"C"}],"axes":[],"reference":"","note":"","gras":false,"italique":false,"vide":false,"fond":false,"imprimer":true,"afficher":true,"demo":{"ant":54230757496.38,"b":["","","",""],"r":[5999088634.92,-3543167517.72,10510579137.01,""]}},{"code":"R2","ordre":30,"libelle":"Revenus d'intérêts","type":"ressources","nature":"ligne","fourchettes":[{"d":"771","f":"771","s":"C"}],"axes":[],"reference":"","note":"","gras":false,"italique":false,"vide":false,"fond":false,"imprimer":true,"afficher":true,"demo":{"ant":6772627.94,"b":["","","",""],"r":["","","",""]}},{"code":"R3","ordre":40,"libelle":"Autres revenus","type":"ressources","nature":"ligne","fourchettes":[{"d":"75","f":"75","s":"C"}],"axes":[],"reference":"","note":"","gras":false,"italique":false,"vide":false,"fond":false,"imprimer":true,"afficher":true,"demo":{"ant":-252638297.08,"b":["","","",""],"r":[42204338.86,-893236992.33,1345031508.48,8334178.3]}},{"code":"RT","ordre":50,"libelle":"Total Ressources","type":"ressources","nature":"total","fourchettes":[],"axes":[],"reference":"","note":"","gras":true,"italique":false,"vide":false,"fond":true,"imprimer":true,"afficher":true},{"code":"C","ordre":60,"libelle":"Classification des coûts GAVI","type":"emp1","nature":"titre","fourchettes":[],"axes":[],"reference":"","note":"","gras":true,"italique":false,"vide":false,"fond":false,"imprimer":true,"afficher":true},{"code":"C1","ordre":70,"libelle":"1. Ressources humaines (RH)","type":"emp1","nature":"ligne","fourchettes":[],"axes":[{"axe":"CATEGORIE DE DEPENSE","d":"01","f":"01","s":"D"}],"reference":"","note":"","gras":false,"italique":false,"vide":false,"fond":false,"imprimer":true,"afficher":true,"demo":{"ant":8369110897.78,"b":["","","",""],"r":[307693724.82,402417327.52,246827769.89,113770453.17]}},{"code":"C2","ordre":80,"libelle":"2. Transport","type":"emp1","nature":"ligne","fourchettes":[],"axes":[{"axe":"CATEGORIE DE DEPENSE","d":"02","f":"02","s":"D"}],"reference":"","note":"","gras":false,"italique":false,"vide":false,"fond":false,"imprimer":true,"afficher":true,"demo":{"ant":5240862736.97,"b":["","","",""],"r":[3455324633.95,1761907740.6,161277938.02,647970080]}},{"code":"C3","ordre":90,"libelle":"3. Services professionnels externes (SPE)","type":"emp1","nature":"ligne","fourchettes":[],"axes":[{"axe":"CATEGORIE DE DEPENSE","d":"03","f":"03","s":"D"}],"reference":"","note":"","gras":false,"italique":false,"vide":false,"fond":false,"imprimer":true,"afficher":true,"demo":{"ant":484115317.81,"b":["","","",""],"r":[29152303.18,29322303.12,69757669.8,21433937.48]}},{"code":"C4","ordre":100,"libelle":"4. Produits de santé, consommables, équipements","type":"emp1","nature":"ligne","fourchettes":[],"axes":[{"axe":"CATEGORIE DE DEPENSE","d":"04","f":"04","s":"D"}],"reference":"","note":"","gras":false,"italique":false,"vide":false,"fond":false,"imprimer":true,"afficher":true,"demo":{"ant":464174758.24,"b":["","","",""],"r":[118650400,5692840,9923760,""]}},{"code":"C5","ordre":110,"libelle":"5. Evènementiel (formation, réunion,...)","type":"emp1","nature":"ligne","fourchettes":[],"axes":[{"axe":"CATEGORIE DE DEPENSE","d":"05","f":"05","s":"D"}],"reference":"","note":"","gras":false,"italique":false,"vide":false,"fond":false,"imprimer":true,"afficher":true,"demo":{"ant":9495005388.98,"b":["","","",""],"r":[1599725456.24,1597994235.1,1502524575.78,164773902.66]}},{"code":"C6","ordre":120,"libelle":"6. Chaine du froid","type":"emp1","nature":"ligne","fourchettes":[],"axes":[{"axe":"CATEGORIE DE DEPENSE","d":"06","f":"06","s":"D"}],"reference":"","note":"","gras":false,"italique":false,"vide":false,"fond":false,"imprimer":true,"afficher":true,"demo":{"ant":-200000,"b":["","","",""],"r":[4752000,"","",""]}},{"code":"C7","ordre":130,"libelle":"7. Infrastructures et équipements non médicaux","type":"emp1","nature":"ligne","fourchettes":[],"axes":[{"axe":"CATEGORIE DE DEPENSE","d":"07","f":"07","s":"D"}],"reference":"","note":"","gras":false,"italique":false,"vide":false,"fond":false,"imprimer":true,"afficher":true,"demo":{"ant":260304291.3,"b":["","","",""],"r":[6639717,288033556,7967200,123480000]}},{"code":"C8","ordre":140,"libelle":"8. Support de communication et publications","type":"emp1","nature":"ligne","fourchettes":[],"axes":[{"axe":"CATEGORIE DE DEPENSE","d":"08","f":"08","s":"D"}],"reference":"","note":"","gras":false,"italique":false,"vide":false,"fond":false,"imprimer":true,"afficher":true,"demo":{"ant":314319218.95,"b":["","","",""],"r":[81172510,1050771976,103768069.15,3976517.5]}},{"code":"C9","ordre":150,"libelle":"9. Administration de programme (AP)","type":"emp1","nature":"ligne","fourchettes":[],"axes":[{"axe":"CATEGORIE DE DEPENSE","d":"09","f":"09","s":"D"}],"reference":"","note":"","gras":false,"italique":false,"vide":false,"fond":false,"imprimer":true,"afficher":true,"demo":{"ant":1137632800.73,"b":["","","",""],"r":[124253746.69,169228102.74,70798141.28,18488046]}},{"code":"C10","ordre":160,"libelle":"10. Financement fondé sur les résultats","type":"emp1","nature":"ligne","fourchettes":[],"axes":[{"axe":"CATEGORIE DE DEPENSE","d":"10","f":"10","s":"D"}],"reference":"","note":"","gras":false,"italique":false,"vide":false,"fond":false,"imprimer":true,"afficher":true,"demo":{"ant":"","b":["","","",""],"r":["","","",""]}},{"code":"CT","ordre":170,"libelle":"Total Emplois  - 1","type":"emp1","nature":"total","fourchettes":[],"axes":[],"reference":"","note":"","gras":true,"italique":false,"vide":false,"fond":true,"imprimer":true,"afficher":true},{"code":"A","ordre":180,"libelle":"Catégorie d'activité Gavi","type":"emp2","nature":"titre","fourchettes":[],"axes":[],"reference":"","note":"","gras":true,"italique":false,"vide":false,"fond":false,"imprimer":true,"afficher":true},{"code":"A1","ordre":190,"libelle":"1. Prestation de services","type":"emp2","nature":"ligne","fourchettes":[],"axes":[{"axe":"DOMAINE","d":"01","f":"01","s":"D"}],"reference":"","note":"","gras":false,"italique":false,"vide":false,"fond":false,"imprimer":true,"afficher":true,"demo":{"ant":10355966302.43,"b":["","","",""],"r":[4793357366.83,3661056367.94,1364329250.44,121502340.18]}},{"code":"A2","ordre":200,"libelle":"2. Renforcement des capacités des ressources humaines","type":"emp2","nature":"ligne","fourchettes":[],"axes":[{"axe":"DOMAINE","d":"02","f":"02","s":"D"}],"reference":"","note":"","gras":false,"italique":false,"vide":false,"fond":false,"imprimer":true,"afficher":true,"demo":{"ant":1341590346.31,"b":["","","",""],"r":[-16604312.4,78769850,18611000,""]}},{"code":"A3","ordre":210,"libelle":"3. Gestion des achats et de la chaîne d'approvisionnement","type":"emp2","nature":"ligne","fourchettes":[],"axes":[{"axe":"DOMAINE","d":"03","f":"03","s":"D"}],"reference":"","note":"","gras":false,"italique":false,"vide":false,"fond":false,"imprimer":true,"afficher":true,"demo":{"ant":2686170402.93,"b":["","","",""],"r":[48957583,271014568,-90000,""]}},{"code":"A4","ordre":220,"libelle":"4. Systèmes d'information sanitaire","type":"emp2","nature":"ligne","fourchettes":[],"axes":[{"axe":"DOMAINE","d":"04","f":"04","s":"D"}],"reference":"","note":"","gras":false,"italique":false,"vide":false,"fond":false,"imprimer":true,"afficher":true,"demo":{"ant":2155004247.55,"b":["","","",""],"r":[-5996915.36,158166495.7,44344309,45240300]}},{"code":"A5","ordre":230,"libelle":"5. Plaidoyer, communication et mobilisation sociale","type":"emp2","nature":"ligne","fourchettes":[],"axes":[{"axe":"DOMAINE","d":"05","f":"05","s":"D"}],"reference":"","note":"","gras":false,"italique":false,"vide":false,"fond":false,"imprimer":true,"afficher":true,"demo":{"ant":-5700000,"b":["","","",""],"r":["",81428100,-1425000,""]}},{"code":"A6","ordre":240,"libelle":"6. Environnement légal, politique et réglementaire","type":"emp2","nature":"ligne","fourchettes":[],"axes":[{"axe":"DOMAINE","d":"06","f":"06","s":"D"}],"reference":"","note":"","gras":false,"italique":false,"vide":false,"fond":false,"imprimer":true,"afficher":true,"demo":{"ant":701697529,"b":["","","",""],"r":[37638594,23265866.32,1003600,797400]}},{"code":"A7","ordre":250,"libelle":"7. Financement de la santé","type":"emp2","nature":"ligne","fourchettes":[],"axes":[{"axe":"DOMAINE","d":"07","f":"07","s":"D"}],"reference":"","note":"","gras":false,"italique":false,"vide":false,"fond":false,"imprimer":true,"afficher":true,"demo":{"ant":1201688127.56,"b":["","","",""],"r":[322259667.12,133643952,51930000,""]}},{"code":"A8","ordre":260,"libelle":"8. Gestion des programmes","type":"emp2","nature":"ligne","fourchettes":[],"axes":[{"axe":"DOMAINE","d":"08","f":"08","s":"D"}],"reference":"","note":"","gras":false,"italique":false,"vide":false,"fond":false,"imprimer":true,"afficher":true,"demo":{"ant":"","b":["","","",""],"r":[3250240,-480240,"",""]}},{"code":"A9","ordre":270,"libelle":"9. Coûts du soutien aux programmes","type":"emp2","nature":"ligne","fourchettes":[],"axes":[{"axe":"DOMAINE","d":"09","f":"09","s":"D"}],"reference":"","note":"","gras":false,"italique":false,"vide":false,"fond":false,"imprimer":true,"afficher":true,"demo":{"ant":7328908454.98,"b":["","","",""],"r":[544502268.69,898503121.12,694141964.48,926352896.63]}},{"code":"A10","ordre":280,"libelle":"10. Autre(s)","type":"emp2","nature":"ligne","fourchettes":[],"axes":[{"axe":"DOMAINE","d":"10","f":"10","s":"D"}],"reference":"","note":"","gras":false,"italique":false,"vide":false,"fond":false,"imprimer":true,"afficher":true,"demo":{"ant":"","b":["","","",""],"r":["","","",""]}},{"code":"AT","ordre":290,"libelle":"Total Emplois  - 2","type":"emp2","nature":"total","fourchettes":[],"axes":[],"reference":"","note":"","gras":true,"italique":false,"vide":false,"fond":true,"imprimer":true,"afficher":true},{"code":"T1","ordre":300,"libelle":"Solde bancaire disponible","type":"treso","nature":"ligne","fourchettes":[{"d":"512","f":"512","s":"D"}],"axes":[],"reference":"","note":"","gras":false,"italique":false,"vide":false,"fond":false,"imprimer":true,"afficher":true,"demo":{"ant":26431471700.35,"b":["","","",""],"r":[-954738937.6,-7378976967.63,9819467872.77,-6631727241.21]}},{"code":"T2","ordre":310,"libelle":"Avances non liquidées","type":"avances","nature":"ligne","fourchettes":[{"d":"409","f":"409","s":"D"}],"axes":[],"reference":"","note":"","gras":false,"italique":false,"vide":false,"fond":false,"imprimer":true,"afficher":true,"demo":{"ant":1854415772.56,"b":["","","",""],"r":[1480778306,-2133182177,-183584701,5601814417]}},{"code":"T3","ordre":320,"libelle":"Total Emplois  - 3","type":"emp3","nature":"total","fourchettes":[],"axes":[],"reference":"","note":"","gras":true,"italique":false,"vide":false,"fond":true,"imprimer":true,"afficher":true}] }];
+  var cur = null, sel = -1, mode = 'consultation', copie = null, optOuvert = false;
+  var sM = q('[data-gsp-modele]'), tb = q('[data-gsp-lignes]');
+
+  function toast(m) { var t = q('[data-gsp-toast]'); t.textContent = m; t.hidden = false; clearTimeout(toast.t); toast.t = setTimeout(function () { t.hidden = true; }, 2200); }
+  function refModeles(garder) {
+    sM.innerHTML = '<option value="">— Sélectionner un modèle —</option>' + modeles.map(function (m) { return '<option value="' + m.id + '">' + m.id + ' — ' + m.libelle + '</option>'; }).join('');
+    sM.value = garder || '';
+  }
+  function modele() { return modeles.filter(function (m) { return m.id === sM.value; })[0] || null; }
+  function esc(s) { return String(s == null ? '' : s).replace(/[&<>"]/g, function (c) { return { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c]; }); }
+
+  function renderLignes() {
+    var m = modele(); cur = m;
+    q('[data-gsp-dupliquer]').disabled = !m; q('[data-gsp-supprimer-modele]').disabled = !m;
+    q('[data-gsp-vide]').hidden = !!m && m.lignes.length > 0;
+    q('[data-gsp-vide]').textContent = !m ? 'Sélectionnez ou créez un modèle pour afficher ses lignes.' : 'Ce modèle n\'a pas encore de ligne : utilisez « Ajouter ».';
+    q('[data-gsp-compte]').textContent = m ? m.lignes.length + ' ligne' + (m.lignes.length > 1 ? 's' : '') : '';
+    var LET = { ligne: 'G', formule: 'F', constante: 'C' };
+    tb.innerHTML = m ? m.lignes.map(function (l, i) { return { l: l, i: i }; }).sort(function (a, b) { return (0) || (+a.l.ordre || 0) - (+b.l.ordre || 0); }).map(function (o) {
+      var l = o.l, i = o.i, f = l.fourchettes[0] || {}, a = (l.axes || [])[0] || {}, res = l.nature === 'resultat';
+      function c(v, cl) { return '<td' + (cl ? ' class="' + cl + '"' : '') + '>' + esc(v) + '</td>'; }
+      return '<tr data-i="' + i + '" class="t-' + l.nature + (i === sel ? ' sel' : '') + '">' + c(l.code) + c(l.libelle) + c(TYPELIB[l.type] || l.type) +
+        '<td class="c" data-v="' + (res ? 'oui' : 'non') + '"><input type="checkbox" tabindex="-1" aria-label="Résultat"' + (res ? ' checked' : '') + '></td>' +
+        c(f.d) + c(f.f) + c(f.s, 'c') + c(a.axe) + c(a.d) + c(a.f) +
+        '<td class="c" title="' + NAT[l.nature] + '">' + (LET[l.nature] || 'R') + '</td>' + c(l.formule) + '</tr>';
+    }).join('') : '';
+    filtrer();
+  }
+
+  function filtrer() {
+    var F = qa('[data-fc]').map(function (e) { return e.value.trim().toLowerCase(); });
+    qa('[data-gsp-lignes] tr').forEach(function (tr) {
+      tr.hidden = F.some(function (v, k) { if (!v) return false; var td = tr.children[k]; var t = (td.dataset.v || td.textContent).toLowerCase(); return k === 3 ? t !== v : t.indexOf(v) < 0; });
+    });
+  }
+  qa('[data-fc]').forEach(function (e) { e.addEventListener('input', filtrer); e.addEventListener('change', filtrer); });
+  var ABREV = { ACTIVITE: 'ACT', 'POSTE BUDGETAIRE': 'BUD', FINANCEMENT: 'FIN', GEOGRAPHIQUE: 'GEO', 'CATEGORIE DE DEPENSE': 'Catégories', NATURE: 'NAT', DOMAINE: 'Domaines' };
+  function axesUtilises() {
+    var AX = (window.ECRITURES_SAISIES && window.ECRITURES_SAISIES.AXES) || ['ACTIVITE', 'POSTE BUDGETAIRE', 'FINANCEMENT', 'GEOGRAPHIQUE'], act = window.PLANS_ACTIFS ? window.PLANS_ACTIFS() : [];
+    var L = AX.filter(function (n, k) { return !act.length || act.indexOf('PLAN' + (k + 1)) >= 0; });
+    if (L.indexOf('CATEGORIE DE DEPENSE') < 0) L.push('CATEGORIE DE DEPENSE');
+    if (L.indexOf('DOMAINE') < 0) L.push('DOMAINE');
+    return L;
+  }
+  var G = {}, snap = {}, ax = 'Compte', optC = {};
+  function cles() { return ['Compte'].concat(axesUtilises()); }
+  function libCle(k) { return k === 'Compte' ? 'Compte' : (ABREV[k] || k); }
+  function listeOpts(k) {
+    var out = [], vus = {};
+    function add(c, l) { c = String(c == null ? '' : c); if (!c || vus[c]) return; vus[c] = 1; out.push([c, l || '']); }
+    if (k === 'Compte') {
+      var R = (window.ECRITURES_REF && window.ECRITURES_REF.comptes) || [], P = window.PLAN_COMPTABLE || [], par = {};
+      P.forEach(function (x) { if (x.parent) par[x.parent] = 1; });
+      R.forEach(function (x) { add(x.code, x.label); }); P.forEach(function (x) { if (x.actif !== false && !par[x.code]) add(x.code, x.libelle); });
+      out.sort(function (a, b) { return a[0] < b[0] ? -1 : a[0] > b[0] ? 1 : 0; });
+    } else { ((window.ECRITURES_AXES || {})[k] || []).forEach(function (x) { add(x.code, x.label); }); }
+    return out;
+  }
+  function optsHtml(k) {
+    if (!optC[k]) optC[k] = '<option value="">Choisir...</option>' + listeOpts(k).map(function (o) { return '<option value="' + esc(o[0]) + '">' + esc(o[0] + (o[1] ? ' — ' + o[1] : '')) + '</option>'; }).join('');
+    return optC[k];
+  }
+  function choisir1(sel, v) { sel.value = v || ''; if (v && sel.value !== v) { var o = document.createElement('option'); o.value = v; o.textContent = v; sel.appendChild(o); sel.value = v; } }
+  function ligneFl(kind, v) {
+    v = v || { d: '', f: '', s: 'S' };
+    var d = document.createElement('tr'), o = optsHtml(ax); d.className = 'bp-fl';
+    d.innerHTML = '<td><select class="bp-sel" data-k="d" aria-label="Min">' + o + '</select></td>' +
+      '<td><select class="bp-sel" data-k="f" aria-label="Max">' + o + '</select></td>' +
+      '<td><select class="bp-sel" data-k="s" aria-label="Sens"><option value="S">S</option><option value="D">D</option><option value="C">C</option></select></td>';
+    choisir1(d.querySelector('[data-k=d]'), v.d); choisir1(d.querySelector('[data-k=f]'), v.f); d.querySelector('[data-k=s]').value = v.s || 'S';
+    return d;
+  }
+  function majVide(kind) { var n = q('[data-rows="' + kind + '"]').children.length; q('[data-vide="' + kind + '"]').hidden = n > 0; }
+  function lireRows() {
+    return qa('[data-rows="cur"] .bp-fl').map(function (r) { return { d: r.querySelector('[data-k=d]').value.trim(), f: r.querySelector('[data-k=f]').value.trim(), s: r.querySelector('[data-k=s]').value }; });
+  }
+  function selFl(e) { var tr = e.target.closest && e.target.closest('.bp-fl'); if (!tr) return; qa('.bp-fl.sel-fl').forEach(function (x) { x.classList.remove('sel-fl'); }); tr.classList.add('sel-fl'); }
+  root.addEventListener('click', selFl); root.addEventListener('focusin', selFl);
+  function desactiver() { var ed = mode !== 'consultation'; qa('[data-gsp-form] [data-rows="cur"] select,[data-gsp-form] [data-rm-sel],[data-gsp-form] [data-add-f],[data-gsp-form] [data-g-save],[data-gsp-form] [data-g-undo]').forEach(function (e) { e.disabled = !ed; }); }
+  function dessinerOnglets() {
+    q('[data-gsp-axt]').innerHTML = cles().map(function (k) { return '<button type="button" role="tab" data-axk="' + esc(k) + '" aria-selected="' + (k === ax ? 'true' : 'false') + '"' + (k === ax ? ' class="on"' : '') + ' title="' + esc(k) + '">' + esc(libCle(k)) + '</button>'; }).join('');
+  }
+  function afficherAxe() {
+    var c = q('[data-rows="cur"]'); c.innerHTML = ''; (G[ax] || []).forEach(function (v) { c.appendChild(ligneFl('cur', v)); }); majVide('cur');
+    q('[data-gsp-axh]').textContent = 'Axe : ' + (ax === 'Compte' ? 'Compte' : ax);
+    q('[data-gsp-aide]').textContent = ax === 'Compte' ? 'Saisissez les comptes comptables constituant le montant. Sens : (S)olde, (D)ébit, (C)rédit.' : 'Fourchette d’éléments du plan de l’axe ' + ax + ' à retenir (Min / Max). Plusieurs fourchettes possibles ; aucune = pas de filtre sur cet axe. Sens : (S)olde, (D)ébit, (C)rédit.';
+    dessinerOnglets(); desactiver();
+  }
+  function changerAxe(k) { G[ax] = lireRows(); ax = k; afficherAxe(); }
+  function chargerG(l) {
+    optC = {}; G = {}; snap = {}; ax = 'Compte';
+    cles().forEach(function (k) { G[k] = JSON.parse(JSON.stringify(k === 'Compte' ? (l.fourchettes || []) : (l.axes || []).filter(function (x) { return x.axe === k; }).map(function (x) { return { d: x.d, f: x.f, s: x.s }; }))); snap[k] = JSON.stringify(G[k]); });
+    afficherAxe();
+  }
+  function collecterG() {
+    G[ax] = lireRows(); var axes = [];
+    cles().forEach(function (k) { if (k !== 'Compte') (G[k] || []).forEach(function (x) { if (x.d || x.f) axes.push({ axe: k, d: x.d, f: x.f, s: x.s }); }); });
+    return { fourchettes: G.Compte || [], axes: axes };
+  }
+  q('[data-gsp-axt]').addEventListener('click', function (e) { var b = e.target.closest('button[data-axk]'); if (b) changerAxe(b.dataset.axk); });
+  function majSections() { var n = qa('[name=gsp-nature]:checked')[0]; q('[data-gsp-grilles]').hidden = !(n && n.value === 'ligne'); q('[data-gsp-formule]').hidden = !(n && (n.value === 'formule' || n.value === 'constante')); }
+  qa('[name=gsp-nature]').forEach(function (r) { r.addEventListener('change', majSections); });
+
+  function remplirForm(l) {
+    l = l || L('', '', '', 'ressources', 'ligne'); if (!l.code && !l.libelle) { l.gras = false; l.fond = false; }
+    qa('[data-f]').forEach(function (e) { e.value = l[e.dataset.f] == null ? '' : l[e.dataset.f]; });
+    qa('[name=gsp-type]').forEach(function (r) { r.checked = r.value === l.type && (l.code || l.libelle || sel >= 0 || mode === 'edition'); });
+    qa('[name=gsp-nature]').forEach(function (r) { r.checked = r.value === l.nature && (l.code || l.libelle || sel >= 0 || mode === 'edition'); });
+    qa('[data-c]').forEach(function (c) { c.checked = !!l[c.dataset.c]; });
+    chargerG(l); majSections();
+  }
+  function appliquerMode() {
+    var ed = mode !== 'consultation';
+    qa('[data-gsp-form] input,[data-gsp-form] select,[data-gsp-form] textarea,[data-gsp-form] [data-add-f],[data-gsp-form] [data-g-save],[data-gsp-form] [data-g-undo],[data-gsp-form] [data-rm-sel]').forEach(function (e) { e.disabled = !ed; });
+    q('[data-gsp-mode]').textContent = mode === 'creation' ? 'Création' : mode === 'edition' ? 'Modification' : 'Consultation';
+    var m = modele(), a = root.querySelector('[data-gsp-actions]');
+    a.querySelector('[data-gsp-ajouter]').disabled = !m || ed;
+    a.querySelector('[data-gsp-modifier]').disabled = !m || ed || sel < 0;
+    a.querySelector('[data-gsp-enregistrer]').disabled = !ed;
+    a.querySelector('[data-gsp-annuler]').disabled = !ed;
+    a.querySelector('[data-gsp-imprimer]').disabled = !m;
+    a.querySelector('[data-gsp-exporter]').disabled = !m;
+  }
+  function onglet(n) { qa('[data-gsp-pan]').forEach(function (p) { p.hidden = p.dataset.gspPan !== n; }); qa('[data-gsp-tab]').forEach(function (t) { var on = t.dataset.gspTab === n; t.classList.toggle('on', on); t.setAttribute('aria-selected', on); }); }
+  function choisir(i) {
+    if (mode !== 'consultation') return;
+    sel = i; renderLignes(); remplirForm(cur.lignes[i]); appliquerMode();
+  }
+  qa('[data-gsp-tab]').forEach(function (t) { t.addEventListener('click', function () { onglet(t.dataset.gspTab); }); });
+  tb.addEventListener('dblclick', function (e) { var tr = e.target.closest('tr[data-i]'); if (tr) { choisir(+tr.dataset.i); onglet('saisie'); } });
+
+  tb.addEventListener('click', function (e) { var tr = e.target.closest('tr[data-i]'); if (tr) choisir(+tr.dataset.i); });
+  sM.addEventListener('change', function () { sel = -1; mode = 'consultation'; renderLignes(); remplirForm(null); appliquerMode(); });
+
+  root.addEventListener('click', function (e) {
+    var b = e.target.closest('button'); if (!b || b.disabled) return;
+    if (b.hasAttribute('data-add-f')) { q('[data-rows="cur"]').appendChild(ligneFl('cur')); majVide('cur'); return; }
+    if (b.hasAttribute('data-g-save')) { snap[ax] = JSON.stringify(lireRows()); G[ax] = lireRows(); toast('Grille validée'); return; }
+    if (b.hasAttribute('data-g-undo')) { G[ax] = JSON.parse(snap[ax] || '[]'); afficherAxe(); return; }
+    if (b.hasAttribute('data-rm-sel')) { var rs = q('[data-rows="cur"] .bp-fl.sel-fl'); if (!rs) { toast('Sélectionnez la fourchette à retirer.'); return; } rs.remove(); majVide('cur'); return; }
+    if (b.hasAttribute('data-gsp-opt-t')) { optOuvert = !optOuvert; q('[data-gsp-opt]').hidden = !optOuvert; b.setAttribute('aria-expanded', optOuvert); b.querySelector('i').className = 'ti ti-chevron-' + (optOuvert ? 'up' : 'down'); return; }
+    if (b.hasAttribute('data-gsp-ajouter')) { onglet('saisie'); mode = 'creation'; sel = -1; renderLignes(); copie = null; var nl = L('', (cur.lignes.length + 1) * 10, '', 'ressources', 'ligne'); remplirForm(nl); qa('[name=gsp-type][value=ressources]')[0].checked = true; qa('[name=gsp-nature][value=ligne]')[0].checked = true; majSections(); appliquerMode(); q('[data-f=code]').focus(); return; }
+    if (b.hasAttribute('data-gsp-modifier')) { onglet('saisie'); mode = 'edition'; appliquerMode(); q('[data-f=code]').focus(); return; }
+    if (b.hasAttribute('data-gsp-annuler')) { mode = 'consultation'; renderLignes(); remplirForm(sel >= 0 ? cur.lignes[sel] : null); appliquerMode(); return; }
+    if (b.hasAttribute('data-gsp-enregistrer')) { enregistrer(); return; }
+    if (b.hasAttribute('data-gsp-imprimer')) { window.print(); return; }
+    if (b.hasAttribute('data-gsp-exporter')) { (function () {
+      var X = window.EXPORT_TABLEAU; if (!X || !cur) { toast('Export indisponible.'); return; }
+      function rg(a) { return (a || []).map(function (f) { return f && typeof f === 'object' ? Object.keys(f).map(function (k) { return f[k]; }).filter(function (v) { return v !== '' && v != null; }).join(' à ') : String(f); }).join(' ; '); }
+      var tete = ['Code', 'Ordre', 'Libellé', 'Type', 'Nature', 'Mouvement', 'Fourchettes / axes', 'Référence', 'Note'];
+      var lignes = (cur.lignes || []).map(function (l) { return [l.code, l.ordre != null ? l.ordre : (l.tri != null ? l.tri : ''), l.libelle, l.type || '', l.nature || '', l.mouvement || '', rg(l.fourchettes || l.axes || []), l.reference || '', l.note || '']; });
+      X.xlsx('modele_' + String(cur.id).replace(/[^A-Za-z0-9_-]+/g, '_') + '.xlsx', 'Modèle ' + cur.id, tete, lignes, [['Modèle ' + cur.id + (cur.libelle ? ' — ' + cur.libelle : '')], []]);
+      toast('Export Excel (XLSX) généré : ' + lignes.length + ' ligne(s).');
+    })(); return; }
+    if (b.hasAttribute('data-gsp-nouveau')) { var o = q('[data-gsp-ov]'); o.hidden = false; q('[data-n-err]').hidden = true; qa('[data-n]').forEach(function (i) { i.value = ''; }); q('[data-n=code]').focus(); return; }
+    if (b.hasAttribute('data-gsp-dupliquer')) { var m0 = modele(), n = 2; while (modeles.some(function (x) { return x.id === m0.id + '-' + n; })) n++; var cp = JSON.parse(JSON.stringify(m0)); cp.id = m0.id + '-' + n; cp.libelle = m0.libelle + ' (copie)'; modeles.push(cp); refModeles(cp.id); sM.dispatchEvent(new Event('change')); toast('Modèle dupliqué'); return; }
+    if (b.hasAttribute('data-gsp-supprimer-modele')) { var m1 = modele(); if (!window.confirm('Supprimer le modèle « ' + m1.id + ' » ?')) return; modeles = modeles.filter(function (x) { return x !== m1; }); refModeles(''); sM.dispatchEvent(new Event('change')); toast('Modèle supprimé'); return; }
+    if (b.hasAttribute('data-n-annuler')) { q('[data-gsp-ov]').hidden = true; return; }
+    if (b.hasAttribute('data-n-ok')) {
+      var c = q('[data-n=code]').value.trim().toUpperCase(), lb = q('[data-n=libelle]').value.trim(), er = q('[data-n-err]');
+      if (!c || !lb) { er.textContent = 'Le code et le libellé sont obligatoires.'; er.hidden = false; return; }
+      if (modeles.some(function (x) { return x.id === c; })) { er.textContent = 'Ce code existe déjà.'; er.hidden = false; return; }
+      modeles.push({ id: c, libelle: lb, lignes: [] }); refModeles(c); sM.dispatchEvent(new Event('change')); q('[data-gsp-ov]').hidden = true; toast('Modèle créé'); return;
+    }
+  });
+  root.addEventListener('keydown', function (e) { if (e.key === 'Escape' && !q('[data-gsp-ov]').hidden) q('[data-gsp-ov]').hidden = true; });
+
+  function enregistrer() {
+    var l = collecterG(); if (mode !== 'creation' && cur.lignes[sel] && cur.lignes[sel].demo) l.demo = cur.lignes[sel].demo;
+    qa('[data-f]').forEach(function (e) { l[e.dataset.f] = e.value.trim(); });
+    qa('[data-c]').forEach(function (c) { l[c.dataset.c] = c.checked; });
+    var t = qa('[name=gsp-type]:checked')[0], n = qa('[name=gsp-nature]:checked')[0];
+    l.type = t && t.value; l.nature = n && n.value; if (l.nature !== 'ligne') { l.fourchettes = []; l.axes = []; } l.ordre = parseInt(l.ordre, 10) || '';
+    var err = !l.code ? 'Le code est obligatoire.' : !l.libelle ? 'Le libellé est obligatoire.' : !l.type ? 'Choisissez le type de la ligne.' : !l.nature ? 'Choisissez la nature de la ligne.'
+      : (l.nature === 'ligne' && !l.fourchettes.some(function (x) { return x.d && x.f; }) && !(l.axes || []).length) ? 'Au moins une fourchette (compte ou axe) est obligatoire.' : (l.axes || []).some(function (x) { return !x.d || !x.f; }) ? 'Chaque fourchette analytique renseignée doit indiquer le minimum et le maximum (axe ' + (l.axes.filter(function (x) { return !x.d || !x.f; })[0] || {}).axe + ').' : '';
+    if (!err && l.fourchettes.some(function (x) { return !!x.d !== !!x.f; })) err = 'Chaque fourchette de comptes doit indiquer le minimum et le maximum.';
+    if (!err && cur.lignes.some(function (x, i) { return x.code === l.code && i !== sel; })) err = 'Ce code existe déjà dans le modèle.';
+    if (err) { toast(err); return; }
+    if (mode === 'creation') { cur.lignes.push(l); sel = cur.lignes.length - 1; } else cur.lignes[sel] = l;
+    mode = 'consultation'; renderLignes(); remplirForm(cur.lignes[sel]); appliquerMode(); onglet('liste'); toast('Ligne enregistrée');
+  }
+
+  refModeles(''); renderLignes(); remplirForm(null); appliquerMode();
+  sM.value = '1'; sM.dispatchEvent(new Event('change')); onglet('liste');
+})();
+</script>

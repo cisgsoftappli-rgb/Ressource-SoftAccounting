@@ -22,6 +22,18 @@
 [data-bc] tr.bc-tot td{background:#E8ECF6;font-weight:700;color:#243569}
 [data-bc] .bc-vide{padding:22px;text-align:center;color:#747A88;font-size:13px}
 [data-bc] .bc-badge{display:inline-flex;align-items:center;padding:2px 10px;border:1px solid;border-radius:6px;font-size:12px;font-weight:600}[data-bc] .bc-badge.on{background:#ECFDF5;border-color:#A7F3D0;color:#047857}[data-bc] .bc-badge.off{background:#F5F7F9;border-color:#D6D9E0;color:#5B606D}
+[data-bc] .bc-ov{position:fixed;inset:0;z-index:2300;display:flex;align-items:center;justify-content:center;background:#0B133280;padding:16px}[data-bc] .bc-ov[hidden]{display:none}
+[data-bc] .bc-md{background:#fff;border-radius:12px;width:min(980px,100%);max-height:calc(100vh - 32px);display:flex;flex-direction:column;overflow:hidden;box-shadow:0 20px 60px #0000004d}
+[data-bc] .bc-mh{display:flex;justify-content:space-between;align-items:flex-start;gap:12px;padding:16px 20px;border-bottom:1px solid #E9EBF0}[data-bc] .bc-mh h2{margin:0;font-size:18px;font-weight:700;color:#0B1332}[data-bc] .bc-mh p{margin:4px 0 0;font-size:13px;color:#5B606D}
+[data-bc] .bc-x{border:0;background:none;font-size:26px;line-height:1;color:#5B606D;cursor:pointer;padding:0 4px}[data-bc] .bc-x:hover{color:#0B1332}
+[data-bc] .bc-mb{padding:16px 20px;overflow:auto;display:flex;flex-direction:column;gap:14px}[data-bc] .bc-mf{display:flex;justify-content:flex-end;align-items:center;gap:8px;padding:12px 88px 12px 20px;border-top:1px solid #E9EBF0;background:#F5F7F9}[data-bc] .bc-mi{margin-right:auto;font-size:12px;color:#474C58}
+[data-bc] .bc-fmt{padding:10px 12px;border-radius:8px;background:#F4F7FE;color:#18244F;font-size:13px}
+[data-bc] .bc-r2{display:grid;grid-template-columns:minmax(0,2fr) minmax(0,1fr);gap:12px 16px;align-items:end}@media (max-width:700px){[data-bc] .bc-r2{grid-template-columns:1fr}}
+[data-bc] .bc-ta{width:100%;box-sizing:border-box;font-family:inherit;resize:vertical}[data-bc] .bc-st{min-height:36px;display:flex;align-items:center;padding:0 12px;border:1px solid #D6D9E0;border-radius:8px;background:#F5F7F9;font-size:12px;color:#353944}
+[data-bc] .bc-b{display:inline-flex;align-items:center;justify-content:center;box-sizing:border-box;height:36px;padding:0 14px;border:1px solid #D6D9E0;border-radius:8px;background:#fff;color:#353944;font:inherit;font-size:13px;font-weight:600;cursor:pointer}[data-bc] .bc-b:hover:not(:disabled){background:#F5F7F9;border-color:#B9BEC8}
+[data-bc] .bc-b.pri{background:#2E427B;border-color:#2E427B;color:#fff}[data-bc] .bc-b.pri:hover:not(:disabled){background:#243569;border-color:#243569}[data-bc] .bc-b:disabled{opacity:.5;cursor:not-allowed}
+[data-bc] .bc-pv{max-height:300px;overflow:auto}[data-bc] .bc-tout{display:flex;align-items:center;gap:8px;font-size:13px;font-weight:600;color:#353944}
+[data-bc] .bc-badge.maj{background:#FFF7E6;border-color:#F5D58A;color:#8A5A00}
 </style>
 
 <div class="bp-root" data-bc>
@@ -33,6 +45,8 @@
     <button type="button" data-bc-supprimer>Supprimer</button>
     <button type="button" data-bc-enregistrer>Enregistrer</button>
     <button type="button" data-bc-annuler>Annuler</button>
+    <button type="button" data-bc-sync>Synchronisation SoftBudget</button>
+    <button type="button" data-bc-import>Importation</button>
     <span class="bc-ok" data-bc-msg role="status"></span>
   </div>
 
@@ -59,8 +73,45 @@
         </div>
       </div>
       <div class="pf-tablewrap bc-grille"><table class="pf-table" data-no-tf data-bc-grille></table></div>
+      <p class="bc-ok" data-bc-devnote style="margin:8px 0 0;font-size:12px"></p>
       <div class="bc-er" data-bc-er="montant" role="alert"></div>
     </section>
+  </div>
+
+  <div class="bc-ov" data-bc-ovi hidden>
+    <div class="bc-md" role="dialog" aria-modal="true" aria-label="Importation du budget">
+      <header class="bc-mh"><div><h2>Importation du budget</h2><p>Importez les montants du budget par convention, catégorie et devise. Procédure financière : <b data-bc-iproc></b>.</p></div><button type="button" class="bc-x" data-bc-iclose aria-label="Fermer">×</button></header>
+      <div class="bc-mb">
+        <div class="bc-fmt">Colonnes attendues : <b>Convention</b> · <b>Catégorie</b> · <b>Devise</b> · <b>Montant</b> (séparateur point-virgule, virgule ou tabulation ; la première ligne peut être l’en-tête).</div>
+        <div class="bc-r2">
+          <label class="bp-champ"><span>Fichier (CSV, TXT)</span><input type="file" class="bp-in" accept=".csv,.txt,.tsv,text/csv,text/plain" data-bc-ifile></label>
+          <div class="bp-champ"><span>Modèle</span><button type="button" class="bc-b" data-bc-imodele>Télécharger le modèle</button></div>
+        </div>
+        <label class="bp-champ"><span>… ou collez les lignes copiées depuis Excel</span><textarea class="bp-in bc-ta" rows="4" data-bc-ipaste placeholder="Convention;Catégorie;Devise;Montant"></textarea></label>
+        <div class="bc-r2">
+          <label class="bp-champ"><span>Mode d’importation</span><select class="bp-sel" data-bc-imode><option value="maj">Ajouter ou mettre à jour les montants</option><option value="rempl">Remplacer le budget des conventions concernées</option></select></label>
+          <div class="bp-champ"><span>Contrôle</span><button type="button" class="bc-b" data-bc-ianalyse>Analyser</button></div>
+        </div>
+        <div data-bc-iprev></div>
+      </div>
+      <footer class="bc-mf"><span class="bc-mi" data-bc-iinfo></span><button type="button" class="bc-b" data-bc-iclose>Annuler</button><button type="button" class="bc-b pri" data-bc-iok disabled>Importer</button></footer>
+    </div>
+  </div>
+
+  <div class="bc-ov" data-bc-ovs hidden>
+    <div class="bc-md" role="dialog" aria-modal="true" aria-label="Synchronisation SoftBudget">
+      <header class="bc-mh"><div><h2>Synchronisation SoftBudget</h2><p>Récupère les budgets des conventions depuis SoftBudget. Procédure financière : <b data-bc-sproc></b>.</p></div><button type="button" class="bc-x" data-bc-sclose aria-label="Fermer">×</button></header>
+      <div class="bc-mb">
+        <div class="bc-fmt">Source : <b>SoftBudget</b> (données de démonstration, aucun appel réseau dans la maquette) · Dernière synchronisation : <b data-bc-slast>jamais</b></div>
+        <div class="bc-r2">
+          <label class="bp-champ"><span>Périmètre</span><select class="bp-sel" data-bc-sscope></select></label>
+          <div class="bp-champ"><span>État</span><div class="bc-st" data-bc-sstat role="status">Prêt à synchroniser.</div></div>
+        </div>
+        <div><button type="button" class="bc-b pri" data-bc-sgo>Lancer la synchronisation</button></div>
+        <div data-bc-sprev></div>
+      </div>
+      <footer class="bc-mf"><span class="bc-mi" data-bc-sinfo></span><button type="button" class="bc-b" data-bc-sclose>Fermer</button><button type="button" class="bc-b pri" data-bc-sok disabled>Appliquer la sélection</button></footer>
+    </div>
   </div>
 </div>
 
@@ -91,10 +142,18 @@
   }
   function conv(code) { return conventions().filter(function (r) { return r.code === code; })[0]; }
   function devises() { var d = (window.DEVISES || []).filter(function (x) { return x.actif !== false; }).map(function (x) { return x.code; }); d = ['MGA'].concat(d.filter(function (c) { return c !== 'MGA'; })); return d.length > 1 ? d : ['MGA', 'EUR', 'USD']; }
+  /* devises d'une convention : la monnaie locale, puis la monnaie de la convention paramétrée dans Procédures financières (procédure en cours) */
+  function monConv(code) {
+    var r = conv(code), P = (window.__pfProcs || []).filter(function (p) { return p.proc === procedure(); });
+    var nm = function (t) { return String(t || '').toLowerCase().replace(/\s+/g, ''); };
+    var hit = P.filter(function (p) { return nm(p.conv).indexOf(nm(code)) >= 0 || (r && nm(p.conv).indexOf(nm(r.libelle)) >= 0); })[0] || P[0];
+    return hit && hit.mon ? String(hit.mon).trim().toUpperCase() : '';
+  }
+  function devisesConv(code) { var loc = 'MGA', m = monConv(code); return m && m !== loc ? [loc, m] : [loc]; }
   function realloc(code, cat, dev) { var s = 0; ((window.REALLOC_CONV || {})[code] || []).forEach(function (x) { if (x.devise !== dev) return; if (x.cat === cat) s -= Number(x.montant) || 0; if (x.vers === cat) s += Number(x.montant) || 0; }); return s; }
   function initial(code, dev) { var B = (data[code] || {}).lignes || {}, s = 0; Object.keys(B).forEach(function (k) { s += Number((B[k] || {})[dev]) || 0; }); return s; }
   function courant(code, dev) { var B = (data[code] || {}).lignes || {}, s = 0; Object.keys(B).forEach(function (k) { s += (Number((B[k] || {})[dev]) || 0) + realloc(code, k, dev); }); return s; }
-  function resume(code, f) { return devises().map(function (d) { var v = f(code, d); return v ? nb(v) + ' ' + d : ''; }).filter(Boolean).join(' · ') || '—'; }
+  function resume(code, f) { return devisesConv(code).map(function (d) { var v = f(code, d); return v ? nb(v) + ' ' + d : ''; }).filter(Boolean).join(' · ') || '—'; }
 
   // ---------- onglets
   function tab(n) {
@@ -135,7 +194,8 @@
     var r = conv(code); q('[data-bc-bailleur]').textContent = r ? (r.extra || '—') : ''; grille();
   }
   function grille() {
-    var D = devises(), cats = cur.code ? categories(cur.code) : [];
+    var D = cur.code ? devisesConv(cur.code) : devises(), cats = cur.code ? categories(cur.code) : [];
+    var nt = q('[data-bc-devnote]'); nt.textContent = cur.code && D.length < 2 ? 'Aucune devise de convention paramétrée pour la procédure ' + procedure() + ' : seule la monnaie locale est proposée (Paramétrages › Paramètres financiers › Procédures financières).' : '';
     var t = q('[data-bc-grille]');
     if (!cur.code) { t.innerHTML = '<tbody><tr><td class="bc-vide">Choisissez une convention pour saisir son budget.</td></tr></tbody>'; return; }
     if (!cats.length) { t.innerHTML = '<tbody><tr><td class="bc-vide">Cette convention n’a aucune catégorie dans le plan financier.</td></tr></tbody>'; return; }
@@ -165,6 +225,145 @@
     data[cur.code] = { lignes: propre }; sel = cur.code; publier(); cur = null; liste(); tab('liste'); msg('Budget enregistré.');
   });
   window.addEventListener('plans-changed', liste); document.addEventListener('click', function (e) { if (e.target.closest && e.target.closest('[data-proc]')) setTimeout(function () { sel = ''; cur = null; liste(); if (!q('[data-bc-pan="saisie"]').hidden) tab('liste'); }, 50); }); window.addEventListener('hashchange', function () { if (location.hash === '#budgetconv' && q('[data-bc-pan="liste"]') && !q('[data-bc-pan="liste"]').hidden) liste(); });
+
+  // ---------- Importation et synchronisation SoftBudget ----------
+  function norme(t) { return String(t == null ? '' : t).normalize('NFD').replace(/[̀-ͯ]/g, '').toLowerCase().replace(/\s+/g, ''); }
+  function nombre(t) { var s = String(t == null ? '' : t).replace(/[\s  ]/g, '').replace(',', '.'); return /^-?\d+(\.\d+)?$/.test(s) ? parseFloat(s) : NaN; }
+  function valeur(code, cat, dev) { return (((data[code] || {}).lignes || {})[cat] || {})[dev]; }
+  function pose(code, cat, dev, m) {
+    var d = data[code] || (data[code] = { lignes: {} }), L = d.lignes[cat] || (d.lignes[cat] = {});
+    if (m > 0) L[dev] = m; else delete L[dev];
+    if (!Object.keys(L).length) delete d.lignes[cat];
+  }
+  function ouvre(sel0) { var o = q(sel0); o.hidden = false; var f = o.querySelector('input,select,button'); if (f) f.focus(); }
+  function ferme(sel0) { q(sel0).hidden = true; }
+  function apresChangement(texte) {
+    if (cur) { cur = null; effacer(); tab('liste'); }
+    publier(); liste(); msg(texte);
+  }
+  function tableau(entetes, lignes) { return '<div class="pf-tablewrap bc-pv"><table class="pf-table" data-no-tf data-no-pg><thead><tr>' + entetes.map(function (e) { return '<th' + (e.r ? ' class="r"' : '') + '>' + e.t + '</th>'; }).join('') + '</tr></thead><tbody>' + lignes.join('') + '</tbody></table></div>'; }
+  function pastille(cls, t) { return '<span class="bc-badge ' + cls + '">' + esc(t) + '</span>'; }
+
+  // --- Importation ---
+  var imp = { lignes: [] };
+  function lireTexte(txt) {
+    var L = String(txt || '').replace(/\r/g, '').split('\n').filter(function (x) { return x.trim(); }), out = [];
+    L.forEach(function (l, i) {
+      var sep = l.indexOf('\t') >= 0 ? '\t' : (l.indexOf(';') >= 0 ? ';' : ','), c = l.split(sep).map(function (x) { return x.replace(/^"|"$/g, '').trim(); });
+      if (i === 0 && /conv/i.test(c[0]) && isNaN(nombre(c[3]))) return;       // ligne d'en-tête
+      out.push({ n: i + 1, conv: c[0] || '', cat: c[1] || '', dev: (c[2] || '').toUpperCase(), mont: c[3] || '' });
+    });
+    return out;
+  }
+  function controle(rows) {
+    var C = conventions(), vus = {};
+    return rows.map(function (r) {
+      var o = { n: r.n, conv: r.conv, cat: r.cat, dev: r.dev, mont: r.mont, ko: '', etat: '' };
+      var cv = C.filter(function (x) { return norme(x.code) === norme(r.conv); })[0];
+      if (!cv) { o.ko = 'Convention inconnue pour la procédure ' + procedure(); return o; }
+      o.conv = cv.code;
+      var ct = categories(cv.code).filter(function (x) { return norme(x.code) === norme(r.cat); })[0];
+      if (!ct) { o.ko = 'Catégorie absente du plan de la convention'; return o; }
+      o.cat = ct.code;
+      var D = devisesConv(cv.code);
+      if (D.indexOf(r.dev) < 0) { o.ko = 'Devise non admise pour cette convention (' + D.join(', ') + ')'; return o; }
+      var m = nombre(r.mont); if (isNaN(m) || m < 0) { o.ko = 'Montant invalide'; return o; }
+      var k = o.conv + '|' + o.cat + '|' + o.dev; if (vus[k]) { o.ko = 'Doublon dans le fichier (ligne ' + vus[k] + ')'; return o; } vus[k] = r.n;
+      o.m = m; o.actuel = valeur(o.conv, o.cat, o.dev) || 0;
+      o.etat = !o.actuel ? (m ? 'nouveau' : 'identique') : (o.actuel === m ? 'identique' : 'maj');
+      return o;
+    });
+  }
+  function analyse() {
+    var txt = q('[data-bc-ipaste]').value; imp.lignes = controle(lireTexte(txt));
+    var ok = imp.lignes.filter(function (x) { return !x.ko && x.etat !== 'identique'; }), ko = imp.lignes.filter(function (x) { return x.ko; });
+    q('[data-bc-iprev]').innerHTML = imp.lignes.length ? tableau([{ t: 'Ligne' }, { t: 'Convention' }, { t: 'Catégorie' }, { t: 'Devise' }, { t: 'Montant', r: 1 }, { t: 'Actuel', r: 1 }, { t: 'Statut' }],
+      imp.lignes.slice(0, 300).map(function (x) {
+        var st = x.ko ? pastille('off', 'Erreur') + ' <span class="bc-er show" style="display:inline;margin:0">' + esc(x.ko) + '</span>' : x.etat === 'nouveau' ? pastille('on', 'Nouveau') : x.etat === 'maj' ? pastille('maj', 'Mise à jour') : pastille('off', 'Identique');
+        return '<tr><td>' + x.n + '</td><td>' + esc(x.conv) + '</td><td>' + esc(x.cat) + '</td><td>' + esc(x.dev) + '</td><td class="r">' + (x.ko ? esc(x.mont) : nb(x.m)) + '</td><td class="r">' + (x.ko || !x.actuel ? '—' : nb(x.actuel)) + '</td><td>' + st + '</td></tr>';
+      })) : '<div class="bc-vide">Aucune ligne à analyser : choisissez un fichier ou collez des lignes.</div>';
+    q('[data-bc-iinfo]').textContent = imp.lignes.length ? ok.length + ' ligne(s) à importer · ' + ko.length + ' en erreur · ' + (imp.lignes.length - ok.length - ko.length) + ' identique(s)' : '';
+    q('[data-bc-iok]').disabled = !ok.length; q('[data-bc-iok]').textContent = ok.length ? 'Importer ' + ok.length + ' ligne(s)' : 'Importer';
+  }
+  q('[data-bc-ifile]').addEventListener('change', function (e) {
+    var f = e.target.files && e.target.files[0]; if (!f) return;
+    var r = new FileReader(); r.onload = function () { q('[data-bc-ipaste]').value = String(r.result || '').replace(/^﻿/, ''); analyse(); }; r.readAsText(f, 'utf-8');
+  });
+  q('[data-bc-ipaste]').addEventListener('input', function () { q('[data-bc-iok]').disabled = true; });
+  q('[data-bc-ianalyse]').addEventListener('click', analyse);
+  q('[data-bc-imodele]').addEventListener('click', function () {
+    var l = ['Convention;Catégorie;Devise;Montant'];
+    conventions().forEach(function (c) { var D = devisesConv(c.code); categories(c.code).forEach(function (k) { D.forEach(function (d) { l.push(c.code + ';' + k.code + ';' + d + ';' + (valeur(c.code, k.code, d) || '')); }); }); });
+    if (l.length === 1) l.push('01;01 - 1;MGA;1500000');
+    var b = new Blob(['﻿' + l.join('\r\n')], { type: 'text/csv;charset=utf-8' }), a = document.createElement('a'); a.href = URL.createObjectURL(b); a.download = 'Modele_import_budget_convention.csv'; document.body.appendChild(a); a.click(); a.remove();
+  });
+  q('[data-bc-iok]').addEventListener('click', function () {
+    var ok = imp.lignes.filter(function (x) { return !x.ko && x.etat !== 'identique'; }); if (!ok.length) return;
+    if (q('[data-bc-imode]').value === 'rempl') { var vu = {}; ok.forEach(function (x) { if (!vu[x.conv]) { vu[x.conv] = 1; data[x.conv] = { lignes: {} }; } }); }
+    var nou = 0, maj0 = 0; ok.forEach(function (x) { if (x.etat === 'nouveau') nou++; else maj0++; pose(x.conv, x.cat, x.dev, x.m); });
+    var rej = imp.lignes.filter(function (x) { return x.ko; }).length; ferme('[data-bc-ovi]');
+    apresChangement('Importation terminée : ' + ok.length + ' ligne(s) importée(s) (' + nou + ' nouvelle(s), ' + maj0 + ' mise(s) à jour)' + (rej ? ', ' + rej + ' rejetée(s)' : '') + '.');
+  });
+  function ouvrirImport() { q('[data-bc-iproc]').textContent = procedure(); q('[data-bc-ipaste]').value = ''; q('[data-bc-ifile]').value = ''; q('[data-bc-iprev]').innerHTML = ''; q('[data-bc-iinfo]').textContent = ''; q('[data-bc-iok]').disabled = true; q('[data-bc-iok]').textContent = 'Importer'; imp.lignes = []; ouvre('[data-bc-ovi]'); }
+  q('[data-bc-import]').addEventListener('click', ouvrirImport);
+  qa('[data-bc-iclose]').forEach(function (b) { b.addEventListener('click', function () { ferme('[data-bc-ovi]'); }); });
+
+  // --- Synchronisation SoftBudget (données de démonstration générées à partir du plan financier) ---
+  var SB = 'softcompta.softbudgetSync', sync = { lignes: [] };
+  function hash(t) { var h = 7; for (var i = 0; i < t.length; i++) h = (h * 31 + t.charCodeAt(i)) >>> 0; return h; }
+  function softbudget(code, cat) {      // montants SoftBudget fictifs, stables d'un appel à l'autre ; certaines catégories n'y sont pas budgétées
+    var h = hash(code + '|' + cat), out = {}; if (h % 7 === 0) return out;
+    var D = devisesConv(code), base = (20 + (h % 580)) * 1000000, taux = { USD: 4500, EUR: 4900, UC: 5700 };
+    D.forEach(function (d, i) { if (i === 0) out[d] = base; else out[d] = Math.round(base / (taux[d] || 4500) / 10) * 10; });
+    return out;
+  }
+  function derniere() { var v = ''; try { v = localStorage.getItem(SB) || ''; } catch (e) {} q('[data-bc-slast]').textContent = v || 'jamais'; }
+  function ouvrirSync() {
+    q('[data-bc-sproc]').textContent = procedure(); sync.lignes = [];
+    q('[data-bc-sscope]').innerHTML = '<option value="">Toutes les conventions de la procédure</option>' + conventions().map(function (c) { return '<option value="' + esc(c.code) + '">' + esc(c.code) + ' — ' + esc(c.libelle) + '</option>'; }).join('');
+    q('[data-bc-sstat]').textContent = 'Prêt à synchroniser.'; q('[data-bc-sprev]').innerHTML = ''; q('[data-bc-sinfo]').textContent = ''; q('[data-bc-sok]').disabled = true; q('[data-bc-sgo]').disabled = false; derniere(); ouvre('[data-bc-ovs]');
+  }
+  q('[data-bc-sync]').addEventListener('click', ouvrirSync);
+  q('[data-bc-sgo]').addEventListener('click', function () {
+    var C = conventions(), sc = q('[data-bc-sscope]').value; if (sc) C = C.filter(function (c) { return c.code === sc; });
+    if (!C.length) { q('[data-bc-sstat]').textContent = 'Aucune convention rattachée à la procédure ' + procedure() + '.'; return; }
+    var go = q('[data-bc-sgo]'); go.disabled = true; q('[data-bc-sok]').disabled = true; q('[data-bc-sprev]').innerHTML = '';
+    q('[data-bc-sstat]').textContent = 'Connexion à SoftBudget…';
+    setTimeout(function () { q('[data-bc-sstat]').textContent = 'Lecture des budgets…'; }, 450);
+    setTimeout(function () {
+      var rows = [], absentes = 0;
+      C.forEach(function (c) { categories(c.code).forEach(function (k) {
+        var s = softbudget(c.code, k.code); if (!Object.keys(s).length) { absentes++; return; }
+        Object.keys(s).forEach(function (d) { var a = valeur(c.code, k.code, d) || 0; rows.push({ conv: c.code, cat: k.code, dev: d, m: s[d], actuel: a, etat: !a ? 'nouveau' : (a === s[d] ? 'identique' : 'maj') }); });
+      }); });
+      sync.lignes = rows; go.disabled = false;
+      var chg = rows.filter(function (x) { return x.etat !== 'identique'; });
+      q('[data-bc-sstat]').textContent = 'Synchronisation terminée : ' + rows.length + ' ligne(s) reçue(s).';
+      q('[data-bc-sprev]').innerHTML = rows.length ? '<label class="bc-tout"><input type="checkbox" data-bc-stout checked> Tout sélectionner (' + chg.length + ' modification(s))</label>' + tableau([{ t: '' }, { t: 'Convention' }, { t: 'Catégorie' }, { t: 'Devise' }, { t: 'SoftBudget', r: 1 }, { t: 'Actuel', r: 1 }, { t: 'Écart', r: 1 }, { t: 'Statut' }],
+        rows.slice(0, 400).map(function (x, i) {
+          var st = x.etat === 'nouveau' ? pastille('on', 'Nouveau') : x.etat === 'maj' ? pastille('maj', 'Modifié') : pastille('off', 'Identique');
+          return '<tr><td><input type="checkbox" data-bc-sl="' + i + '"' + (x.etat === 'identique' ? ' disabled' : ' checked') + ' aria-label="Appliquer"></td><td>' + esc(x.conv) + '</td><td>' + esc(x.cat) + '</td><td>' + esc(x.dev) + '</td><td class="r">' + nb(x.m) + '</td><td class="r">' + (x.actuel ? nb(x.actuel) : '—') + '</td><td class="r">' + (x.etat === 'identique' ? '—' : nb(x.m - x.actuel)) + '</td><td>' + st + '</td></tr>';
+        })) : '<div class="bc-vide">SoftBudget n’a renvoyé aucun budget pour ce périmètre.</div>';
+      q('[data-bc-sinfo]').textContent = (absentes ? absentes + ' catégorie(s) non budgétée(s) dans SoftBudget · ' : '') + chg.length + ' modification(s) proposée(s)';
+      majSel();
+    }, 1100);
+  });
+  function majSel() { var n = qa('[data-bc-sl]:checked').length; q('[data-bc-sok]').disabled = !n; q('[data-bc-sok]').textContent = n ? 'Appliquer ' + n + ' ligne(s)' : 'Appliquer la sélection'; }
+  q('[data-bc-ovs]').addEventListener('change', function (e) {
+    if (e.target.matches('[data-bc-stout]')) { qa('[data-bc-sl]:not(:disabled)').forEach(function (c) { c.checked = e.target.checked; }); majSel(); }
+    else if (e.target.matches('[data-bc-sl]')) majSel();
+  });
+  q('[data-bc-sok]').addEventListener('click', function () {
+    var ch = qa('[data-bc-sl]:checked').map(function (c) { return sync.lignes[+c.dataset.bcSl]; }).filter(Boolean); if (!ch.length) return;
+    var nou = 0, maj0 = 0; ch.forEach(function (x) { if (x.etat === 'nouveau') nou++; else maj0++; pose(x.conv, x.cat, x.dev, x.m); });
+    var d = new Date(), p = function (v) { return ('0' + v).slice(-2); }, stamp = p(d.getDate()) + '/' + p(d.getMonth() + 1) + '/' + d.getFullYear() + ' à ' + p(d.getHours()) + ':' + p(d.getMinutes());
+    try { localStorage.setItem(SB, stamp); } catch (e) {}
+    ferme('[data-bc-ovs]'); apresChangement('Synchronisation SoftBudget appliquée : ' + ch.length + ' ligne(s) (' + nou + ' nouvelle(s), ' + maj0 + ' modifiée(s)).');
+  });
+  qa('[data-bc-sclose]').forEach(function (b) { b.addEventListener('click', function () { ferme('[data-bc-ovs]'); }); });
+  document.addEventListener('keydown', function (e) { if (e.key === 'Escape') { ferme('[data-bc-ovi]'); ferme('[data-bc-ovs]'); } });
+  ['[data-bc-ovi]', '[data-bc-ovs]'].forEach(function (s0) { q(s0).addEventListener('mousedown', function (e) { if (e.target === q(s0)) ferme(s0); }); });
+  window.addEventListener('pf-change', function () { liste(); if (cur && !q('[data-bc-pan="saisie"]').hidden) grille(); });
 
   publier(); liste(); tab('liste');
   window.addEventListener('load', function () { setTimeout(function () { if (!cur) liste(); }, 200); }); setTimeout(function () { if (!cur) liste(); }, 600);

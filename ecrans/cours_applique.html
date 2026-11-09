@@ -1,0 +1,137 @@
+<!--
+  Écran « Gestion des cours › Cours appliqué » (Comptabilité générale) — contrôle des cours appliqués aux écritures.
+  Le contrôle calcule le taux réellement appliqué entre la monnaie de comptabilisation (locale) et la contre-valeur en devise (devise 1),
+  à partir des montants enregistrés sur chaque ligne d'écriture (taux = montant local / montant en devise), et le compare au cours officiel
+  en vigueur à la date du mouvement (Gestion des cours › Saisie, window.COURS_API.taux : dernier cours à la date ou avant).
+  Tout écart supérieur au seuil de tolérance (± 3 % par défaut, modifiable) est signalé en anomalie ; sans cours officiel, la ligne est « Sans cours ».
+  Sources : pièces enregistrées (window.ECRITURES_PIECES) + écritures de démonstration. Boutons relayés par la barre d'actions de page (CFG « coursapplique »).
+  Préfixe ca- / data-cpa. Ne pas nommer de fonction « $$ » (build.cjs).
+-->
+<style>
+[data-cpa] .cpa-bar{display:flex;flex-wrap:wrap;align-items:end;gap:16px;margin:0 0 14px}[data-cpa] .cpa-bar label{display:grid;gap:4px;font-size:12px;color:#5B606D;min-width:150px}
+[data-cpa] .cpa-kpi{display:grid;grid-template-columns:repeat(5,minmax(0,1fr));gap:12px;margin:0 0 14px}
+[data-cpa] .cpa-k{border:1px solid #E9EBF0;border-radius:10px;background:#fff;padding:10px 14px}[data-cpa] .cpa-k span{display:block;font-size:12px;color:#5B606D}[data-cpa] .cpa-k b{font-size:20px;color:#0B1332}
+[data-cpa] .cpa-k.ko b{color:#B63132}[data-cpa] .cpa-k.ok b{color:#1E7B4B}
+[data-cpa] .cpa-tb td.r,[data-cpa] .cpa-tb th.r{text-align:right;font-variant-numeric:tabular-nums;white-space:nowrap}[data-cpa] .cpa-tb td.m{font-family:ui-monospace,Consolas,monospace;font-size:12px}
+[data-cpa] .cpa-st{display:inline-block;padding:2px 10px;border-radius:999px;font-size:12px;font-weight:600;white-space:nowrap}
+[data-cpa] .cpa-st.ok{background:#E3F3EA;color:#1E7B4B}[data-cpa] .cpa-st.ko{background:#FDE8E8;color:#B63132}[data-cpa] .cpa-st.nc{background:#FDF1D8;color:#8A5A12}
+[data-cpa] tr.cpa-ano td{background:#FFF7F7}[data-cpa] .cpa-neg{color:#B63132;font-weight:600}
+[data-cpa] .cpa-pg{display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:10px;padding:10px 4px 0;font-size:13px;color:#5B606D}
+@media (max-width:900px){[data-cpa] .cpa-kpi{grid-template-columns:repeat(2,minmax(0,1fr))}}
+</style>
+
+<div class="bp-root" data-cpa>
+  <h1 style="position:absolute;width:1px;height:1px;overflow:hidden;clip-path:inset(50%);margin:0">Cours appliqué</h1>
+  <div class="no-print" data-cpa-actions>
+    <button type="button" data-cpa-lancer>Lancer le contrôle</button>
+    <button type="button" data-cpa-pdf>PDF</button>
+    <button type="button" data-cpa-xlsx>Excel (XLSX)</button>
+  </div>
+  <div class="bp-grid"><section class="bp-pan" aria-label="Contrôle du cours appliqué">
+    <div class="cpa-bar">
+      <label>Exercice<select class="bp-sel" data-cpa-ex data-no-combo></select></label>
+      <label>Du<input class="bp-in" type="date" data-cpa-du></label>
+      <label>Au<input class="bp-in" type="date" data-cpa-au></label>
+      <label>Journal<select class="bp-sel" data-cpa-jnl data-no-combo></select></label>
+      <label>Seuil de tolérance (± %)<input class="bp-in" type="number" min="0" max="100" step="0.1" value="3" data-cpa-seuil></label>
+      <label>Résultat<select class="bp-sel" data-cpa-st data-no-combo><option value="">Tous</option><option value="ko">Anomalies</option><option value="ok">Conformes</option><option value="nc">Sans cours</option></select></label>
+    </div>
+    <div class="cpa-kpi" data-cpa-kpi hidden></div>
+    <div data-cpa-res hidden>
+      <div style="overflow:auto"><table class="bp-tb cpa-tb" style="min-width:1150px"><thead><tr><th>Date</th><th>Journal</th><th>Pièce</th><th>Compte</th><th>Libellé</th><th class="r">Montant local</th><th class="r" data-cpa-hdev>Montant devise 1</th><th class="r">Taux appliqué</th><th class="r">Cours officiel</th><th class="r">Écart</th><th>Résultat</th></tr></thead><tbody data-cpa-lignes></tbody></table></div>
+      <div class="bp-vide" data-cpa-vide hidden>Aucune ligne ne correspond au filtre.</div>
+      <div class="cpa-pg"><span data-cpa-pginfo></span></div>
+    </div>
+    <div class="bp-vide" data-cpa-init>Renseignez la période puis cliquez sur « Lancer le contrôle ».</div>
+  </section></div>
+  <div class="bp-toast" role="status" hidden data-cpa-toast></div>
+</div>
+
+<script>
+(function () {
+  var root = document.querySelector('[data-cpa]'); if (!root) return;
+  function q(s) { return root.querySelector(s); } function qa(s) { return [].slice.call(root.querySelectorAll(s)); }
+  function esc(s) { return String(s == null ? '' : s).replace(/[&<>"]/g, function (c) { return { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c]; }); }
+  function nb(n, d) { return Number(n).toLocaleString('fr-FR', { minimumFractionDigits: d || 0, maximumFractionDigits: d || 0 }).replace(/[  ]/g, ' '); }
+  function dt(d) { return d ? d.split('-').reverse().join('/') : ''; }
+  function toast(m) { var t = q('[data-cpa-toast]'); t.textContent = m; t.hidden = false; clearTimeout(toast.t); toast.t = setTimeout(function () { t.hidden = true; }, 2600); }
+  function devise1() { var d = 'USD'; [].slice.call(document.querySelectorAll('.ig-f')).forEach(function (f) { var l = f.querySelector('.ig-l'), s = f.querySelector('select'); if (l && s && l.textContent.trim() === 'Devise 1' && s.value) d = s.value; }); return d; }
+  function exercices() { return (window.EXERCICES_API && window.EXERCICES_API.liste()) || []; }
+  function exo() { var v = q('[data-cpa-ex]').value; return exercices().filter(function (e) { return String(e.annee) === v; })[0]; }
+  function iso(d) { return d ? d.split('/').reverse().join('-') : ''; }
+  // écritures de démonstration (montants local / devise 1 déjà comptabilisés) — complétées par les pièces réellement saisies
+  var DEMO = [
+    ['2026-10-02', 'ACHA', 'ACHA-2026-0101', '607000', 'Achat de fournitures — SOMACOU', 4380000, 1000],
+    ['2026-10-05', 'VENT', 'VENT-2026-0058', '706000', 'Prestation client Alpha', 8800000, 2000],
+    ['2026-10-12', 'OD', 'OD-2026-0014', '658000', 'Écart de change constaté', 4330000, 1000],
+    ['2026-10-16', 'BANQ', 'BANQ-2026-0102', '512100', 'Virement fournisseur Beta', 4700000, 1000],
+    ['2026-10-20', 'ACHA', 'ACHA-2026-0109', '613000', 'Location équipement importé', 21000000, 5000],
+    ['2026-10-28', 'VENT', 'VENT-2026-0064', '706000', 'Prestation client Gamma', 9240000, 2000],
+    ['2026-10-29', 'VENT', 'VENT-2026-0066', '707000', 'Vente de marchandises', 6700000, 1500],
+    ['2026-10-30', 'BANQ', 'BANQ-2026-0111', '512100', 'Encaissement client Delta', 13200000, 3000],
+    ['2026-10-31', 'ACHA', 'ACHA-2026-0115', '604000', 'Achat de matériel', 4500000, 1000]
+  ];
+  function sources() {
+    var L = DEMO.map(function (x) { return { d: x[0], j: x[1], p: x[2], c: x[3], l: x[4], loc: x[5], dev: x[6] }; });
+    (window.ECRITURES_PIECES || []).forEach(function (pc) {
+      (pc.lignes || []).forEach(function (l) { if (l.montant > 0 && l.montant1 > 0) L.push({ d: pc.date, j: pc.journal, p: pc.piece, c: l.compte || '', l: l.libelle || '', loc: l.montant, dev: l.montant1 }); });
+    });
+    return L;
+  }
+  var res = [];
+  function remplir() {
+    var ex = exercices(), s = q('[data-cpa-ex]'), v = s.value;
+    s.innerHTML = ex.map(function (e) { return '<option value="' + esc(e.annee) + '">' + esc(e.annee + (e.cours ? ' (en cours)' : '')) + '</option>'; }).join('');
+    var mc = (window.COURS || []).reduce(function (m, c) { return c.date > m ? c.date : m; }, ''), cour = ex.filter(function (e) { return mc && String(e.annee) === mc.slice(0, 4); })[0] || ex.filter(function (e) { return e.cours; })[0];
+    s.value = v && s.querySelector('option[value="' + v + '"]') ? v : (cour ? String(cour.annee) : (ex[0] ? String(ex[0].annee) : ''));
+    var j = q('[data-cpa-jnl]'), J = ((window.ECRITURES_REF || {}).journaux || []);
+    j.innerHTML = '<option value="">Tous</option>' + J.map(function (x) { return '<option value="' + esc(x.code) + '">' + esc(x.code + ' — ' + (x.label || '')) + '</option>'; }).join('');
+    bornes();
+  }
+  function bornes() {
+    var e = exo(); if (!e) return; q('[data-cpa-du]').value = iso(e.debut) || ''; q('[data-cpa-au]').value = iso(e.fin) || '';
+  }
+  function seuil() { var v = parseFloat(q('[data-cpa-seuil]').value); return isNaN(v) || v < 0 ? 3 : v; }
+  function controler() {
+    var d1 = devise1(), du = q('[data-cpa-du]').value, au = q('[data-cpa-au]').value, jn = q('[data-cpa-jnl]').value, S = seuil(), api = window.COURS_API;
+    var st = q('[data-cpa-seuiltxt]'); if (st) st.textContent = String(S).replace('.', ',');
+    res = sources().filter(function (x) { return (!du || x.d >= du) && (!au || x.d <= au) && (!jn || x.j === jn); }).sort(function (a, b) { return a.d < b.d ? -1 : 1; }).map(function (x) {
+      var app = x.loc / x.dev, off = api ? api.taux(d1, x.d) : null, ec = off ? (app - off) / off * 100 : null;
+      return { d: x.d, j: x.j, p: x.p, c: x.c, l: x.l, loc: x.loc, dev: x.dev, app: app, off: off, ec: ec, st: off ? (Math.abs(ec) > S + 1e-9 ? 'ko' : 'ok') : 'nc' };
+    });
+    dessiner();
+  }
+  function dessiner() {
+    var d1 = devise1(), f = q('[data-cpa-st]').value, L = res.filter(function (r) { return !f || r.st === f; });
+    q('[data-cpa-hdev]').textContent = 'Montant ' + d1;
+    var n = res.length, ko = res.filter(function (r) { return r.st === 'ko'; }).length, ok = res.filter(function (r) { return r.st === 'ok'; }).length, nc = n - ko - ok;
+    var mx = res.reduce(function (m, r) { return r.ec != null && Math.abs(r.ec) > Math.abs(m) ? r.ec : m; }, 0);
+    var K = q('[data-cpa-kpi]'); K.hidden = false;
+    K.innerHTML = '<div class="cpa-k"><span>Lignes contrôlées</span><b>' + n + '</b></div><div class="cpa-k ok"><span>Conformes</span><b>' + ok + '</b></div><div class="cpa-k ' + (ko ? 'ko' : '') + '"><span>Anomalies (&gt; ' + String(seuil()).replace('.', ',') + ' %)</span><b>' + ko + '</b></div><div class="cpa-k"><span>Sans cours officiel</span><b>' + nc + '</b></div><div class="cpa-k"><span>Écart maximal</span><b>' + (n ? (mx > 0 ? '+' : '') + nb(mx, 2) + ' %' : '—') + '</b></div>';
+    q('[data-cpa-init]').hidden = true; q('[data-cpa-res]').hidden = false;
+    q('[data-cpa-lignes]').innerHTML = L.map(function (r) {
+      return '<tr class="' + (r.st === 'ko' ? 'cpa-ano' : '') + '"><td>' + dt(r.d) + '</td><td>' + esc(r.j) + '</td><td class="m">' + esc(r.p) + '</td><td class="m">' + esc(r.c) + '</td><td>' + esc(r.l) + '</td><td class="r">' + nb(r.loc, 2) + '</td><td class="r">' + nb(r.dev, 2) + '</td><td class="r">' + nb(r.app, 4) + '</td><td class="r">' + (r.off ? nb(r.off, 4) : '—') + '</td><td class="r ' + (r.st === 'ko' ? 'cpa-neg' : '') + '">' + (r.ec == null ? '—' : (r.ec > 0 ? '+' : '') + nb(r.ec, 2) + ' %') + '</td><td><span class="cpa-st ' + r.st + '">' + (r.st === 'ko' ? 'Anomalie' : r.st === 'ok' ? 'Conforme' : 'Sans cours') + '</span></td></tr>';
+    }).join('');
+    q('[data-cpa-vide]').hidden = L.length > 0; q('[data-cpa-pginfo]').textContent = L.length + ' ligne(s) affichée(s) sur ' + n + ' — taux = montant local / montant en ' + d1 + ' ; cours officiel à la date du mouvement.';
+  }
+  function exporter(fmt) {
+    var X = window.EXPORT_TABLEAU, f = q('[data-cpa-st]').value, L = res.filter(function (r) { return !f || r.st === f; });
+    if (!X) { toast('Module d’export indisponible.'); return; } if (!L.length) { toast('Lancez le contrôle : rien à exporter.'); return; }
+    var d1 = devise1(), T = ['Date', 'Journal', 'Pièce', 'Compte', 'Libellé', 'Montant local', 'Montant ' + d1, 'Taux appliqué', 'Cours officiel', 'Écart (%)', 'Résultat'],
+      rows = L.map(function (r) { return [dt(r.d), r.j, r.p, r.c, r.l, r.loc, r.dev, Math.round(r.app * 10000) / 10000, r.off || '', r.ec == null ? '' : Math.round(r.ec * 100) / 100, r.st === 'ko' ? 'Anomalie' : r.st === 'ok' ? 'Conforme' : 'Sans cours']; });
+    if (fmt === 'pdf') X.pdf('cours_applique.pdf', 'Contrôle du cours appliqué', 'Seuil de tolérance ± ' + seuil() + ' % — ' + L.length + ' ligne(s)', T, rows); else X.xlsx('cours_applique.xlsx', 'Cours appliqué', T, rows);
+    toast('Export ' + (fmt === 'pdf' ? 'PDF' : 'Excel (XLSX)') + ' généré : ' + L.length + ' ligne(s).');
+  }
+  q('[data-cpa-lancer]').addEventListener('click', function () {
+    if (q('[data-cpa-du]').value && q('[data-cpa-au]').value && q('[data-cpa-du]').value > q('[data-cpa-au]').value) { toast('La date de début est postérieure à la date de fin.'); return; }
+    controler(); var ko = res.filter(function (r) { return r.st === 'ko'; }).length; toast('Contrôle terminé : ' + res.length + ' ligne(s), ' + ko + ' anomalie(s).');
+  });
+  q('[data-cpa-ex]').addEventListener('change', function () { bornes(); });
+  q('[data-cpa-st]').addEventListener('change', function () { if (res.length || !q('[data-cpa-res]').hidden) dessiner(); });
+  q('[data-cpa-pdf]').addEventListener('click', function () { exporter('pdf'); });
+  q('[data-cpa-xlsx]').addEventListener('click', function () { exporter('xlsx'); });
+  window.addEventListener('hashchange', function () { if (location.hash === '#coursapplique') remplir(); });
+  window.addEventListener('cours-changed', function () { if (!q('[data-cpa-res]').hidden) controler(); });
+  window.addEventListener('load', remplir); remplir();
+})();
+</script>

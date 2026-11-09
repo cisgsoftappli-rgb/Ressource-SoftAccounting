@@ -18,13 +18,24 @@
 .tt-b{border:1px solid #d6d3d1;background:#fff;border-radius:8px;font:inherit;cursor:pointer;color:#334155;transition:.15s}.tt-b:hover:not(:disabled){background:#fafaf9}.tt-b:disabled{opacity:.4;cursor:not-allowed}
 .tt-b.t{min-height:36px;padding:6px 12px;font-size:12px;font-weight:600}.tt-b.i{width:36px;height:36px;color:#64748b}.tt-b.i:hover:not(:disabled){background:#fef2f2;border-color:#fca5a5;color:#b91c1c}
 .tt-empty{padding:32px;text-align:center;font-size:13px;color:#94a3b8;border:1px dashed #d6d3d1;border-radius:12px}
-.tt-ov{position:fixed;inset:0;z-index:2000;display:none;align-items:center;justify-content:center;background:#0f172a99;padding:16px}
-.tt-md{display:flex;flex-direction:column;width:100%;max-width:768px;max-height:90vh;background:#fff;border:1px solid #e2e8f099;border-radius:16px;box-shadow:0 25px 50px -12px #0f172a40}
+.tt-tabs{display:flex;gap:4px;border-bottom:1px solid #e7e5e4;margin:0 0 20px}.tt-tab{border:0;background:none;font:inherit;font-size:14px;font-weight:600;color:#64748b;padding:10px 18px;cursor:pointer;border-bottom:3px solid transparent;margin-bottom:-1px}.tt-tab:hover{color:#0f172a}.tt-tab.on{color:#134e4a;border-bottom-color:#134e4a}
+.tt-ov{display:none}
+.tt-md{display:flex;flex-direction:column;width:100%;background:#fff;border:1px solid #e7e5e4;border-radius:12px}
 .tt-mh{padding:24px 32px;border-bottom:1px solid #f1f5f9}.tt-mh h2{margin:0;font-size:20px;font-weight:700}.tt-mh p{margin:4px 0 0;font-size:14px;color:#78716c}
-.tt-mb{flex:1;overflow:auto;padding:24px 32px;display:flex;flex-direction:column;gap:24px}
+.tt-mb{flex:1;padding:24px 32px;display:flex;flex-direction:column;gap:24px}
 .tt-fg{display:grid;grid-template-columns:1fr 1fr;gap:16px}@media(max-width:640px){.tt-fg{grid-template-columns:1fr}}
 .tt-fg label{display:block;margin-bottom:6px;font-size:12px;font-weight:700;color:#1e293b}.tt-fg label i{color:#dc2626;font-style:normal}
 .tt-in{width:100%;height:40px;border:1px solid #d6d3d1;border-radius:8px;background:#fff;padding:0 12px;font:inherit;font-size:14px;outline:none}.tt-in:focus{border-color:#0f766e;box-shadow:0 0 0 2px #0f766e26}.tt-in:disabled{background:#f5f5f4;color:#78716c}.tt-in.bad{border-color:#ef4444}
+.tt-al{border:1px solid #e7e5e4;border-radius:12px;background:#fff;overflow:hidden}.tt-al-h{display:flex;align-items:center;justify-content:space-between;gap:12px;padding:14px 16px;background:#fafaf9;border-bottom:1px solid #e7e5e4}.tt-al-h h3{margin:0;font-size:14px;font-weight:700;display:flex;align-items:center;gap:8px}.tt-al-h h3 svg{width:16px;height:16px;color:#8b5cf6}
+.tt-sw{display:inline-flex;align-items:center;gap:8px;font-size:13px;font-weight:600;color:#334155;cursor:pointer}.tt-sw input{width:16px;height:16px;accent-color:#134e4a}
+.tt-al-b{padding:16px;display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:16px}@media(max-width:760px){.tt-al-b{grid-template-columns:1fr}}
+.tt-al-b label{display:block;margin-bottom:6px;font-size:12px;font-weight:700;color:#1e293b}.tt-al-b label i{color:#dc2626;font-style:normal}.tt-al-b .w2{grid-column:span 2}.tt-al-b .w3{grid-column:1/-1}@media(max-width:760px){.tt-al-b .w2{grid-column:auto}}
+.tt-al.off .tt-al-b{opacity:.5;pointer-events:none}
+.tt-pv{border-radius:8px;background:#f0fdfa;color:#134e4a;padding:10px 12px;font-size:13px}.tt-pv b{font-weight:700}
+.tt-pop{position:fixed;z-index:2200;display:none;flex-direction:column;background:#fff;border:1px solid #d6d3d1;border-radius:10px;box-shadow:0 12px 32px #0f172a33;overflow:hidden;font-size:13px;color:#0f172a}.tt-pop.on{display:flex}
+.tt-pg{display:grid;grid-template-columns:130px minmax(0,1fr);gap:0 8px;padding:0 12px}.tt-ph{background:#fafaf9;border-bottom:1px solid #e7e5e4}.tt-ph .l{padding:8px 0 4px;font-size:10px;font-weight:700;letter-spacing:.04em;text-transform:uppercase;color:#57534e}.tt-ph input{width:100%;box-sizing:border-box;height:30px;margin:0 0 8px;border:1px solid #d6d3d1;border-radius:6px;padding:0 8px;font:inherit;font-size:12px;background:#fff;outline:none}.tt-ph input:focus{border-color:#0f766e;box-shadow:0 0 0 2px #0f766e26}
+.tt-pl{overflow:auto;flex:1;min-height:60px}.tt-pr{padding:7px 12px;cursor:pointer;border-top:1px solid #f5f5f4}.tt-pr:first-child{border-top:0}.tt-pr b{font-weight:600}.tt-pr:hover,.tt-pr.a{background:#f0fdfa}.tt-pr .lb{overflow:hidden;text-overflow:ellipsis;white-space:nowrap;color:#475569}.tt-pr.cur{box-shadow:inset 3px 0 0 #134e4a}
+.tt-pm{padding:6px 12px;font-size:12px;color:#78716c;background:#fafaf9;border-top:1px solid #e7e5e4}.tt-pe{padding:18px 12px;text-align:center;color:#94a3b8;font-size:12px}
 .tt-er{margin:4px 0 0;font-size:12px;color:#dc2626;display:none}
 .tt-sec h3{margin:0 0 12px;font-size:14px;font-weight:700;display:flex;align-items:center;gap:8px}.tt-sec h3 svg{width:16px;height:16px;color:#8b5cf6}
 .tt-warn{margin:0 0 12px;border-radius:8px;background:#fffbeb;color:#92400e;padding:8px 12px;font-size:12px}
@@ -45,20 +56,36 @@
 <div data-tt-root style="width:100%">
   <main class="tt-main">
     <header class="tt-hd">
-      <div><p class="k">Déclaration fiscale</p><h1>Type de taxe</h1><p class="s">Rattacher et configurer les comptes comptables associés à un type de taxe (compte, libellé, sens de filtrage débit/crédit).</p></div>
+      <div><p class="k">Déclaration fiscale</p><h1>Type de taxe</h1><p class="s">Rattacher et configurer les comptes comptables associés à un type de taxe (compte ou fourchette de comptes, libellé, sens de filtrage débit/crédit).</p></div>
       <button type="button" class="tt-new" data-tt-new><span aria-hidden="true">+</span> Nouveau type de taxe</button>
     </header>
+    <div class="tt-tabs" role="tablist"><button type="button" class="tt-tab on" role="tab" data-tt-tab="liste">Liste</button><button type="button" class="tt-tab" role="tab" data-tt-tab="saisie">Saisie</button></div>
     <section class="tt-list" data-tt-list aria-label="Liste des types de taxe"></section>
-  </main>
 
   <div class="tt-ov" data-tt-ov>
-    <div class="tt-md" role="dialog" aria-modal="true">
-      <div class="tt-mh"><h2 data-tt-title>Nouveau type de taxe</h2><p>Rattacher et configurer les comptes comptables associés à un type de taxe (compte, libellé, sens de filtrage débit/crédit).</p></div>
+    <div class="tt-md">
+      <div class="tt-mh"><h2 data-tt-title>Nouveau type de taxe</h2><p>Rattacher et configurer les comptes comptables associés à un type de taxe (compte ou fourchette de comptes, libellé, sens de filtrage débit/crédit).</p></div>
       <div class="tt-mb">
         <div class="tt-fg">
           <div><label>Numéro <i>*</i></label><input class="tt-in" data-tt-code maxlength="20" autocomplete="off" placeholder="Ex. : 01"><p class="tt-er" data-tt-ecode>Le code est obligatoire.</p></div>
           <div><label>Libellé <i>*</i></label><input class="tt-in" data-tt-lib maxlength="100" placeholder="Ex. : TVA"><p class="tt-er" data-tt-elib>Le libellé est obligatoire.</p></div>
+          <div><label>Type <i>*</i></label><select class="tt-in" data-tt-type><option value="">Sélectionner un type</option><option value="IR">IR — Impôt sur le revenu</option><option value="IRSA">IRSA — Impôt sur les salaires</option><option value="IMP">IMP — Impôt sur les marchés publics</option><option value="TVA">TVA — Taxe sur la valeur ajoutée</option><option value="DCOM">DCOM — Droit de communication</option><option value="AUTRE">Autre</option></select><p class="tt-er" data-tt-etype>Le type est obligatoire.</p><p style="margin:4px 0 0;font-size:12px;color:#747A88">Filtre les modèles d’état applicables à ce type de taxe.</p></div>
         </div>
+        <section class="tt-al" data-tt-al>
+          <div class="tt-al-h">
+            <h3><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M6 9a6 6 0 1 1 12 0c0 5 2 6 2 6H4s2-1 2-6M10 19a2 2 0 0 0 4 0"/></svg> Alerte périodique (planification)</h3>
+            <label class="tt-sw"><input type="checkbox" data-tt-al-on> Activer l'alerte</label>
+          </div>
+          <div class="tt-al-b">
+            <div><label>Périodicité <i>*</i></label><select class="tt-in" data-tt-al-freq><option value="hebdo">Hebdomadaire</option><option value="mensuel" selected>Mensuelle</option><option value="trim">Trimestrielle</option><option value="sem">Semestrielle</option><option value="annuel">Annuelle</option></select></div>
+            <div><label>Première échéance <i>*</i></label><input type="date" class="tt-in" data-tt-al-debut><p class="tt-er" data-tt-al-edebut>Choisissez la date de la première échéance.</p></div>
+            <div><label>Me prévenir (jours avant)</label><input type="number" min="0" max="60" class="tt-in" data-tt-al-pre value="3"></div>
+            <div><label>Fin de la récurrence</label><select class="tt-in" data-tt-al-fin><option value="jamais" selected>Jamais (récurrente)</option><option value="nb">Après un nombre d'occurrences</option><option value="date">À une date</option></select></div>
+            <div data-tt-al-wnb style="display:none"><label>Nombre d'occurrences <i>*</i></label><input type="number" min="1" max="500" class="tt-in" data-tt-al-nb value="12"><p class="tt-er" data-tt-al-enb>Indiquez un nombre supérieur ou égal à 1.</p></div>
+            <div data-tt-al-wdate style="display:none"><label>Date de fin <i>*</i></label><input type="date" class="tt-in" data-tt-al-find><p class="tt-er" data-tt-al-edate>La date de fin doit être postérieure à la première échéance.</p></div>
+            <div class="w3"><div class="tt-pv" data-tt-al-pv></div></div>
+          </div>
+        </section>
         <section class="tt-sec">
           <h3><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M4 4h14v16H4zM7 8h8M7 12h8M7 16h5"/></svg> Comptes</h3>
           <p class="tt-warn" data-tt-warn>Enregistrez d'abord le type de taxe (Numéro et Libellé) pour pouvoir lui rattacher des comptes.</p>
@@ -71,13 +98,14 @@
               <button type="button" class="tt-b sv" data-tt-a="save" title="Enregistrer" disabled>💾</button>
               <button type="button" class="tt-b" data-tt-a="cancel" title="Annuler" disabled>✕</button>
             </div>
-            <div style="overflow:auto"><table class="tt-t"><thead><tr><th>Compte</th><th>Libellé</th><th>Sens</th></tr></thead><tbody data-tt-rows></tbody></table></div>
+            <div style="overflow:auto"><table class="tt-t"><thead><tr><th>Compte de</th><th>Compte à</th><th>Libellé</th><th>Sens</th></tr></thead><tbody data-tt-rows></tbody></table></div>
           </div>
         </section>
       </div>
-      <div class="tt-mf"><button type="button" class="c" data-tt-close>Fermer</button><button type="button" class="s" data-tt-save>Enregistrer</button></div>
+      <div class="tt-mf"><button type="button" class="c" data-tt-close>Retour à la liste</button><button type="button" class="s" data-tt-save>Enregistrer</button></div>
     </div>
   </div>
+  </main>
 
   <div class="tt-cf" data-tt-cf><div class="tt-cfb"><p data-tt-cft></p><div style="display:flex;justify-content:flex-end;gap:8px"><button type="button" class="tt-b t" data-tt-cfn>Annuler</button><button type="button" class="tt-b t" style="background:#dc2626;border-color:#dc2626;color:#fff" data-tt-cfy>Supprimer</button></div></div></div>
 </div>
@@ -86,17 +114,74 @@
   var root = document.currentScript.parentElement.querySelector('[data-tt-root]');
   var q = function (s) { return root.querySelector(s); };
   var TYPES = [
-    { code: 'IR', lib: 'IR', cpt: [] }, { code: 'IRSA', lib: 'IRSA', cpt: [] }, { code: 'TVA', lib: 'TVA', cpt: [] }
+    { code: 'IR', lib: 'IR', type: 'IR', cpt: [{ compte: '447100', lib: 'État — IR retenu à la source', sens: 'Crédit' }] }, { code: 'IRSA', lib: 'IRSA', type: 'IRSA', cpt: [{ compte: '447200', lib: 'État — IRSA retenu', sens: 'Crédit' }] }, { code: 'TVA', lib: 'TVA', type: 'TVA', alerte: { actif: true, freq: 'mensuel', debut: '2026-11-15', fin: 'jamais', nb: 12, finDate: '', pre: 3 }, cpt: [{ compte: '445660', compteFin: '445669', lib: 'TVA déductible sur achats', sens: 'Débit' }] },
+    { code: 'DCOM', lib: 'Droit de communication', type: 'DCOM', cpt: [{ compte: '401000', lib: 'Fournisseurs — droit de communication', sens: 'Crédit' }, { compte: '600000', compteFin: '699999', lib: 'Charges soumises au droit de communication', sens: 'Débit' }] }
   ];
   window.__taxTypes = TYPES;
+  window.__taxFamilles = [['IR', 'IR — Impôt sur le revenu'], ['IRSA', 'IRSA — Impôt sur les salaires'], ['IMP', 'IMP — Impôt sur les marchés publics'], ['TVA', 'TVA — Taxe sur la valeur ajoutée'], ['DCOM', 'DCOM — Droit de communication'], ['AUTRE', 'Autre']];
   var cur = null, saved = false, selI = -1, editing = null; // editing = {i, row} (i=-1 → ajout)
   var SENS = ['Débit', 'Crédit', 'Débit et crédit'];
+  // Comptes proposés : référence des plans (PLANS_REF) + comptes de détail actifs du plan comptable de la maquette
+  function comptesPlan() {
+    var map = {}, pc = window.PLAN_COMPTABLE;
+    if (window.PLANS_REF && window.PLANS_REF.comptes) window.PLANS_REF.comptes.forEach(function (c) { map[String(c[0])] = c[1] || ''; });
+    if (Array.isArray(pc)) { var par = {}; pc.forEach(function (x) { if (x.parent) par[x.parent] = 1; }); pc.forEach(function (x) { if (x.actif !== false && !par[x.code]) map[String(x.code)] = x.libelle || x.lib || x.label || map[String(x.code)] || ''; }); }
+    return Object.keys(map).sort().map(function (k) { return [k, map[k]]; });
+  }
+  function libCompte(code) { var l = (window.__ttComptes || []).filter(function (c) { return c[0] === code; })[0]; return l ? l[1] : ''; }
+  function monterListeComptes() { var l = comptesPlan(); if (!window.__ttComptes || window.__ttComptes.length !== l.length) window.__ttComptes = l; }
+
+  var FREQ = { hebdo: 'Hebdomadaire', mensuel: 'Mensuelle', trim: 'Trimestrielle', sem: 'Semestrielle', annuel: 'Annuelle' }, PAS = { mensuel: 1, trim: 3, sem: 6, annuel: 12 };
+  function iso(d) { return d.getFullYear() + '-' + ('0' + (d.getMonth() + 1)).slice(-2) + '-' + ('0' + d.getDate()).slice(-2); }
+  function parse(v) { var m = /^(\d{4})-(\d{2})-(\d{2})$/.exec(v || ''); return m ? new Date(+m[1], +m[2] - 1, +m[3]) : null; }
+  function fr(v) { var d = parse(v); return d ? ('0' + d.getDate()).slice(-2) + '/' + ('0' + (d.getMonth() + 1)).slice(-2) + '/' + d.getFullYear() : ''; }
+  // k-ième échéance (0 = première) ; le jour du mois est conservé, ramené au dernier jour si le mois est plus court
+  function echeance(debut, freq, k) {
+    if (freq === 'hebdo') return new Date(debut.getFullYear(), debut.getMonth(), debut.getDate() + 7 * k);
+    var tot = debut.getMonth() + PAS[freq] * k, y = debut.getFullYear() + Math.floor(tot / 12), m = ((tot % 12) + 12) % 12, dernier = new Date(y, m + 1, 0).getDate();
+    return new Date(y, m, Math.min(debut.getDate(), dernier));
+  }
+  function alerteDefaut() { return { actif: false, freq: 'mensuel', debut: '', fin: 'jamais', nb: 12, finDate: '', pre: 3 }; }
+  function lireAlerteBrut() {
+    return { actif: q('[data-tt-al-on]').checked, freq: q('[data-tt-al-freq]').value, debut: q('[data-tt-al-debut]').value, fin: q('[data-tt-al-fin]').value, nb: +q('[data-tt-al-nb]').value || 0, finDate: q('[data-tt-al-find]').value, pre: Math.max(0, +q('[data-tt-al-pre]').value || 0) };
+  }
+  function majAlerte() {
+    var a = lireAlerteBrut(), blk = q('[data-tt-al]');
+    blk.classList.toggle('off', !a.actif);
+    q('[data-tt-al-wnb]').style.display = a.fin === 'nb' ? '' : 'none'; q('[data-tt-al-wdate]').style.display = a.fin === 'date' ? '' : 'none';
+    var pv = q('[data-tt-al-pv]'), d0 = parse(a.debut);
+    if (!a.actif) { pv.innerHTML = 'Alerte désactivée : aucune échéance ne sera planifiée pour ce type de taxe.'; return; }
+    if (!d0) { pv.innerHTML = 'Choisissez la date de la première échéance pour voir le calendrier.'; return; }
+    var fin = a.fin === 'date' ? parse(a.finDate) : null, liste = [], k = 0, max = a.fin === 'nb' ? a.nb : 500;
+    while (liste.length < 4 && k < max) { var e = echeance(d0, a.freq, k++); if (fin && e > fin) break; liste.push(fr(iso(e))); }
+    var txt = FREQ[a.freq] + ' — ' + (a.fin === 'jamais' ? 'récurrente, sans date de fin' : a.fin === 'nb' ? a.nb + ' occurrence(s)' : 'jusqu’au ' + (fr(a.finDate) || '…'));
+    pv.innerHTML = '<b>' + txt + '.</b> Prochaines échéances : ' + (liste.length ? liste.join(', ') + (a.fin === 'jamais' || k < max ? ', …' : '') : 'aucune') + (a.pre ? '. Rappel ' + a.pre + ' jour(s) avant chaque échéance.' : '.');
+  }
+  function remplirAlerte(a) {
+    a = Object.assign(alerteDefaut(), a || {});
+    q('[data-tt-al-on]').checked = !!a.actif; q('[data-tt-al-freq]').value = a.freq; q('[data-tt-al-debut]').value = a.debut; q('[data-tt-al-fin]').value = a.fin;
+    q('[data-tt-al-nb]').value = a.nb; q('[data-tt-al-find]').value = a.finDate; q('[data-tt-al-pre]').value = a.pre;
+    ['debut', 'nb', 'date'].forEach(function (k) { q('[data-tt-al-e' + k + ']').style.display = 'none'; });
+    ['debut', 'nb', 'find'].forEach(function (k) { q('[data-tt-al-' + k + ']').classList.remove('bad'); });
+    majAlerte();
+  }
+  function validerAlerte() {
+    var a = lireAlerteBrut(), ok = true, d0 = parse(a.debut);
+    ['debut', 'nb', 'date'].forEach(function (k) { q('[data-tt-al-e' + k + ']').style.display = 'none'; });
+    ['debut', 'nb', 'find'].forEach(function (k) { q('[data-tt-al-' + k + ']').classList.remove('bad'); });
+    if (a.actif) {
+      if (!d0) { q('[data-tt-al-edebut]').style.display = 'block'; q('[data-tt-al-debut]').classList.add('bad'); ok = false; }
+      if (a.fin === 'nb' && !(a.nb >= 1)) { q('[data-tt-al-enb]').style.display = 'block'; q('[data-tt-al-nb]').classList.add('bad'); ok = false; }
+      if (a.fin === 'date') { var df = parse(a.finDate); if (!df || (d0 && df <= d0)) { q('[data-tt-al-edate]').style.display = 'block'; q('[data-tt-al-find]').classList.add('bad'); ok = false; } }
+    }
+    return ok ? a : null;
+  }
   function esc(s) { var d = document.createElement('div'); d.textContent = s == null ? '' : s; return d.innerHTML; }
   var TRASH = '<svg aria-hidden="true" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M4 7h16M9 7V4h6v3m-8 0 1 13h8l1-13M10 11v5m4-5v5"/></svg>';
 
   function drawList() {
     q('[data-tt-list]').innerHTML = TYPES.length ? TYPES.map(function (t, i) {
-      return '<article class="tt-row" data-tt-open="' + i + '"><div style="min-width:0"><h2>' + esc(t.code) + ' — ' + esc(t.lib) + '</h2><p>' + t.cpt.length + ' compte(s) rattaché(s)</p></div>' +
+      return '<article class="tt-row" data-tt-open="' + i + '"><div style="min-width:0"><h2>' + esc(t.code) + ' — ' + esc(t.lib) + '</h2><p>Type ' + esc(t.type || '—') + ' · ' + t.cpt.length + ' compte(s) rattaché(s)' + (t.alerte && t.alerte.actif ? ' · Alerte ' + FREQ[t.alerte.freq].toLowerCase() + ' à partir du ' + fr(t.alerte.debut) : '') + '</p></div>' +
         '<div class="tt-act"><button type="button" class="tt-b t" data-tt-open="' + i + '">Modifier</button><button type="button" class="tt-b i" data-tt-rm="' + i + '" aria-label="Supprimer le type de taxe ' + esc(t.code) + '">' + TRASH + '</button></div></article>';
     }).join('') : '<div class="tt-empty">Aucun type de taxe.</div>';
   }
@@ -114,33 +199,39 @@
     var h = '';
     cur.cpt.forEach(function (c, i) {
       if (editing && editing.i === i) h += editRow(editing.row, i);
-      else h += '<tr data-i="' + i + '" class="' + (i === selI ? 'sel' : '') + '"><td>' + esc(c.compte) + '</td><td>' + esc(c.lib) + '</td><td>' + esc(c.sens) + '</td></tr>';
+      else h += '<tr data-i="' + i + '" class="' + (i === selI ? 'sel' : '') + '"><td>' + esc(c.compte) + '</td><td>' + (c.compteFin ? esc(c.compteFin) : '<span style="color:#94a3b8">—</span>') + '</td><td>' + esc(c.lib) + '</td><td>' + esc(c.sens) + '</td></tr>';
     });
     if (editing && editing.i === -1) h += editRow(editing.row, -1);
-    if (!h) h = '<tr><td class="e" colspan="3">Aucun compte rattaché pour l’instant.</td></tr>';
+    if (!h) h = '<tr><td class="e" colspan="4">Aucun compte rattaché pour l’instant.</td></tr>';
     q('[data-tt-rows]').innerHTML = h; setBar();
   }
   function editRow(r, i) {
-    return '<tr class="sel"><td><input class="tt-in" data-tt-f="compte" value="' + esc(r.compte) + '" placeholder="Ex. : 4457"></td><td><input class="tt-in" data-tt-f="lib" value="' + esc(r.lib) + '"></td><td><select class="tt-in" data-tt-f="sens">' +
+    return '<tr class="sel"><td><input class="tt-in" data-tt-f="compte" value="' + esc(r.compte) + '" placeholder="Choisir ou saisir un compte" inputmode="numeric" autocomplete="off" data-tt-combo></td><td><input class="tt-in" data-tt-f="compteFin" value="' + esc(r.compteFin || '') + '" placeholder="Choisir un compte (facultatif)" inputmode="numeric" autocomplete="off" data-tt-combo></td><td><input class="tt-in" data-tt-f="lib" value="' + esc(r.lib) + '"></td><td><select class="tt-in" data-tt-f="sens">' +
       SENS.map(function (s) { return '<option' + (s === r.sens ? ' selected' : '') + '>' + s + '</option>'; }).join('') + '</select></td></tr>';
+  }
+  function vue(v) {
+    q('[data-tt-list]').style.display = v === 'liste' ? '' : 'none'; q('[data-tt-ov]').style.display = v === 'saisie' ? 'block' : 'none';
+    [].forEach.call(root.querySelectorAll('[data-tt-tab]'), function (b) { var on = b.dataset.ttTab === v; b.classList.toggle('on', on); b.setAttribute('aria-selected', on ? 'true' : 'false'); });
   }
   function openModal(i) {
     selI = -1; editing = null;
     if (i == null) { cur = { code: '', lib: '', cpt: [] }; saved = false; q('[data-tt-title]').textContent = 'Nouveau type de taxe'; }
     else { cur = TYPES[i]; cur._i = i; saved = true; q('[data-tt-title]').textContent = 'Modifier le type de taxe'; }
-    q('[data-tt-code]').value = cur.code; q('[data-tt-lib]').value = cur.lib;
-    ['code', 'lib'].forEach(function (k) { q('[data-tt-e' + k + ']').style.display = 'none'; q('[data-tt-' + k + ']').classList.remove('bad'); });
-    drawRows(); q('[data-tt-ov]').style.display = 'flex'; q(i == null ? '[data-tt-code]' : '[data-tt-lib]').focus();
+    q('[data-tt-code]').value = cur.code; q('[data-tt-lib]').value = cur.lib; q('[data-tt-type]').value = cur.type || '';
+    ['code', 'lib', 'type'].forEach(function (k) { q('[data-tt-e' + k + ']').style.display = 'none'; q('[data-tt-' + k + ']').classList.remove('bad'); });
+    monterListeComptes(); remplirAlerte(cur.alerte); drawRows(); vue('saisie'); q(i == null ? '[data-tt-code]' : '[data-tt-lib]').focus();
   }
-  function close() { q('[data-tt-ov]').style.display = 'none'; cur = null; drawList(); }
+  function close() { cur = null; drawList(); vue('liste'); }
   function saveType() {
     var c = q('[data-tt-code]').value.trim(), l = q('[data-tt-lib]').value.trim(), ok = true;
     q('[data-tt-ecode]').style.display = c ? 'none' : 'block'; q('[data-tt-code]').classList.toggle('bad', !c);
     q('[data-tt-elib]').style.display = l ? 'none' : 'block'; q('[data-tt-lib]').classList.toggle('bad', !l);
-    if (!c || !l) return;
+    var ty = q('[data-tt-type]').value; q('[data-tt-etype]').style.display = ty ? 'none' : 'block'; q('[data-tt-type]').classList.toggle('bad', !ty);
+    if (!c || !l || !ty) return;
     if (!saved && TYPES.some(function (t) { return t.code.toLowerCase() === c.toLowerCase(); })) { q('[data-tt-ecode]').textContent = 'Ce numéro existe déjà.'; q('[data-tt-ecode]').style.display = 'block'; q('[data-tt-code]').classList.add('bad'); return; }
     q('[data-tt-ecode]').textContent = 'Le code est obligatoire.';
-    cur.code = c; cur.lib = l;
+    var al = validerAlerte(); if (!al) { var bad = q('[data-tt-al] .tt-in.bad'); if (bad) bad.focus(); return; }
+    cur.code = c; cur.lib = l; cur.type = ty; cur.alerte = al;
     if (!saved) { TYPES.push(cur); cur._i = TYPES.length - 1; saved = true; }
     drawRows(); drawList();
   }
@@ -156,27 +247,102 @@
   q('[data-tt-cfn]').addEventListener('click', function () { q('[data-tt-cf]').style.display = 'none'; pendingDel = null; });
   q('[data-tt-cfy]').addEventListener('click', function () { q('[data-tt-cf]').style.display = 'none'; if (pendingDel) pendingDel(); pendingDel = null; });
   q('[data-tt-close]').addEventListener('click', close);
+  q('[data-tt-al]').addEventListener('input', majAlerte); q('[data-tt-al]').addEventListener('change', majAlerte);
+  q('[data-tt-tab="liste"]').addEventListener('click', function () { if (cur) close(); else vue('liste'); });
+  q('[data-tt-tab="saisie"]').addEventListener('click', function () { if (!cur) openModal(null); else vue('saisie'); });
   q('[data-tt-save]').addEventListener('click', saveType);
   q('[data-tt-rows]').addEventListener('click', function (e) {
     var tr = e.target.closest('tr[data-i]'); if (!tr || editing) return; selI = +tr.dataset.i; drawRows();
   });
   q('[data-tt-rows]').addEventListener('input', function (e) { var f = e.target.dataset.ttF; if (f && editing) editing.row[f] = e.target.value; });
-  q('[data-tt-rows]').addEventListener('change', function (e) { var f = e.target.dataset.ttF; if (f && editing) editing.row[f] = e.target.value; });
+  q('[data-tt-rows]').addEventListener('change', function (e) {
+    var f = e.target.dataset.ttF; if (f && editing) editing.row[f] = e.target.value;
+    if (f === 'compte' && editing && !String(editing.row.lib || '').trim()) { var l = libCompte(String(e.target.value).trim()); if (l) { editing.row.lib = l; var li = q('[data-tt-f="lib"]'); if (li) li.value = l; } }
+  });
   root.addEventListener('click', function (e) {
     var b = e.target.closest('[data-tt-a]'); if (!b || b.disabled) return;
     var a = b.dataset.ttA;
-    if (a === 'add') { editing = { i: -1, row: { compte: '', lib: '', sens: 'Débit' } }; drawRows(); }
+    if (a === 'add' || a === 'edit') monterListeComptes();
+    if (a === 'add') { editing = { i: -1, row: { compte: '', compteFin: '', lib: '', sens: 'Débit' } }; drawRows(); }
     else if (a === 'edit') { editing = { i: selI, row: Object.assign({}, cur.cpt[selI]) }; drawRows(); }
-    else if (a === 'del') { var i = selI; confirmDel('Supprimer le compte « ' + cur.cpt[i].compte + ' » ?', function () { cur.cpt.splice(i, 1); selI = -1; drawRows(); drawList(); }); }
-    else if (a === 'cancel') { editing = null; drawRows(); }
+    else if (a === 'del') { var i = selI; confirmDel('Supprimer ' + (cur.cpt[i].compteFin ? 'la fourchette « ' + cur.cpt[i].compte + ' à ' + cur.cpt[i].compteFin : 'le compte « ' + cur.cpt[i].compte) + ' » ?', function () { cur.cpt.splice(i, 1); selI = -1; drawRows(); drawList(); }); }
+    else if (a === 'cancel') { pFermer(); editing = null; drawRows(); }
     else if (a === 'save') {
-      var r = editing.row; if (!String(r.compte).trim()) { var inp = q('[data-tt-f="compte"]'); inp.classList.add('bad'); inp.focus(); return; }
-      r.compte = String(r.compte).trim();
+      var r = editing.row, de = String(r.compte).trim(), fin = String(r.compteFin || '').trim();
+      q('[data-tt-f="compte"]').classList.remove('bad'); q('[data-tt-f="compteFin"]').classList.remove('bad');
+      var L = Math.max(de.length, fin.length), ko = null;
+      if (!/^\d+$/.test(de)) ko = 'compte'; else if (fin && !/^\d+$/.test(fin)) ko = 'compteFin';
+      else if (fin && fin.padEnd(L, '9') < de.padEnd(L, '0')) ko = 'compteFin';
+      if (ko) { var inp = q('[data-tt-f="' + ko + '"]'); inp.classList.add('bad'); inp.title = ko === 'compte' ? 'Saisissez un numéro de compte (chiffres).' : 'Le compte de fin doit être supérieur ou égal au compte de début.'; inp.focus(); return; }
+      r.compte = de; r.compteFin = (fin && fin !== de) ? fin : '';
       if (editing.i === -1) { cur.cpt.push(r); selI = cur.cpt.length - 1; } else cur.cpt[editing.i] = r;
       editing = null; drawRows(); drawList();
     }
   });
-  drawList();
+
+  // ---- Liste déroulante des comptes : colonnes Compte / Libellé, filtre sur chaque colonne ----
+  var pop = document.createElement('div'); pop.className = 'tt-pop'; pop.setAttribute('role', 'listbox');
+  pop.innerHTML = '<div class="tt-ph"><div class="tt-pg"><div class="l">Compte</div><div class="l">Libellé</div></div><div class="tt-pg"><input data-tt-pf="c" placeholder="Filtrer…" autocomplete="off"><input data-tt-pf="l" placeholder="Filtrer…" autocomplete="off"></div></div><div class="tt-pl" data-tt-pl></div><div class="tt-pm" data-tt-pm></div>';
+  root.appendChild(pop);
+  var pcible = null, pact = 0, pliste = [], PMAX = 1000;
+  function norm(t) { return String(t == null ? '' : t).normalize('NFD').replace(/[\u0300-\u036f]/g, '').toLowerCase(); }
+  function pRecalc(ouv) {
+    monterListeComptes();
+    var fc = pop.querySelector('[data-tt-pf="c"]').value.trim(), fl = norm(pop.querySelector('[data-tt-pf="l"]').value.trim());
+    var min = pcible && pcible.dataset.ttF === 'compteFin' && editing ? String(editing.row.compte || '').trim() : '';
+    pliste = (window.__ttComptes || []).filter(function (c) { return (!fc || c[0].indexOf(fc) === 0) && (!fl || norm(c[1]).indexOf(fl) >= 0) && (!min || c[0] >= min); });
+    pact = 0; if (ouv === true && pcible && pcible.value.trim()) { var v0 = pcible.value.trim(), k0 = pliste.findIndex(function (c) { return c[0] >= v0; }); if (k0 > 0) pact = k0; }
+    pDessin(ouv === true);
+  }
+  function pDessin(centre) {
+    var cur = pcible ? pcible.value.trim() : '', box = pop.querySelector('[data-tt-pl]');
+    box.innerHTML = pliste.length ? pliste.slice(0, PMAX).map(function (c, i) {
+      return '<div class="tt-pr tt-pg' + (i === pact ? ' a' : '') + (c[0] === cur ? ' cur' : '') + '" role="option" data-tt-pi="' + i + '"><b>' + esc(c[0]) + '</b><span class="lb" title="' + esc(c[1]) + '">' + esc(c[1]) + '</span></div>';
+    }).join('') : '<div class="tt-pe">Aucun compte ne correspond aux filtres.</div>';
+    pop.querySelector('[data-tt-pm]').textContent = pliste.length > PMAX ? pliste.length + ' comptes — les ' + PMAX + ' premiers sont affichés, affinez avec les filtres.' : pliste.length + ' compte(s)';
+    var a = box.querySelector('.a'); if (a) { if (centre) box.scrollTop = Math.max(0, a.offsetTop - box.clientHeight / 2 + a.offsetHeight / 2); else a.scrollIntoView({ block: 'nearest' }); }
+  }
+  function pPlacer() {
+    if (!pcible) return; var r0 = pcible.getBoundingClientRect(), larg = Math.max(520, r0.width), bas = window.innerHeight - r0.bottom - 12, haut = r0.top - 12, dessous = bas >= 300 || bas >= haut;
+    pop.style.width = Math.min(larg, window.innerWidth - 24) + 'px'; pop.style.left = Math.max(12, Math.min(r0.left, window.innerWidth - larg - 12)) + 'px';
+    var h = Math.min(380, dessous ? bas : haut); pop.style.maxHeight = h + 'px';
+    if (dessous) { pop.style.top = (r0.bottom + 4) + 'px'; pop.style.bottom = ''; } else { pop.style.bottom = (window.innerHeight - r0.top + 4) + 'px'; pop.style.top = ''; }
+  }
+  function pOuvrir(input) {
+    pcible = input; pop.querySelector('[data-tt-pf="c"]').value = ''; pop.querySelector('[data-tt-pf="l"]').value = '';
+    pop.classList.add('on'); pPlacer(); pRecalc(true);
+  }
+  function pFermer() { pop.classList.remove('on'); pcible = null; }
+  function pChoisir(i) {
+    var c = pliste[i]; if (!c || !pcible || !editing) return;
+    var champ = pcible.dataset.ttF, input = pcible; editing.row[champ] = c[0]; input.value = c[0];
+    if (champ === 'compte' && !String(editing.row.lib || '').trim()) { editing.row.lib = c[1]; var li = q('[data-tt-f="lib"]'); if (li) li.value = c[1]; }
+    pFermer(); input.focus();
+  }
+  q('[data-tt-rows]').addEventListener('focusin', function (e) { if (e.target.hasAttribute && e.target.hasAttribute('data-tt-combo') && pcible !== e.target) pOuvrir(e.target); });
+  q('[data-tt-rows]').addEventListener('click', function (e) { if (e.target.hasAttribute && e.target.hasAttribute('data-tt-combo') && !pop.classList.contains('on')) pOuvrir(e.target); });
+  q('[data-tt-rows]').addEventListener('input', function (e) { if (pcible === e.target) { pop.querySelector('[data-tt-pf="c"]').value = e.target.value.trim(); pRecalc(); } });
+  q('[data-tt-rows]').addEventListener('keydown', function (e) {
+    if (pcible !== e.target) return;
+    if (e.key === 'ArrowDown') { e.preventDefault(); pact = Math.min(pact + 1, Math.min(pliste.length, PMAX) - 1); pDessin(); }
+    else if (e.key === 'ArrowUp') { e.preventDefault(); pact = Math.max(pact - 1, 0); pDessin(); }
+    else if (e.key === 'Enter' && pop.classList.contains('on') && pliste.length && pop.querySelector('.tt-pr.a')) { e.preventDefault(); e.stopPropagation(); pChoisir(pact); }
+    else if (e.key === 'Escape') { e.stopPropagation(); pFermer(); }
+    else if (e.key === 'Tab') pFermer();
+  });
+  pop.addEventListener('mousedown', function (e) { if (!e.target.closest('input')) e.preventDefault(); });
+  pop.addEventListener('click', function (e) { var r1 = e.target.closest('[data-tt-pi]'); if (r1) pChoisir(+r1.dataset.ttPi); });
+  pop.addEventListener('input', function () { pRecalc(); });
+  pop.addEventListener('keydown', function (e) {
+    if (e.key === 'Escape') { e.stopPropagation(); var c0 = pcible; pFermer(); if (c0) c0.focus(); }
+    else if (e.key === 'ArrowDown') { e.preventDefault(); pact = Math.min(pact + 1, Math.min(pliste.length, PMAX) - 1); pDessin(); }
+    else if (e.key === 'ArrowUp') { e.preventDefault(); pact = Math.max(pact - 1, 0); pDessin(); }
+    else if (e.key === 'Enter') { e.preventDefault(); e.stopPropagation(); pChoisir(pact); }
+  });
+  document.addEventListener('mousedown', function (e) { if (pop.classList.contains('on') && !pop.contains(e.target) && e.target !== pcible) pFermer(); });
+  window.addEventListener('resize', function () { if (pop.classList.contains('on')) pPlacer(); });
+  document.addEventListener('scroll', function () { if (pop.classList.contains('on')) pPlacer(); }, true);
+  monterListeComptes(); drawList(); vue('liste');
 })();
 </script>
 </app-type-taxe>

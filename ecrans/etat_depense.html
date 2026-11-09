@@ -8,8 +8,10 @@
 .ed{background:#f4f6fa;padding:22px;border-radius:12px;color:#2c2c2a;font-size:13px}
 .ed h1{margin:0;font-size:20px;font-weight:700}
 .ed-sub{margin:6px 0 20px;max-width:72ch;font-size:13px;color:#78829d;line-height:1.6}
-.ed-banner{display:flex;flex-wrap:wrap;gap:4px 32px;margin-bottom:16px;padding:12px 16px;background:#fdf6e3;border:1px solid #f0e2b6;border-radius:12px}
-.ed-banner span.k{display:block;font-size:11px;font-weight:600;text-transform:uppercase;letter-spacing:.04em;color:#a17d1f}
+.ed-hd{display:flex;flex-wrap:wrap;align-items:flex-end;justify-content:space-between;gap:12px 24px;margin-bottom:16px}
+.ed-hd .ed-banner{margin:0;padding:8px 16px}
+.ed-banner{display:flex;flex-wrap:wrap;gap:4px 32px;margin-bottom:16px;padding:12px 16px;background:#F5F7F9;border:1px solid #E4E8EE;border-radius:12px}
+.ed-banner span.k{display:block;font-size:11px;font-weight:600;text-transform:uppercase;letter-spacing:.04em;color:#78829d}
 .ed-banner span.v{font-size:13px;font-weight:700}
 .ed-steps{display:flex;align-items:center;margin:0 0 20px;padding:16px 20px;list-style:none;background:#fff;border:1px solid #edf1f5;border-radius:12px;box-shadow:0 1px 2px #0f172a0d}
 .ed-steps li{display:flex;align-items:center;flex:1;min-width:0}
@@ -58,7 +60,7 @@
 .ed-lab{display:block;margin:12px 0 6px;font-size:12px;font-weight:700;color:#334155}
 .ed-g>div:nth-child(-n+2) .ed-lab{margin-top:0}
 .ed-req{color:#f1416c}
-.ed-in{width:100%;border:1px solid #dbdfe9;border-radius:8px;padding:8px 10px;font:inherit;font-size:13px;color:#2c2c2a;background:#fefce8}
+.ed-in{width:100%;border:1px solid #dbdfe9;border-radius:8px;padding:8px 10px;font:inherit;font-size:13px;color:#2c2c2a;background:#fff}
 .ed-in.pl{background:#fff}
 .ed-in:disabled{background:#f4f6fa;color:#888780;cursor:not-allowed}
 .ed-note{margin:6px 0 0;font-size:12px;color:#888780}
@@ -75,7 +77,7 @@
 .ed-head2{display:flex;flex-wrap:wrap;align-items:center;justify-content:space-between;gap:12px;padding:14px 16px;border-bottom:1px solid #edf1f5}
 .ed-head2 h3{margin:0;font-size:14px;font-weight:700}
 .ed-btn:disabled{opacity:.5;cursor:not-allowed}
-.ed-btn:disabled:hover{background:#3e97ff}
+.ed-btn:disabled:hover{background:#3e97ff}.ed-btn.sec:disabled:hover{background:#fff}.ed-btn.sec i{color:#2E427B}
 .ed-tf td{background:#f8fafc;font-weight:700;color:#4b5675;border-top:1px solid #edf1f5;border-bottom:0}
 .ed-ro{background:#f4f6fa;color:#4b5675}.ed-imp{display:flex;flex-wrap:wrap;gap:4px 16px;height:auto;min-height:38px;align-items:center}.ed-imp span{font-size:11px}.ed-imp b{display:block;font-size:9.5px;letter-spacing:.04em;color:#0c4a6e;text-transform:uppercase}
 .ed-circ{display:flex;flex-wrap:wrap;align-items:center;gap:6px;margin:0 0 16px;padding:10px 14px;list-style:none;background:#fff;border:1px solid #edf1f5;border-radius:12px;font-size:11px}.ed-circ li{display:inline-flex;align-items:center;padding:4px 10px;border-radius:999px;background:#f4f6fa;color:#78829d;font-weight:600}.ed-circ li.ext{background:#fff;border:1px dashed #b9c3d6}.ed-circ li.on{background:#3e97ff;border-color:#3e97ff;color:#fff}.ed-circ li.done{background:#e8fff3;color:#17a673}.ed-circ li+li:before{content:"›";margin-right:8px;margin-left:-4px;color:#b9c3d6}
@@ -89,22 +91,39 @@
 .edv-body{height:640px;overflow:auto;padding:14px 0}.edv-z{width:max-content;margin:0 auto;display:flex;flex-direction:column;gap:12px}
 .edv.edv-full{position:fixed;inset:0;z-index:3000;border:0;border-radius:0;display:flex;flex-direction:column}.edv.edv-full .edv-body{flex:1;height:auto}.edv-x{display:none}.edv-full .edv-x{display:inline-block}.edv-full .edv-ex{display:none}
 .edv-z .md4-doc{display:flex;flex-direction:column;gap:12px}.edv-z .ee-sheet{margin:0 auto}
+/* Assistant en étapes (charte) : pastille 32 px ; faite = marine pleine + coche ; courante = cerclée marine ; à venir = neutre ; libellé + sous-titre ; horizontal, vertical sur téléphone */
+.ed-steps{padding:16px 24px;border-color:#E3E7EE}
+.ed-st{gap:12px}
+.ed-n{width:32px;height:32px;background:#F1F2F5;border:2px solid transparent;color:#7B8190;font-size:13px}
+.ed-st.on .ed-n{background:#fff;border-color:#2E427B;color:#2E427B;box-shadow:none}
+.ed-st.done .ed-n{background:#2E427B;border-color:#2E427B;color:#fff}
+.ed-tx{display:flex;flex-direction:column;line-height:1.25;white-space:normal}.ed-tx .ed-l{font-size:14px;font-weight:700;color:#667085}.ed-tx small{font-size:12px;color:#667085}
+.ed-st.on .ed-l,.ed-st.done .ed-l{color:#0B1332}.ed-st.on .ed-l{color:#0B1332}
+.ed-line{height:2px;background:#E3E7EE}.ed-st.done+.ed-line,li:has(.ed-st.done) .ed-line{background:#2E427B}
+.ed-et{margin:0 0 4px;font-size:12px;color:#667085}
+.ed-btn:not(.sec):not(.ed-dg){background:#2E427B;border-color:#2E427B;color:#fff}
+@media (max-width:639px){.ed-steps{flex-direction:column;align-items:stretch}.ed-steps li{flex:none;flex-direction:column;align-items:flex-start}.ed-line{width:2px;height:20px;min-width:0;margin:4px 15px;flex:none}}
+.ed-mh{background:#fff!important;color:#1f2a4d!important;border-bottom:1px solid #edf1f5}.ed-mh h2{color:#1f2a4d!important}.ed-mh p{color:#667085!important}.ed-x{color:#667085!important}.ed-x:hover{color:#1f2a4d!important}
+.ed-vide{margin:0 0 16px;padding:28px 20px;text-align:center;border:1px dashed #dbdfe9;border-radius:12px;background:#F5F7F9;color:#667085;font-size:13px}.ed-vide b{display:block;margin-bottom:6px;color:#1f2a4d;font-size:14px}
 </style>
 <app-confection-guidee-etat-depense-drf>
 <div class="ed" data-ed-root>
-  <h1 data-ed-h1>Confection guidée d'une demande</h1>
+  <div class="ed-hd">
+  <div><p class="ed-et" data-ed-et>Étape 1 sur 4</p>
+  <h1 data-ed-h1>Confection guidée d'une demande</h1></div>
 
   <div class="ed-banner">
     <div><span class="k">N° état de dépense</span><span class="v" data-ed-ns>001</span></div>
     <div><span class="k">Période de sélection</span><span class="v" data-ed-psel>01/01/2026 → 20/10/2026</span></div>
     <div><span class="k">Période d'édition</span><span class="v" data-ed-ped>01/01/2026 → 20/10/2026</span></div>
   </div>
+  </div>
 
   <ol class="ed-steps" aria-label="Étapes de confection">
-    <li><button type="button" class="ed-st on" data-ed-step="1"><span class="ed-n">1</span><span class="ed-l">Sélection des écritures</span></button><div class="ed-line"></div></li>
-    <li><button type="button" class="ed-st" data-ed-step="2"><span class="ed-n">2</span><span class="ed-l">Vérification &amp; modification</span></button><div class="ed-line"></div></li>
-    <li><button type="button" class="ed-st" data-ed-step="3"><span class="ed-n">3</span><span class="ed-l">Édition</span></button><div class="ed-line"></div></li>
-    <li><button type="button" class="ed-st" data-ed-step="4"><span class="ed-n">4</span><span class="ed-l">Confirmation</span></button></li>
+    <li><button type="button" class="ed-st on" data-ed-step="1"><span class="ed-n">1</span><span class="ed-tx"><span class="ed-l">Sélection des écritures</span><small>Périmètre</small></span></button><div class="ed-line"></div></li>
+    <li><button type="button" class="ed-st" data-ed-step="2"><span class="ed-n">2</span><span class="ed-tx"><span class="ed-l">Vérification &amp; modification</span><small>Contrôle des lignes</small></span></button><div class="ed-line"></div></li>
+    <li><button type="button" class="ed-st" data-ed-step="3"><span class="ed-n">3</span><span class="ed-tx"><span class="ed-l">Édition</span><small>Modèle & aperçu</small></span></button><div class="ed-line"></div></li>
+    <li><button type="button" class="ed-st" data-ed-step="4"><span class="ed-n">4</span><span class="ed-tx"><span class="ed-l">Confirmation</span><small>Verrouillage</small></span></button></li>
   </ol>
 
   <div data-ed-view="1">
@@ -112,26 +131,27 @@
       <b><i class="ti ti-pencil"></i> Modifier les critères de sélection</b>
       <span data-ed-resume>2026 · IDA01 · Sélection 001 (validé)</span>
     </button>
-    <div class="ed-card"><div class="ed-scroll"><table class="ed-table">
+    <div class="ed-vide" data-ed-empty><b>Aucune donnée affichée</b>Renseignez les critères de sélection puis cliquez sur « Afficher les mouvements » ou « Valider le tri ».</div>
+    <div class="ed-card" data-ed-v1card><div class="ed-scroll"><table class="ed-table" data-pg-min="720">
       <thead><tr><th>Site</th><th>Date</th><th>N° Pièce</th><th>Cat. financière</th><th>Libellé</th><th class="ed-r" style="text-align:right">Montant</th><th class="ed-c">F/N</th></tr></thead>
       <tbody data-ed-rows></tbody>
     </table></div></div>
-    <div class="ed-foot">
+    <div class="ed-foot" data-ed-v1foot>
       <span class="ed-total" data-ed-total></span>
-      <button type="button" class="ed-btn" data-ed-next>Suivant : Vérification &amp; modification <span aria-hidden="true">→</span></button>
+      <div style="display:flex;gap:8px;flex-wrap:wrap"><button type="button" class="ed-btn ed-dg" data-ed-askc>✕ Annuler la confection de la demande</button><button type="button" class="ed-btn" data-ed-next>Suivant <span aria-hidden="true">→</span></button></div>
     </div>
   </div>
 
   <div data-ed-view="2" style="display:none">
     <div class="ed-card">
-      <div class="ed-head2"><h3>Modifier la ligne sélectionnée</h3><button type="button" class="ed-btn" data-ed-edit disabled><i class="ti ti-pencil"></i> Modifier</button></div>
-      <div class="ed-scroll"><table class="ed-table" style="min-width:1280px">
+      <div class="ed-head2" style="justify-content:flex-end"><button type="button" class="ed-btn" data-ed-edit disabled><i class="ti ti-pencil"></i> Modifier</button></div>
+      <div class="ed-scroll"><table class="ed-table" data-pg-min="820" style="min-width:1280px">
         <thead><tr><th>Site</th><th>Date</th><th>N° Bordereau</th><th>N° Pièce</th><th>Cat. financière</th><th>Libellé complémentaire</th><th>Description</th><th>Réf. facture</th><th>Bénéficiaire paiement</th><th>N° marché / BC</th><th class="ed-r" style="text-align:right" data-ed-th="1">Montant (MGA)</th><th class="ed-r" style="text-align:right" data-ed-th="2">Montant à émettre</th><th class="ed-r" style="text-align:right">Cours utilisé</th><th class="ed-c">Statut</th></tr></thead>
         <tbody data-ed-rows2></tbody>
         <tfoot><tr class="ed-tf"><td colspan="10" data-ed-tot2></td><td class="ed-r" data-ed-tm></td><td class="ed-r" data-ed-td></td><td colspan="2" style="text-align:right" data-ed-fn></td></tr></tfoot>
       </table></div>
     </div>
-    <div class="ed-foot"><button type="button" class="ed-btn sec" data-ed-go="1">← Précédent</button><div style="display:flex;gap:8px;flex-wrap:wrap"><button type="button" class="ed-btn ed-dg" data-ed-err>⚠ Signaler une erreur d’imputation</button><button type="button" class="ed-btn" data-ed-go="3">Suivant : Édition <span aria-hidden="true">→</span></button></div></div>
+    <div class="ed-foot"><button type="button" class="ed-btn sec" data-ed-go="1">← Précédent</button><div style="display:flex;gap:8px;flex-wrap:wrap"><button type="button" class="ed-btn ed-dg" data-ed-err>⚠ Signaler une erreur d’imputation</button><button type="button" class="ed-btn ed-dg" data-ed-askc>✕ Annuler la confection de la demande</button><button type="button" class="ed-btn" data-ed-go="3">Suivant : Édition <span aria-hidden="true">→</span></button></div></div>
   </div>
   <div data-ed-view="3" style="display:none">
     <div class="ed-card" style="padding:16px">
@@ -140,23 +160,22 @@
           <p class="ed-hint" style="margin:4px 0 0" data-ed-cfg>Aucun modèle sélectionné pour le moment.</p>
           <p class="ed-hint" style="margin:4px 0 0">Centre(s) de saisie : Siège</p></div>
         <div style="display:flex;gap:8px;flex-wrap:wrap">
-          <button type="button" class="ed-btn" data-ed-conf><i class="ti ti-settings"></i> Choisir le type et le modèle</button>
-          <button type="button" class="ed-btn" data-ed-exp="pdf" disabled style="background:#f1416c"><i class="ti ti-file-type-pdf"></i> Exporter PDF</button>
-          <button type="button" class="ed-btn" data-ed-exp="xlsx" disabled style="background:#17c653"><i class="ti ti-file-spreadsheet"></i> Exporter XLSX</button>
+          <button type="button" class="ed-btn sec" data-ed-conf><i class="ti ti-settings"></i> Choisir le type et le modèle</button>
+          <button type="button" class="ed-btn sec" data-ed-exp="pdf" disabled><i class="ti ti-file-type-pdf"></i> Exporter PDF</button>
+          <button type="button" class="ed-btn sec" data-ed-exp="xlsx" disabled><i class="ti ti-file-spreadsheet"></i> Exporter XLSX</button>
         </div>
       </div>
     </div>
     <div class="ed-card" data-ed-prev style="border-style:dashed;padding:32px;text-align:center;color:#78829d">Cliquez sur « Choisir le type et le modèle » pour afficher l'aperçu dynamique de l'état.</div>
-    <div class="ed-foot"><button type="button" class="ed-btn sec" data-ed-go="2">← Précédent</button><button type="button" class="ed-btn" data-ed-go="4" data-ed-to4 disabled>Suivant : Confirmation <span aria-hidden="true">→</span></button></div></div>
+    <div class="ed-foot"><button type="button" class="ed-btn sec" data-ed-go="2">← Précédent</button><div style="display:flex;gap:8px;flex-wrap:wrap"><button type="button" class="ed-btn ed-dg" data-ed-askc>✕ Annuler la confection de la demande</button><button type="button" class="ed-btn" data-ed-go="4" data-ed-to4 disabled>Suivant <span aria-hidden="true">→</span></button></div></div></div>
   <div data-ed-view="4" style="display:none"><div class="ed-card" style="padding:0;overflow:hidden">
       <div style="display:flex;justify-content:space-between;gap:12px;padding:14px 16px;border-bottom:1px solid #edf1f5"><span style="font-size:12px;font-weight:600;text-transform:uppercase;letter-spacing:.04em;color:#78829d">Nombre de mouvements</span><b data-ed-c-n style="font-size:14px;color:#2c2c2a">0</b></div>
-      <div style="display:flex;justify-content:space-between;gap:12px;padding:14px 16px;border-bottom:1px solid #edf1f5;background:#e8fff3"><span style="font-size:12px;font-weight:600;text-transform:uppercase;letter-spacing:.04em;color:#17a673">Total montant facturable</span><b data-ed-c-f style="font-size:14px;color:#17a673">0 MGA</b></div>
-      <div style="display:flex;justify-content:space-between;gap:12px;padding:14px 16px;background:#fff5f8"><span style="font-size:12px;font-weight:600;text-transform:uppercase;letter-spacing:.04em;color:#f1416c">Total montant non facturable</span><b data-ed-c-nf style="font-size:14px;color:#f1416c">0 MGA</b></div>
+      <div style="display:flex;justify-content:space-between;gap:12px;padding:14px 16px;border-bottom:1px solid #edf1f5;background:#fff"><span style="font-size:12px;font-weight:600;text-transform:uppercase;letter-spacing:.04em;color:#78829d">Total montant facturable</span><b data-ed-c-f style="font-size:14px;color:#0f7a52">0 MGA</b></div>
+      <div style="display:flex;justify-content:space-between;gap:12px;padding:14px 16px;background:#fff"><span style="font-size:12px;font-weight:600;text-transform:uppercase;letter-spacing:.04em;color:#78829d">Total montant non facturable</span><b data-ed-c-nf style="font-size:14px;color:#c7254e">0 MGA</b></div>
     </div>
     <p style="font-size:12px;color:#78829d;margin:0 0 12px;line-height:1.5">Cette action est irréversible pour les mouvements facturables : ils seront définitivement rattachés à cette demande et ne pourront plus être repris dans une future sélection. Les mouvements non facturables redeviendront éligibles à une future sélection.</p>
     <div class="ed-foot"><button type="button" class="ed-btn sec" data-ed-go="3">← Précédent</button><div style="display:flex;gap:8px;flex-wrap:wrap"><button type="button" class="ed-btn ed-dg" data-ed-askc>✕ Annuler la confection de la demande</button><button type="button" class="ed-btn" data-ed-valider>Valider &amp; confirmer l’état de dépense</button></div></div></div>
   <div data-ed-view="5" style="display:none"><div class="ed-card ed-ok5"><div class="ed-ok5i">✓</div><h2>Demande confectionnée avec succès</h2><p data-ed-ok5t></p><p>Étape suivante : enregistrer la réponse du bailleur (payé, rejeté, litige, apuré). Les lignes en litige levé seront reprises à la sélection suivante.</p></div><div style="display:flex;justify-content:center;gap:8px;flex-wrap:wrap"><button type="button" class="ed-btn" data-ed-regul>Régulariser la demande →</button><button type="button" class="ed-btn sec" data-ed-new>Démarrer une nouvelle confection</button></div></div>
-  <div class="ed-ov" data-ed-cf style="display:none"><div class="ed-md ed-cfm" role="alertdialog" aria-modal="true"><div class="ed-cfb"><div class="ed-cfi" data-ed-cfi>!</div><div><h2 data-ed-cft></h2><div class="ed-cfw" data-ed-cfw></div><p data-ed-cfp></p></div></div><div class="ed-cff"><button type="button" class="ed-btn sec" data-ed-cfno>Annuler</button><button type="button" class="ed-btn" data-ed-cfok>Valider</button></div></div></div>
 
   <div class="ed-ov" data-ed-m2 style="display:none">
     <div class="ed-md ed-wide" role="dialog" aria-modal="true">
@@ -205,7 +224,7 @@
           </div></section>
         </div>
       </div>
-      <footer class="ed-mf"><button type="button" class="ed-btn sec" data-ed-m2c>Annuler</button><button type="button" class="ed-btn ok" data-ed-m2s>Enregistrer</button></footer>
+      <footer class="ed-mf"><span class="ed-m2n" data-ed-m2n style="margin-right:auto;align-self:center;font-size:12px;color:#78829d"></span><button type="button" class="ed-btn sec" data-ed-m2p><span aria-hidden="true">←</span> Précédent</button><button type="button" class="ed-btn sec" data-ed-m2x>Suivant <span aria-hidden="true">→</span></button><button type="button" class="ed-btn sec" data-ed-m2c style="margin-left:8px">Annuler</button><button type="button" class="ed-btn ok" data-ed-m2s>Enregistrer</button></footer>
     </div>
   </div>
   <div class="ed-ov" data-ed-m3 style="display:none">
@@ -230,10 +249,10 @@
       <div class="ed-mb">
         <div>
           <label class="ed-lab" style="margin-top:0">Paramètre de sélection <span class="ed-req">*</span></label>
-          <select class="ed-in" disabled><option>SOE — STATE OF EXPENDITURE</option></select>        </div>
+          <select class="ed-in" data-ed-f="param"><option>SOE — STATE OF EXPENDITURE</option></select>        </div>
         <div class="ed-g">
           <div><label class="ed-lab">Code de la convention <span class="ed-req">*</span></label>
-            <select class="ed-in" disabled><option>IDA01 — 7286 MG CAT 1 2 3</option><option>IDA02 — 7286 MG CAT 4</option></select></div>
+            <select class="ed-in" data-ed-f="conv"><option value="IDA01">IDA01 — 7286 MG CAT 1 2 3</option><option value="IDA02">IDA02 — 7286 MG CAT 4</option></select></div>
           <div><label class="ed-lab">Exercice comptable <span class="ed-req">*</span></label>
             <select class="ed-in" data-ed-f="exo"><option>2028 (2028)</option><option>2027 (2027)</option><option selected>2026 (2026)</option><option>2025 (2025)</option><option>2024 (2024)</option><option>2023 (2023)</option></select></div>
           <div><label class="ed-lab">N° de sélection <span class="ed-req">*</span></label><input class="ed-in" data-ed-f="num" value="001" placeholder="Ex : 07"></div>
@@ -248,7 +267,6 @@
         </div>
         <div class="ed-fin"><p>Plan de financement</p><div><span>Bailleur : <b>—</b></span><span>Monnaie de suivi : <b>—</b></span><span>Règle de change : <b>—</b></span></div></div>
         <div class="ed-chk">
-          <label><input type="checkbox" data-ed-chk="marche"> Avec Marché</label>
           <label><input type="checkbox" data-ed-chk="pointe"> Mouvements pointés (Rappro.)</label>
           <label><input type="checkbox" data-ed-chk="nf"> Non facturable par défaut</label>
         </div>
@@ -260,6 +278,7 @@
       </footer>
     </div>
   </div>
+  <div class="ed-ov" data-ed-cf style="display:none"><div class="ed-md ed-cfm" role="alertdialog" aria-modal="true"><div class="ed-cfb"><div class="ed-cfi" data-ed-cfi>!</div><div><h2 data-ed-cft></h2><div class="ed-cfw" data-ed-cfw></div><p data-ed-cfp></p></div></div><div class="ed-cff"><button type="button" class="ed-btn sec" data-ed-cfno>Annuler</button><button type="button" class="ed-btn" data-ed-cfok>Valider</button></div></div></div>
 </div>
 <script>
 (function () {
@@ -1067,7 +1086,10 @@
       rel: 'RLV' + ('0' + d[1]).slice(-2) + '/26-' + ('00' + (i % 40 + 1)).slice(-3), fref: 'FACT N°' + ('0000' + (i + 1)).slice(-4) + '/26', tx: 100 };
   });
   var POOL = JSON.stringify(D2);
+  var shown = false;
+  function vue1() { var on = shown; [q('[data-ed-v1card]'), q('[data-ed-v1foot]')].forEach(function (e) { if (e) e.style.display = on ? '' : 'none'; }); var em = q('[data-ed-empty]'); if (em) em.style.display = on ? 'none' : ''; }
   function draw1() {
+    vue1();
     rows.innerHTML = '';
     D2.forEach(function (r) {
       var tr = document.createElement('tr');
@@ -1093,7 +1115,7 @@
       var tr = document.createElement('tr'); tr.className = 'ed-sel'; tr.setAttribute('aria-selected', i === sel);
       tr.innerHTML = '<td><b style="color:#2c2c2a">Siège</b></td><td>' + r.date + '</td><td style="font-family:monospace;color:#2f80c1">' + r.bordn + '</td><td style="font-family:monospace;color:#2f80c1">' + r.bord + '</td><td>' + r.cat + '</td><td style="color:#2c2c2a">' + r.lib + '</td><td>' + r.desc + '</td><td>' + (r.fref || '') + '</td><td>' + (r.benp || '') + '</td><td>' + (r.marche || '') + '</td><td class="ed-r">' + fmt(r.mont) + '</td><td class="ed-r">' + fmt(ev(r)) + '</td><td class="ed-r" style="font-weight:400!important;color:#4b5675!important">' + fmt(tx(r)) + '</td><td class="ed-c">' + stat(r) + '</td>';
       tr.addEventListener('click', function () { sel = i; btnEdit.disabled = false; draw2(); });
-      tr.addEventListener('dblclick', function () { r.fact = r.fact ? 0 : 1; sel = i; btnEdit.disabled = false; draw2(); });
+      tr.addEventListener('dblclick', function () { sel = i; btnEdit.disabled = false; draw2(); fillM2(); });
       rows2.appendChild(tr);
     });
     var t = D2.reduce(function (a, r) { return a + r.mont; }, 0), f = D2.reduce(function (a, r) { return a + (r.fact ? r.mont : 0); }, 0);
@@ -1105,35 +1127,48 @@
   }
   draw2();
   var m2 = q('[data-ed-m2]'), mf = function (k) { return q('[data-ed-m="' + k + '"]'); };
-  btnEdit.addEventListener('click', function () {
-    if (sel < 0) return; var r = D2[sel];
+  function fillM2() {
+    var r = D2[sel];
     function imputation(r) {
       var h = (parseInt(String(r.bord || '').slice(-4), 10) || 0) % 4, c = String(r.cat || '');
       var P = [['ACTIVITE', 'ACT.' + (1 + h) + '.1'], ['POSTE BUDGETAIRE', c || '627000'], ['FINANCEMENT', ['IDA', 'DA-A', 'DA-B', 'PD'][h]], ['GEOGRAPHIQUE', ['Analamanga', 'Atsinanana', 'Boeny', 'Siège'][h]]];
       P.forEach(function (p) { q('[data-ed-imp="' + p[0] + '"]').value = p[1]; });
     }
-    mf('date').value = r.date; imputation(r); q('[data-ed-lab="dev"]').textContent = 'Montant à émettre (' + emis() + ')'; mf('mont').value = fmt(r.mont); mf('lib').value = r.lib; mf('desc').value = r.desc; ['fref', 'pref', 'benp', 'bcol', 'baux', 'marche', 'mdate', 'chq', 'finc', 'catf', 'mmon', 'mtot', 'pmode', 'jnl', 'dreg'].forEach(function (k) { mf(k).value = r[k] != null ? r[k] : (k === 'mmon' ? 'MGA' : ''); });
+    mf('date').value = r.date; imputation(r); q('[data-ed-lab="dev"]').textContent = 'Montant à émettre (' + emis() + ')'; mf('mont').value = fmt(r.mont); mf('lib').value = r.lib; mf('desc').value = r.desc; ['fref', 'pref', 'benp', 'bcol', 'baux', 'marche', 'mdate', 'chq', 'finc', 'catf', 'mmon', 'mtot', 'pmode', 'jnl', 'dreg', 'obs'].forEach(function (k) { mf(k).value = r[k] != null ? r[k] : (k === 'mmon' ? 'MGA' : ''); });
     var tx0 = r.taux != null ? r.taux : 4472;
     mf('taux').value = tx0; mf('dev').value = fmt(r.mont / (tx0 > 0 ? tx0 : TX0)); mf('mmon').dispatchEvent(new Event('change'));mf('net').value = r.net != null ? r.net : r.mont; mf('fin').value = r.fin != null ? r.fin : r.mont; mf('usd').value = r.usd != null ? r.usd : Math.round(r.mont / tx0 * 100) / 100; mf('piece').value = r.bord; if (!mf('catf').value) mf('catf').value = r.fcat || '01'; if (!mf('finc').value) mf('finc').value = '01 E083-MG';
     mf('tx').value = r.tx != null ? r.tx : 100; mf('rel').value = r.rel != null ? r.rel : '';
     qa('[name="edst"]').forEach(function (x) { x.checked = x.value === (r.fact ? 'f' : 'n'); });
-    m2.style.display = '';
-  });
+    m2.style.display = ''; majNav();
+  }
+  function majNav() {
+    q('[data-ed-m2n]').textContent = 'Ligne ' + (sel + 1) + ' / ' + D2.length;
+    q('[data-ed-m2p]').disabled = sel <= 0; q('[data-ed-m2x]').disabled = sel >= D2.length - 1;
+  }
+  btnEdit.addEventListener('click', function () { if (sel < 0) return; fillM2(); });
   mf('taux').addEventListener('input', function () { var t = parseFloat(mf('taux').value) || 0, m = parseFloat(String(mf('mont').value).replace(/\s/g, '').replace(',', '.')) || 0; mf('dev').value = t > 0 ? fmt(m / t) : ''; });
   mf('mmon').addEventListener('change', function () { q('[data-ed-lab="mtot"]').textContent = 'Montant du contrat (' + (mf('mmon').value || 'MGA') + ')'; });
   ['fin', 'taux'].forEach(function (k) { mf(k).addEventListener('input', function () { var t = parseFloat(mf('taux').value) || 0, f = parseFloat(mf('fin').value) || 0; if (t) mf('usd').value = Math.round(f / t * 100) / 100; }); });
   qa('[data-ed-m2c]').forEach(function (b) { b.addEventListener('click', function () { m2.style.display = 'none'; }); });
-  q('[data-ed-m2s]').addEventListener('click', function () {
-    if (!mf('lib').value.trim()) { say('Le libellé complémentaire est obligatoire.'); return; }
+  function saveM2() {
+    if (!mf('lib').value.trim()) { say('Le libellé complémentaire est obligatoire.'); return false; }
     var r = D2[sel]; r.lib = mf('lib').value; r.desc = mf('desc').value; ['fref', 'pref', 'benp', 'bcol', 'baux', 'marche', 'mdate', 'chq', 'finc', 'catf', 'mmon', 'pmode', 'jnl', 'dreg', 'rel', 'obs'].forEach(function (k) { r[k] = mf(k).value.trim(); });
     ['mtot', 'net', 'fin', 'taux', 'usd', 'tx'].forEach(function (k) { var v = parseFloat(mf(k).value); r[k] = isNaN(v) ? null : v; }); r.fcat = r.catf || r.fcat;
     r.fact = qa('[name="edst"]').filter(function (x) { return x.checked; })[0].value === 'f' ? 1 : 0;
-    m2.style.display = 'none'; draw2(); say('Mouvement modifié.');
-  });
+    return true;
+  }
+  q('[data-ed-m2s]').addEventListener('click', function () { if (saveM2()) { m2.style.display = 'none'; draw2(); say('Mouvement modifié.'); } });
+  function navM2(d) {
+    var n = sel + d; if (n < 0 || n >= D2.length) return;
+    if (!saveM2()) return;
+    sel = n; fillM2(); draw2(); say('Ligne ' + (n + 1) + ' sur ' + D2.length + ' (la précédente a été enregistrée).');
+  }
+  q('[data-ed-m2p]').addEventListener('click', function () { navM2(-1); });
+  q('[data-ed-m2x]').addEventListener('click', function () { navM2(1); });
   var m3 = q('[data-ed-m3]'), selType = q('[data-ed-type]'), selMod = q('[data-ed-mod]'), okBtn = q('[data-ed-m3s]');
   function fillMods() {
     var list = [];
-    (window.__pfProcs || []).forEach(function (p) { p.models.forEach(function (m) { if (list.indexOf(m) < 0) list.push(m); }); });
+    (window.__pfProcs || []).filter(function (p) { return !window.__procNow || p.proc === window.__procNow(); }).forEach(function (p) { p.models.forEach(function (m) { if (list.indexOf(m) < 0) list.push(m); }); });
     if (!list.length) list = [selType.value === 'S' ? 'Modèle SOE standard' : 'Modèle récapitulatif standard'];
     selMod.innerHTML = '<option value="">Sélectionner un modèle</option>' + list.map(function (m) { return '<option>' + m + '</option>'; }).join('');
     okBtn.disabled = true; q('[data-ed-moderr]').style.display = '';
@@ -1153,6 +1188,34 @@
         return { cat: r.fcat || '01', ben: r.benp || '', desc: r.desc || '', marche: r.mtot ? fmt(r.mtot) + ' ' + (r.mmon || 'MGA') : '', net: r.mont, fin: r.mont, usd: Math.round(ev(r) * 100) / 100, pct: r.tx != null ? r.tx : 100, date: r.dreg ? r.dreg.split('-').reverse().join('/') : '', rel: r.rel || '', taux: tx(r), ref: r.marche || '', fac: r.fref || '' }; }), { titre: 'Demande de retrait de fonds - Formulaire 4F (4F) - ' + q('[data-ed-ped]').textContent }));
       bindViewer();
       q('[data-ed-to4]').disabled = false; setExp(true); return;
+    }
+    if (/^104/.test(selMod.value) && window.__render104) {
+      var v104 = Object.assign({}, window.__sample104.v, { l6: Math.round(D2.filter(function (r) { return r.fact; }).reduce(function (a, r) { return a + ev(r); }, 0) * 100) / 100 });
+      prev.innerHTML = viewer(selMod.value, window.__render104(v104, window.__demandesNonRegularisees({ exclure: q('[data-ed-ns]').textContent.trim() }), window.__cfg104, { drf: q('[data-ed-ns]').textContent.trim() }));
+      bindViewer(); q('[data-ed-to4]').disabled = false; setExp(true); return;
+    }
+    if (/^102/.test(selMod.value) && window.__render102) {
+      prev.innerHTML = viewer(selMod.value, window.__render102(D2.filter(function (r) { return r.fact; }).map(function (r) {
+        var pc = r.tx != null ? r.tx : 100, remb = Math.round(r.mont * pc) / 100;
+        return { cat: r.fcat || '01', desc: [r.desc || r.lib || '', r.benp || '', r.fref ? 'Facture ' + r.fref : ''].filter(Boolean).join(' - '), contrat: r.mtot || '', dep: r.mont, pct: pc, remb: remb, ref: [r.rel, 'Paiement'].filter(Boolean).join(' - '), date: r.dreg ? r.dreg.split('-').reverse().join('/') : '', taux: tx(r), usd: Math.round(ev(r) * 100) / 100, obs: r.pays || 'MADAGASCAR' };
+      }), { demande: q('[data-ed-ns]').textContent.trim() }));
+      bindViewer(); q('[data-ed-to4]').disabled = false; setExp(true); return;
+    }
+    if (/^A3/.test(selMod.value) && window.__renderA3) {
+      prev.innerHTML = viewer(selMod.value, window.__renderA3(D2.filter(function (r) { return r.fact; }).map(function (r) {
+        var v = Math.round(ev(r) * 100) / 100, k = r.mont ? ev(r) / r.mont : 1, mc = r.mtot && (r.mmon || 'MGA') === 'MGA' ? Math.round(r.mtot * k * 100) / 100 : v, pc = r.tx != null ? r.tx : 100;
+        return { cat: r.fcat ? 'Catégorie ' + r.fcat : '', qte: 0, paysBien: r.pays || 'MADAGASCAR', paysFourn: r.pays || 'MADAGASCAR', budget: mc, fad: Math.round(mc * pc) / 100, avance: v, dateApprob: r.dreg ? r.dreg.split('-').reverse().join('/') : '' };
+      }), { demande: q('[data-ed-ns]').textContent.trim() }));
+      bindViewer(); q('[data-ed-to4]').disabled = false; setExp(true); return;
+    }
+    if (/^A2/.test(selMod.value) && window.__renderA2) {
+      var payes = {};
+      prev.innerHTML = viewer(selMod.value, window.__renderA2(D2.filter(function (r) { return r.fact; }).map(function (r) {
+        var v = Math.round(ev(r) * 100) / 100, cle = r.marche || '', dej = cle ? (payes[cle] || 0) : '', k = r.mont ? ev(r) / r.mont : 1, mc = r.mtot && (r.mmon || 'MGA') === 'MGA' ? Math.round(r.mtot * k * 100) / 100 : (r.mtot || ''), part = mc !== '' ? Math.round(mc * (r.tx != null ? r.tx : 100)) / 100 : '';
+        if (cle) payes[cle] = (payes[cle] || 0) + v;
+        return { cat: r.fcat ? 'Catégorie ' + r.fcat : '', fourn: r.benp || '', pays: r.pays || 'MADAGASCAR', desc: r.desc || '', refEmp: r.marche || '', refBad: r.refbad || '', mtContrat: mc, part: part, dejaPaye: dej, refFact: r.fref || '', dFact: r.date || '', montant: v, dPaie: r.dreg ? r.dreg.split('-').reverse().join('/') : '', preuve: [r.rel, r.benp].filter(Boolean).join(' - ') };
+      }), { demande: q('[data-ed-ns]').textContent.trim() }));
+      bindViewer(); q('[data-ed-to4]').disabled = false; setExp(true); return;
     }
     if (/EJCD/i.test(selMod.value) && window.__renderEJCD) {
       prev.innerHTML = viewer(selMod.value, window.__renderEJCD()); bindViewer();
@@ -1214,10 +1277,10 @@
     q('[data-ed-c-f]').textContent = fmt(f) + ' MGA';
     q('[data-ed-c-nf]').textContent = fmt(n) + ' MGA';
   }
-  var TT = { 4: ['Étape 4 — Confirmation', 'Vérifiez le récapitulatif ci-dessous puis validez la confection de la demande.'], 1: ["Confection guidée d'une demande", 'Assistant guidé : sélection des mouvements, vérification et modification, puis validation finale de la demande'],
-    3: ['Étape 3 — Édition', "Choisissez le type d'état (Récapitulatif ou SOE) puis le modèle paramétré à utiliser pour éditer la demande."],
+  var TT = { 4: ['Confirmation', 'Vérifiez le récapitulatif ci-dessous puis validez la confection de la demande.'], 1: ["Confection guidée d'une demande", 'Assistant guidé : sélection des mouvements, vérification et modification, puis validation finale de la demande'],
+    3: ['Édition', "Choisissez le type d'état (Récapitulatif ou SOE) puis le modèle paramétré à utiliser pour éditer la demande."],
     5: ["Confection guidée d'une demande", 'Assistant guidé : sélection des mouvements, vérification et modification, puis validation finale de la demande'],
-    2: ['Étape 2 — Vérification & modification', 'Sélectionnez une ligne (clic) puis cliquez sur « Modifier » pour ajuster ses informations. Un double-clic bascule le statut facturable.'] };
+    2: ['Vérification & modification', 'Sélectionnez une ligne (clic) puis cliquez sur « Modifier » pour ajuster ses informations. Un double-clic sur une ligne ouvre la fenêtre de modification (le statut facturable s’y règle).'] };
   function circ(n) {
     var cur = { 1: 1, 2: 2, 3: 3, 4: 6, 5: 7 }[n] || 1;
     qa('[data-ed-ci]').forEach(function (li) { var k = +li.dataset.edCi; li.classList.toggle('on', k === cur); li.classList.toggle('done', k < cur); });
@@ -1226,7 +1289,7 @@
     if (n === 4) recap();
     if (n === 1) draw1();
     circ(n);
-    var tt = TT[n] || TT[1]; q('[data-ed-h1]').textContent = tt[0];
+    var tt = TT[n] || TT[1]; q('[data-ed-h1]').textContent = tt[0]; q('[data-ed-et]').textContent = n >= 1 && n <= 4 ? 'Étape ' + n + ' sur 4' : '';
     qa('[data-ed-view]').forEach(function (v) { v.style.display = v.dataset.edView == n ? '' : 'none'; });
     qa('[data-ed-step]').forEach(function (b) { var k = +b.dataset.edStep; b.classList.toggle('on', k === n); b.classList.toggle('done', k < n); b.querySelector('.ed-n').textContent = k < n ? '✓' : k; });
   }
@@ -1239,7 +1302,7 @@
     q('[data-ed-cfno]').textContent = m === 'cursel' ? 'Fermer' : 'Annuler';
     if (m === 'cursel') {
       q('[data-ed-cft]').textContent = 'Une sélection est déjà en cours';
-      q('[data-ed-cfw]').innerHTML = '<strong>La sélection n° ' + pendNum + ' (SOE · IDA01) est en cours.</strong> Pour un même paramètre et une même convention, elle doit être validée (confection de la demande) ou annulée avant d’en créer une nouvelle.';
+      q('[data-ed-cfw]').innerHTML = '<strong>La sélection n° ' + pendNum + ' (SOE · ' + pendKey.split('|')[1] + ') est en cours.</strong> Pour un même paramètre et une même convention, elle doit être validée (confection de la demande) ou annulée avant d’en créer une nouvelle.';
       q('[data-ed-cfp]').textContent = 'Voulez-vous annuler la sélection en cours ? Ses mouvements redeviennent éligibles aux sélections ultérieures.';
       ic.className = 'ed-cfi d'; ic.textContent = '!'; ok.className = 'ed-btn d'; ok.textContent = 'Annuler la sélection en cours';
     } else if (m === 'err') {
@@ -1261,14 +1324,17 @@
     cf.style.display = '';
   }
   q('[data-ed-valider]').addEventListener('click', function () { askCf('lock'); });
-  q('[data-ed-askc]').addEventListener('click', function () { askCf('cancel'); });
+  qa('[data-ed-askc]').forEach(function (b) { b.addEventListener('click', function () { askCf('cancel'); }); });
   q('[data-ed-cfno]').addEventListener('click', function () { cf.style.display = 'none'; });
   q('[data-ed-cfok]').addEventListener('click', function () {
     cf.style.display = 'none';
-    if (cfM === 'cursel') { var n0 = pendNum; endSel('Annulée', n0); say('Sélection ' + n0 + ' annulée : vous pouvez valider un nouveau tri.'); }
+    if (cfM === 'cursel') { var n0 = pendNum; endSel('Annulée', n0, pendKey); say('Sélection ' + n0 + ' annulée : vous pouvez valider un nouveau tri.'); }
     else if (cfM === 'err') { go(1); say('Corrigez l’écriture en Comptabilité Générale, puis relancez la sélection.'); }
     else if (cfM === 'cancel') { endSel('Annulée'); go(1); say('Confection de la demande annulée : retour à l\'étape 1.'); }
-    else { var nf = D2.filter(function (r) { return r.fact; }).length, n1 = curNum; q('[data-ed-ok5t]').textContent = nf + ' mouvement(s) facturable(s) verrouillé(s) pour la demande ' + n1 + '. Elle est disponible dans la Régularisation des demandes.'; endSel('Confectionnée'); go(5); }
+    else { var nf = D2.filter(function (r) { return r.fact; }).length, n1 = curNum; q('[data-ed-ok5t]').textContent = nf + ' mouvement(s) facturable(s) verrouillé(s) pour la demande ' + n1 + '. Elle est disponible dans la Régularisation des demandes.';
+      var tot1 = Math.round(D2.filter(function (r) { return r.fact; }).reduce(function (a, r) { return a + ev(r); }, 0) * 100) / 100, kk = curKey;
+      SELS.forEach(function (x) { if (x.num === n1 && keyOf(x) === kk) { x.total = tot1; x.nbl = nf; x.dconf = new Date().toISOString().slice(0, 10); x.devEmis = emis(); } });
+      endSel('Confectionnée'); go(5); }
   });
   q('[data-ed-new]').addEventListener('click', function () { go(1); });
   q('[data-ed-regul]').addEventListener('click', function () { location.hash = '#regul'; });
@@ -1286,14 +1352,17 @@
     sd.value = ok.some(function (d) { return d[0] === cur; }) ? cur : 'MGA';
   }
   window.addEventListener('pf-change', devises);
-  q('[data-ed-open]').addEventListener('click', function () { devises(); modal.style.display = ''; });
+  q('[data-ed-open]').addEventListener('click', function () { devises(); fillFields(); modal.style.display = ''; });
   qa('[data-ed-close]').forEach(function (b) { b.addEventListener('click', function () { modal.style.display = 'none'; }); });
-  q('[data-ed-show]').addEventListener('click', function () { modal.style.display = 'none'; draw1(); say(curNum ? 'Sélection en cours n° ' + curNum + ' : ' + D2.length + ' mouvements affichés.' : 'Aucune sélection en cours.'); });
+  q('[data-ed-show]').addEventListener('click', function () {
+    modal.style.display = 'none'; var p = loadFor(keyNow()); shown = true; draw1();
+    say(p ? 'Sélection en cours n° ' + p.num + ' : ' + D2.length + ' mouvements affichés.' : 'Aucune sélection en cours pour ce paramètre et cette convention : renseignez les critères puis validez le tri.');
+  });
   var chks = qa('[data-ed-chk]');
   function chkSync() {
     var c = {}; chks.forEach(function (x) { c[x.dataset.edChk] = x; });
-    c.marche.disabled = c.pointe.disabled = c.nf.checked; c.nf.disabled = c.marche.checked || c.pointe.checked;
-    if (c.nf.checked) { c.marche.checked = false; c.pointe.checked = false; }
+    c.pointe.disabled = c.nf.checked; c.nf.disabled = c.pointe.checked;
+    if (c.nf.checked) { c.pointe.checked = false; }
   }
   chks.forEach(function (x) { x.addEventListener('change', chkSync); });
   var f = function (k) { return q('[data-ed-f="' + k + '"]'); };
@@ -1304,42 +1373,89 @@
     { num: '002', param: PSOE, conv: 'IDA01', exo: '2025', dev: 'USD', d1: '2025-01-01', d2: '2025-06-30', e1: '2025-07-01', e2: '2025-07-31', cs: ['Siège'], jn: JN13.slice(), st: 'Payée' },
     { num: '003', param: PSOE, conv: 'IDA02', exo: '2025', dev: 'MGA', d1: '2025-07-01', d2: '2025-12-31', e1: '2026-01-01', e2: '2026-01-31', cs: ['Siège'], jn: ['BFM', 'BQ1', 'BQ2', 'CAISSE', 'OD'], st: 'En litige' },
     { num: '004', param: PSOE, conv: 'IDA01', exo: '2025', dev: 'EUR', d1: '2025-03-01', d2: '2025-09-30', e1: '2025-10-01', e2: '2025-10-31', cs: ['Siège'], jn: ['ACHMGA', 'ACHUSD', 'AUDIT', 'OD', 'RMBT'], st: 'Apurée' },
-    { num: '005', param: PSOE, conv: 'IDA02', exo: '2024', dev: 'MGA', d1: '2024-04-01', d2: '2024-09-30', e1: '2024-10-01', e2: '2024-10-31', cs: ['Siège'], jn: JN13.slice(), st: 'Rejetée' }];
+    { num: '005', param: PSOE, conv: 'IDA02', exo: '2024', dev: 'MGA', d1: '2024-04-01', d2: '2024-09-30', e1: '2024-10-01', e2: '2024-10-31', cs: ['Siège'], jn: JN13.slice(), st: 'Rejetée' },
+    { num: '070', param: PSOE, conv: 'IDA01', exo: '2026', dev: 'USD', d1: '2026-01-01', d2: '2026-03-24', e1: '2026-01-01', e2: '2026-03-24', cs: ['Siège'], jn: JN13.slice(), st: 'Confectionnée', total: 731324.53, devEmis: 'USD', dconf: '2026-03-24' },
+    { num: '071', param: PSOE, conv: 'IDA01', exo: '2026', dev: 'USD', d1: '2026-03-25', d2: '2026-05-21', e1: '2026-03-25', e2: '2026-05-21', cs: ['Siège'], jn: JN13.slice(), st: 'Confectionnée', total: 256119.09, devEmis: 'USD', dconf: '2026-05-21' }];
+  // Demandes confirmées dans l'état de dépense (statut « Confectionnée ») mais pas encore régularisées : liste dynamique, lue par la ligne 8 du formulaire 104 FIDA.
+  // Elle suit la confection (confirmation) et le traitement (la Régularisation des demandes fait passer le statut à Payée / En litige / Apurée / Rejetée).
+  window.__demandesNonRegularisees = function (o) {
+    o = o || {}; var dmy = function (v) { var p = String(v || '').split('-'); return p.length === 3 ? p[2] + '/' + p[1] + '/' + p[0] : ''; };
+    return SELS.filter(function (s) { return s.st === 'Confectionnée' && (!o.conv || s.conv === o.conv) && (!o.exclure || s.num !== o.exclure); }).map(function (s) {
+      return { num: s.num, conv: s.conv, lib: 'Demande N° ' + s.num + ' — état de dépense du ' + dmy(s.d1) + ' au ' + dmy(s.d2) + ' (confirmé, non régularisé)', date: dmy(s.dconf || s.d2), dev: s.devEmis || s.dev || 'USD', m: +s.total || 0 };
+    });
+  };
   function saveSel(st) {
-    var c = { num: f('num').value.trim(), param: PSOE, conv: 'IDA01', exo: f('exo').value.slice(0, 4), dev: f('dev') ? f('dev').value : 'MGA', d1: f('d1').value, d2: f('d2').value, e1: f('e1').value, e2: f('e2').value, cs: ['Siège'], jn: JN13.slice(), st: st || 'En cours' };
-    var i = -1; SELS.forEach(function (x, k) { if (x.num === c.num) i = k; });
+    var c = { num: f('num').value.trim(), param: f('param').value || PSOE, conv: (f('conv') && f('conv').value) || 'IDA01', exo: f('exo').value.slice(0, 4), dev: f('dev') ? f('dev').value : 'MGA', d1: f('d1').value, d2: f('d2').value, e1: f('e1').value, e2: f('e2').value, cs: ['Siège'], jn: JN13.slice(), st: st || 'En cours' };
+    var i = -1; SELS.forEach(function (x, k) { if (x.num === c.num && x.param === c.param && x.conv === c.conv) i = k; });
     if (i >= 0) { c.st = st || SELS[i].st; SELS[i] = c; } else SELS.push(c);
     window.dispatchEvent(new CustomEvent('selections-change'));
   }
   window.__saveSelDRF = saveSel;
-  var curNum = '001', pendNum = '001';
-  function nextNum() { var m = 0; SELS.forEach(function (x) { m = Math.max(m, parseInt(x.num, 10) || 0); }); return ('00' + (m + 1)).slice(-3); }
-  function endSel(st, num) {
-    num = num || curNum;
-    SELS.forEach(function (x) { if (x.num === num) x.st = st; });
+  // Données stockées par « Paramètre de sélection + Code de la convention »
+  var curKey = PSOE + '|IDA01', curNum = '001', pendNum = '001', pendKey = curKey;
+  var DATA = {}; DATA[curKey] = JSON.parse(POOL);
+  function keyNow() { return (f('param').value || PSOE) + '|' + (f('conv').value || 'IDA01'); }
+  function keyOf(x) { return x.param + '|' + x.conv; }
+  function pendOf(key) { return SELS.filter(function (x) { return keyOf(x) === key && x.st === 'En cours'; })[0]; }
+  function keep() { if (curKey && curNum) DATA[curKey] = D2.slice(); }
+  function setHead(p) {
+    q('[data-ed-ns]').textContent = p ? p.num : '—';
+    q('[data-ed-psel]').textContent = p ? dm(p.d1) + ' → ' + dm(p.d2) : '—';
+    q('[data-ed-ped]').textContent = p ? dm(p.e1) + ' → ' + dm(p.e2) : '—';
+    q('[data-ed-resume]').textContent = p ? p.exo + ' · ' + p.conv + ' · Sélection ' + p.num + ' (validé)' : 'Aucune sélection en cours';
+  }
+  function loadFor(key) {
+    keep();
+    var p = pendOf(key);
+    D2.length = 0; (p && DATA[key] ? DATA[key] : []).forEach(function (r) { D2.push(r); });
+    curKey = key; curNum = p ? p.num : null; sel = -1; btnEdit.disabled = true; setHead(p); draw2(); draw1();
+    return p;
+  }
+  // Sélection en cours pour le paramètre + la convention choisis : champs préremplis (et verrouillés) ; sinon à renseigner
+  function fillFields() {
+    var p = pendOf(keyNow());
+    if (p) {
+      f('num').value = p.num; f('d1').value = p.d1; f('d2').value = p.d2; f('e1').value = p.e1; f('e2').value = p.e2;
+      Array.prototype.forEach.call(f('exo').options, function (o) { if (o.textContent.slice(0, 4) === p.exo) f('exo').value = o.value; });
+      if (f('dev')) f('dev').value = p.dev;
+    } else {
+      ['num', 'd1', 'd2', 'e1', 'e2'].forEach(function (k) { f(k).value = ''; });
+    }
+    ['num', 'exo', 'dev', 'd1', 'd2', 'e1', 'e2'].forEach(function (k) { if (f(k)) f(k).disabled = !!p; });
+    chks.forEach(function (x) { x.disabled = !!p; if (p) x.checked = false; });
+    if (!p) chkSync();
+  }
+  f('param').addEventListener('change', fillFields); f('conv').addEventListener('change', fillFields);
+  function endSel(st, num, key) {
+    num = num || curNum; key = key || curKey; if (!num) return;
+    SELS.forEach(function (x) { if (x.num === num && keyOf(x) === key) x.st = st; });
     window.dispatchEvent(new CustomEvent('selections-change'));
-    if (num !== curNum) return;
-    D2.length = 0; sel = -1; btnEdit.disabled = true; curNum = null; draw2(); draw1();
-    f('num').value = nextNum(); q('[data-ed-ns]').textContent = '—'; q('[data-ed-resume]').textContent = 'Aucune sélection en cours';
+    delete DATA[key];
+    if (key === curKey) { D2.length = 0; sel = -1; btnEdit.disabled = true; curNum = null; shown = false; setHead(null); draw2(); draw1(); }
+    fillFields();
   }
   q('[data-ed-apply]').addEventListener('click', function () {
+    var key = keyNow(), pend = pendOf(key);
+    // une sélection en cours doit être confirmée (confection) ou annulée avant d'en créer une autre
+    if (pend) { pendNum = pend.num; pendKey = key; askCf('cursel'); return; }
     if (!f('num').value.trim() || !f('d1').value || !f('d2').value || !f('e1').value || !f('e2').value) { say('Renseignez les champs obligatoires.'); return; }
-    var pend = SELS.filter(function (x) { return x.conv === 'IDA01' && x.param === PSOE && x.st === 'En cours'; })[0];
-    if (pend) { pendNum = pend.num; askCf('cursel'); return; }
     var num = f('num').value.trim();
-    if (SELS.some(function (x) { return x.num === num; })) { say('Le n° de sélection ' + num + ' existe déjà.'); return; }
+    if (SELS.some(function (x) { return keyOf(x) === key && x.num === num; })) { say('Le n° de sélection ' + num + ' existe déjà pour ce paramètre et cette convention.'); return; }
+    keep();
     var c = {}; chks.forEach(function (x) { c[x.dataset.edChk] = x.checked; });
     D2.length = 0; JSON.parse(POOL).forEach(function (r) { D2.push(r); });
-    D2.forEach(function (r) { r.fact = c.nf ? 0 : ((c.marche && !r.marche) || (c.pointe && !r.pt)) ? 0 : 1; });
-    sel = -1; btnEdit.disabled = true; draw2(); draw1();
-    q('[data-ed-psel]').textContent = dm(f('d1').value) + ' → ' + dm(f('d2').value);
-    q('[data-ed-ped]').textContent = dm(f('e1').value) + ' → ' + dm(f('e2').value);
-    q('[data-ed-resume]').textContent = f('exo').value.slice(0, 4) + ' · IDA01 · Sélection ' + num + ' (validé)';
-    q('[data-ed-ns]').textContent = num; curNum = num;
-    saveSel('En cours'); modal.style.display = 'none';
+    D2.forEach(function (r) { r.fact = c.nf ? 0 : (c.pointe && !r.pt) ? 0 : 1; });
+    curKey = key; curNum = num; DATA[key] = D2.slice();
+    sel = -1; btnEdit.disabled = true; shown = true; draw2(); draw1();
+    saveSel('En cours'); setHead(pendOf(key)); modal.style.display = 'none';
     say('Sélection ' + num + ' créée : ' + D2.length + ' mouvements, ' + D2.filter(function (r) { return r.fact; }).length + ' facturables.');
   });
   draw1();
+  // au clic sur le module : la fenêtre des critères s'ouvre directement ; les données n'apparaissent qu'après validation
+  function entree() { shown = false; go(1); devises(); fillFields(); modal.style.display = ''; }
+  window.addEventListener('hashchange', function () { if (location.hash === '#etatdep') setTimeout(entree, 0); });
+  if (location.hash === '#etatdep') setTimeout(entree, 50);
+  var em0 = q('[data-ed-empty]'); if (em0) em0.addEventListener('click', function () { devises(); fillFields(); modal.style.display = ''; });
 })();
 </script>
 </app-confection-guidee-etat-depense-drf>

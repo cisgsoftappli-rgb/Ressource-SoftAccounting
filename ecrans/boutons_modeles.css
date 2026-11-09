@@ -1,0 +1,112 @@
+/* Boutons uniformisés des listes de modèles et des concepteurs d'état (charte).
+   Trois variantes : secondaire (blanc, bordure neutre), principal (bleu marine) et icône (corbeille).
+   Même hauteur (36 px), même arrondi (8 px), même police (13 px / 600) partout. */
+
+/* ---- Base commune ---- */
+[data-screen] .mf-a, [data-screen] .ml-b, [data-screen] .md-btn, [data-screen] .rm-b, [data-screen] .rc-btn, [data-screen] .so-btn,
+[data-screen] .ds-btn, [data-screen] .dd-btn, [data-screen] .pp-btn, [data-screen] .bp-b, [data-screen] .dl-save, [data-screen] .df-save {
+  display: inline-flex; align-items: center; justify-content: center; gap: 6px;
+  box-sizing: border-box; height: 36px; min-height: 36px; padding: 0 14px; margin: 0;
+  border: 1px solid #D6D9E0; border-radius: 8px; background: #fff; color: #353944;
+  font: inherit; font-size: 13px; font-weight: 600; line-height: 1; white-space: nowrap;
+  cursor: pointer; transition: background .15s, border-color .15s, color .15s;
+}
+[data-screen] .mf-a:hover, [data-screen] .ml-b:hover, [data-screen] .md-btn:hover, [data-screen] .rm-b:hover, [data-screen] .rc-btn:hover, [data-screen] .so-btn:hover,
+[data-screen] .ds-btn:hover, [data-screen] .dd-btn:hover, [data-screen] .pp-btn:hover, [data-screen] .bp-b:hover, [data-screen] .dl-save:hover, [data-screen] .df-save:hover {
+  background: #F5F7F9; border-color: #B9BEC8; color: #353944;
+}
+[data-screen] .mf-a:focus-visible, [data-screen] .ml-b:focus-visible, [data-screen] .md-btn:focus-visible, [data-screen] .rm-b:focus-visible, [data-screen] .rc-btn:focus-visible, [data-screen] .so-btn:focus-visible,
+[data-screen] .ds-btn:focus-visible, [data-screen] .dd-btn:focus-visible, [data-screen] .pp-btn:focus-visible, [data-screen] .bp-b:focus-visible, [data-screen] .dl-save:focus-visible, [data-screen] .df-save:focus-visible,
+[data-screen] .mf-trash:focus-visible, [data-screen] .ml-b.del:focus-visible {
+  outline: 3px solid #A9BDEE; outline-offset: 2px;
+}
+[data-screen] .mf-a:disabled, [data-screen] .ml-b:disabled, [data-screen] .md-btn:disabled, [data-screen] .rm-b:disabled, [data-screen] .rc-btn:disabled, [data-screen] .so-btn:disabled,
+[data-screen] .ds-btn:disabled, [data-screen] .dd-btn:disabled, [data-screen] .pp-btn:disabled, [data-screen] .bp-b:disabled, [data-screen] .dl-save:disabled, [data-screen] .df-save:disabled {
+  opacity: .5; cursor: not-allowed;
+}
+/* icônes dans les boutons : même taille partout */
+[data-screen] .ml-b svg, [data-screen] .mf-a svg, [data-screen] .md-btn svg, [data-screen] .rm-b svg { width: 14px; height: 14px; flex: none; }
+
+/* ---- Principal : action de l'écran (Ouvrir le designer, Nouveau, Enregistrer…) ---- */
+[data-screen] .mf-a.mf-or, [data-screen] .ml-b.des, [data-screen] .md-btn[data-md-open], [data-screen] .rm-b[data-open],
+[data-screen] .rc-btn:not(.rc-sec), [data-screen] .so-btn:not(.sec), [data-screen] .ds-btn:not(.ds-sec), [data-screen] .dd-btn:not(.sec),
+[data-screen] .dl-save, [data-screen] .df-save {
+  background: #2E427B; border-color: #2E427B; color: #fff;
+}
+[data-screen] .mf-a.mf-or:hover, [data-screen] .ml-b.des:hover, [data-screen] .md-btn[data-md-open]:hover, [data-screen] .rm-b[data-open]:hover,
+[data-screen] .rc-btn:not(.rc-sec):hover, [data-screen] .so-btn:not(.sec):hover, [data-screen] .ds-btn:not(.ds-sec):hover, [data-screen] .dd-btn:not(.sec):hover,
+[data-screen] .dl-save:hover, [data-screen] .df-save:hover {
+  background: #243569; border-color: #243569; color: #fff;
+}
+
+/* ---- Secondaire explicite (mêmes couleurs que la base, annule les variantes d'origine : orange, vert, rouge) ---- */
+[data-screen] .ml-b.mod, [data-screen] .ml-b.run, [data-screen] .rc-btn.rc-sec, [data-screen] .so-btn.sec, [data-screen] .ds-btn.ds-sec, [data-screen] .dd-btn.sec {
+  background: #fff; border-color: #D6D9E0; color: #353944;
+}
+[data-screen] .ml-b.mod:hover, [data-screen] .ml-b.run:hover, [data-screen] .rc-btn.rc-sec:hover, [data-screen] .so-btn.sec:hover, [data-screen] .ds-btn.ds-sec:hover, [data-screen] .dd-btn.sec:hover {
+  background: #F5F7F9; border-color: #B9BEC8; color: #353944;
+}
+/* danger textuel (supprimer dans un concepteur) */
+[data-screen] .pp-btn.dng { color: #B91C1C; border-color: #FECACA; }
+[data-screen] .pp-btn.dng:hover { background: #FEF2F2; border-color: #FCA5A5; color: #B91C1C; }
+
+/* ---- Icône : corbeille ---- */
+[data-screen] .mf-trash, [data-screen] .ml-b.del {
+  display: inline-flex; align-items: center; justify-content: center; box-sizing: border-box;
+  width: 36px; height: 36px; min-height: 36px; padding: 0; border: 1px solid #D6D9E0; border-radius: 8px;
+  background: #fff; color: #5B606D; font-size: 14px; cursor: pointer; transition: background .15s, border-color .15s, color .15s;
+}
+[data-screen] .mf-trash:hover:not(:disabled), [data-screen] .ml-b.del:hover:not(:disabled), [data-screen] .mf-trash.mf-on:hover {
+  background: #FEF2F2; border-color: #FCA5A5; color: #B91C1C;
+}
+[data-screen] .mf-trash:disabled { opacity: .45; cursor: not-allowed; }
+[data-screen] .mf-trash.mf-on { color: #5B606D; border-color: #D6D9E0; }
+
+/* ---- Rangées d'actions : même espacement, alignées à droite ---- */
+[data-screen] .mf-acts, [data-screen] .ml-act, [data-screen] .rm-act { display: flex; align-items: center; justify-content: flex-end; gap: 8px; flex-wrap: nowrap; }
+
+[data-screen] .ml-b.des svg { display: none; }
+
+/* « Ouvrir le designer » du modèle récapitulatif : même style principal que dans les autres listes */
+[data-screen] .rc-btn.rc-sec[data-rc-open] { background: #2E427B; border-color: #2E427B; color: #fff; }
+[data-screen] .rc-btn.rc-sec[data-rc-open]:hover { background: #243569; border-color: #243569; color: #fff; }
+
+/* ---- Liste « Modèle SOE » et « Modèle récapitulatif » : boutons de ligne alignés sur les autres listes ---- */
+[data-screen] .so-ico {
+  display: inline-flex; align-items: center; justify-content: center; gap: 6px;
+  box-sizing: border-box; height: 36px; min-height: 36px; padding: 0 14px; margin: 0;
+  border: 1px solid #D6D9E0; border-radius: 8px; background: #fff; color: #353944;
+  font: inherit; font-size: 13px; font-weight: 600; line-height: 1; white-space: nowrap; cursor: pointer;
+  transition: background .15s, border-color .15s, color .15s;
+}
+[data-screen] .so-ico:hover { background: #F5F7F9; border-color: #B9BEC8; color: #353944; }
+[data-screen] .so-ico:focus-visible, [data-screen] .rc-del:focus-visible { outline: 3px solid #A9BDEE; outline-offset: 2px; }
+[data-screen] .so-ico[data-so-open] { background: #2E427B; border-color: #2E427B; color: #fff; }
+[data-screen] .so-ico[data-so-open]:hover { background: #243569; border-color: #243569; color: #fff; }
+[data-screen] .so-ico.d { color: #B91C1C; border-color: #FECACA; }
+[data-screen] .so-ico.d:hover { background: #FEF2F2; border-color: #FCA5A5; color: #B91C1C; }
+[data-screen] td.a { display: table-cell; text-align: right; white-space: nowrap; }
+[data-screen] td.a .so-ico + .so-ico { margin-left: 8px; }
+[data-screen] .rc-del {
+  display: inline-flex; align-items: center; justify-content: center; box-sizing: border-box;
+  width: 36px; height: 36px; padding: 0; border: 1px solid #D6D9E0; border-radius: 8px; background: #fff; color: #5B606D; cursor: pointer;
+}
+[data-screen] .rc-del:hover { background: #FEF2F2; border-color: #FCA5A5; color: #B91C1C; }
+
+/* « Paramétrer » (modèle A2) : action principale de la ligne, comme « Ouvrir le designer » */
+[data-screen] .so-ico[data-so-par], [data-screen] .md-btn[data-md-a2par] { background: #2E427B; border-color: #2E427B; color: #fff; }
+[data-screen] .so-ico[data-so-par]:hover, [data-screen] .md-btn[data-md-a2par]:hover { background: #243569; border-color: #243569; color: #fff; }
+
+/* ---- Modes des concepteurs (Designer / Données / Mise en page / JSON / Aperçu live) : vrais onglets soulignés, comme Liste / Saisie ---- */
+[data-screen] .df-modes, [data-screen] .dd-tabs {
+  display: flex; flex-wrap: wrap; gap: 4px; border-bottom: 1px solid #E9EBF0; margin: 0;
+}
+[data-screen] .df-modes button, [data-screen] .dd-tab, [data-screen] .dl-mode {
+  display: inline-flex; align-items: center; justify-content: center; box-sizing: border-box;
+  height: auto; min-height: 36px; padding: 8px 16px; margin: 0 0 -1px; border: 0; border-bottom: 3px solid transparent; border-radius: 0;
+  background: none; color: #5B606D; font: inherit; font-size: 13px; font-weight: 600; white-space: nowrap; cursor: pointer;
+  transition: color .15s, border-color .15s;
+}
+[data-screen] .df-modes button:hover, [data-screen] .dd-tab:hover, [data-screen] .dl-mode:hover { background: none; color: #0B1332; border-bottom-color: #D6D9E0; }
+[data-screen] .df-modes button.on, [data-screen] .dd-tab.on, [data-screen] .dl-mode.on { background: none; color: #2E427B; border-bottom-color: #2E427B; }
+[data-screen] .df-modes button:focus-visible, [data-screen] .dd-tab:focus-visible, [data-screen] .dl-mode:focus-visible { outline: 3px solid #A9BDEE; outline-offset: -3px; }

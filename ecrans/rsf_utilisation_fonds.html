@@ -1,0 +1,226 @@
+<!--
+  Écran « RSF › Utilisation de fonds » (Comptabilité Projets & Bailleurs).
+  Édition des ressources par structure d'activités (Composante > Sous-composante > Volet > Sous-volet > Groupe d'activités > Activité),
+  avec les colonnes Trimestre / Année (à la fin de période) / Cumulatif / Prévisions sur 6 mois (Prévu, Effectif, Écart).
+  Critères : exercice, périodicité + numéro (période calculée), budget période / année, centres de saisie, journaux, financiers, type de dépenses,
+  état en milliers, conventions, monnaie, niveaux de la structure d'activités.
+  Case à choix « Section Cumulatif » : la colonne Prévu du cumulatif est remplie par le PAD (colonne « PAD ») ou par le Budget cumulatif (colonne « Prévu »).
+  Données de démonstration déterministes. Préfixe uf- / data-uf. Ne pas nommer de fonction « $$ » (build.cjs).
+-->
+<style>
+[data-uf] .uf-info{font-size:13px;color:#474C58;margin:0 0 12px;max-width:980px;line-height:1.5}[data-uf] .uf-info b{color:#0B1332}
+[data-uf] .uf-crit{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:10px 18px;margin:0 0 14px}
+[data-uf] .uf-crit label,[data-uf] .uf-f{display:grid;gap:4px;font-size:12px;color:#5B606D;align-content:start}
+[data-uf] .uf-sec{grid-column:1/-1;font-size:13px;font-weight:700;color:#2F6DB5;border-bottom:1px solid #2F6DB5;padding:4px 0;margin-top:4px}
+[data-uf] .uf-per{display:grid;grid-template-columns:1fr 1fr;gap:8px}
+[data-uf] .uf-ms{position:relative}
+[data-uf] .uf-msb{width:100%;min-height:34px;text-align:left;border:1px solid #D5D9E3;border-radius:6px;background:#fff;padding:4px 10px;font-size:13px;color:#0B1332;cursor:pointer;display:flex;justify-content:space-between;align-items:center;gap:8px}
+[data-uf] .uf-msp{position:absolute;z-index:30;left:0;right:0;top:100%;margin-top:2px;background:#fff;border:1px solid #D5D9E3;border-radius:8px;box-shadow:0 8px 24px rgba(11,19,50,.14);max-height:240px;overflow:auto;padding:6px}
+[data-uf] .uf-msp label{display:flex;align-items:center;gap:8px;padding:4px 6px;font-size:13px;color:#0B1332;min-width:0}[data-uf] .uf-msp label:hover{background:#F3F5FA}
+[data-uf] .uf-msp .uf-all{border-bottom:1px solid #E9EBF0;margin-bottom:4px;font-weight:600}
+[data-uf] .uf-cumul{grid-column:1/-1;border:1px solid #C9D6F2;background:#F3F7FF;border-radius:10px;padding:10px 14px;display:flex;flex-wrap:wrap;align-items:center;gap:8px 24px}
+[data-uf] .uf-cumul b{font-size:13px;color:#0B1332}[data-uf] .uf-cumul label{display:flex;align-items:center;gap:8px;font-size:13px;color:#0B1332}
+[data-uf] .uf-lv{grid-column:1/-1;display:flex;flex-wrap:wrap;gap:6px 22px}[data-uf] .uf-lv label{display:flex;align-items:center;gap:8px;font-size:13px;color:#0B1332}
+[data-uf] .uf-tb{border-collapse:separate;border-spacing:0;width:100%;font-size:13px}
+[data-uf] .uf-tb th,[data-uf] .uf-tb td{padding:6px 10px;border-bottom:1px solid #E9EBF0;white-space:nowrap}
+[data-uf] .uf-tb thead th{background:#EEF1F8;color:#0B1332;text-align:center;font-weight:700;border-right:1px solid #fff}
+[data-uf] .uf-tb thead tr:nth-child(2) th{background:#F6F7FB;font-weight:600}
+[data-uf] .uf-tb td.r{text-align:right;font-variant-numeric:tabular-nums}[data-uf] .uf-tb td.d{white-space:nowrap;min-width:460px;text-align:left}
+[data-uf] .uf-tb td.m{font-family:ui-monospace,Consolas,monospace;font-size:12px}
+[data-uf] .uf-tb tr.l1 td{background:#E7EDFB;font-weight:700}[data-uf] .uf-tb tr.l2 td{background:#F1F4FC;font-weight:700}[data-uf] .uf-tb tr.l3 td{font-weight:600;background:#FAFBFE}[data-uf] .uf-tb tr.l4 td,[data-uf] .uf-tb tr.l5 td{font-weight:500}
+[data-uf] .uf-neg{color:#B63132}
+[data-uf] .uf-pg{padding:10px 4px 0;font-size:13px;color:#5B606D}
+[data-uf] .uf-ov{position:fixed;inset:0;z-index:1000;background:rgba(11,19,50,.45);display:flex;align-items:center;justify-content:center;padding:20px}[data-uf] .uf-ov[hidden]{display:none}
+[data-uf] .uf-md{background:#fff;border-radius:12px;width:min(1100px,100%);max-height:92vh;display:flex;flex-direction:column;box-shadow:0 20px 60px rgba(11,19,50,.3)}
+[data-uf] .uf-mh{display:flex;justify-content:space-between;align-items:center;padding:14px 20px;border-bottom:1px solid #E9EBF0;font-size:16px;color:#0B1332}
+[data-uf] .uf-x{border:0;background:none;font-size:24px;line-height:1;cursor:pointer;color:#5B606D}
+[data-uf] .uf-mb{padding:14px 20px;overflow:auto;flex:1}[data-uf] .uf-mb .uf-crit{margin:0}
+[data-uf] .uf-mf{display:flex;justify-content:flex-end;gap:10px;padding:12px 20px;border-top:1px solid #E9EBF0}
+[data-uf] .uf-mf button{height:36px;padding:0 18px;border-radius:8px;border:1px solid #D5D9E3;background:#fff;color:#0B1332;font-weight:600;font-size:13px;cursor:pointer}
+[data-uf] .uf-mf button[data-uf-gen]{background:#0F2A6B;border-color:#0F2A6B;color:#fff}
+@media (max-width:900px){[data-uf] .uf-crit{grid-template-columns:1fr}}
+</style>
+
+<div class="bp-root" data-uf>
+  <h1 style="position:absolute;width:1px;height:1px;overflow:hidden;clip-path:inset(50%);margin:0">Utilisation de fonds</h1>
+  <div class="no-print" data-uf-actions>
+    <button type="button" data-uf-crit>Critères</button>
+    <button type="button" data-uf-pdf>PDF</button>
+    <button type="button" data-uf-xlsx>Excel (XLSX)</button>
+  </div>
+  <div class="bp-grid"><section class="bp-pan" aria-label="Utilisation de fonds">
+    <p class="uf-info">L’état d’<b>utilisation de fonds</b> édite, par niveau de la structure d’activités, le <b>prévu</b>, l’<b>effectif</b> et l’<b>écart</b> du trimestre (ou de la période choisie), de l’année à la fin de la période, du cumulatif depuis l’origine, ainsi que les prévisions sur 6 mois.</p>
+    <div class="uf-ov" data-uf-ov hidden><div class="uf-md" role="dialog" aria-modal="true" aria-label="Critères d’édition">
+    <div class="uf-mh"><b>Critères d’édition — Utilisation de fonds</b><button type="button" class="uf-x" data-uf-fermer aria-label="Fermer">×</button></div>
+    <div class="uf-mb"><div class="uf-crit">
+      <div class="uf-sec">Période et budgets</div>
+      <label>Exercice comptable<select class="bp-sel" data-uf-ex data-no-combo><option>2026</option><option>2025</option></select></label>
+      <label>Périodicité<select class="bp-sel" data-uf-perio data-no-combo><option value="1">Mois</option><option value="3" selected>Trimestre</option><option value="6">Semestre</option><option value="12">Année</option></select></label>
+      <label>Numéro<select class="bp-sel" data-uf-num data-no-combo></select></label>
+      <div class="uf-f"><span>Période</span><div class="uf-per"><input class="bp-in" type="date" data-uf-du readonly><input class="bp-in" type="date" data-uf-au readonly></div></div>
+      <label>Budget période<select class="bp-sel" data-uf-bp data-no-combo><option>1 - BUDGET INITIAL</option><option selected>2 - BUDGET AMENDÉ</option></select></label>
+      <label>Budget année<select class="bp-sel" data-uf-ba data-no-combo><option>1 - BUDGET INITIAL</option><option selected>2 - BUDGET AMENDÉ</option></select></label>
+      <div class="uf-cumul" data-uf-cumul>
+        <b>Section « Cumulatif » — remplir la colonne Prévu par :</b>
+        <label><input type="radio" name="ufcum" value="pad" data-uf-src> le PAD</label>
+        <label><input type="radio" name="ufcum" value="bud" data-uf-src checked> le Budget cumulatif</label>
+      </div>
+      <div class="uf-sec">Sélections</div>
+      <div class="uf-f"><span>Centre de saisie</span><div class="uf-ms" data-uf-ms="Siège|Antenne Menabe|Antenne Melaky"></div></div>
+      <div class="uf-f"><span>Journaux</span><div class="uf-ms" data-uf-ms="ACHA — Achats|VENT — Ventes|BANQ — Banque|CA — Caisse|OD — Opérations diverses|PAIE — Paie|AN — À nouveaux|IMMO — Immobilisations"></div></div>
+      <div class="uf-f"><span>Financier</span><div class="uf-ms" data-uf-ms="IDA|FIDA|FED|FM|BAD|État malgache|Bénéficiaires"></div></div>
+      <label>Type de dépenses<select class="bp-sel" data-uf-typ data-no-combo><option>Décaissements</option><option>Engagements</option></select></label>
+      <div class="uf-f"><span>Convention</span><div class="uf-ms" data-uf-ms="IDA-6543|IDA-6544|FIDA-2210|FIDA-2211|BAD-0987|FED-1120|FM-0455"></div></div>
+      <label>État exprimé en milliers<input type="checkbox" data-uf-mil style="width:22px;height:22px"></label>
+      <div class="uf-sec">Monnaie</div>
+      <label>Monnaie<select class="bp-sel" data-uf-dev data-no-combo><option value="1">MGA - ARIARY</option><option value="4800">EUR - EURO</option><option value="4500">USD - DOLLAR US</option></select></label>
+      <div class="uf-sec" data-uf-lvt>Structure d’activités</div>
+      <div class="uf-lv" data-uf-lv></div>
+    </div></div>
+    <div class="uf-mf"><button type="button" class="bp-btn" data-uf-fermer>Annuler</button><button type="button" class="bp-btn bp-btn-primary" data-uf-gen>Générer</button></div>
+    </div></div>
+    <div data-uf-res hidden>
+      <div style="overflow:auto"><table class="uf-tb" style="min-width:1500px"><thead data-uf-th></thead><tbody data-uf-lignes></tbody></table></div>
+      <div class="uf-pg" data-uf-pginfo></div>
+    </div>
+    <div class="bp-vide" data-uf-init>Cliquez sur « Critères » pour renseigner l’édition, puis sur « Générer ».</div>
+  </section></div>
+  <div class="bp-toast" role="status" hidden data-uf-toast></div>
+</div>
+
+<script>
+(function () {
+  var root = document.querySelector('[data-uf]'); if (!root) return;
+  function q(s) { return root.querySelector(s); } function qa(s) { return [].slice.call(root.querySelectorAll(s)); }
+  function esc(s) { return String(s == null ? '' : s).replace(/[&<>"]/g, function (c) { return { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c]; }); }
+  function toast(m) { var t = q('[data-uf-toast]'); t.textContent = m; t.hidden = false; clearTimeout(toast.t); toast.t = setTimeout(function () { t.hidden = true; }, 2600); }
+  function p2(n) { return (n < 10 ? '0' : '') + n; }
+  function iso(d) { return d.getFullYear() + '-' + p2(d.getMonth() + 1) + '-' + p2(d.getDate()); }
+  function fr(s) { return s.split('-').reverse().join('/'); }
+  function h(s) { var x = 7; for (var i = 0; i < s.length; i++) x = (x * 31 + s.charCodeAt(i)) % 9973; return x; }
+  var NIV = ['Composante', 'Sous composante', 'Volet', 'Sous volet', 'Groupe d’activités', 'Activité'];
+  // [code, désignation, enfants]
+  var ARBRE = [
+    ['1', 'COMPOSANTE 1 : PROMOTION DE SYSTÈMES DE PRODUCTION AGRICOLE', [
+      ['11', 'Sous composante 1.1 : Développement des infrastructures et services', [
+        ['11A', 'Volet : Planification territoriale', [
+          ['11A1', 'Planification au niveau communal', [['11A10', 'Planification au niveau communal', [['11A1001', 'Formation des acteurs locaux en planification'], ['11A1002', 'Élaboration et mise à jour de PCD'], ['11A1003', 'Appui à l’élaboration SAC']]]]],
+          ['11A2', 'Planification au niveau régional', [['11A20', 'Planification territoriale au niveau régional', [['11A2001', 'Appui à l’élaboration SRAT Menabe'], ['11A2002', 'Appui à mise à jour du PRD & PRDR Melaky'], ['11A2004', 'Formation des acteurs régionaux en planification']]]]]]],
+        ['11B', 'Volet Aménagement hydro agricoles', [
+          ['11B1', 'Sous volet : Études', [['11B10', 'Études', [['11B1001', 'Mise en conformité environnementale PI'], ['11B1002', 'Études d’APD de périmètres irrigués'], ['11B1004', 'Diagnostic de Bemarivo']]]]]]]]],
+      ['12', 'Sous composante 1.2 : Appui aux filières', [
+        ['12A', 'Volet : Intrants et semences', [['12A1', 'Multiplication de semences', [['12A10', 'Semences de base', [['12A1001', 'Production de semences de riz'], ['12A1002', 'Contrôle et certification']]]]]]]]]]],
+    ['2', 'COMPOSANTE 2 : GESTION DU PROJET', [
+      ['21', 'Sous composante 2.1 : Coordination et gestion', [
+        ['21A', 'Volet : Unité de gestion', [['21A1', 'Personnel', [['21A10', 'Personnel de l’unité de gestion', [['21A1001', 'Salaires et charges'], ['21A1002', 'Indemnités de mission']]]]],
+          ['21A2', 'Fonctionnement', [['21A20', 'Fonctionnement courant', [['21A2001', 'Loyers et charges locatives'], ['21A2002', 'Carburant et entretien véhicules']]]]]]]]]]]
+  ];
+  var MS = {};
+  function msInit(el) {
+    var vals = el.getAttribute('data-uf-ms').split('|'), sel = vals.slice(), id = Math.random().toString(36).slice(2);
+    el.innerHTML = '<button type="button" class="uf-msb"><span></span><i class="ti ti-chevron-down" aria-hidden="true"></i></button><div class="uf-msp" hidden></div>';
+    var b = el.querySelector('.uf-msb'), p = el.querySelector('.uf-msp');
+    function maj() { b.firstChild.textContent = sel.length === vals.length ? 'Tous sélectionnés (' + vals.length + ')' : sel.length ? sel.length + ' sélectionné(s) sur ' + vals.length : 'Aucun'; }
+    p.innerHTML = '<label class="uf-all"><input type="checkbox" checked> Tout sélectionner</label>' + vals.map(function (v, i) { return '<label><input type="checkbox" data-i="' + i + '" checked> ' + esc(v) + '</label>'; }).join('');
+    p.addEventListener('change', function (e) {
+      var c = e.target; if (c.closest('.uf-all')) { [].forEach.call(p.querySelectorAll('input[data-i]'), function (x) { x.checked = c.checked; }); }
+      sel = [].filter.call(p.querySelectorAll('input[data-i]'), function (x) { return x.checked; }).map(function (x) { return vals[x.dataset.i]; });
+      p.querySelector('.uf-all input').checked = sel.length === vals.length; maj();
+    });
+    b.addEventListener('click', function (e) { e.stopPropagation(); var o = p.hidden; qa('.uf-msp').forEach(function (x) { x.hidden = true; }); p.hidden = !o; });
+    p.addEventListener('click', function (e) { e.stopPropagation(); });
+    el.__n = function () { return sel.length; }; el.__t = vals.length; maj();
+  }
+  qa('[data-uf-ms]').forEach(msInit);
+  document.addEventListener('click', function () { qa('.uf-msp').forEach(function (x) { x.hidden = true; }); });
+  // Plan d'activité (Paramétrages › Gestion des plans › Configuration des plans / Plan d'activité) : niveaux = PLANS_CFG.PLAN1.niveaux, lignes = PLANS_LIGNES.PLAN1.rows
+  function planAct() { return (window.PLANS_CFG || []).filter(function (p) { return p.code === 'PLAN1'; })[0] || null; }
+  function lignesPlan() { var L = window.PLANS_LIGNES && window.PLANS_LIGNES.PLAN1; return L && L.rows ? L.rows.filter(function (r) { return r.actif !== false; }) : []; }
+  function niveauxPlan() { var p = planAct(); return p && p.niveaux && p.niveaux.length ? p.niveaux.map(function (v) { return v.libelle || v.nom || v.lib || String(v); }) : NIV; }
+  function majNiveaux() {
+    var p = planAct(), N = niveauxPlan(), coche = {}; qa('[data-uf-niv]').forEach(function (c) { coche[c.dataset.ufNiv] = c.checked; });
+    q('[data-uf-lvt]').textContent = 'Structure d’activités — plan ' + (p ? p.libelle + (p.abrev ? ' (' + p.abrev + ')' : '') : 'd’activité');
+    q('[data-uf-lv]').innerHTML = N.map(function (n, i) { return '<label><input type="checkbox" data-uf-niv="' + (i + 1) + '"' + (coche[i + 1] === false ? '' : ' checked') + '> ' + (i + 1) + ' - ' + esc(String(n).toUpperCase()) + '</label>'; }).join('');
+  }
+  function arbrePlan() {
+    var R = lignesPlan(); if (!R.length) return ARBRE;
+    var par = {}, ex = {}; R.forEach(function (r) { ex[r.code] = 1; }); R.forEach(function (r) { var k = r.parent && ex[r.parent] ? r.parent : ''; (par[k] = par[k] || []).push(r); });
+    function noeud(r, vu) { var e = par[r.code]; return e && !vu[r.code] ? (vu[r.code] = 1, [r.code, r.libelle || '', e.map(function (x) { return noeud(x, vu); })]) : [r.code, r.libelle || '']; }
+    var vu = {}; return (par[''] || []).map(function (r) { return noeud(r, vu); });
+  }
+  majNiveaux();
+  // période calculée d'après l'exercice, la périodicité et le numéro
+  function periode() {
+    var an = Number(q('[data-uf-ex]').value), len = Number(q('[data-uf-perio]').value), n = Number(q('[data-uf-num]').value) || 1;
+    var d1 = new Date(an, (n - 1) * len, 1), d2 = new Date(an, n * len, 0); return { du: iso(d1), au: iso(d2), len: len, fin: n * len };
+  }
+  function numeros() {
+    var len = Number(q('[data-uf-perio]').value), nb = 12 / len, cur = q('[data-uf-num]').value, o = '';
+    for (var i = 1; i <= nb; i++) o += '<option' + (String(i) === cur ? ' selected' : '') + '>' + i + '</option>'; q('[data-uf-num]').innerHTML = o; majPer();
+  }
+  function majPer() { var p = periode(); q('[data-uf-du]').value = p.du; q('[data-uf-au]').value = p.au; }
+  q('[data-uf-perio]').addEventListener('change', numeros); q('[data-uf-num]').addEventListener('change', majPer); q('[data-uf-ex]').addEventListener('change', majPer);
+  numeros();
+
+  var res = null;
+  function calc(code, p, k) {
+    var b = (h(code) % 900 + 100) * 120000, A = Math.round(b * k), vide = h(code + 'v') % 6 === 0;
+    var tp = Math.round(A * p.len / 12), te = vide ? 0 : Math.round(tp * (0.04 + (h(code + 't') % 40) / 100)),
+      ap = A, ae = vide ? 0 : Math.round(te * (p.fin / p.len) * (0.8 + (h(code + 'a') % 30) / 100)),
+      cb = Math.round(A * 2.1), pad = Math.round(A * 4.2), ce = vide ? 0 : Math.round(ae * 1.35 + b * 0.08), pv = vide ? 0 : Math.round(A * 0.5 * (h(code + 'p') % 3 ? 1 : 0));
+    return { tp: tp, te: te, ap: ap, ae: ae, cb: cb, pad: pad, ce: ce, pv: pv };
+  }
+  function somme(a, b) { var o = {}; Object.keys(a).forEach(function (x) { o[x] = a[x] + b[x]; }); return o; }
+  function lignes(noeuds, niv, p, k, out) {
+    var tot = null;
+    noeuds.forEach(function (n) {
+      var idx = out.length; out.push(null);
+      var v = n[2] && n[2].length ? lignes(n[2], niv + 1, p, k, out) : calc(n[0], p, k);
+      out[idx] = { code: n[0], lib: n[1], niv: niv, v: v }; tot = tot ? somme(tot, v) : v;
+    });
+    return tot;
+  }
+  function generer() {
+    var p = periode(), div = q('[data-uf-mil]').checked ? 1000 : 1, dv = Number(q('[data-uf-dev]').value);
+    var k = 1 / dv / div * (qa('[data-uf-ms]').reduce(function (a, e) { return a * (e.__n() / e.__t); }, 1) || 0.0001);
+    if (!qa('[data-uf-ms]').every(function (e) { return e.__n() > 0; })) { toast('Sélectionnez au moins un élément dans chaque liste.'); return; }
+    var niv = qa('[data-uf-niv]').filter(function (c) { return c.checked; }).map(function (c) { return Number(c.dataset.ufNiv); });
+    if (!niv.length) { toast('Cochez au moins un niveau de la structure d’activités.'); return; }
+    var out = []; lignes(arbrePlan(), 1, p, k, out);
+    res = { rows: out.filter(function (r) { return niv.indexOf(r.niv) >= 0; }), p: p, src: q('[data-uf-src]:checked').value, dev: q('[data-uf-dev]').selectedOptions[0].textContent.split(' - ')[0], mil: div === 1000 };
+    dessiner();
+  }
+  function n(x) { return Math.round(x).toLocaleString('fr-FR').replace(/[  ]/g, ' '); }
+  function cell(x) { return '<td class="r' + (x < 0 ? ' uf-neg' : '') + '">' + (x === 0 ? '' : n(x)) + '</td>'; }
+  function cols(r, src) { var v = r.v, pc = src === 'pad' ? v.pad : v.cb; return [v.tp, v.te, v.tp - v.te, v.ap, v.ae, v.ap - v.ae, pc, v.ce, pc - v.ce, v.pv]; }
+  function dessiner() {
+    var lab = res.src === 'pad' ? 'PAD' : 'Prévu', fin = fr(res.p.au);
+    q('[data-uf-th]').innerHTML = '<tr><th rowspan="2">Code</th><th rowspan="2">Désignation</th><th colspan="3">' + ({ 1: 'Mois', 3: 'Trimestre', 6: 'Semestre', 12: 'Année' }[res.p.len]) + '</th><th colspan="3">Année (au ' + fin + ')</th><th colspan="3">Cumulatif</th><th rowspan="2">Prévisions sur 6 mois</th></tr><tr><th>Prévu</th><th>Effectif</th><th>Écart</th><th>Prévu</th><th>Effectif</th><th>Écart</th><th>' + lab + '</th><th>Effectif</th><th>Écart</th></tr>';
+    q('[data-uf-lignes]').innerHTML = res.rows.map(function (r) {
+      return '<tr class="l' + Math.min(r.niv, 5) + '"><td class="m">' + esc(r.code) + '</td><td class="d">' + esc(r.lib) + '</td>' + cols(r, res.src).map(cell).join('') + '</tr>';
+    }).join('');
+    q('[data-uf-res]').hidden = false; q('[data-uf-init]').hidden = true;
+    q('[data-uf-pginfo]').textContent = 'Exercice ' + q('[data-uf-ex]').value + ' — période du ' + fr(res.p.du) + ' au ' + fin + ' — ' + q('[data-uf-bp]').value + ' / ' + q('[data-uf-ba]').value + ' — ' + q('[data-uf-typ]').value + ' — montants en ' + (res.mil ? 'milliers de ' : '') + res.dev + ' — cumulatif prévu : ' + (res.src === 'pad' ? 'PAD' : 'Budget cumulatif') + ' (données de démonstration).';
+  }
+  function exporter(fmt) {
+    var X = window.EXPORT_TABLEAU; if (!X) { toast('Module d’export indisponible.'); return; } if (!res) { toast('Générez l’état : rien à exporter.'); return; }
+    var per = res.p.len === 12 ? 'Année' : res.p.len === 6 ? 'Semestre' : res.p.len === 1 ? 'Mois' : 'Trimestre', lab = res.src === 'pad' ? 'PAD' : 'Prévu', fin = fr(res.p.au);
+    var T = ['Code', 'Désignation', per + ' – Prévu', per + ' – Effectif', per + ' – Écart', 'Année (au ' + fin + ') – Prévu', 'Année – Effectif', 'Année – Écart', 'Cumulatif – ' + lab, 'Cumulatif – Effectif', 'Cumulatif – Écart', 'Prévisions sur 6 mois'];
+    var rows = res.rows.map(function (r) { return [r.code, r.lib].concat(cols(r, res.src)); });
+    var sub = q('[data-uf-pginfo]').textContent;
+    if (fmt === 'pdf') X.pdf('utilisation_fonds.pdf', 'Utilisation de fonds', sub, T, rows); else X.xlsx('utilisation_fonds.xlsx', 'Utilisation de fonds', T, rows);
+    toast('Export ' + (fmt === 'pdf' ? 'PDF' : 'Excel (XLSX)') + ' généré.');
+  }
+  function ouvrir(o) { if (o) majNiveaux(); q('[data-uf-ov]').hidden = !o; }
+  q('[data-uf-crit]').addEventListener('click', function () { ouvrir(true); });
+  qa('[data-uf-fermer]').forEach(function (b) { b.addEventListener('click', function () { ouvrir(false); }); });
+  q('[data-uf-ov]').addEventListener('mousedown', function (e) { if (e.target === this) ouvrir(false); });
+  document.addEventListener('keydown', function (e) { if (e.key === 'Escape' && !q('[data-uf-ov]').hidden) ouvrir(false); });
+  window.addEventListener('hashchange', function () { if (location.hash === '#rsfuf' && !res) ouvrir(true); });
+  if (location.hash === '#rsfuf') window.addEventListener('load', function () { if (!res) ouvrir(true); });
+  q('[data-uf-gen]').addEventListener('click', function () { generer(); if (res) { ouvrir(false); toast('Utilisation de fonds générée : ' + res.rows.length + ' ligne(s).'); } });
+  qa('[data-uf-src]').forEach(function (r) { r.addEventListener('change', function () { if (res) { res.src = r.value; dessiner(); } }); });
+  q('[data-uf-pdf]').addEventListener('click', function () { exporter('pdf'); });
+  q('[data-uf-xlsx]').addEventListener('click', function () { exporter('xlsx'); });
+})();
+</script>

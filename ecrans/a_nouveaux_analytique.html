@@ -1,0 +1,224 @@
+<!--
+  Écran « À nouveau analytique » (Comptabilité générale › Travaux périodiques › À nouveau analytique) — report, sur l'exercice suivant, des soldes analytiques d'un exercice,
+  ventilés par TOUS les axes analytiques (Activité, Poste budgétaire, Financement, Géographique) et par TYPE DE DÉPENSE (Décaissement, Engagement :
+  Paramétrages › Procédures financières). Génération depuis l'exercice source (montants d'exemple simulés), saisie manuelle d'une ligne (les quatre axes et le type de dépense
+  sont obligatoires), suppression, recherche, pagination, totaux par type de dépense, exports PDF / Excel.
+  État partagé : window.A_NOUVEAUX_ANA = { 'site|exercice' : { le, source, lignes } }. Boutons relayés par la barre d'actions de page (CFG « anouvanalytique »).
+  Ne pas nommer de fonction « $$ » (build.cjs).
+-->
+<style>
+.aa-bar{display:flex;flex-wrap:wrap;align-items:end;gap:16px;margin:0 0 14px}.aa-bar label{display:grid;gap:4px;font-size:12px;color:#5B606D;min-width:180px}
+.aa-rech{display:inline-flex;align-items:center;gap:6px;height:40px;padding:0 18px;border:1px solid #2E427B;border-radius:8px;background:#2E427B;color:#fff;font-weight:600;font-size:14px;cursor:pointer}.aa-rech:hover{background:#243566}
+.aa-info{font-size:13px;color:#474C58;margin:0 0 12px}.aa-info b{color:#0B1332}
+.aa-head{display:flex;justify-content:space-between;align-items:flex-start;gap:24px;flex-wrap:wrap;margin:0 0 6px}.aa-gauche{flex:1 1 520px;min-width:0}.aa-tot{flex:0 1 560px;min-width:340px;border:1px solid #E9EBF0;border-radius:8px;background:#fff;padding:10px 14px;align-self:start}
+.aa-tot table{width:100%;border-collapse:collapse;font-size:13px}.aa-tot th{padding:4px 8px;text-align:right;font-size:12px;font-weight:700;color:#2E427B}.aa-tot th:first-child,.aa-tot td:first-child{text-align:left}.aa-tot td{padding:4px 8px;text-align:right;font-variant-numeric:tabular-nums}.aa-tot tr.t td{font-weight:700;border-top:1px solid #E9EBF0}
+.aa-tools{display:flex;align-items:center;justify-content:flex-end;gap:10px;margin:0 0 8px}.aa-q{position:relative}.aa-q i{position:absolute;left:8px;top:50%;transform:translateY(-50%);color:#8A8F9C;font-size:14px}.aa-q input{height:34px;width:260px;padding:0 8px 0 28px;border:1px solid #D6D9E0;border-radius:6px;font-size:13px}
+.aa-tb td.r,.aa-tb th.r{text-align:right;font-variant-numeric:tabular-nums}.aa-tb td.m{font-family:ui-monospace,Consolas,monospace;font-size:12px}
+.aa-ty{display:inline-block;padding:1px 8px;border-radius:6px;font-size:12px;font-weight:600}.aa-ty.Décaissement{background:#E3EBFE;color:#2E427B}.aa-ty.Engagement{background:#FEF3C7;color:#92400E}
+.aa-pg{display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:10px;padding:10px 4px 0;font-size:13px;color:#5B606D}.aa-pgs{display:flex;gap:6px}.aa-pgs button,.aa-sz select{min-height:32px;padding:0 10px;border:1px solid #D6D9E0;border-radius:6px;background:#fff;font-size:13px;cursor:pointer}.aa-pgs button.on{background:#2E427B;color:#fff;border-color:#2E427B}.aa-pgs button:disabled{opacity:.45;cursor:not-allowed}
+.aa-ov{position:fixed;inset:0;z-index:2500;display:flex;align-items:center;justify-content:center;padding:16px;background:rgba(11,19,50,.55)}.aa-ov[hidden]{display:none}
+.aa-md{display:flex;flex-direction:column;width:min(640px,100%);max-height:calc(100vh - 32px);border-radius:12px;background:#fff;box-shadow:0 28px 70px rgba(11,19,50,.35)}
+.aa-md h2{margin:0;padding:16px 20px;border-bottom:1px solid #E9EBF0;font-size:18px}.aa-mb{display:grid;gap:14px;padding:18px 20px;overflow:auto}.aa-mg{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:14px}.aa-mb label{display:grid;gap:4px;font-size:12px;color:#5B606D}
+.aa-mn{margin:0;font-size:12px;color:#5B606D}.aa-er{margin:0;font-size:12px;color:#B63132}
+.aa-mf{display:flex;justify-content:flex-end;gap:10px;padding:14px 20px;border-top:1px solid #E9EBF0}.aa-mf button{min-height:38px;padding:0 16px;border:1px solid #2E427B;border-radius:8px;background:#fff;color:#2E427B;font-weight:600;font-size:14px;cursor:pointer}.aa-mf button.p{background:#2E427B;color:#fff}
+.aa-x{appearance:none;border:1px solid #D6D9E0;background:#fff;border-radius:6px;width:30px;height:30px;color:#B63132;cursor:pointer}.aa-x:hover{background:#FDE8E8}
+@media (max-width:700px){.aa-mg{grid-template-columns:1fr}}
+</style>
+
+<div class="bp-root" data-aa>
+  <h1 style="position:absolute;width:1px;height:1px;overflow:hidden;clip-path:inset(50%);margin:0">À nouveau analytique</h1>
+  <div class="no-print" data-aa-actions>
+    <button type="button" data-aa-saisie>Saisie manuelle</button>
+    <button type="button" data-aa-importer>Importer</button>
+    <button type="button" data-aa-supprimer>Supprimer les à nouveaux analytiques</button>
+    <button type="button" data-aa-pdf>PDF</button>
+    <button type="button" data-aa-xlsx>Excel (XLSX)</button>
+  </div>
+  <div class="bp-grid"><section class="bp-pan" aria-label="À nouveau analytique">
+    <div class="aa-head"><div class="aa-gauche">
+      <div class="aa-bar">
+        <label>Site<select class="bp-sel" data-aa-site data-no-combo><option value="01">01 - Siège</option><option value="02">02 - Toamasina</option></select></label>
+        <label>Exercice<select class="bp-sel" data-aa-ex data-no-combo></select></label>
+        <label>Type de dépense<select class="bp-sel" data-aa-type data-no-combo><option value="">Tous</option><option>Décaissement</option><option>Engagement</option></select></label>
+        <button type="button" class="aa-rech" data-aa-rechercher><i class="ti ti-search" aria-hidden="true"></i> Rechercher</button>
+      </div>
+      <p class="aa-info" data-aa-info></p>
+    </div>
+    <div class="aa-tot" data-aa-totbox hidden><table data-no-pg><thead><tr><th>Type de dépense</th><th>Lignes</th><th>Total Débit</th><th>Total Crédit</th></tr></thead><tbody data-aa-tot></tbody></table></div></div>
+
+    <div data-aa-conso hidden>
+      <div class="aa-tools"><span class="aa-q"><i class="ti ti-search" aria-hidden="true"></i><input data-aa-q placeholder="Recherche (compte, axe, type…)" autocomplete="off"></span></div>
+      <div style="overflow:auto"><table class="bp-tb aa-tb" style="min-width:1100px"><thead><tr><th>Exercice</th><th>Site</th><th>ACT</th><th>BUD</th><th>FIN</th><th>GEO</th><th>Type de dépense</th><th>Sens</th><th class="r" data-aa-hloc>Montant local</th><th class="r" data-aa-hdev>Montant devise 1</th><th></th></tr></thead><tbody data-aa-lignes></tbody></table></div>
+      <div class="bp-vide" data-aa-vide2 hidden>Aucune ligne ne correspond aux filtres.</div>
+      <div class="aa-pg"><div class="aa-sz">Lignes par page <select data-aa-sz><option>10</option><option selected>20</option><option>50</option></select></div><span data-aa-pginfo></span><div class="aa-pgs" data-aa-pgs></div></div>
+    </div>
+    <div class="bp-vide" data-aa-vide>Aucun à nouveau analytique pour ce site et cet exercice : utilisez « Saisie manuelle » ou « Importer » (Excel) en début d’exercice.</div>
+  </section></div>
+
+  <div class="aa-ov" data-aa-ovs hidden><div class="aa-md" role="dialog" aria-modal="true" aria-label="Saisie manuelle d'une ligne d'à nouveau analytique">
+    <h2>Saisie manuelle d'une ligne</h2>
+    <div class="aa-mb">
+      <div class="aa-mg">
+        <label><span>Compte <b>*</b></span><select class="bp-sel" data-aa-f="compte" data-combo></select></label>
+        <label><span>Type de dépense <b>*</b></span><select class="bp-sel" data-aa-f="type" data-no-combo><option value="">— Sélectionner —</option><option>Décaissement</option><option>Engagement</option></select></label>
+        <label><span>Activité (ACT) <b>*</b></span><select class="bp-sel" data-aa-f="ACTIVITE" data-combo></select></label>
+        <label><span>Poste budgétaire (BUD) <b>*</b></span><select class="bp-sel" data-aa-f="POSTE BUDGETAIRE" data-combo></select></label>
+        <label><span>Financement (FIN) <b>*</b></span><select class="bp-sel" data-aa-f="FINANCEMENT" data-combo></select></label>
+        <label><span>Géographique (GEO) <b>*</b></span><select class="bp-sel" data-aa-f="GEOGRAPHIQUE" data-combo></select></label>
+        <label><span>Sens <b>*</b></span><select class="bp-sel" data-aa-f="sens" data-no-combo><option value="D">Débit</option><option value="C">Crédit</option></select></label>
+        <label><span>Montant en monnaie locale <b>*</b></span><input class="bp-in" type="number" min="0" step="0.01" data-aa-f="montant"></label>
+      </div>
+      <p class="aa-er" data-aa-er></p>
+    </div>
+    <div class="aa-mf"><button type="button" data-aa-sx>Annuler</button><button type="button" class="p" data-aa-sok>Ajouter la ligne</button></div>
+  </div></div>
+  <div class="bp-toast" role="status" hidden data-aa-toast></div>
+</div>
+
+<script>
+(function () {
+  var root = document.querySelector('[data-aa]'); if (!root) return;
+  function q(s) { return root.querySelector(s); } function qa(s) { return [].slice.call(root.querySelectorAll(s)); }
+  var G = window.A_NOUVEAUX_ANA = window.A_NOUVEAUX_ANA || {}, page = 1, taille = 20, rech = '', typeAppl = '';
+  var AXES = ['ACTIVITE', 'POSTE BUDGETAIRE', 'FINANCEMENT', 'GEOGRAPHIQUE'], ABR = { 'ACTIVITE': 'ACT', 'POSTE BUDGETAIRE': 'BUD', 'FINANCEMENT': 'FIN', 'GEOGRAPHIQUE': 'GEO' }, TYPES = ['Décaissement', 'Engagement'];
+  function esc(s) { return String(s == null ? '' : s).replace(/[&<>"]/g, function (c) { return { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c]; }); }
+  function toast(m) { var t = q('[data-aa-toast]'); t.textContent = m; t.hidden = false; clearTimeout(toast.t); toast.t = setTimeout(function () { t.hidden = true; }, 2600); }
+  function nb(n) { return n == null ? '' : n.toFixed(2).replace('.', ',').replace(/\B(?=(\d{3})+(?!\d))/g, ' '); }
+  function exercices() { return (window.EXERCICES_API && window.EXERCICES_API.liste()) || []; }
+  function exo() { var v = q('[data-aa-ex]').value; return exercices().filter(function (e) { return String(e.annee) === v; })[0]; }
+  function cle() { var e = exo(); return q('[data-aa-site]').value + '|' + (e ? e.annee : ''); }
+  function axeListe(n) { return ((window.ECRITURES_AXES || {})[n]) || []; }
+  function comptes() {
+    var pc = window.PLAN_COMPTABLE || [], par = {}; pc.forEach(function (r) { if (r.parent) par[r.parent] = 1; });
+    var L = pc.filter(function (r) { return r.actif !== false && !par[r.code] && /^[67]/.test(r.code); }).map(function (r) { return { code: r.code, label: r.libelle || r.label || '' }; });
+    return L.length ? L : [{ code: '606300', label: 'Petit matériel et fournitures' }, { code: '624400', label: 'Frais de transport et de taxi' }];
+  }
+  // devises : monnaie locale et devise 1 (Administration de l'entité), taux d'exemple
+  var TAUX = { MGA: 1, USD: 4000, EUR: 4400, GBP: 5100, MUR: 100, XOF: 6.6, CNY: 560 };
+  function devise1() { var d = 'USD'; qaDoc('.ig-f').forEach(function (f) { var l = f.querySelector('.ig-l'), s = f.querySelector('select'); if (l && s && l.textContent.trim() === 'Devise 1' && s.value) d = s.value; }); return d; }
+  function qaDoc(s) { return [].slice.call(document.querySelectorAll(s)); }
+  function conv(loc, code) { return Math.round(loc / (TAUX[code] || 1000) * 100) / 100; }
+
+  function remplirExercices() {
+    var E = exercices(), v = q('[data-aa-ex]').value;
+    q('[data-aa-ex]').innerHTML = E.map(function (e) { return '<option value="' + esc(e.annee) + '">' + esc(e.annee) + (e.cours ? ' (en cours)' : '') + '</option>'; }).join('') || '<option value="">—</option>';
+    if (v && E.some(function (e) { return String(e.annee) === v; })) q('[data-aa-ex]').value = v; else { var c = E.filter(function (e) { return e.cours; })[0] || E.filter(function (e) { return !e.cloture; })[0]; if (c) q('[data-aa-ex]').value = String(c.annee); }
+  }
+  function filtrees() {
+    var e = G[cle()]; if (!e) return []; var t = typeAppl, s = rech.toLowerCase();
+    return e.lignes.filter(function (l) { return (!t || l.type === t) && (!s || (l.compte + ' ' + AXES.map(function (n) { return l.axes[n]; }).join(' ') + ' ' + l.type).toLowerCase().indexOf(s) >= 0); });
+  }
+  // données de démonstration : à nouveaux analytiques d'exemple, semés une seule fois par site et exercice (supprimables / remplaçables par saisie ou import)
+  var SEMES = {};
+  function semer() {
+    var k = cle(), ex = exo(); if (!ex || SEMES[k]) return; if (G[k]) { SEMES[k] = 1; return; }
+    var C = comptes(), L = AXES.map(axeListe), n = new Date(), site = q('[data-aa-site]').value, off = site === '02' ? 1 : 0;
+    var D = [[0, 'Décaissement', 'D', 4850000], [1, 'Décaissement', 'D', 2300000], [2, 'Engagement', 'D', 6120000], [3, 'Décaissement', 'D', 1275000], [4, 'Engagement', 'D', 3400000], [5, 'Décaissement', 'D', 890000], [6, 'Engagement', 'C', 450000], [7, 'Décaissement', 'D', 1960000]];
+    var lignes = D.map(function (d, i) {
+      var l = { ex: String(ex.annee), site: site, compte: C[(d[0] + off) % C.length].code, axes: {}, type: d[1], sens: d[2], local: d[3] + off * 125000, manuel: false };
+      AXES.forEach(function (a, j) { var li = L[j]; if (li.length) l.axes[a] = li[(i + j + off) % li.length].code; }); return l;
+    }).filter(function (l) { return AXES.every(function (a) { return l.axes[a]; }); });
+    if (lignes.length) SEMES[k] = 1;
+    if (lignes.length) G[k] = { le: ('0' + n.getDate()).slice(-2) + '/' + ('0' + (n.getMonth() + 1)).slice(-2) + '/' + n.getFullYear(), source: 'Données de démonstration', lignes: lignes };
+  }
+  function dessiner() {
+    semer();
+    var e = G[cle()], ex = exo(), d1 = devise1();
+    q('[data-aa-hdev]').textContent = 'Montant devise 1 (' + d1 + ')';
+    q('[data-aa-vide]').hidden = !!e; q('[data-aa-conso]').hidden = !e; q('[data-aa-totbox]').hidden = !e;
+    q('[data-aa-info]').innerHTML = e ? 'À nouveaux analytiques de l’exercice <b>' + esc(ex ? ex.annee : '') + '</b> — site <b>' + esc(q('[data-aa-site]').value) + '</b> — ' + 'créés le ' + esc(e.le) + ' — ' + e.lignes.length + ' ligne(s).' : '';
+    ['[data-aa-supprimer]', '[data-aa-pdf]', '[data-aa-xlsx]'].forEach(function (s) { var b = q(s); if (b) b.disabled = !e; });
+    q('[data-aa-saisie]').disabled = !ex;
+    if (!e) return;
+    var T = {}; TYPES.forEach(function (t) { T[t] = { n: 0, d: 0, c: 0 }; }); e.lignes.forEach(function (l) { var x = T[l.type]; x.n++; if (l.sens === 'D') x.d += l.local; else x.c += l.local; });
+    var tn = 0, td = 0, tc = 0; q('[data-aa-tot]').innerHTML = TYPES.map(function (t) { var x = T[t]; tn += x.n; td += x.d; tc += x.c; return '<tr><td><span class="aa-ty ' + t + '">' + t + '</span></td><td>' + x.n + '</td><td>' + nb(x.d) + '</td><td>' + nb(x.c) + '</td></tr>'; }).join('') + '<tr class="t"><td>Total</td><td>' + tn + '</td><td>' + nb(td) + '</td><td>' + nb(tc) + '</td></tr>';
+    var L = filtrees(), pages = Math.max(1, Math.ceil(L.length / taille)); if (page > pages) page = pages;
+    var deb = (page - 1) * taille, vus = L.slice(deb, deb + taille);
+    q('[data-aa-lignes]').innerHTML = vus.map(function (l) {
+      var i = e.lignes.indexOf(l);
+      return '<tr><td>' + esc(l.ex) + '</td><td>' + esc(l.site) + '</td>' + AXES.map(function (n) { return '<td class="m">' + esc(l.axes[n]) + '</td>'; }).join('') + '<td><span class="aa-ty ' + esc(l.type) + '">' + esc(l.type) + '</span></td><td>' + (l.sens === 'D' ? 'D' : 'C') + '</td><td class="r">' + nb(l.local) + '</td><td class="r">' + nb(conv(l.local, d1)) + '</td><td><button type="button" class="aa-x" data-aa-del="' + i + '" title="Supprimer cette ligne" aria-label="Supprimer cette ligne"><i class="ti ti-trash"></i></button></td></tr>';
+    }).join('');
+    q('[data-aa-vide2]').hidden = L.length > 0;
+    q('[data-aa-pginfo]').textContent = L.length ? (deb + 1) + '–' + (deb + vus.length) + ' sur ' + L.length : '0 ligne';
+    var h = '<button type="button" data-aa-p="' + (page - 1) + '"' + (page <= 1 ? ' disabled' : '') + '>Précédent</button>';
+    for (var p = 1; p <= pages; p++) if (p === 1 || p === pages || Math.abs(p - page) <= 1) h += '<button type="button" data-aa-p="' + p + '"' + (p === page ? ' class="on"' : '') + '>' + p + '</button>';
+    q('[data-aa-pgs]').innerHTML = h + '<button type="button" data-aa-p="' + (page + 1) + '"' + (page >= pages ? ' disabled' : '') + '>Suivant</button>';
+  }
+
+  // ---------- saisie manuelle ----------
+  function ouvrirSaisie() {
+    var C = comptes(); q('[data-aa-f=compte]').innerHTML = '<option value="">— Sélectionner —</option>' + C.map(function (c) { return '<option value="' + esc(c.code) + '">' + esc(c.code + ' — ' + c.label) + '</option>'; }).join('');
+    AXES.forEach(function (n) { q('[data-aa-f="' + n + '"]').innerHTML = '<option value="">— Sélectionner —</option>' + axeListe(n).map(function (a) { return '<option value="' + esc(a.code) + '">' + esc(a.code + ' — ' + a.label) + '</option>'; }).join(''); });
+    q('[data-aa-f=type]').value = ''; q('[data-aa-f=sens]').value = 'D'; q('[data-aa-f=montant]').value = ''; q('[data-aa-er]').textContent = ''; q('[data-aa-ovs]').hidden = false; q('[data-aa-f=compte]').focus();
+  }
+  function ajouterLigne() {
+    var f = function (k) { return q('[data-aa-f="' + k + '"]').value; }, manque = [];
+    if (!f('compte')) manque.push('le compte'); AXES.forEach(function (n) { if (!f(n)) manque.push('l’axe ' + ABR[n]); }); if (!f('type')) manque.push('le type de dépense');
+    var m = parseFloat(f('montant')); if (!(m > 0)) manque.push('un montant supérieur à 0');
+    if (manque.length) { q('[data-aa-er]').textContent = 'Complétez : ' + manque.join(', ') + '. Les quatre axes et le type de dépense sont obligatoires.'; return; }
+    var ex = exo(), site = q('[data-aa-site]').value, k = cle(), n = new Date();
+    if (!G[k]) G[k] = { le: ('0' + n.getDate()).slice(-2) + '/' + ('0' + (n.getMonth() + 1)).slice(-2) + '/' + n.getFullYear(), source: '', lignes: [] };
+    var l = { ex: String(ex.annee), site: site, compte: f('compte'), axes: {}, type: f('type'), sens: f('sens'), local: Math.round(m * 100) / 100, manuel: true }; AXES.forEach(function (a) { l.axes[a] = f(a); });
+    if (G[k].lignes.some(function (x) { return x.compte === l.compte && x.type === l.type && x.sens === l.sens && AXES.every(function (a) { return x.axes[a] === l.axes[a]; }); })) { q('[data-aa-er]').textContent = 'Cette combinaison compte / axes / type de dépense existe déjà : supprimez-la ou modifiez l’un des éléments.'; return; }
+    G[k].lignes.push(l); q('[data-aa-ovs]').hidden = true; page = 1; dessiner(); toast('Ligne ajoutée.');
+  }
+
+  // ---------- événements ----------
+  root.addEventListener('click', function (e) {
+    var b = e.target.closest('button'); if (!b || b.disabled) return;
+    if (b.hasAttribute('data-aa-saisie')) ouvrirSaisie();
+    else if (b.hasAttribute('data-aa-importer')) importer();
+    else if (b.hasAttribute('data-aa-supprimer')) { if (G[cle()] && window.confirm('Supprimer les à nouveaux analytiques de l’exercice ' + exo().annee + ' (site ' + q('[data-aa-site]').value + ') ?')) { delete G[cle()]; page = 1; dessiner(); toast('À nouveaux analytiques supprimés.'); } }
+    else if (b.hasAttribute('data-aa-pdf') || b.hasAttribute('data-aa-xlsx')) exporter(b.hasAttribute('data-aa-pdf') ? 'pdf' : 'xlsx');
+    else if (b.hasAttribute('data-aa-sx')) q('[data-aa-ovs]').hidden = true;
+    else if (b.hasAttribute('data-aa-sok')) ajouterLigne();
+    else if (b.hasAttribute('data-aa-p')) { page = +b.dataset.aaP; dessiner(); }
+    else if (b.hasAttribute('data-aa-del')) { var e0 = G[cle()]; if (e0) { e0.lignes.splice(+b.dataset.aaDel, 1); if (!e0.lignes.length) delete G[cle()]; dessiner(); toast('Ligne supprimée.'); } }
+  });
+  q('[data-aa-site]').addEventListener('change', function () { page = 1; dessiner(); });
+  q('[data-aa-ex]').addEventListener('change', function () { page = 1; dessiner(); });
+  // les critères (type de dépense, texte) s'appliquent au clic sur « Rechercher » ou à la touche Entrée dans le champ de recherche
+  function rechercher() { typeAppl = q('[data-aa-type]').value; rech = q('[data-aa-q]').value.trim(); page = 1; dessiner(); var n = filtrees().length; toast(n + ' ligne(s) trouvée(s).'); }
+  q('[data-aa-rechercher]').addEventListener('click', rechercher);
+  q('[data-aa-q]').addEventListener('keydown', function (e) { if (e.key === 'Enter') { e.preventDefault(); rechercher(); } });
+  q('[data-aa-sz]').addEventListener('change', function () { taille = +this.value; page = 1; dessiner(); });
+  document.addEventListener('keydown', function (e) { if (e.key === 'Escape') { q('[data-aa-ovs]').hidden = true; } });
+  function exporter(fmt) {
+    var X = window.EXPORT_TABLEAU, L = filtrees(), ex = exo(), d1 = devise1(); if (!X) { toast('Module d’export indisponible.'); return; } if (!L.length) { toast('Rien à exporter.'); return; }
+    var T = ['Exercice', 'Site'].concat(AXES.map(function (n) { return ABR[n]; }), ['Type de dépense', 'Sens (D/C)', 'Montant local', 'Montant devise 1 (' + d1 + ')']), rows = L.map(function (l) { return [l.ex, l.site].concat(AXES.map(function (n) { return l.axes[n]; }), [l.type, l.sens, l.local, conv(l.local, d1)]); }), nom = 'a_nouveaux_analytiques_' + ex.annee;
+    if (fmt === 'pdf') X.pdf(nom + '.pdf', 'À nouveaux analytiques ' + ex.annee, 'Site ' + q('[data-aa-site]').value + ' — ' + L.length + ' ligne(s)', T, rows); else X.xlsx(nom + '.xlsx', 'À nouveaux analytiques ' + ex.annee, T, rows);
+    toast('Export ' + (fmt === 'pdf' ? 'PDF' : 'Excel (XLSX)') + ' généré : ' + L.length + ' ligne(s).');
+  }
+  // ---------- importation Excel (début d'exercice) : étapes communes dans import_assistant.js ----------
+  function ech(t) { return String(t == null ? '' : t).normalize('NFD').replace(/[\u0300-\u036f]/g, '').toLowerCase().replace(/[^a-z0-9]/g, ''); }
+  function modeleImp() {
+    var C = comptes(), ch = [{ col: 'Compte', oblig: true, format: 'Compte de charge ou de produit existant du plan comptable.', exemple: C[0].code }];
+    AXES.forEach(function (n) { var l = axeListe(n); ch.push({ col: ABR[n], oblig: true, format: 'Code existant de l’axe ' + ABR[n] + '.', exemple: l.length ? l[0].code : '' }); });
+    ch.push({ col: 'Type de dépense', oblig: true, format: TYPES.join(' ou ') + '.', exemple: TYPES[0], alias: ['Type'] }, { col: 'Sens', oblig: true, format: 'D (débit) ou C (crédit).', exemple: 'D' }, { col: 'Montant', oblig: true, format: 'Nombre strictement positif, en monnaie locale.', exemple: '1250000' });
+    return { titre: 'Importer les à nouveaux analytiques', fichier: 'modele_a_nouveaux_analytiques.xlsx', champs: ch, exemples: [ch.map(function (c) { return c.exemple; })],
+      ligne: function (v) {
+        var er = [], cp = String(v['Compte'] || '').trim(), ax = {}, tp = TYPES.filter(function (x) { return ech(x) === ech(v['Type de dépense']); })[0], sens = String(v['Sens'] || '').trim().toUpperCase().charAt(0), m = parseFloat(String(v['Montant'] || '').replace(/[\s ]/g, '').replace(',', '.'));
+        if (!cp) er.push('Compte obligatoire'); else if (!C.some(function (c) { return c.code === cp; })) er.push('Compte « ' + cp + ' » inconnu');
+        AXES.forEach(function (n) { var c = String(v[ABR[n]] || '').trim(); ax[n] = c; if (!c) er.push('Axe ' + ABR[n] + ' obligatoire'); else if (!axeListe(n).some(function (a) { return a.code === c; })) er.push('Axe ' + ABR[n] + ' : code « ' + c + ' » inconnu'); });
+        if (!tp) er.push('Type de dépense « ' + (v['Type de dépense'] || '') + ' » invalide (' + TYPES.join(', ') + ')'); if (sens !== 'D' && sens !== 'C') er.push('Sens invalide (D ou C)'); if (!(m > 0)) er.push('Montant invalide (nombre positif)');
+        var k = cle(), ex = G[k], dbl = !er.length && !!ex && ex.lignes.some(function (x) { return x.compte === cp && x.type === tp && x.sens === sens && AXES.every(function (n) { return x.axes[n] === ax[n]; }); });
+        return { cle: cp + ' · ' + AXES.map(function (n) { return ax[n]; }).join('/') + ' · ' + (tp || ''), doublon: dbl, erreurs: er, data: { compte: cp, axes: ax, type: tp, sens: sens, local: Math.round(m * 100) / 100 } };
+      },
+      integrer: function (L) {
+        var ex = exo(), k = cle(), n = new Date(), ajout = 0, maj = 0;
+        if (!G[k]) G[k] = { le: ('0' + n.getDate()).slice(-2) + '/' + ('0' + (n.getMonth() + 1)).slice(-2) + '/' + n.getFullYear(), lignes: [] };
+        L.forEach(function (x) {
+          var d = x.data, i = G[k].lignes.findIndex(function (y) { return y.compte === d.compte && y.type === d.type && y.sens === d.sens && AXES.every(function (a) { return y.axes[a] === d.axes[a]; }); });
+          var l = { ex: String(ex.annee), site: q('[data-aa-site]').value, compte: d.compte, axes: d.axes, type: d.type, sens: d.sens, local: d.local, manuel: true };
+          if (i >= 0) { if (x.remplace) { G[k].lignes[i] = l; maj++; } } else { G[k].lignes.push(l); ajout++; }
+        });
+        page = 1; dessiner(); toast(ajout + ' ligne(s) importée(s)' + (maj ? ', ' + maj + ' remplacée(s)' : '') + '.');
+      } };
+  }
+  function importer() { if (!exo()) { toast('Aucun exercice sélectionné.'); return; } if (window.IMPORT_ASSISTANT) window.IMPORT_ASSISTANT.ouvrir(modeleImp()); else toast('Assistant d’importation indisponible.'); }
+  function init() { remplirExercices(); dessiner(); }
+  window.addEventListener('hashchange', function () { if (location.hash === '#anouvanalytique') init(); });
+  window.addEventListener('exercices-changed', init);
+  init(); setTimeout(init, 800);
+})();
+</script>

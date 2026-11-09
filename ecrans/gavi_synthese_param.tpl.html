@@ -1,0 +1,105 @@
+<!--
+  Écran « Paramétrage de la synthèse » de la procédure financière GAVI (Comptabilité Projets & Bailleurs › GAVI › Synthèse › Paramétrage) — accessible par le bouton
+  « Paramétrage » de la synthèse. Même principe que « Emplois et ressources › Paramétrages », avec les types de ligne GAVI :
+  Ressources, Emplois - 1, Emplois - 2, Emplois - 3, Trésorerie, Avances non liquidés. Pour chaque ligne : tri, libellé, type, nature (Grille / Regroupement / Total)
+  et, pour une grille, les fourchettes de comptes et d'axes (financement, activité, domaine, catégorie de dépenses, poste, …) avec le sens.
+  Le paramètre est partagé avec l'édition par window.GAVI_SYNTH_MODELES. Les valeurs de démonstration (fichier ExploitationGaviSynthese.xlsx) restent portées par les lignes ;
+  les fourchettes servent aux écritures saisies. Fourchettes de la démonstration à confirmer.
+-->
+/*CSS*/
+<div class="be-root" data-gp>
+  <h1 style="position:absolute;width:1px;height:1px;overflow:hidden;clip-path:inset(50%);margin:0">Paramétrage de la synthèse</h1>
+  <div class="no-print" data-gp-actions>
+    <button type="button" data-gp-add>Ajouter une ligne</button>
+    <button type="button" data-gp-del>Supprimer la ligne</button>
+    <button type="button" data-gp-save>Enregistrer</button>
+    <button type="button" data-bil-vers="gavisynth">Édition</button>
+  </div>
+  <section class="be-pan" aria-label="Paramètre"><h2>Paramètre de la synthèse</h2><div class="be-g">
+    <label class="be-c"><span>Numéro paramètre</span><select class="be-sel" data-gp-modele></select></label>
+    <label class="be-c"><span>Nom</span><input class="be-in" data-gp-nom maxlength="80"></label>
+  </div></section>
+  <section class="be-pan" aria-label="Lignes"><h2>Lignes <small data-gp-nb style="font:400 12px var(--font-sans);color:#5B606D"></small></h2>
+    <div data-gp-sc><table class="be-tb gp-t"><thead><tr><th>Tri</th><th>Libellé</th><th>Type de la ligne</th><th>Nature</th><th>Fourchettes</th></tr></thead><tbody data-gp-corps></tbody></table></div></section>
+  <section class="be-pan" aria-label="Ligne sélectionnée" data-gp-ed hidden><h2>Ligne sélectionnée</h2>
+    <div class="be-g">
+      <label class="be-c"><span>Type de la ligne *</span><select class="be-sel" data-gp-f="type"></select></label>
+      <label class="be-c"><span>Tri *</span><input class="be-in" type="number" step="1" data-gp-f="tri"></label>
+      <label class="be-c be-span2"><span>Libellé *</span><input class="be-in" data-gp-f="libelle" maxlength="120"></label>
+      <div class="be-c"><span class="be-lab">Nature *</span><div class="gp-nat" data-gp-nat></div></div>
+      <div class="be-c"><div class="be-sites" style="margin-top:20px"><label><input type="checkbox" data-gp-f="retrait">Ligne de détail (retrait du libellé)</label></div></div>
+      <div class="be-c be-span2" data-gp-fz><span class="be-lab">Fourchettes (comptes et axes)</span>
+        <table class="be-tb gp-fz"><thead><tr><th>Axe</th><th>Min</th><th>Max</th><th>Sens</th><th></th></tr></thead><tbody data-gp-fl></tbody></table>
+        <div><button type="button" class="be-b" data-gp-fadd><i class="ti ti-plus"></i>Ajouter une fourchette</button></div></div>
+      <p class="be-dsub be-span2" data-gp-aide></p>
+    </div></section>
+  <div class="bp-toast" role="status" hidden data-gp-toast style="position:fixed;top:16px;right:16px;z-index:60;background:#0B1332;color:#fff;border-radius:8px;padding:10px 16px;font-size:12px;font-weight:600">Paramétrage de la synthèse enregistré (maquette)</div>
+</div>
+<script>
+(function () {
+  var root = document.querySelector('[data-gp]'); if (!root) return;
+  function q(s) { return root.querySelector(s); }
+  function esc(s) { var d = document.createElement('div'); d.textContent = s == null ? '' : s; return d.innerHTML; }
+  var TYPES = [['ressources', 'Ressources'], ['emp1', 'Emplois - 1'], ['emp2', 'Emplois - 2'], ['emp3', 'Emplois - 3'], ['treso', 'Trésorerie'], ['avances', 'Avances non liquidés']];
+  var NATURES = [['grille', 'Grille'], ['regroupement', 'Regroupement'], ['total', 'Total']];
+  var AXES = [['Compte', 'Compte'], ['FINANCEMENT', 'Subvention (financement)'], ['ACTIVITE', 'Activité'], ['DOMAINE', 'Domaine'], ['CATEGORIE DE DEPENSE', 'Catégorie de dépenses'], ['POSTE BUDGETAIRE', 'Poste de dépenses'], ['GEOGRAPHIQUE', 'Géographique'], ['NATURE', 'Nature']];
+  var AIDES = { grille: 'Grille : valeur issue des fourchettes de comptes et d’axes (écritures saisies) ; les lignes Emplois - 1 et Emplois - 2 suivent la règle « type de dépenses » de l’édition.',
+    regroupement: 'Regroupement : somme des lignes de grille qui le suivent, jusqu’à la prochaine ligne qui n’est pas une grille.',
+    total: 'Total : somme des lignes de grille du même type depuis le total précédent (vide s’il n’y a aucune ligne de ce type).' };
+  var MODELES = /*MODELES*/[];
+  window.GAVI_SYNTH_MODELES = function () { return MODELES; };
+  var cur = 0, sel = -1;
+  function M() { return MODELES[cur]; }
+  function trie() { return M().lignes.map(function (l, i) { return { l: l, i: i }; }).sort(function (a, b) { return (+a.l.tri || 0) - (+b.l.tri || 0); }); }
+  function typeLib(t) { var x = TYPES.filter(function (y) { return y[0] === t; })[0]; return x ? x[1] : t; }
+  function natLib(t) { var x = NATURES.filter(function (y) { return y[0] === t; })[0]; return x ? x[1] : t; }
+  function resume(l) { return (l.f || []).filter(function (f) { return f.min || f.max; }).map(function (f) { return (AXES.filter(function (a) { return a[0] === f.axe; })[0] || [0, f.axe])[1] + ' ' + (f.min || '') + (f.max && f.max !== f.min ? '–' + f.max : '') + (f.sens ? ' (' + f.sens + ')' : ''); }).join(' ; '); }
+  function liste() {
+    q('[data-gp-modele]').innerHTML = MODELES.map(function (m, i) { return '<option value="' + i + '"' + (i === cur ? ' selected' : '') + '>' + esc(m.num + ' - ' + m.nom) + '</option>'; }).join('');
+    q('[data-gp-nom]').value = M().nom; q('[data-gp-nb]').textContent = M().lignes.length + ' ligne(s)';
+    q('[data-gp-corps]').innerHTML = trie().map(function (o) { var l = o.l; return '<tr data-i="' + o.i + '" class="' + (o.i === sel ? 'sel' : '') + '"><td>' + esc(l.tri) + '</td><td' + (l.retrait ? ' style="padding-left:32px"' : '') + '>' + esc(l.libelle) + '</td><td>' + esc(typeLib(l.type)) + '</td><td>' + esc(natLib(l.nature)) + '</td><td>' + esc(resume(l)) + '</td></tr>'; }).join('');
+    editeur();
+  }
+  function editeur() {
+    var ed = q('[data-gp-ed]'); if (sel < 0 || !M().lignes[sel]) { ed.hidden = true; return; }
+    var l = M().lignes[sel]; ed.hidden = false;
+    q('[data-gp-f=type]').innerHTML = TYPES.map(function (t) { return '<option value="' + t[0] + '"' + (t[0] === l.type ? ' selected' : '') + '>' + t[1] + '</option>'; }).join('');
+    q('[data-gp-f=tri]').value = l.tri; q('[data-gp-f=libelle]').value = l.libelle; q('[data-gp-f=retrait]').checked = !!l.retrait;
+    q('[data-gp-nat]').innerHTML = NATURES.map(function (n) { return '<button type="button" class="be-b' + (n[0] === l.nature ? ' pri' : '') + '" data-gp-n="' + n[0] + '">' + n[1] + '</button>'; }).join(' ');
+    q('[data-gp-fz]').style.display = l.nature === 'grille' ? '' : 'none'; q('[data-gp-aide]').textContent = AIDES[l.nature] || '';
+    q('[data-gp-fl]').innerHTML = (l.f || []).map(function (f, k) {
+      return '<tr><td><select class="be-sel" data-gp-fk="axe" data-k="' + k + '">' + AXES.map(function (a) { return '<option value="' + a[0] + '"' + (a[0] === f.axe ? ' selected' : '') + '>' + a[1] + '</option>'; }).join('') + '</select></td>' +
+        '<td><input class="be-in" data-gp-fk="min" data-k="' + k + '" value="' + esc(f.min) + '"></td><td><input class="be-in" data-gp-fk="max" data-k="' + k + '" value="' + esc(f.max) + '"></td>' +
+        '<td><select class="be-sel" data-gp-fk="sens" data-k="' + k + '"><option value=""' + (!f.sens ? ' selected' : '') + '>Par défaut</option><option value="D"' + (f.sens === 'D' ? ' selected' : '') + '>Débit − Crédit</option><option value="C"' + (f.sens === 'C' ? ' selected' : '') + '>Crédit − Débit</option></select></td>' +
+        '<td><button type="button" class="be-x" data-gp-fdel="' + k + '" aria-label="Supprimer la fourchette"><i class="ti ti-trash"></i></button></td></tr>';
+    }).join('');
+  }
+  function majLigne(redessine) {
+    var l = M().lignes[sel]; if (!l) return;
+    if (redessine) { var y = q('[data-gp-corps] tr.sel'); liste(); }
+  }
+  root.addEventListener('click', function (e) {
+    var t = e.target, x;
+    if ((x = t.closest('[data-gp-corps] tr'))) { sel = +x.dataset.i; liste(); }
+    else if ((x = t.closest('[data-gp-n]'))) { M().lignes[sel].nature = x.dataset.gpN; if (x.dataset.gpN !== 'grille') { /* les fourchettes sont conservées mais ignorées */ } liste(); }
+    else if (t.closest('[data-gp-fadd]')) { (M().lignes[sel].f = M().lignes[sel].f || []).push({ axe: 'Compte', min: '', max: '', sens: '' }); editeur(); }
+    else if ((x = t.closest('[data-gp-fdel]'))) { M().lignes[sel].f.splice(+x.dataset.gpFdel, 1); liste(); }
+    else if (t.closest('[data-gp-add]')) { var mx = M().lignes.reduce(function (a, l) { return Math.max(a, +l.tri || 0); }, 0); M().lignes.push({ tri: mx + 10, libelle: 'Nouvelle ligne', type: 'ressources', nature: 'grille', retrait: true, f: [{ axe: 'Compte', min: '', max: '', sens: '' }] }); sel = M().lignes.length - 1; liste(); }
+    else if (t.closest('[data-gp-del]')) { if (sel >= 0) { M().lignes.splice(sel, 1); sel = -1; liste(); } }
+    else if (t.closest('[data-gp-save]')) { var o = q('[data-gp-toast]'); o.hidden = false; setTimeout(function () { o.hidden = true; }, 2200); }
+  });
+  root.addEventListener('input', function (e) {
+    var t = e.target, f = t.dataset.gpF, l = sel >= 0 ? M().lignes[sel] : null;
+    if (t.matches('[data-gp-nom]')) { M().nom = t.value; var o = q('[data-gp-modele] option:checked'); if (o) o.textContent = M().num + ' - ' + M().nom; return; }
+    if (f && l) { if (f === 'tri') l.tri = +t.value || 0; else if (f === 'libelle') l.libelle = t.value; if (f === 'tri' || f === 'libelle') { var ae = document.activeElement; var rows = q('[data-gp-corps]'); rows.innerHTML = trie().map(function (o) { var ll = o.l; return '<tr data-i="' + o.i + '" class="' + (o.i === sel ? 'sel' : '') + '"><td>' + esc(ll.tri) + '</td><td' + (ll.retrait ? ' style="padding-left:32px"' : '') + '>' + esc(ll.libelle) + '</td><td>' + esc(typeLib(ll.type)) + '</td><td>' + esc(natLib(ll.nature)) + '</td><td>' + esc(resume(ll)) + '</td></tr>'; }).join(''); } }
+    var fk = t.dataset.gpFk; if (fk && l) { l.f[+t.dataset.k][fk] = t.value; }
+  });
+  root.addEventListener('change', function (e) {
+    var t = e.target, f = t.dataset.gpF, l = sel >= 0 ? M().lignes[sel] : null;
+    if (t.matches('[data-gp-modele]')) { cur = +t.value; sel = -1; liste(); return; }
+    if (f && l) { if (f === 'type') l.type = t.value; else if (f === 'retrait') l.retrait = t.checked; liste(); }
+    else if (t.dataset.gpFk && l) { l.f[+t.dataset.k][t.dataset.gpFk] = t.value; liste(); }
+  });
+  liste();
+})();
+</script>

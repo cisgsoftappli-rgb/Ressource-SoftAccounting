@@ -26,6 +26,7 @@
     return { code: td[0].textContent.trim(), libelle: td[1].textContent.trim(),
       anD: lire(td[2].textContent), anC: lire(td[3].textContent), mvD: lire(td[4].textContent), mvC: lire(td[5].textContent) };
   });
+  window.BALANCE_BASE = COMPTES;   // soldes de démonstration (centimes) repris par les états financiers
   var EXERCICE_DONNEES = '2026';
   // Les cumuls capturés portent sur 2026 : la période éditée (exercice ou programme) doit couvrir cette année
   function avecDonnees() { return deb.value <= EXERCICE_DONNEES + '-12-31' && fin.value >= EXERCICE_DONNEES + '-01-01'; }
@@ -81,9 +82,33 @@
   var PAD = { 1: 10, 2: 28, 3: 46, 4: 64, 5: 82 };
   var LONG = { 1: 1, 2: 2, 3: 3, 4: 4 };
 
+  // Libellés des regroupements (classe, sous-classe, rubrique, compte) : plan comptable standard, sinon libellé commun aux comptes du regroupement
+  var CLASSES = { 1: 'Comptes de capitaux', 2: "Comptes d'immobilisations", 3: 'Comptes de stocks et en-cours', 4: 'Comptes de tiers', 5: 'Comptes financiers', 6: 'Comptes de charges', 7: 'Comptes de produits', 8: 'Comptes spéciaux', 9: 'Comptabilité analytique' };
+  var SOUS = { 10: 'Capital et réserves', 11: 'Report à nouveau', 12: "Résultat de l'exercice", 13: "Subventions d'investissement", 14: 'Provisions réglementées', 15: 'Provisions pour risques et charges', 16: 'Emprunts et dettes assimilées', 17: 'Dettes rattachées à des participations', 18: 'Comptes de liaison', 19: 'Fonds à recevoir / à payer',
+    20: 'Immobilisations incorporelles', 21: 'Immobilisations corporelles', 22: 'Immobilisations mises en concession', 23: 'Immobilisations en cours', 26: 'Participations et créances rattachées', 27: 'Autres immobilisations financières', 28: 'Amortissements des immobilisations', 29: 'Dépréciations des immobilisations',
+    31: 'Matières premières', 32: 'Autres approvisionnements', 33: 'En-cours de production', 35: 'Stocks de produits', 37: 'Stocks de marchandises', 39: 'Dépréciations des stocks',
+    40: 'Fournisseurs et comptes rattachés', 41: 'Clients et comptes rattachés', 42: 'Personnel et comptes rattachés', 43: 'Organismes sociaux', 44: 'État et collectivités publiques', 45: 'Groupe et associés', 46: 'Débiteurs et créditeurs divers', 47: "Comptes transitoires ou d'attente", 48: 'Comptes de régularisation', 49: 'Dépréciations des comptes de tiers',
+    50: 'Valeurs mobilières de placement', 51: 'Banques, établissements financiers', 52: 'Instruments de trésorerie', 53: 'Caisse', 54: "Régies d'avances et accréditifs", 58: 'Virements internes', 59: 'Dépréciations des comptes financiers',
+    60: 'Achats', 61: 'Services extérieurs', 62: 'Autres services extérieurs', 63: 'Impôts, taxes et versements assimilés', 64: 'Charges de personnel', 65: 'Autres charges de gestion courante', 66: 'Charges financières', 67: 'Charges exceptionnelles', 68: 'Dotations aux amortissements et provisions', 69: 'Impôts sur les bénéfices',
+    70: 'Ventes de produits et prestations', 71: 'Production stockée', 72: 'Production immobilisée', 74: "Subventions d'exploitation", 75: 'Autres produits de gestion courante', 76: 'Produits financiers', 77: 'Produits exceptionnels', 78: 'Reprises sur amortissements et provisions', 79: 'Transferts de charges' };
+  function exact(code) { var P = window.PLAN_COMPTABLE || [], r = P.filter(function (x) { return x.code === code; })[0]; return r ? (r.libelle || r.label || '') : ''; }
+  function motsCommuns(L) {
+    var T = L.map(function (x) { return x.split(/\s+/); }), out = [];
+    for (var i = 0; i < T[0].length; i++) { var st = function (w) { return String(w || '').toLowerCase().replace(/s$/, ''); }, m = st(T[0][i]); if (T.every(function (t) { return t[i] && st(t[i]) === m; })) out.push(T[0][i]); else break; }
+    return out.join(' ');
+  }
+  function libelleGroupe(l) {
+    var k = l.code, n = k.length;
+    if (n === 1 && CLASSES[k]) return CLASSES[k];
+    if (n === 2 && SOUS[+k]) return SOUS[+k];
+    var e = exact(k); if (e) return e;
+    var L = l.comptes.map(function (c) { return c.libelle; }).filter(Boolean); if (!L.length) return k;
+    if (L.length === 1) return L[0];
+    var c = motsCommuns(L).replace(/[\s,:;\-–]+$/, ''); return c.length >= 6 ? c : L[0];
+  }
   function lignes() {
-    var garde = COMPTES;
-    if (!avecDonnees()) garde = [];
+    var garde = avecDonnees() ? COMPTES : [];
+    if (window.ECRITURES_SAISIES) garde = window.ECRITURES_SAISIES.balance(garde, deb.value, fin.value);   // + écritures saisies de la période
     if (cDeb.value) garde = garde.filter(function (c) { return cle(c.code) >= cle(cDeb.value); });
     if (cFin.value) garde = garde.filter(function (c) { return cle(c.code) <= cle(cFin.value); });
     // Plan de regroupement : sur la balance générale, seul le plan comptable ventile les comptes (éléments = préfixes de comptes)
@@ -105,6 +130,7 @@
       out.forEach(function (l) { if (l.niveau < 5 && c.code.indexOf(l.code) === 0 && ouverts[l.niveau] === l.code) l.comptes.push(c); });
       if (vus[4]) out.push({ code: c.code, libelle: c.libelle, niveau: 5, comptes: [c] });
     });
+    out.forEach(function (l) { if (l.niveau < 5) l.libelle = libelleGroupe(l); });
     return { lignes: out, comptes: garde };
   }
   function cumul(comptes) {
@@ -138,6 +164,12 @@
     var t = cumul(d.comptes), sD = 0, sC = 0;
     d.comptes.forEach(function (c) { var s = c.anD + c.mvD - c.anC - c.mvC; if (s > 0) sD += s; else sC -= s; });
     var badge = (cDeb.value || cFin.value || filtre) ? '<span' + A + ' class="badge-filtre">Filtré</span>' : '';
+    function soldes(L) { var d = 0, c = 0; L.forEach(function (x) { var s = x.anD + x.mvD - x.anC - x.mvC; if (s > 0) d += s; else c -= s; }); return [d, c]; }
+    [['Total compte de bilan', /^[1-5]/], ['Total compte de gestion', /^[67]/]].forEach(function (g) {
+      var L = d.comptes.filter(function (x) { return g[1].test(x.code); }); if (!L.length) return;
+      var tg = cumul(L), sg = soldes(L);
+      html += '<tr' + A + ' class="row-total row-sous-total"><td' + A + ' colspan="2"> ' + g[0] + '</td>' + cellules(tg, Math.max(tg.an, 0), Math.max(-tg.an, 0), sg[0], sg[1]) + '</tr>';
+    });
     html += '<tr' + A + ' class="row-total"><td' + A + ' colspan="2"> Total général ' + badge + '</td>' +
       cellules(t, Math.max(t.an, 0), Math.max(-t.an, 0), sD, sC) + '</tr>';
     tbody.innerHTML = html;

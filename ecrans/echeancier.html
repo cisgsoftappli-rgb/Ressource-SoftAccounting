@@ -1,0 +1,70 @@
+<app-echeancier data-etf class="bx-page ech-page">
+  <section class="bx-crit">
+    <div class="etf-head">
+      <div class="etf-titre">
+        <span class="etf-icone"><i class="ti ti-calendar-time"></i></span>
+        <div>
+          <h1 class="page-title">Échéancier et balance âgée</h1>
+          <p class="page-subtitle">Éditer l'échéancier ou la balance âgée des tiers (fournisseurs ou clients) par fourchettes de jours à la date d'arrêté.</p>
+        </div>
+      </div>
+      <div class="etf-actions">
+        <button type="button" class="toolbar-btn ech-reset"><i class="ti ti-rotate"></i>Réinitialiser</button>
+        <button type="button" class="toolbar-btn toolbar-btn-primary ech-consulter"><i class="ti ti-search"></i>Consulter</button>
+      </div>
+    </div>
+    <div class="etf-carte">
+      <div class="etf-bloc">
+        <span class="etf-bloc-titre"><i class="ti ti-calendar-event"></i>Période et périmètre</span>
+        <div class="etf-ligne">
+          <div><label class="filter-label">Centre de saisie</label><div class="bx-multi" data-multi="sites" data-tous="Tous les sites"></div></div>
+          <div class="ech-exo"><label class="filter-label" for="ech-exercice">Exercice comptable</label>
+            <select id="ech-exercice" class="filter-input"><option>2028</option><option>2027</option><option selected>2026</option><option>2025</option><option>2024</option><option>2023</option></select></div>
+          <div><label class="filter-label">Plan de regroupement</label><div class="bx-multi" data-multi="plans" data-tous="Tous les plans"></div></div>
+          <div><label class="filter-label" for="ech-date" data-ech-datelib>Balance âgée au</label><input id="ech-date" type="date" class="filter-input"></div>
+        </div>
+      </div>
+      <div class="etf-bloc">
+        <span class="etf-bloc-titre"><i class="ti ti-list-numbers"></i>Comptes et journaux</span>
+        <div class="etf-ligne">
+          <div><label class="filter-label">Journal</label><div class="bx-multi" data-multi="journaux" data-tous="Tous les journaux"></div></div>
+          <div class="bx-large"><label class="filter-label" for="ech-du">Du compte général</label><select id="ech-du" class="filter-input"></select></div>
+          <div class="bx-large"><label class="filter-label" for="ech-au">Au compte général</label><select id="ech-au" class="filter-input"></select></div>
+        </div>
+      </div>
+      <div class="etf-bloc">
+        <span class="etf-bloc-titre"><i class="ti ti-adjustments-horizontal"></i>Présentation</span>
+        <div class="etf-ligne">
+          <div><span class="filter-label">Type de l'état</span>
+            <div class="etf-pastilles"><label><input type="radio" name="ech-etat" value="echeancier">Échéancier</label><label><input type="radio" name="ech-etat" value="balance" checked>Balance âgée</label></div></div>
+          <div><span class="filter-label">Type d'échéancier</span>
+            <div class="etf-pastilles"><label><input type="radio" name="ech-type" value="Fournisseur" checked>Fournisseur</label><label><input type="radio" name="ech-type" value="Client">Client</label></div></div>
+        <div><span class="filter-label">Monnaie d'édition</span>
+            <div class="etf-pastilles"><label><input type="radio" name="ech-monnaie" value="MGA" checked>Monnaie Locale — MGA</label><label><input type="radio" name="ech-monnaie" value="USD">Monnaie Devise 1 — USD</label></div></div>
+</div>
+      </div>
+      <div class="etf-bloc">
+        <span class="etf-bloc-titre"><i class="ti ti-columns-3"></i>Paramétrage de l'état — fourchettes de retard constaté à la date d'arrêté (en jours)</span>
+        <span class="filter-label ech-cols-lib">Fourchettes de retard constaté à la date d'arrêté (en jours)</span>
+        <div class="ech-pb"><div class="ech-tb"><button type="button" class="ech-b ech-b-add" title="Ajouter une colonne"><i class="ti ti-plus"></i></button><button type="button" class="ech-b ech-b-save" title="Enregistrer les fourchettes" disabled><i class="ti ti-device-floppy"></i></button><button type="button" class="ech-b ech-b-undo" title="Annuler les modifications" disabled><i class="ti ti-arrow-back-up"></i></button></div>
+        <div class="ech-tw"><table class="ech-pt"><thead><tr><th>Colonne N°</th><th>Jour Mini.</th><th>Jour Max.</th><th></th></tr></thead><tbody data-ech-cols></tbody></table></div></div>
+      </div>
+      <p class="filters-erreur ech-erreur" style="display:none"></p>
+    </div>
+  </section>
+
+  <section class="bx-res" style="display:none">
+    <div class="bx-toolbar">
+      <button type="button" class="toolbar-btn ech-retour"><i class="ti ti-arrow-left"></i>Retour</button>
+      <div class="etf-actions">
+        <button type="button" class="toolbar-btn ech-pdf"><i class="ti ti-printer"></i>Imprimer PDF</button>
+        <button type="button" class="toolbar-btn ech-csv"><i class="ti ti-file-spreadsheet"></i>Exporter (CSV)</button>
+      </div>
+    </div>
+    <div class="bx-bar"><div><h2 class="bx-titre ech-titre"></h2><p class="ech-sstitre"></p></div><input type="search" class="filter-input bx-search ech-search" placeholder="Recherche..."></div>
+    <div class="bx-wrap">
+      <table class="bx-table ech-table"><thead></thead><tbody></tbody><tfoot></tfoot></table>
+    </div>
+    <p class="bx-hint ech-hint">Double-clic sur une ligne pour afficher le détail des mouvements constituant le solde.</p>
+  </section>
+</app-echeancier>

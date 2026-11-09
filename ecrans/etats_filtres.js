@@ -29,7 +29,7 @@
     function dessiner() {
       var g = window.REGROUPEMENT && window.REGROUPEMENT(), el2 = g ? g.elements.map(function (e) { return e.code + ' — ' + e.libelle; }) : [], k = el2.join('|');
       if (k === cle) return; cle = k; items = el2;
-      m.innerHTML = '<button type="button"><span class="v"></span><small></small></button><div class="pop">' + (el2.length ? el2.map(function (i) { return '<label><input type="checkbox" value="' + esc(i) + '">' + esc(i) + '</label>'; }).join('') : '<span style="padding:8px 10px;color:#5B606D;font-size:12px">Aucun plan de regroupement choisi.</span>') + '</div>';
+      m.innerHTML = '<button type="button"><span class="v"></span><small></small></button><div class="pop">' + (el2.length ? '<div class="pop-h"><span></span><span>Code</span><span>Libellé</span></div>' + el2.map(function (i) { var k = i.indexOf(' — '), c = k > 0 ? [i.slice(0, k), i.slice(k + 3)] : [i, '']; return '<label class="deux"><input type="checkbox" value="' + esc(i) + '"><span>' + esc(c[0]) + '</span><span>' + esc(c[1]) + '</span></label>'; }).join('') : '<span style="padding:8px 10px;color:#5B606D;font-size:12px">Aucun plan de regroupement choisi.</span>') + '</div>';
       note.textContent = g ? (g.plan === 'PC' ? '' : 'Plan « ' + g.planLibelle + ' » : sans effet sur les comptes de la balance générale.') : 'Aucun plan de regroupement choisi dans Analytique.';
       m.title = g ? 'Niveau ' + g.niveau + ' du plan ' + g.planLibelle : '';
       maj();

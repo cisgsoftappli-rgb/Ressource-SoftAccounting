@@ -1,0 +1,568 @@
+<!--
+  Écran « Comptabilité générale › Liste des écritures » — consultation et recherche multicritère des lignes d'écritures (reprend l'écran de référence SoftAccounting).
+  Critères : site, exercice, type de journal, saisi par, journal (listes à cases à cocher : aucune case cochée = pas de filtre), période d'écriture, recherche par montant
+  (local, devises 1 à 3), échéance, état de rapprochement (lettrage / pointage), n° de bordereau / pièce / facture, référence, libellé, compte, tiers, mode de paiement ;
+  sections repliables « Analytique et budget » (plans 1 à 10, exercice budget, budget, ligne budgétaire, e-paiement), « Contrat et rapprochement » (contrat, DRF, lettrage, pré-lettrage, relevé),
+  « Informations complémentaires » (informations libres, documents, liens documentaires ; recherche partielle sans distinction de casse).
+  Résultat : une ligne par ligne d'écriture (NUMBORD, site, journal, dates, n° pièce, référence, compte, tiers, libellé, sens, débit, crédit, échéance, étape actuelle, mode de paiement).
+  Source : pièces saisies (window.ECRITURES_PIECES) + écritures de démonstration. Exports PDF / Excel, boutons relayés par la barre d'actions de page (CFG « listeecritures »).
+  Préfixe le- / data-le. Ne pas nommer de fonction « $$ » (build.cjs).
+-->
+<style>
+[data-screen] [data-le] .le-md.le-md .le-in.le-in.le-in.le-in.le-in,[data-screen] [data-le] .le-md.le-md .le-msf.le-msf input.le-msf-in.le-msf-in.le-msf-in.le-msf-in,[data-screen] [data-le] .le-md .le-in,[data-screen] [data-le] .le-md .le-msb,[data-screen] [data-le] .le-md .le-msf input{height:34px!important;min-height:34px!important;padding-top:0!important;padding-bottom:0!important;line-height:1.1!important}
+[data-le] .le-ov{position:fixed;inset:0;z-index:2500;display:flex;align-items:center;justify-content:center;padding:16px;background:rgba(11,19,50,.55)}[data-le] .le-ov[hidden]{display:none}
+[data-le] .le-md{display:flex;flex-direction:column;width:min(1320px,100%);max-height:calc(100vh - 32px);background:#fff;border-radius:14px;box-shadow:0 24px 60px rgba(11,19,50,.35);overflow:hidden}
+[data-le] .le-mh{display:flex;align-items:center;justify-content:space-between;padding:14px 20px;border-bottom:1px solid #E9EBF0}[data-le] .le-mh h2{margin:0;font-size:18px}[data-le] .le-x{width:36px;height:36px;border:0;border-radius:50%;background:#F5F7F9;cursor:pointer;font-size:14px}
+[data-le] .le-mb{padding:14px 20px;overflow:auto;flex:1;min-height:0}[data-le] .le-mf{display:flex;justify-content:flex-end;gap:10px;padding:12px 20px;border-top:1px solid #E9EBF0}
+[data-le] .le-mf button{min-height:38px;padding:0 18px;border:1px solid #2E427B;border-radius:8px;background:#fff;color:#2E427B;font-weight:600;font-size:14px;cursor:pointer}[data-le] .le-mf button.p{background:#2E427B;color:#fff}[data-le] .le-mf .gauche{margin-right:auto}
+[data-le] .le-fa{margin-left:10px;padding:2px 10px;border-radius:999px;background:#E8ECF6;color:#2E427B;font-size:12px;font-weight:600}
+[data-le] .le-g3{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:14px 16px}[data-le] .le-cbp{min-width:420px}[data-le] .le-cbp tbody tr.cb-on td{background:#E3EBFE}
+[data-le] .le-bloc{border:1px solid #E3E7EE;border-radius:10px;padding:10px 12px 12px;margin:0 0 10px}[data-le] .le-bt{margin:0 0 8px;font-size:12.5px;font-weight:700;color:#2E427B;text-transform:uppercase;letter-spacing:.04em}[data-le] .le-sbt{margin:0 0 6px;font-size:11.5px;font-weight:700;color:#0B1332;padding-bottom:4px;border-bottom:1px solid #EEF1F5}[data-le] .le-stack{display:grid;gap:8px;align-content:start}
+[data-le] .le-g12{display:grid;grid-template-columns:repeat(12,minmax(0,1fr));gap:10px 14px}[data-le] .le-g12>.c2{grid-column:span 2}[data-le] .le-g12>.c3{grid-column:span 3}[data-le] .le-g12>.c4{grid-column:span 4}[data-le] .le-g12>.c6{grid-column:span 6}
+[data-le] .le-g4{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:8px 12px}[data-le] .le-s2{grid-column:span 2}[data-le] .le-g2{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:12px}
+[data-le] .le-l{display:grid;gap:3px;font-size:11px;font-weight:700;color:#5B606D;text-transform:uppercase;letter-spacing:.03em;align-content:start}
+[data-le] .le-l small{font-size:11.5px;font-weight:400;color:#7B8190;text-transform:none;letter-spacing:0}
+[data-le] .le-in{height:26px;border:1px solid #D6D9E0;border-radius:6px;padding:0 8px;font:400 12px var(--font-sans);color:#0B1332;background:#fff;width:100%;box-sizing:border-box;min-width:0}
+[data-le] .le-in:focus{outline:2px solid #2E427B33;border-color:#2E427B}
+[data-le] .le-h{margin:10px 0 6px;padding-top:8px;border-top:1px solid #EEF1F5;font-size:12.5px;font-weight:700;color:#2E427B;text-transform:uppercase;letter-spacing:.04em}[data-le] .le-h.p{margin-top:0;padding-top:0;border-top:0}
+[data-le] .le-mm{display:grid;grid-template-columns:1fr 1fr;gap:8px}
+[data-le] .le-sub{font-size:11.5px;font-weight:700;color:#5B606D;text-transform:uppercase;margin:0 0 4px}
+[data-le] details.le-d{margin:12px 0 0;border-top:1px solid #EEF1F5;padding-top:10px}[data-le] details.le-d>summary{cursor:pointer;font-weight:700;font-size:14px;color:#0B1332;list-style:none}[data-le] details.le-d>summary::-webkit-details-marker{display:none}
+[data-le] details.le-d>summary::before{content:"▼ ";font-size:11px}[data-le] details.le-d:not([open])>summary::before{content:"▶ "}
+[data-le] .le-note{margin:0 0 10px;font-size:12px;color:#7B8190}
+[data-le] .le-ms{position:relative}
+[data-le] .le-msb{display:flex;align-items:center;justify-content:space-between;gap:8px;width:100%;height:26px;padding:0 8px;border:1px solid #D6D9E0;border-radius:6px;background:#fff;font:400 12px var(--font-sans);color:#7B8190;cursor:pointer;text-align:left}
+[data-le] .le-msb.on{color:#0B1332;border-color:#2E427B}[data-le] .le-mst{flex:1;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}[data-le] .le-msc{font-size:12px;color:#7B8190;text-transform:none}
+[data-le] .le-msp{position:absolute;z-index:40;left:0;right:0;top:30px;min-width:240px;background:#fff;border:1px solid #D6D9E0;border-radius:8px;box-shadow:0 12px 28px rgba(11,19,50,.2);padding:8px}
+[data-le] .le-msf{display:grid;grid-template-columns:1fr;gap:6px;margin:0 0 6px}[data-le] .le-deux .le-msf{grid-template-columns:34% 1fr;margin-left:26px}[data-le] .le-msf input[type=search]{width:100%;height:26px;box-sizing:border-box;border:1px solid #D6D9E0;border-radius:6px;padding:0 8px;font-size:12px}
+[data-le] .le-msh{display:none}[data-le] .le-deux .le-msh{display:grid;grid-template-columns:18px 34% 1fr;gap:8px;padding:4px 6px;font-size:11px;font-weight:700;color:#5B606D;text-transform:uppercase;border-bottom:1px solid #E3E7EE}[data-le] .le-deux .le-msh[hidden]{display:none}
+[data-le] .le-mso.deux{display:grid;grid-template-columns:18px 34% 1fr;gap:8px;align-items:center}[data-le] .le-mso.deux span:first-of-type{font-variant-numeric:tabular-nums;font-weight:600}[data-le] .le-msp.le-deux{min-width:440px}
+[data-le] .le-msl{max-height:220px;overflow:auto}[data-le] .le-mso{display:flex;align-items:center;gap:8px;padding:5px 6px;border-radius:6px;font-size:12.5px;text-transform:none;font-weight:400;color:#0B1332;cursor:pointer}[data-le] .le-mso:hover{background:#F5F7F9}
+[data-le] .le-mso input{width:15px;height:15px;accent-color:#2E427B}[data-le] .le-mact{display:flex;justify-content:space-between;margin:0 0 6px;font-size:12px}[data-le] .le-mact button{border:0;background:none;color:#2E427B;cursor:pointer;padding:0}
+[data-le] .le-act{display:flex;gap:10px;justify-content:flex-end;margin:14px 0 0}[data-le] .le-act button{height:38px;padding:0 18px;border-radius:8px;border:1px solid #2E427B;background:#fff;color:#2E427B;font-weight:600;cursor:pointer}[data-le] .le-act button.p{background:#2E427B;color:#fff}
+[data-le] .le-res{display:flex;justify-content:space-between;align-items:center;margin:0 0 8px;font-size:13px;color:#474C58}[data-le] .le-res b{color:#0B1332}
+[data-le] .le-tb td.r,[data-le] .le-tb th.r{text-align:right;font-variant-numeric:tabular-nums}[data-le] .le-tb td{white-space:nowrap}
+[data-le] .le-tb td.m{font-variant-numeric:tabular-nums}[data-le] .le-tb td.lb{white-space:normal;min-width:280px}[data-le] .le-vide{padding:22px;text-align:center;color:#7B8190}
+@media (max-width:1000px){[data-le] .le-g12{grid-template-columns:repeat(6,minmax(0,1fr))}[data-le] .le-g12>.c2{grid-column:span 3}[data-le] .le-g12>.c3,[data-le] .le-g12>.c4{grid-column:span 3}[data-le] .le-g12>.c6{grid-column:1/-1}[data-le] .le-g3,[data-le] .le-g4{grid-template-columns:repeat(2,minmax(0,1fr))}[data-le] .le-s2{grid-column:1/-1}}
+@media (max-width:640px){[data-le] .le-g12{grid-template-columns:1fr}[data-le] .le-g12>*{grid-column:1/-1!important}[data-le] .le-g3,[data-le] .le-g4,[data-le] .le-g2{grid-template-columns:1fr}}
+
+/* cases à cocher de la liste : cliquables (les feuilles de style des paramétrages d’états les neutralisent sur toute la page) */
+.le-tb input[type=checkbox],[data-le-tout]{pointer-events:auto!important;cursor:pointer}
+/* ---- Fenêtre « Filtres de recherche » (maquette filtres-recherche) ---- */
+[data-le] .le-md.lf{width:min(1240px,100%);height:min(880px,calc(100vh - 32px));max-height:none}
+[data-le] .lf-h{display:flex;align-items:flex-start;gap:16px;padding:16px 24px 12px;border-bottom:1px solid #E3E7EE}
+[data-le] .lf-ico{width:38px;height:38px;border-radius:10px;background:#EEF2FB;color:#23408E;display:grid;place-items:center;flex:none;font-size:20px}
+[data-le] .lf-h h2{margin:0 0 2px;font-size:18px}[data-le] .lf-h p{margin:0;color:#667085;font-size:13px}[data-le] .lf-h .gr{flex:1}
+[data-le] .lf-chips{display:flex;flex-wrap:wrap;align-items:center;gap:6px;padding:8px 24px;background:#F5F7FB;border-bottom:1px solid #E3E7EE;min-height:46px;max-height:92px;overflow:auto}
+[data-le] .lf-chips .lb{font-size:12px;font-weight:600;color:#667085;margin-right:4px}[data-le] .lf-chips .vd{font-size:13px;color:#98A2B3}
+[data-le] .lf-chip{display:inline-flex;align-items:center;gap:6px;height:26px;padding:0 4px 0 10px;border-radius:999px;background:#fff;border:1px solid #DFE7F7;font-size:12.5px;color:#1B3375;white-space:nowrap}
+[data-le] .lf-chip b{font-weight:600;color:#1B2433;max-width:240px;overflow:hidden;text-overflow:ellipsis}
+[data-le] .lf-chip button{width:18px;height:18px;border:0;border-radius:50%;background:#EEF2FB;color:#23408E;cursor:pointer;display:grid;place-items:center;padding:0;font-size:12px;line-height:1}[data-le] .lf-chip button:hover{background:#23408E;color:#fff}
+[data-le] .lf-lk{border:0;background:none;color:#23408E;font-size:12.5px;font-weight:600;cursor:pointer;padding:4px 6px}[data-le] .lf-lk:hover{text-decoration:underline}
+[data-le] .lf-body{flex:1;display:flex;min-height:0}
+[data-le] .lf-nav{width:210px;flex:none;border-right:1px solid #E3E7EE;padding:14px 12px;overflow:auto}
+[data-le] .lf-nav a{display:flex;align-items:center;gap:10px;padding:9px 10px;border-radius:8px;color:#1B2433;text-decoration:none;font-weight:500;font-size:13.5px;margin-bottom:2px;cursor:pointer}
+[data-le] .lf-nav a:hover{background:#F5F7FB}[data-le] .lf-nav a.on{background:#EEF2FB;color:#23408E}[data-le] .lf-nav a i{font-size:16px;opacity:.8}
+[data-le] .lf-nav a .n{margin-left:auto;min-width:20px;height:20px;padding:0 6px;border-radius:999px;background:#23408E;color:#fff;font-size:11px;font-weight:600;display:none;align-items:center;justify-content:center}[data-le] .lf-nav a .n.show{display:inline-flex}
+[data-le] .lf-main{flex:1;overflow:auto;overflow-x:hidden;padding:4px 28px 28px;scroll-behavior:smooth;min-width:0}
+[data-le] .lf-s{padding:18px 0 22px;border-bottom:1px solid #E3E7EE}[data-le] .lf-s:last-child{border-bottom:0}
+[data-le] .lf-sh{display:flex;align-items:baseline;gap:10px;margin-bottom:12px}[data-le] .lf-sh h3{font-size:15px;margin:0;font-weight:700;color:#0B1332}[data-le] .lf-sh .hint{font-size:12.5px;color:#667085}
+[data-le] .lf-g{display:grid;gap:12px 16px;grid-template-columns:repeat(12,minmax(0,1fr))}[data-le] .lf-g>*{min-width:0}
+[data-le] .lf-g>.c3{grid-column:span 3}[data-le] .lf-g>.c4{grid-column:span 4}[data-le] .lf-g>.c6{grid-column:span 6}[data-le] .lf-g>.c12{grid-column:span 12}
+[data-le] .lf-fd>label,[data-le] .lf-fd>.lbl{display:block;font-size:12.5px;font-weight:500;color:#344054;margin:0 0 6px;text-transform:none;letter-spacing:0}
+[data-le] .lf-fd .le-in.filled,[data-le] .le-in.filled{border-color:#23408E;background:#FBFCFF}
+[data-le] .lf-rg{display:flex;align-items:center;gap:8px}[data-le] .lf-rg .sp{color:#98A2B3;flex:none}
+[data-le] .lf-pre{display:flex;gap:6px;margin-top:8px;flex-wrap:wrap}
+[data-le] .lf-pre button{height:26px;padding:0 10px;border-radius:999px;border:1px solid #E3E7EE;background:#fff;font-size:12px;color:#667085;cursor:pointer}[data-le] .lf-pre button:hover{border-color:#23408E;color:#23408E}
+[data-le] .lf-op{display:flex;gap:8px}[data-le] .lf-op select{width:170px;flex:none;background:#F5F7FB;cursor:pointer}[data-le] .lf-op input{flex:1;min-width:0}
+[data-le] .lf-cards{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:16px}
+[data-le] .lf-card{border:1px solid #E3E7EE;border-radius:10px;padding:14px 16px 16px}[data-le] .lf-card h4{font-size:13.5px;margin:0 0 12px;display:flex;align-items:center;gap:8px}[data-le] .lf-card h4 .dt{width:8px;height:8px;border-radius:50%}
+[data-le] .lf-card .lf-fd+.lf-fd{margin-top:12px}
+[data-le] .lf-seg{display:flex;background:#F5F7FB;border:1px solid #E3E7EE;border-radius:8px;padding:3px;gap:2px}
+[data-le] .lf-seg button{flex:1;height:28px;border:0;border-radius:6px;background:transparent;font-size:12.5px;color:#667085;cursor:pointer;white-space:nowrap;padding:0 8px}[data-le] .lf-seg button:hover{color:#1B2433}
+[data-le] .lf-seg button.on{background:#fff;color:#23408E;font-weight:600;box-shadow:0 1px 2px rgba(16,24,40,.12)}
+[data-le] .lf-rt{width:100%;border:1px solid #E3E7EE;border-radius:10px;border-collapse:separate;border-spacing:0;table-layout:fixed}
+[data-le] .lf-rt th{background:#F5F7FB;font-size:12px;font-weight:600;color:#667085;text-align:left;padding:9px 14px;border-bottom:1px solid #E3E7EE}[data-le] .lf-rt thead th:first-child{border-top-left-radius:10px}[data-le] .lf-rt thead th:last-child{border-top-right-radius:10px}
+[data-le] .lf-rt td{padding:7px 14px;border-bottom:1px solid #E3E7EE;vertical-align:middle}[data-le] .lf-rt tr:last-child td{border-bottom:0}
+[data-le] .lf-rt th:first-child,[data-le] .lf-rt td:first-child{width:42%;font-weight:500}[data-le] .lf-rt th:nth-child(3),[data-le] .lf-rt td:nth-child(3){width:28px;padding:0;text-align:center;color:#98A2B3}
+[data-le] .lf-rt .cd{display:inline-block;min-width:38px;font-size:11px;font-weight:700;color:#23408E;background:#EEF2FB;border-radius:5px;padding:2px 6px;margin-right:8px;text-align:center}
+[data-le] .lf-rt .sl{display:block;font-size:12px;color:#667085;font-weight:400;margin-top:1px;padding-left:50px}
+[data-le] .lf-rt .le-in{height:32px!important;min-height:32px!important}[data-le] .lf-rt .nm{text-align:right;font-variant-numeric:tabular-nums}
+[data-le] .lf-ft{display:flex;align-items:center;gap:12px;padding:12px 24px;border-top:1px solid #E3E7EE;background:#fff}
+[data-le] .lf-ft .gr{flex:1}[data-le] .lf-ft .st{color:#667085;font-size:13px}
+[data-le] .lf-ft button{height:38px;padding:0 16px;border-radius:8px;font-weight:600;font-size:13.5px;cursor:pointer;display:inline-flex;align-items:center;gap:8px;border:1px solid #C9D2E3;background:#fff;color:#1B2433}[data-le] .lf-ft button:hover{background:#F5F7FB}
+[data-le] .lf-ft button.gh{border-color:transparent;color:#667085}[data-le] .lf-ft button.gh:hover{color:#C0392B;background:#FDF2F1}
+[data-le] .lf-ft button.p{background:#23408E;border-color:#23408E;color:#fff}[data-le] .lf-ft button.p:hover{background:#1B3375}[data-le] .lf-ft button.p .b{background:rgba(255,255,255,.22);border-radius:999px;font-size:11.5px;padding:1px 7px}
+[data-le] .lf-res{display:inline-flex;align-items:center;gap:8px;font-size:13px}[data-le] .lf-res b{font-variant-numeric:tabular-nums;font-size:14px}
+[data-le] .lf-res .sp{width:12px;height:12px;border:2px solid #DFE7F7;border-top-color:#23408E;border-radius:50%;animation:lfsp .7s linear infinite;display:none}[data-le] .lf-res.ld .sp{display:inline-block}[data-le] .lf-res.ld b{opacity:.4}[data-le] .lf-res.z b{color:#C0392B}
+@keyframes lfsp{to{transform:rotate(360deg)}}
+[data-le] .lf-kbd{font:inherit;font-size:11px;border:1px solid #E3E7EE;border-bottom-width:2px;border-radius:4px;padding:0 5px;color:#667085;background:#F5F7FB}
+[data-le] .le-md.lf{width:min(1380px,98vw);height:auto;max-height:calc(100vh - 24px)}
+[data-le] .lf-sh .hint,[data-le] .lf-rt .sl{display:none}
+[data-le] .lf-pre{flex-wrap:nowrap;gap:6px}[data-le] .lf-pre button{white-space:nowrap;padding:0 8px;font-size:11.5px}
+[data-le] .lf-h p,[data-le] .lf-chips,[data-le] .lf-nav,[data-le] .lf-ft .st{display:none!important}
+[data-le] .lf-h{padding:10px 24px;align-items:center}
+[data-le] .lf-main{padding:0 24px 8px}
+[data-le] .lf-main>div{display:grid;grid-template-columns:1fr 1fr;column-gap:28px;align-items:start}
+[data-le] .lf-c{display:contents}[data-le] .lf-main>div{align-items:stretch!important}[data-le] .lf-s[data-s=journal]{grid-area:1/1}[data-le] .lf-s[data-s=refs]{grid-area:2/1}[data-le] .lf-s[data-s=trait]{grid-area:3/1}[data-le] .lf-s[data-s=comptes]{grid-area:1/2}[data-le] .lf-s[data-s=infos]{grid-area:2/2}[data-le] .lf-s[data-s=montants]{grid-area:3/2}
+[data-le] .lf-s{break-inside:avoid;padding:16px 0 20px}
+[data-le] .lf-sh{margin-bottom:14px}
+[data-le] .lf-g{gap:18px 14px}
+[data-le] .lf-rt td{padding:7px 10px}[data-le] .lf-rt th{padding:6px 10px}
+[data-le] .lf-card{padding:12px 12px 16px}[data-le] .lf-card .lf-fd+.lf-fd{margin-top:18px}[data-le] .lf-seg button{padding:0 6px;font-size:12px;flex:1 1 auto;min-width:0}[data-le] .lf-seg{overflow:hidden}[data-le] .lf-card{min-width:0}
+@media (max-width:1500px){[data-le] .lf-main>div{grid-template-columns:1fr 1fr}}@media (max-width:1100px){[data-le] .lf-main>div{display:block}}
+@media (max-width:980px){[data-le] .lf-nav{display:none}[data-le] .lf-cards{grid-template-columns:1fr}[data-le] .lf-g>.c3,[data-le] .lf-g>.c4{grid-column:span 6}}
+@media (max-width:640px){[data-le] .lf-main{padding:4px 16px 20px}[data-le] .lf-h,[data-le] .lf-chips,[data-le] .lf-ft{padding-left:16px;padding-right:16px}[data-le] .lf-g>*{grid-column:span 12!important}[data-le] .lf-ft .st,[data-le] .lf-kbd{display:none}[data-le] .lf-op select{width:130px}}
+</style>
+
+<div class="bp-root" data-le>
+  <h1 style="position:absolute;width:1px;height:1px;overflow:hidden;clip-path:inset(50%);margin:0">Liste des écritures</h1>
+  <div class="no-print" data-le-actions>
+    <button type="button" data-le-modifier title="Corriger la pièce de la ligne cochée dans la saisie d’écritures"><i class="ti ti-pencil" aria-hidden="true"></i> Modifier</button>
+    <button type="button" data-le-filtres>Filtres</button>
+    <button type="button" data-le-fiche>Imprimer la fiche d’imputation</button>
+    <button type="button" data-le-pdf>PDF</button>
+    <button type="button" data-le-xlsx>Excel (XLSX)</button>
+  </div>
+
+  <div class="le-ov" data-le-ov hidden><div class="le-md lf" role="dialog" aria-modal="true" aria-label="Filtres de recherche">
+    <div class="lf-h"><div class="lf-ico"><i class="ti ti-filter" aria-hidden="true"></i></div><div class="gr"><h2>Filtres de recherche</h2><p>Affinez la liste des écritures. Un champ laissé vide n’applique aucun filtre.</p></div><button type="button" class="le-x" data-le-fermer aria-label="Fermer (Échap)" title="Fermer (Échap)">✕</button></div>
+    <div class="lf-chips" data-lf-chips></div>
+    <div class="lf-body">
+      <nav class="lf-nav" data-lf-nav>
+        <a data-s="journal"><i class="ti ti-calendar-event" aria-hidden="true"></i>Journal &amp; période<span class="n"></span></a>
+        <a data-s="refs"><i class="ti ti-hash" aria-hidden="true"></i>Références &amp; saisie<span class="n"></span></a>
+        <a data-s="trait"><i class="ti ti-checks" aria-hidden="true"></i>Traitement<span class="n"></span></a>
+        <a data-s="comptes"><i class="ti ti-chart-line" aria-hidden="true"></i>Plans des comptes<span class="n"></span></a>
+        <a data-s="montants"><i class="ti ti-coin" aria-hidden="true"></i>Montants<span class="n"></span></a>
+        <a data-s="infos"><i class="ti ti-notes" aria-hidden="true"></i>Informations libres<span class="n"></span></a>
+      </nav>
+      <div class="lf-main" data-lf-main><div data-le-form>
+
+      <section class="lf-s" data-s="journal"><div class="lf-sh"><h3>Journal &amp; période</h3></div>
+        <div class="lf-g">
+          <div class="lf-fd f c3" data-label="Site"><span class="lbl">Site</span><div data-ms="site"></div></div><div class="lf-fd f c3" data-label="Exercice"><span class="lbl">Exercice</span><div data-ms="exercice"></div></div><div class="lf-fd f c6" data-label="Journal"><span class="lbl">Journal</span><div data-ms="journal"></div></div>
+          <div class="lf-fd f c6" data-label="Date comptable" data-kind="date"><span class="lbl">Date comptable</span><div class="lf-rg"><input class="le-in" type="date" step="any" aria-label="Du" data-le-f="du"><span class="sp">→</span><input class="le-in" type="date" step="any" aria-label="Au" data-le-f="au"></div><div class="lf-pre"><button type="button" data-pre="month">Mois en cours</button><button type="button" data-pre="quarter">Trimestre en cours</button><button type="button" data-pre="year">Exercice en cours</button></div></div>
+          <div class="lf-fd f c6" data-label="Échéance" data-kind="date"><span class="lbl">Échéance</span><div class="lf-rg"><input class="le-in" type="date" step="any" aria-label="Du" data-le-f="echdu"><span class="sp">→</span><input class="le-in" type="date" step="any" aria-label="Au" data-le-f="echau"></div></div>
+          <div class="lf-fd f c6" data-label="Type de journal"><span class="lbl">Type de journal</span><div data-ms="typeJournal"></div></div>
+        </div></section>
+
+      <section class="lf-s" data-s="refs"><div class="lf-sh"><h3>Références, tiers &amp; saisie</h3></div>
+        <div class="lf-g">
+          <div class="lf-fd f c3" data-label="N° bordereau"><label>N° bordereau</label><input class="le-in" data-le-f="numBord"></div><div class="lf-fd f c3" data-label="N° pièce"><label>N° pièce</label><input class="le-in" data-le-f="piece"></div><div class="lf-fd f c3" data-label="N° facture"><label>N° facture</label><input class="le-in" data-le-f="facture"></div><div class="lf-fd f c3" data-label="Référence"><label>Référence</label><input class="le-in" data-le-f="reference"></div>
+          <div class="lf-fd f c6" data-label="Tiers"><label>Tiers</label><input class="le-in" data-le-f="tiers" placeholder="Code ou nom"></div><div class="lf-fd f c3" data-label="N° contrat"><span class="lbl">N° contrat</span><div data-ms="contrat"></div></div><div class="lf-fd f c3" data-label="Saisi par"><span class="lbl">Saisi par</span><div data-ms="saisiPar"></div></div>
+          <div class="lf-fd f c12" data-label="Libellé" data-kind="textop"><label>Libellé</label><div class="lf-op"><select class="le-in" data-le-op="libelle" data-no-combo aria-label="Type de recherche sur le libellé"><option value="contient">Contient</option><option value="commence par">Commence par</option><option value="se termine par">Se termine par</option><option value="égal à">Égal à</option><option value="ne contient pas">Ne contient pas</option></select><input class="le-in" data-le-f="libelle" placeholder="Saisir le texte recherché"></div></div>
+        </div></section>
+
+      <section class="lf-s" data-s="trait"><div class="lf-sh"><h3>Traitement</h3><span class="hint">État de lettrage, de pointage et de validation</span></div>
+        <div class="lf-cards">
+          <div class="lf-card"><h4><span class="dt" style="background:#3B82F6"></span>Lettrage</h4><div class="lf-fd f " data-label="Lettrage"><span class="lbl">État</span><div class="lf-seg" data-seg="lettrage"><input type="hidden" data-le-f="lettrage"><button type="button" data-v="" class="on">Tous</button><button type="button" data-v="oui">Lettrées</button><button type="button" data-v="non">Non lettrées</button></div></div><div class="lf-fd f " data-label="N° lettrage"><span class="lbl">N° lettrage</span><div data-ms="numLettrage"></div></div></div>
+          <div class="lf-card"><h4><span class="dt" style="background:#10B981"></span>Rapprochement</h4><div class="lf-fd f " data-label="Pointage"><span class="lbl">État du pointage</span><div class="lf-seg" data-seg="pointage"><input type="hidden" data-le-f="pointage"><button type="button" data-v="" class="on">Tous</button><button type="button" data-v="oui">Pointées</button><button type="button" data-v="non">Non pointées</button></div></div><div class="lf-fd f " data-label="N° relevé"><span class="lbl">N° relevé</span><div data-ms="numReleve"></div></div></div>
+          <div class="lf-card"><h4><span class="dt" style="background:#F59E0B"></span>Validation</h4><div class="lf-fd f " data-label="Étape du circuit"><span class="lbl">Étape du circuit</span><div data-ms="etape"></div></div></div>
+        </div></section>
+
+      <section class="lf-s" data-s="comptes"><div class="lf-sh"><h3>Plans des comptes</h3><span class="hint">Filtre par plage de codes. Pour un code unique, renseignez seulement « Du code » puis appuyez sur <kbd class="lf-kbd">=</kbd>.</span></div>
+        <table class="lf-rt"><thead><tr><th>Plan</th><th>Du code</th><th></th><th>Au code</th></tr></thead><tbody data-le-ana></tbody></table></section>
+
+      <section class="lf-s" data-s="montants"><div class="lf-sh"><h3>Montants</h3><span class="hint">Bornes incluses</span></div>
+        <table class="lf-rt"><thead><tr><th>Montant</th><th>Minimum</th><th></th><th>Maximum</th></tr></thead><tbody>
+          <tr class="f" data-label="Montant local" data-kind="amount"><td>Montant local</td><td><input class="le-in nm" type="number" step="any" placeholder="0,00" aria-label="Montant local minimum" data-le-f="lmin"></td><td>→</td><td><input class="le-in nm" type="number" step="any" placeholder="0,00" aria-label="Montant local maximum" data-le-f="lmax"></td></tr><tr class="f" data-label="Devise 1" data-kind="amount"><td>Devise 1</td><td><input class="le-in nm" type="number" step="any" placeholder="0,00" aria-label="Devise 1 minimum" data-le-f="d1min"></td><td>→</td><td><input class="le-in nm" type="number" step="any" placeholder="0,00" aria-label="Devise 1 maximum" data-le-f="d1max"></td></tr><tr class="f" data-label="Devise 2" data-kind="amount"><td>Devise 2</td><td><input class="le-in nm" type="number" step="any" placeholder="0,00" aria-label="Devise 2 minimum" data-le-f="d2min"></td><td>→</td><td><input class="le-in nm" type="number" step="any" placeholder="0,00" aria-label="Devise 2 maximum" data-le-f="d2max"></td></tr><tr class="f" data-label="Devise 3" data-kind="amount"><td>Devise 3</td><td><input class="le-in nm" type="number" step="any" placeholder="0,00" aria-label="Devise 3 minimum" data-le-f="d3min"></td><td>→</td><td><input class="le-in nm" type="number" step="any" placeholder="0,00" aria-label="Devise 3 maximum" data-le-f="d3max"></td></tr>
+        </tbody></table></section>
+
+      <section class="lf-s" data-s="infos"><div class="lf-sh"><h3>Informations libres</h3><span class="hint">Recherche partielle, sans distinction majuscule/minuscule</span></div>
+        <div class="lf-g"><div class="lf-fd f c4" data-label="Information libre 1"><label>Information libre 1</label><input class="le-in" data-le-f="info1"></div><div class="lf-fd f c4" data-label="Information libre 2"><label>Information libre 2</label><input class="le-in" data-le-f="info2"></div><div class="lf-fd f c4" data-label="Information libre 3"><label>Information libre 3</label><input class="le-in" data-le-f="info3"></div><div class="lf-fd f c4" data-label="Documents"><label>Documents</label><input class="le-in" data-le-f="documents"></div><div class="lf-fd f c4" data-label="Liens documentaires"><label>Liens documentaires</label><input class="le-in" data-le-f="liens"></div><div class="lf-fd f c4" data-label="Mode de paiement"><label>Mode de paiement</label><input class="le-in" data-le-f="modePaiement"></div></div><div class="lf-fd c12"><span class="lbl">Colonnes supplémentaires à afficher à l’édition</span><div data-ms="colsExtra"></div></div></section>
+
+      </div></div>
+    </div>
+    <div class="lf-ft">
+      <button type="button" class="gh" data-le-reinit><i class="ti ti-refresh" aria-hidden="true"></i> Réinitialiser</button><span class="st" data-lf-st></span><span class="gr"></span>
+      <span class="lf-res" data-lf-res aria-live="polite"><span class="sp"></span><b data-lf-n>0</b><span data-lf-t>ligne(s) d’écriture correspondent</span></span>
+      <button type="button" data-le-annuler>Fermer</button>
+      <button type="button" class="p" data-le-rech><i class="ti ti-search" aria-hidden="true"></i> Rechercher<span class="b" data-lf-b hidden></span></button>
+      <kbd class="lf-kbd" title="Raccourci">Ctrl + Entrée</kbd>
+    </div>
+  </div></div>
+  <div class="bp-grid"><section class="bp-pan" aria-label="Liste des écritures">
+  <h2>Liste des écritures <small data-le-fa></small></h2>
+  <div class="le-res"><span data-le-compte></span><span data-le-tot></span></div>
+  <div style="overflow:auto">
+    <table class="bp-tb le-tb" style="min-width:1900px"><thead><tr><th style="width:34px"><input type="checkbox" data-le-tout aria-label="Tout cocher"></th><th>NUMBORD</th><th>Site</th><th>Journal</th><th>Date écriture</th><th>Date pièce</th><th>N° pièce</th><th>Référence</th><th>Compte</th><th>Tiers</th><th>Libellé</th><th>Sens</th><th class="r">Débit</th><th class="r">Crédit</th><th>Échéance</th><th>Étape actuelle</th><th>Mode de paiement</th><th data-xc="exercice">Exercice</th><th data-xc="typeJournal">Type de journal</th><th data-xc="facture">N° facture</th><th data-xc="contrat">N° contrat</th><th data-xc="saisiPar">Saisi par</th><th data-xc="numLettrage">N° lettrage</th><th data-xc="numReleve">N° relevé</th><th data-xc="info1">Information libre 1</th><th data-xc="info2">Information libre 2</th><th data-xc="info3">Information libre 3</th><th data-xc="documents">Documents</th><th data-xc="liens">Liens documentaires</th><th data-xc="budget">Budget</th><th data-xc="ligneBud">Ligne budgétaire</th></tr></thead><tbody data-le-lignes></tbody></table>
+    <div class="bp-vide" data-le-vide hidden>Aucune écriture ne correspond aux critères.</div>
+  </div></section></div>
+  <div class="bp-toast" role="status" hidden data-le-toast></div>
+</div>
+
+<script>
+(function () {
+  var root = document.querySelector('[data-le]'); if (!root) return;
+  function q(s) { return root.querySelector(s); } function qa(s) { return [].slice.call(root.querySelectorAll(s)); }
+  function esc(s) { return String(s == null ? '' : s).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;'); }
+  function norm(t) { return String(t == null ? '' : t).normalize('NFD').replace(/[̀-ͯ]/g, '').toLowerCase(); }
+  function nb(n) { return Number(n).toLocaleString('fr-FR', { minimumFractionDigits: 2, maximumFractionDigits: 2 }).replace(/[  ]/g, ' '); }
+  function dt(d) { return d ? d.split('-').reverse().join('/') : ''; }
+  function toast(m) { var t = q('[data-le-toast]'); t.textContent = m; t.hidden = false; clearTimeout(toast.t); toast.t = setTimeout(function () { t.hidden = true; }, 2600); }
+  var REF = function () { return window.ECRITURES_REF || {}; }, AX = function () { return window.ECRITURES_AXES || {}; };
+
+  // ---------- données : écritures de démonstration + pièces saisies ----------
+  var JNL = [['ACHA', 'Achat', 'Achat'], ['VENT', 'Vente', 'Vente'], ['BANQ', 'Banque', 'Banque'], ['CA', 'Caisse', 'Caisse'], ['OD', 'Opérations diverses', 'Opérations diverses']];
+  var USERS = ['superadmin', 'comptable1', 'comptable2', 'caissier1', 'assistant.compta'];
+  var LIB = ['Nettoyage de bureau 1er étage', 'Lavage véhicule', 'Permutation de pneus', 'Achat fournitures de bureau', 'Carburant véhicule de service', 'Frais de mission', 'Abonnement internet', 'Entretien climatisation', 'Honoraires audit', 'Location salle de formation', 'Frais bancaires', 'Règlement fournisseur', 'Encaissement client', 'Paiement salaires', 'Achat petit matériel'];
+  var MODES = ['Espèces', 'Virement', 'Chèque', 'Mobile money', ''];
+  var CHARGES = ['606300', '613000', '615200', '621100', '624400', '627000', '658000'], TIERS_ = ['F0001', 'F0002', 'F0003', 'C0001', 'C0002'];
+  function pad(n, l) { return ('0000' + n).slice(-l); }
+  function axeCode(nom, i) { var L = AX()[nom] || []; return L.length ? L[(i * 7) % L.length].code : ''; }
+  function demo() {
+    var out = [], sites = (REF().sites || [{ code: '01', label: 'Siège' }]), s0 = sites[0], k = 0, seq = {};
+    for (var i = 0; i < 44; i++) {
+      var d = new Date(2026, 8, 29 - Math.floor(i / 2)), iso = d.getFullYear() + '-' + pad(d.getMonth() + 1, 2) + '-' + pad(d.getDate(), 2), j = JNL[i % JNL.length], u = USERS[i % USERS.length];
+      var m = [60000, 35000, 247200, 85000, 120000, 450000, 18500, 72000][i % 8] * (1 + (i % 3) * 0.5), cg = CHARGES[i % CHARGES.length], tiers = j[0] === 'ACHA' || j[0] === 'VENT' ? TIERS_[i % TIERS_.length] : '', ctr = j[0] === 'ACHA' ? '401000' : j[0] === 'VENT' ? '411000' : j[0] === 'BANQ' ? '512100' : j[0] === 'CA' ? '531000' : '471000';
+      var nbd = iso.replace(/-/g, '') + s0.code + pad((seq[iso] = (seq[iso] || 0) + 1), 4), piece = (j[0] === 'CA' ? 'PCD ' : j[0] + ' ') + (410 - Math.floor(i / 2)) + '/26', lib = LIB[i % LIB.length] + ' du ' + dt(iso), lt = i % 5 === 0 ? 'LT' + pad(100 + i, 4) : '', rel = j[0] === 'BANQ' && i % 2 ? '2026-09 / 0470' : '';
+      var charge = j[0] === 'VENT' ? false : true, ech = tiers ? iso.slice(0, 8) + '28' : '';
+      var base = { numBord: nbd, site: s0.label || s0.code, siteCode: s0.code, exercice: '2026', typeJournal: j[2], journal: j[0], saisiPar: u, date: iso, datePiece: iso, piece: piece, reference: i % 4 === 0 ? 'FA-2026-' + pad(300 + i, 4) : '', facture: i % 4 === 0 ? 'F-' + pad(900 + i, 4) : '', libelle: lib, etape: tiers ? (i % 3 ? 'Validée' : 'En attente de règlement') : '', mode: MODES[i % MODES.length], contrat: i % 6 === 0 ? 'CTR-' + pad(10 + (i % 4), 3) : '', drf: i % 9 === 0 ? 'DRF-' + pad(i, 3) : '', numLettrage: lt, numPrelettrage: '', numReleve: rel, info1: i % 7 === 0 ? 'Mission terrain' : '', info2: '', info3: '', documents: i % 4 === 0 ? 'facture_' + pad(300 + i, 4) + '.pdf' : '', liens: '', epay: '', budget: i % 3 === 0 ? 'BUD-2026' : '', ligneBud: i % 3 === 0 ? axeCode('POSTE BUDGETAIRE', i) : '', exerciceBudget: i % 3 === 0 ? '2026' : '', ana: { p1: axeCode('ACTIVITE', i), p2: axeCode('POSTE BUDGETAIRE', i), p3: axeCode('FINANCEMENT', i), p4: axeCode('GEOGRAPHIQUE', i), p5: axeCode('NATURE', i), p6: axeCode('CATEGORIE DE DEPENSE', i) } };
+      function ligne(sens, compte, tr, extra) { var o = Object.assign({}, base, { compte: compte, tiers: tr, sens: sens, debit: sens === 'Débit' ? m : 0, credit: sens === 'Crédit' ? m : 0, echeance: sens === 'Crédit' && ech && j[0] === 'ACHA' || sens === 'Débit' && ech && j[0] === 'VENT' ? ech : '', d1: m / 4400, d2: m / 4800, d3: m / 5600, id: k++ }); if (extra) Object.assign(o, extra); return o; }
+      if (j[0] === 'VENT') { out.push(ligne('Débit', ctr, tiers)); out.push(ligne('Crédit', '706000', '', {})); }
+      else if (j[0] === 'BANQ' || j[0] === 'CA') { out.push(ligne('Débit', cg, '')); out.push(ligne('Crédit', ctr, '')); }
+      else { out.push(ligne('Débit', cg, '')); out.push(ligne('Crédit', ctr, tiers)); }
+    }
+    return out;
+  }
+  function saisies() {
+    var out = [], s0 = (REF().sites || [{ code: '01', label: 'Siège' }])[0], k = 9000;
+    (window.ECRITURES_PIECES || []).forEach(function (pc) {
+      (pc.lignes || []).forEach(function (l) {
+        var m = Number(l.montant) || 0, deb = l.sens === 'DEBIT' || l.sens === 'D' || l.sens === 'Débit';
+        out.push({ numBord: String(pc.date || '').replace(/-/g, '') + s0.code + pad(k - 8999, 4), site: s0.label || s0.code, siteCode: s0.code, exercice: String(pc.date || '').slice(0, 4), typeJournal: (JNL.filter(function (x) { return x[0] === pc.journal; })[0] || [0, 0, 'Opérations diverses'])[2], journal: pc.journal, saisiPar: 'superadmin', date: pc.date, datePiece: pc.datePiece || pc.date, piece: pc.piece, reference: pc.reference || '', facture: pc.facture || '', libelle: l.libelle || '', compte: l.compte || '', tiers: l.tiers || '', sens: deb ? 'Débit' : 'Crédit', debit: deb ? m : 0, credit: deb ? 0 : m, echeance: l.echeance || '', etape: '', mode: '', contrat: l.contrat || '', drf: '', numLettrage: '', numPrelettrage: '', numReleve: '', info1: '', info2: '', info3: '', documents: '', liens: '', epay: '', budget: l.budget || '', ligneBud: '', exerciceBudget: '', d1: l.montant1 || 0, d2: l.montant2 || 0, d3: 0, ana: {}, id: k++ });
+      });
+    });
+    return out;
+  }
+  var DEMO = null;
+  // les imputations analytiques des écritures de démonstration prennent leurs codes dans les lignes des plans configurés (Saisie des plans, niveau le plus fin)
+  function feuilles(code) {
+    var L = window.PLANS_LIGNES && window.PLANS_LIGNES[code], rows = L && L.rows ? L.rows.filter(function (x) { return x.actif !== false; }).map(function (x) { return String(x.code); }) : [];
+    var ck = code + '|' + rows.length; if (FCACHE[ck]) return FCACHE[ck];
+    var set = {}; rows.forEach(function (c) { for (var n = 1; n < c.length; n++) set[c.slice(0, n)] = 1; });   // préfixes = codes parents
+    return (FCACHE[ck] = rows.filter(function (c) { return !set[c]; }).sort());
+  }
+  var FCACHE = {};
+  function anaDe(id) {
+    var a = {}; for (var k = 1; k <= 10; k++) { var f = feuilles('PLAN' + k); a['p' + k] = f.length ? f[((Math.imul(Math.floor(id / 2) + k * 31, 2654435761) >>> 0) >>> 8) % f.length] : axeCode(NOMS_AXE[k], Math.floor(id / 2)); } return a;
+  }
+  function donnees() { if (!DEMO) DEMO = demo(); DEMO.forEach(function (l) { l.ana = anaDe(l.id); }); var rem = window.ECRITURES_REMPLACEES || []; return saisies().concat(rem.length ? DEMO.filter(function (l) { return rem.indexOf(l.journal + '|' + l.piece + '|' + l.date) < 0; }) : DEMO); }
+
+  // ---------- listes à cases à cocher ----------
+  var MSS = {};
+  // Règle générale : des valeurs « code — libellé » s'affichent en deux colonnes (Code | Libellé), chacune avec son champ de recherche ; sinon une seule colonne.
+  function coupe(t) { var i = String(t).indexOf(' — '); return i > 0 ? [t.slice(0, i), t.slice(i + 3)] : [t, '']; }
+  function MS(host, key, tous, options, init) {
+    var sel = {}, opts = options || []; (init || []).forEach(function (v) { if (opts.some(function (o) { return o[0] === v; })) sel[v] = 1; });
+    host.className = 'le-ms'; host.innerHTML = '<button type="button" class="le-msb"><span class="le-mst"></span><span class="le-msc"></span><i class="ti ti-chevron-down" aria-hidden="true"></i></button><div class="le-msp" hidden><div class="le-mact"><button type="button" data-a="all">Tout cocher</button><button type="button" data-a="none">Tout décocher</button></div><div class="le-msf"><input class="le-msf-in" type="search" data-c="0" placeholder="Rechercher…" autocomplete="off" aria-label="Rechercher"><input class="le-msf-in" type="search" data-c="1" placeholder="Rechercher…" autocomplete="off" aria-label="Rechercher par libellé"></div><div class="le-msh"><span></span><span>Code</span><span>Libellé</span></div><div class="le-msl"></div></div>';
+    var b = host.querySelector('.le-msb'), p = host.querySelector('.le-msp'), L = host.querySelector('.le-msl'), f0 = p.querySelector('[data-c="0"]'), f1 = p.querySelector('[data-c="1"]');
+    function deux() { return opts.some(function (o) { return o[1].indexOf(' — ') > 0; }); }
+    function txt() { var n = Object.keys(sel).length; b.classList.toggle('on', n > 0); host.querySelector('.le-mst').textContent = n === 0 ? tous : n === 1 ? (opts.filter(function (o) { return sel[o[0]]; })[0] || ['', ''])[1] : n + ' sélectionnés'; host.querySelector('.le-msc').textContent = n + '/' + opts.length; }
+    function liste() {
+      var d = deux(), s0 = norm(f0.value), s1 = norm(f1.value); p.classList.toggle('le-deux', d); f1.hidden = !d; p.querySelector('.le-msh').hidden = !d;
+      L.innerHTML = opts.filter(function (o) { var c = d ? coupe(o[1]) : [o[1], '']; return (!s0 || (d ? norm(c[0]).indexOf(s0) === 0 : norm(c[0]).indexOf(s0) >= 0)) && (!s1 || norm(c[1]).indexOf(s1) >= 0); }).map(function (o) {
+        var c = d ? coupe(o[1]) : [o[1]];
+        return '<label class="le-mso' + (d ? ' deux' : '') + '"><input type="checkbox" data-v="' + esc(o[0]) + '"' + (sel[o[0]] ? ' checked' : '') + '>' + (d ? '<span>' + esc(c[0]) + '</span><span>' + esc(c[1]) + '</span>' : esc(c[0])) + '</label>';
+      }).join('') || '<div class="le-vide" style="padding:8px">Aucune valeur</div>';
+    }
+    b.addEventListener('click', function (e) { e.stopPropagation(); var o = p.hidden; fermerTout(); p.hidden = !o; if (o) { f0.value = ''; f1.value = ''; liste(); p.style.left = '0'; p.style.right = 'auto'; var md = host.closest('.le-md'), r = p.getBoundingClientRect(), lim = md ? md.getBoundingClientRect().right - 12 : window.innerWidth - 12; if (r.right > lim) { p.style.left = 'auto'; p.style.right = '0'; } } });
+    p.addEventListener('click', function (e) { e.stopPropagation(); var a = e.target.getAttribute('data-a'); if (a) { opts.forEach(function (o) { if (a === 'all') sel[o[0]] = 1; else delete sel[o[0]]; }); liste(); txt(); if (typeof majModal === 'function') majModal(); } });
+    p.addEventListener('change', function (e) { var v = e.target.getAttribute('data-v'); if (v !== null) { if (e.target.checked) sel[v] = 1; else delete sel[v]; txt(); } });
+    f0.addEventListener('input', liste); f1.addEventListener('input', liste);
+    var api = { get: function () { return Object.keys(sel); }, reset: function () { sel = {}; txt(); if (typeof majModal === 'function') majModal(); }, set: function (o) { opts = o; Object.keys(sel).forEach(function (k) { if (!o.some(function (x) { return x[0] === k; })) delete sel[k]; }); txt(); }, close: function () { p.hidden = true; } };
+    MSS[key] = api; txt(); return api;
+  }
+  function fermerTout() { Object.keys(MSS).forEach(function (k) { MSS[k].close(); }); if (typeof cbFermer === 'function') cbFermer(); }
+  document.addEventListener('click', function (e) { if (!e.target.closest || !e.target.closest('[data-le] .le-ms')) fermerTout(); });
+  // Plans analytiques : seuls les plans activés (Administration de l'entité › Analytique) apparaissent ; libellé et abréviation viennent de « Configuration des plans » ;
+  // les valeurs proposées sont les lignes du plan (Saisie des plans) ; le plan de regroupement (un seul, avec son niveau) fournit ses éléments. Rechargés si la configuration change.
+  var NOMS_AXE = { 1: 'ACTIVITE', 2: 'POSTE BUDGETAIRE', 3: 'FINANCEMENT', 4: 'GEOGRAPHIQUE', 5: 'NATURE', 6: 'CATEGORIE DE DEPENSE', 7: 'Plan 7', 8: 'Plan 8', 9: 'Plan 9', 10: 'Plan 10' };
+  function plansEff() {
+    var act = window.PLANS_ACTIFS ? window.PLANS_ACTIFS() : ['PLAN1', 'PLAN2', 'PLAN3', 'PLAN4'], cfg = window.PLANS_CFG || [], out = [];
+    for (var k = 1; k <= 10; k++) { var code = 'PLAN' + k; if (act.indexOf(code) < 0) continue; var c = cfg.filter(function (p) { return p.code === code; })[0] || {}; out.push({ key: 'p' + k, code: code, lib: (c.abrev ? c.abrev + ' — ' : '') + (c.libelle || 'Plan ' + k), axe: NOMS_AXE[k] }); }
+    return out;
+  }
+  function valeursPlan(p) {
+    var L = window.PLANS_LIGNES && window.PLANS_LIGNES[p.code], r = L && L.rows ? L.rows.filter(function (x) { return x.actif !== false; }).map(function (x) { return [x.code, x.code + ' — ' + (x.libelle || '')]; }) : [];
+    return r.length ? r : axOpts(p.axe);
+  }
+  function regr() {
+    var g = window.REGROUPEMENT && window.REGROUPEMENT(); if (!g) return null; var m = /PLAN(\d+)/.exec(g.plan);
+    return { key: m ? 'p' + m[1] : '', lib: 'Plan de regroupement — ' + g.planLibelle + (g.niveauLibelle ? ' (niveau ' + g.niveau + ' « ' + g.niveauLibelle + ' »)' : ''), els: g.elements.map(function (e) { return [e.code, e.code + ' — ' + (e.libelle || '')]; }) };
+  }
+  function axOpts(nom) { return (AX()[nom] || []).map(function (a) { return [a.code, a.code + ' — ' + (a.label || '')]; }); }
+  function uniq(champ) { var s = {}; donnees().forEach(function (l) { if (l[champ]) s[l[champ]] = 1; }); return Object.keys(s).sort().map(function (v) { return [v, v]; }); }
+  function construire() {
+    var ex = (window.EXERCICES_API ? window.EXERCICES_API.liste() : []).map(function (e) { return [String(e.annee), String(e.annee)]; });
+    var sites = (REF().sites || []).map(function (s) { return [s.label || s.code, s.label || s.code]; });
+    var D = donnees(), jset = {}; D.forEach(function (l) { jset[l.journal] = 1; }); var jn = JNL.filter(function (j) { return jset[j[0]]; }).map(function (j) { return [j[0], j[0] + ' — ' + j[1]]; });
+    var tj = {}; D.forEach(function (l) { tj[l.typeJournal] = 1; });
+    function mk(sel, key, tous, o) { var h = q('[data-ms="' + sel + '"]'); if (!h) return; if (MSS[key] && h.firstChild) MSS[key].set(o); else MS(h, key, tous, o); }
+    mk('site', 'site', 'Tous les sites', sites); mk('exercice', 'exercice', 'Tous les exercices', ex); mk('typeJournal', 'typeJournal', 'Tous les types', Object.keys(tj).sort().map(function (v) { return [v, v]; }));
+    mk('saisiPar', 'saisiPar', 'Tous les utilisateurs', uniq('saisiPar')); mk('journal', 'journal', 'Tous les journaux', jn);
+    ['contrat', 'numLettrage', 'numReleve'].forEach(function (k) { mk(k, k, 'Tous', uniq(k)); });
+    mk('etape', 'etape', 'Toutes', uniq('etape')); mk('colsExtra', 'colsExtra', 'Aucune colonne supplémentaire', EXTRA.map(function (x) { return [x[0], x[1]]; }));
+    construireAna();
+  }
+  // Saisie d'un code de plan : panneau de la charte (composant cb-pan, deux colonnes Code | Libellé, un champ de recherche par colonne), à la place de la liste native du navigateur
+  var PVALS = {}, cbIn = null, cbP = null;
+  function cbFermer() { if (cbP) cbP.hidden = true; cbIn = null; }
+  function cbDessiner() {
+    if (!cbIn || !cbP) return; var o = PVALS[cbIn.getAttribute('data-cb')] || [], s0 = norm(cbP.querySelector('[data-cbf="0"]').value), s1 = norm(cbP.querySelector('[data-cbf="1"]').value), tb = cbP.querySelector('tbody'), n = 0;
+    tb.innerHTML = o.filter(function (x) { var c = coupe(x[1]); return (!s0 || norm(c[0]).indexOf(s0) === 0) && (!s1 || norm(c[1] || c[0]).indexOf(s1) >= 0); }).slice(0, 300).map(function (x) { var c = coupe(x[1]); n++; return '<tr data-v="' + esc(x[0]) + '"><td>' + esc(c[0]) + '</td><td>' + esc(c[1]) + '</td></tr>'; }).join('');
+    cbP.querySelector('.cb-vide').hidden = n > 0; var f = tb.querySelector('tr'); if (f && (s0 || s1)) f.classList.add('cb-on');
+  }
+  function cbOuvrir(inp) {
+    var k = inp.getAttribute('data-cb'); if (!PVALS[k] || !PVALS[k].length) { cbFermer(); return; }
+    if (!cbP) {
+      cbP = document.createElement('div'); cbP.className = 'cb-pan le-cbp'; cbP.hidden = true;
+      cbP.innerHTML = '<div class="cb-sc"><table class="cb-tb"><colgroup><col style="width:34%"><col></colgroup><thead><tr><th>Code</th><th>Libellé</th></tr><tr class="cb-f"><th><span class="cb-in"><i class="ti ti-search"></i><input data-cbf="0" placeholder="Rechercher…" aria-label="Filtrer par code" autocomplete="off"></span></th><th><span class="cb-in"><i class="ti ti-search"></i><input data-cbf="1" placeholder="Rechercher…" aria-label="Filtrer par libellé" autocomplete="off"></span></th></tr></thead><tbody></tbody></table><div class="cb-vide" hidden>Aucun résultat</div></div>';
+      root.appendChild(cbP);
+      cbP.addEventListener('mousedown', function (e) { var tr = e.target.closest('tbody tr'); if (!tr || !cbIn) return; e.preventDefault(); cbIn.value = tr.getAttribute('data-v'); cbIn.dispatchEvent(new Event('input', { bubbles: true })); cbFermer(); });
+      cbP.addEventListener('input', cbDessiner);
+      cbP.addEventListener('keydown', function (e) { if (e.key === 'Escape') { e.stopPropagation(); var i = cbIn; cbFermer(); if (i) i.focus(); } else if (e.key === 'Enter') { var tr = cbP.querySelector('tbody tr'); if (tr && cbIn) { e.preventDefault(); e.stopPropagation(); cbIn.value = tr.getAttribute('data-v'); var i2 = cbIn; cbFermer(); i2.focus(); } } });
+    }
+    cbIn = inp; cbP.hidden = false; cbP.querySelector('[data-cbf="0"]').value = inp.value; cbP.querySelector('[data-cbf="1"]').value = ''; cbDessiner();
+    var r = inp.getBoundingClientRect(), w = Math.max(420, r.width), hh = Math.min(380, cbP.offsetHeight), bas = window.innerHeight - r.bottom, top = bas >= hh + 8 || bas > r.top ? r.bottom + 4 : r.top - hh - 4;
+    cbP.style.width = w + 'px'; cbP.style.maxHeight = '380px'; cbP.style.left = Math.max(8, Math.min(r.left, window.innerWidth - w - 8)) + 'px'; cbP.style.top = Math.max(8, top) + 'px';
+  }
+  q('[data-le-ana]').addEventListener('focusin', function (e) { if (e.target.matches('[data-cb]')) cbOuvrir(e.target); });
+  q('[data-le-ana]').addEventListener('click', function (e) { if (e.target.matches('[data-cb]') && (!cbP || cbP.hidden)) cbOuvrir(e.target); });
+  q('[data-le-ana]').addEventListener('input', function (e) { if (e.target.matches('[data-cb]')) { if (cbIn !== e.target || cbP.hidden) cbOuvrir(e.target); else { cbP.querySelector('[data-cbf="0"]').value = e.target.value; cbDessiner(); } } });
+  q('[data-le-ana]').addEventListener('keydown', function (e) {
+    if (!e.target.matches('[data-cb]')) return;
+    if (e.key === 'Escape' && cbP && !cbP.hidden) { e.stopPropagation(); cbFermer(); }
+    else if (e.key === 'Enter' && cbP && !cbP.hidden) { var tr = cbP.querySelector('tbody tr'); e.preventDefault(); e.stopPropagation(); if (tr) e.target.value = tr.getAttribute('data-v'); cbFermer(); }
+    else if (e.key === 'Tab') cbFermer();
+  });
+  document.addEventListener('mousedown', function (e) { if (cbP && !cbP.hidden && !e.target.closest('.le-cbp') && !(e.target.matches && e.target.matches('[data-cb]'))) cbFermer(); });
+  function construireAna() {
+    var ana = q('[data-le-ana]'), R = regr(), P = plansEff(), prev = {}, plans = [{ k: 'pc', cd: 'PC', nm: 'Plan comptable', sl: '', val: (window.PLAN_COMPTABLE || []).map(function (c) { return [c.code, c.code + ' — ' + (c.libelle || c.label || '')]; }) }];
+    qa('[data-le-ana] [data-le-f]').forEach(function (e) { prev[e.getAttribute('data-le-f')] = e.value; });
+    if (R) { var rl = R.lib.replace(/^Plan de regroupement — /, ''); plans.push({ k: 'preg', cd: 'REG', nm: 'Plan de regroupement', sl: rl, val: R.els }); }
+    P.forEach(function (p) { var i = p.lib.indexOf(' — '); plans.push({ k: p.key, cd: i > 0 ? p.lib.slice(0, i) : p.key.toUpperCase(), nm: i > 0 ? p.lib.slice(i + 3) : p.lib, sl: '', val: valeursPlan(p) }); });
+    ana.innerHTML = plans.map(function (p) {
+      PVALS[p.k] = p.val;
+      return '<tr class="f" data-label="' + esc(p.cd) + '" data-kind="code"><td><span class="cd">' + esc(p.cd) + '</span>' + esc(p.nm) + (p.sl ? '<span class="sl">' + esc(p.sl) + '</span>' : '') + '</td><td><input class="le-in" autocomplete="off" aria-label="' + esc(p.nm) + ' — du code" data-le-f="' + p.k + 'min" data-cb="' + p.k + '" value="' + esc(prev[p.k + 'min'] || '') + '"></td><td>→</td><td><input class="le-in" autocomplete="off" aria-label="' + esc(p.nm) + ' — au code" data-le-f="' + p.k + 'max" data-cb="' + p.k + '" value="' + esc(prev[p.k + 'max'] || '') + '"></td></tr>';
+    }).join('') + (P.length ? '' : '<tr><td colspan="4" style="color:#7B8190;font-size:12px">Aucun plan analytique activé : activez-les dans Administration de l’entité › Analytique.</td></tr>');
+    if (typeof majModal === 'function') majModal();
+  }
+
+  // ---------- recherche ----------
+  function v(k) { var e = q('[data-le-f="' + k + '"]'); return e ? e.value : ''; }
+  function num(k) { var x = parseFloat(v(k)); return isNaN(x) ? null : x; }
+  var TXT = [['numBord', 'numBord'], ['piece', 'piece'], ['facture', 'facture'], ['reference', 'reference'], ['tiers', 'tiers'], ['modePaiement', 'mode'], ['info1', 'info1'], ['info2', 'info2'], ['info3', 'info3'], ['documents', 'documents'], ['liens', 'liens']];
+  var EXTRA = [["exercice","Exercice"],["typeJournal","Type de journal"],["facture","N° facture"],["contrat","N° contrat"],["saisiPar","Saisi par"],["numLettrage","N° lettrage"],["numReleve","N° relevé"],["info1","Information libre 1"],["info2","Information libre 2"],["info3","Information libre 3"],["documents","Documents"],["liens","Liens documentaires"],["budget","Budget"],["ligneBud","Ligne budgétaire"]];
+  function colsVis() { var g = MSS.colsExtra ? MSS.colsExtra.get() : []; return EXTRA.filter(function (x) { return g.indexOf(x[0]) >= 0; }); }
+  var ORD = null;   // ordre des colonnes (indices d'origine), modifiable par glisser-déposer
+  function entete() { return q('table.le-tb').tHead.rows[0]; }
+  function initOrd() { if (!ORD) { ORD = []; [].slice.call(entete().cells).forEach(function (c, i) { c.setAttribute('data-oc', i); ORD.push(i); }); } }
+  function ordreLignes() { if (!ORD) return; [].slice.call(q('[data-le-lignes]').rows).forEach(function (rw) { var cs = [].slice.call(rw.cells); if (cs.length !== ORD.length) return; ORD.forEach(function (o) { rw.appendChild(cs[o]); }); }); }
+  function majCols() {
+    var tb = q('table.le-tb'), vis = colsVis().map(function (x) { return x[0]; }), hide = [];
+    [].slice.call(entete().cells).forEach(function (c, k) { var key = c.getAttribute('data-xc'); hide[k] = !!key && vis.indexOf(key) < 0; });
+    [].slice.call(tb.rows).forEach(function (rw) { [].slice.call(rw.cells).forEach(function (c, k) { c.style.display = hide[k] ? 'none' : ''; }); });
+    tb.style.minWidth = (1900 + vis.length * 160) + 'px';
+  }
+  function deplacer(from, to) {
+    var tb = q('table.le-tb'); if (from === to || from < 1 || to < 1) return;
+    [].slice.call(tb.rows).forEach(function (rw) { var cs = rw.cells, n = cs[from], ref = cs[to]; if (!n || !ref) return; if (from < to) ref.parentNode.insertBefore(n, ref.nextSibling); else ref.parentNode.insertBefore(n, ref); });
+    ORD.splice(to, 0, ORD.splice(from, 1)[0]);
+    var hr = entete(); [].slice.call(hr.cells).forEach(function (c, i) { c.__i = i; });
+    var fr = tb.tHead.querySelector('.tf-row'); if (fr) [].slice.call(fr.cells).forEach(function (c, i) { var inp = c.querySelector('input'); if (inp) inp.dataset.tfc = i; });
+    majCols(); toast('Colonne déplacée.');
+  }
+  (function () {
+    var tb = q('table.le-tb'), src = -1, st = document.createElement('style'); st.textContent = '[data-le] .le-tb thead tr:first-child th[draggable=true]{cursor:grab}[data-le] .le-tb th.le-dov{box-shadow:inset 3px 0 0 #23408E;background:#EEF2FB}[data-le] .le-tb th.le-dsrc{opacity:.45}'; document.head.appendChild(st);
+    function th(e) { var t = e.target.closest && e.target.closest('th'); return t && t.parentNode === entete() ? t : null; }
+    function marquer() { initOrd(); [].slice.call(entete().cells).forEach(function (c, i) { if (i > 0) c.setAttribute('draggable', 'true'); }); }
+    marquer();
+    tb.addEventListener('dragstart', function (e) { var t = th(e); if (!t || t.cellIndex < 1) { e.preventDefault(); return; } src = t.cellIndex; t.classList.add('le-dsrc'); try { e.dataTransfer.effectAllowed = 'move'; e.dataTransfer.setData('text/plain', 'col'); } catch (x) {} });
+    tb.addEventListener('dragover', function (e) { var t = th(e); if (src < 0 || !t || t.cellIndex < 1) return; e.preventDefault(); [].slice.call(entete().cells).forEach(function (c) { c.classList.toggle('le-dov', c === t && c.cellIndex !== src); }); });
+    tb.addEventListener('drop', function (e) { var t = th(e); if (src < 0 || !t) return; e.preventDefault(); var to = t.cellIndex, from = src; src = -1; [].slice.call(entete().cells).forEach(function (c) { c.classList.remove('le-dov', 'le-dsrc'); }); deplacer(from, to); });
+    tb.addEventListener('dragend', function () { src = -1; [].slice.call(entete().cells).forEach(function (c) { c.classList.remove('le-dov', 'le-dsrc'); }); });
+  })();
+  var res = [], SEL = {};
+  function filtrer() {
+    var S = {}; Object.keys(MSS).forEach(function (k) { S[k] = MSS[k].get(); });
+    var PE = plansEff(), RG = regr(), RN = [['pc', 'compte']].concat(RG ? [['preg', RG.key]] : [], PE.map(function (p) { return [p.key, p.key]; })).map(function (x) { return [v(x[0] + 'min').trim(), v(x[0] + 'max').trim(), x[0] === 'pc' ? null : x[1]]; }).filter(function (x) { return x[0] || x[1]; }), du = v('du'), au = v('au'), ed = v('echdu'), ea = v('echau'), lt = v('lettrage'), pt = v('pointage');
+    var mm = [['lmin', 'lmax', function (l) { return l.debit || l.credit; }], ['d1min', 'd1max', function (l) { return l.d1; }], ['d2min', 'd2max', function (l) { return l.d2; }], ['d3min', 'd3max', function (l) { return l.d3; }]].map(function (x) { return [num(x[0]), num(x[1]), x[2]]; });
+    var lb = norm(v('libelle')), lop = (q('[data-le-op="libelle"]') || {}).value || 'contient';
+    var tx = TXT.map(function (t) { return [norm(v(t[0])), t[1]]; }).filter(function (t) { return t[0]; });
+    return donnees().filter(function (l) {
+      if (S.site.length && S.site.indexOf(l.site) < 0) return false; if (S.exercice.length && S.exercice.indexOf(l.exercice) < 0) return false;
+      if (S.typeJournal.length && S.typeJournal.indexOf(l.typeJournal) < 0) return false; if (S.saisiPar.length && S.saisiPar.indexOf(l.saisiPar) < 0) return false; if (S.journal.length && S.journal.indexOf(l.journal) < 0) return false;
+      if (du && l.date < du) return false; if (au && l.date > au) return false; if (ed && (!l.echeance || l.echeance < ed)) return false; if (ea && (!l.echeance || l.echeance > ea)) return false;
+      for (var i = 0; i < mm.length; i++) { var x = mm[i], val = Number(x[2](l)) || 0; if (x[0] !== null && val < x[0]) return false; if (x[1] !== null && val > x[1]) return false; }
+      if (lt === 'oui' && !l.numLettrage) return false; if (lt === 'non' && l.numLettrage) return false; if (pt === 'oui' && !l.numReleve) return false; if (pt === 'non' && l.numReleve) return false;
+      for (var j = 0; j < tx.length; j++) if (norm(l[tx[j][1]]).indexOf(tx[j][0]) < 0) return false;
+      if (lb) { var lv = norm(l.libelle); if (lop === 'commence par' ? lv.indexOf(lb) !== 0 : lop === 'se termine par' ? lv.slice(-lb.length) !== lb : lop === 'égal à' ? lv !== lb : lop === 'ne contient pas' ? lv.indexOf(lb) >= 0 : lv.indexOf(lb) < 0) return false; }
+      for (var a = 0; a < RN.length; a++) { var rg = RN[a], cd = rg[2] ? String((l.ana || {})[rg[2]] || '') : String(l.compte || ''); if (!cd || (rg[0] && cd < rg[0]) || (rg[1] && cd > rg[1] && cd.indexOf(rg[1]) !== 0)) return false; }
+      if (S.etape && S.etape.length && S.etape.indexOf(l.etape) < 0) return false;
+      if (S.contrat.length && S.contrat.indexOf(l.contrat) < 0) return false;      if (S.numLettrage.length && S.numLettrage.indexOf(l.numLettrage) < 0) return false; if (S.numReleve.length && S.numReleve.indexOf(l.numReleve) < 0) return false;
+      return true;
+    }).sort(function (a, b) { return a.date < b.date ? 1 : a.date > b.date ? -1 : (a.numBord < b.numBord ? 1 : a.numBord > b.numBord ? -1 : a.id - b.id); });
+  }
+  function T(x) { return x ? esc(x) : '—'; }
+  function dessiner() {
+    var n = res.length, td = 0, tc = 0; res.forEach(function (l) { td += l.debit; tc += l.credit; });
+    q('[data-le-lignes]').innerHTML = res.map(function (l) {
+      return '<tr><td><input type="checkbox" data-le-ck="' + l.id + '"' + (SEL[l.id] ? ' checked' : '') + ' aria-label="Sélectionner la ligne"></td><td class="m">' + esc(l.numBord) + '</td><td>' + esc(l.site) + '</td><td>' + esc(l.journal) + '</td><td>' + dt(l.date) + '</td><td>' + dt(l.datePiece) + '</td><td>' + esc(l.piece) + '</td><td>' + T(l.reference) + '</td><td class="m">' + esc(l.compte) + '</td><td>' + T(l.tiers) + '</td><td class="lb">' + esc(l.libelle) + '</td><td>' + l.sens + '</td><td class="r">' + (l.debit ? nb(l.debit) : '—') + '</td><td class="r">' + (l.credit ? nb(l.credit) : '—') + '</td><td>' + (l.echeance ? dt(l.echeance) : '—') + '</td><td>' + T(l.etape) + '</td><td>' + T(l.mode) + '</td>' + EXTRA.map(function (x) { return '<td data-xc="' + x[0] + '">' + T(l[x[0]]) + '</td>'; }).join('') + '</tr>';
+    }).join('');
+    ordreLignes(); majCols(); q('[data-le-tout]').checked = false; q('[data-le-vide]').textContent = lance ? 'Aucune écriture ne correspond aux critères.' : 'Définissez vos critères dans la fenêtre de filtrage, puis cliquez sur « Rechercher ».'; q('[data-le-vide]').hidden = n > 0; q('[data-le-compte]').innerHTML = '<b>' + n + '</b> ligne(s) d’écriture';
+    q('[data-le-tot]').innerHTML = 'Total débit <b>' + nb(td) + '</b> — Total crédit <b>' + nb(tc) + '</b>';
+  }
+  function nbFiltres() { return qa('.f').filter(function (f) { return valeur(f); }).length; }
+  function majFa() { var n = nbFiltres(); q('[data-le-fa]').innerHTML = n ? '<span class="le-fa">' + n + ' filtre(s) actif(s)</span>' : ''; var b = q('[data-le-filtres]'); if (b) b.setAttribute('title', n ? n + ' filtre(s) actif(s)' : 'Aucun filtre actif'); }
+  // ---------- fenêtre de filtres : puces, compteurs par section, nombre de résultats en direct ----------
+  function valeur(f) {
+    var h = f.querySelector('[data-ms]'); if (h) { var s_ = MSS[h.getAttribute('data-ms')]; var g = s_ ? s_.get() : []; return g.length ? (g.length <= 2 ? g.join(', ') : g.length + ' valeurs') : ''; }
+    var sg = f.querySelector('[data-seg]'); if (sg) { var hv = sg.querySelector('input'); var bt = hv && hv.value ? sg.querySelector('button.on') : null; return bt ? bt.textContent : ''; }
+    var ins = [].slice.call(f.querySelectorAll('input[data-le-f]'));
+    if (f.getAttribute('data-kind') === 'textop') { var tv = ins[0].value.trim(); return tv ? f.querySelector('select').value + ' « ' + tv + ' »' : ''; }
+    if (ins.length === 2) { var a = ins[0].value.trim(), b = ins[1].value.trim(), k = f.getAttribute('data-kind'); if (k === 'date') { a = dt(a); b = dt(b); } if (a && b) return a === b ? a : a + ' → ' + b; if (a) return k === 'code' ? 'à partir de ' + a : '≥ ' + a; if (b) return k === 'code' ? 'jusqu’à ' + b : '≤ ' + b; return ''; }
+    return ins[0] ? ins[0].value.trim() : '';
+  }
+  function viderChamp(f) {
+    var h = f.querySelector('[data-ms]'); if (h && MSS[h.getAttribute('data-ms')]) MSS[h.getAttribute('data-ms')].reset();
+    [].slice.call(f.querySelectorAll('input[data-le-f]')).forEach(function (i) { i.value = ''; });
+    [].slice.call(f.querySelectorAll('select[data-le-op]')).forEach(function (i) { i.selectedIndex = 0; });
+  }
+  var lcT = null;
+  function majModal() {
+    majCols(); var fs = qa('.f'), cnt = {}, html = '', n = 0;
+    fs.forEach(function (f, i) {
+      [].slice.call(f.querySelectorAll('input.le-in')).forEach(function (e) { e.classList.toggle('filled', !!e.value); });
+      var val = valeur(f); if (!val) return; n++; var sec = f.closest('[data-s]').getAttribute('data-s'); cnt[sec] = (cnt[sec] || 0) + 1;
+      html += '<span class="lf-chip">' + esc(f.getAttribute('data-label')) + ' : <b>' + esc(val) + '</b><button type="button" title="Retirer ce filtre" data-lf-x="' + i + '">×</button></span>';
+    });
+    qa('.lf-seg').forEach(function (sg) { var v_ = sg.querySelector('input').value; [].slice.call(sg.querySelectorAll('button')).forEach(function (bt) { bt.classList.toggle('on', bt.getAttribute('data-v') === v_); }); });
+    q('[data-lf-chips]').innerHTML = '<span class="lb">Filtres actifs</span>' + (n ? html + '<button type="button" class="lf-lk" data-lf-all>Tout effacer</button>' : '<span class="vd">Aucun — toutes les écritures seront affichées</span>');
+    qa('[data-lf-nav] a').forEach(function (a) { var c = cnt[a.getAttribute('data-s')] || 0, e = a.querySelector('.n'); e.textContent = c; e.classList.toggle('show', c > 0); });
+    q('[data-lf-st]').textContent = n ? n + ' filtre' + (n > 1 ? 's' : '') + ' actif' + (n > 1 ? 's' : '') : '';
+    var bb = q('[data-lf-b]'); bb.hidden = !n; bb.textContent = n;
+    var r = q('[data-lf-res]'); r.classList.add('ld'); clearTimeout(lcT);
+    lcT = setTimeout(function () { var c = filtrer().length; r.classList.remove('ld'); r.classList.toggle('z', c === 0); q('[data-lf-n]').textContent = c.toLocaleString('fr-FR'); q('[data-lf-n]').hidden = c === 0; q('[data-lf-t]').textContent = c === 0 ? 'aucune écriture ne correspond' : c === 1 ? 'ligne d’écriture correspond' : 'lignes d’écriture correspondent'; }, 250);
+  }
+  var FM = q('[data-le-form]');
+  (function () { var c1 = document.createElement('div'), c2 = document.createElement('div'), c3 = document.createElement('div'); c1.className = c2.className = c3.className = 'lf-c'; ['journal', 'refs', 'trait'].forEach(function (k) { c1.appendChild(FM.querySelector('.lf-s[data-s="' + k + '"]')); }); ['comptes', 'infos', 'montants'].forEach(function (k) { c3.appendChild(FM.querySelector('.lf-s[data-s="' + k + '"]')); }); FM.appendChild(c1); FM.appendChild(c3); })();
+  FM.addEventListener('input', function (e) { if (e.target.matches('input.le-in:not(.le-msf-in)')) majModal(); });
+  FM.addEventListener('change', function (e) { if (e.target.matches('select[data-le-op], .le-msp input[type=checkbox]')) majModal(); });
+  q('[data-lf-chips]').addEventListener('click', function (e) {
+    var x = e.target.closest('[data-lf-x]'); if (x) { viderChamp(qa('.f')[+x.getAttribute('data-lf-x')]); majModal(); return; }
+    if (e.target.closest('[data-lf-all]')) { qa('.f').forEach(viderChamp); majModal(); }
+  });
+  q('[data-lf-main]').addEventListener('click', function (e) {
+    var sb = e.target.closest('.lf-seg button'); if (sb) { var sg = sb.parentNode; sg.querySelector('input').value = sb.getAttribute('data-v'); majModal(); return; }
+    var pr = e.target.closest('[data-pre]'); if (pr) {
+      var t0 = new Date(), y = t0.getFullYear(), mo = t0.getMonth(), d1, d2, iso = function (d) { return d.getFullYear() + '-' + pad(d.getMonth() + 1, 2) + '-' + pad(d.getDate(), 2); }, k = pr.getAttribute('data-pre');
+      if (k === 'month') { d1 = new Date(y, mo, 1); d2 = new Date(y, mo + 1, 0); } else if (k === 'quarter') { var qm = Math.floor(mo / 3) * 3; d1 = new Date(y, qm, 1); d2 = new Date(y, qm + 3, 0); } else { d1 = new Date(y, 0, 1); d2 = new Date(y, 11, 31); }
+      q('[data-le-f="du"]').value = iso(d1); q('[data-le-f="au"]').value = iso(d2); majModal();
+    }
+  });
+  // « = » dans « Du code » : code unique (recopié dans « Au code »)
+  FM.addEventListener('keydown', function (e) {
+    if (e.key !== '=' || !e.target.matches('[data-cb]')) return; var tr = e.target.closest('tr'), ins = tr ? tr.querySelectorAll('input[data-le-f]') : []; if (ins.length === 2 && ins[0] === e.target) { e.preventDefault(); ins[1].value = ins[0].value; if (window.cbFermerLe) window.cbFermerLe(); majModal(); }
+  });
+  // navigation latérale + suivi du défilement
+  var LM = q('[data-lf-main]');
+  qa('[data-lf-nav] a').forEach(function (a) { a.addEventListener('click', function (e) { e.preventDefault(); var sec = q('.lf-s[data-s="' + a.getAttribute('data-s') + '"]'); LM.scrollTo({ top: sec.offsetTop - LM.offsetTop - 4 }); }); });
+  function espion() {
+    var ss = qa('.lf-s'), cur = ss[0]; ss.forEach(function (x) { if (x.offsetTop - LM.offsetTop - 40 <= LM.scrollTop) cur = x; });
+    if (LM.scrollTop + LM.clientHeight >= LM.scrollHeight - 2) cur = ss[ss.length - 1];
+    qa('[data-lf-nav] a').forEach(function (a) { a.classList.toggle('on', a.getAttribute('data-s') === cur.getAttribute('data-s')); });
+  }
+  LM.addEventListener('scroll', espion);
+  q('[data-le-ov]').addEventListener('keydown', function (e) { if (e.key === 'Enter' && (e.ctrlKey || e.metaKey)) { e.preventDefault(); rechercher(true); } });
+  function ouvrirFiltres() { q('[data-le-ov]').hidden = false; LM.scrollTop = 0; majModal(); espion(); }
+  function fermerFiltres() { fermerTout(); q('[data-le-ov]').hidden = true; }
+  function rechercher(msg) { lance = true; fermerFiltres(); res = filtrer(); majFa(); dessiner(); if (msg) toast(res.length + ' ligne(s) trouvée(s).'); }
+  function reinit() { lance = true; Object.keys(MSS).forEach(function (k) { if (k !== 'colsExtra') MSS[k].reset(); }); qa('[data-le-f]').forEach(function (e) { e.value = ''; }); qa('[data-le-op]').forEach(function (e) { e.selectedIndex = 0; }); majModal(); res = filtrer(); majFa(); dessiner(); toast('Critères réinitialisés.'); }
+  function exporter(fmt) {
+    var X = window.EXPORT_TABLEAU; if (!X) { toast('Module d’export indisponible.'); return; } if (!res.length) { toast('Aucune écriture à exporter.'); return; }
+    var Tt = ['NUMBORD', 'Site', 'Journal', 'Date écriture', 'Date pièce', 'N° pièce', 'Référence', 'Compte', 'Tiers', 'Libellé', 'Sens', 'Débit', 'Crédit', 'Échéance', 'Étape actuelle', 'Mode de paiement'].concat(colsVis().map(function (x) { return x[1]; })),
+      rows = res.map(function (l) { return [l.numBord, l.site, l.journal, dt(l.date), dt(l.datePiece), l.piece, l.reference, l.compte, l.tiers, l.libelle, l.sens, l.debit || '', l.credit || '', dt(l.echeance), l.etape, l.mode].concat(colsVis().map(function (x) { return l[x[0]] || ''; })); });
+    if (fmt === 'pdf') X.pdf('liste_des_ecritures.pdf', 'Liste des écritures', res.length + ' ligne(s)', Tt, rows); else X.xlsx('liste_des_ecritures.xlsx', 'Liste des écritures', Tt, rows);
+    toast('Export ' + (fmt === 'pdf' ? 'PDF' : 'Excel (XLSX)') + ' généré : ' + res.length + ' ligne(s).');
+  }
+
+  // ---------- fiche d'imputation (mouvement-imputation) : une page paysage par pièce, en-tête de pièce, lignes imputées (axes, ligne budgétaire), totaux et signataires choisis ----------
+  function libCompte(c) { var r = (window.PLAN_COMPTABLE || []).filter(function (x) { return x.code === c; })[0]; return r ? (r.libelle || r.label || '') : ''; }
+  function entite() { var v = ''; [].slice.call(document.querySelectorAll('.ig-f')).forEach(function (f) { var l = f.querySelector('.ig-l'), i = f.querySelector('input,select'); if (!v && l && i && /raison sociale|nom de l.entit|d[ée]nomination/i.test(l.textContent.trim()) && i.value) v = i.value; }); return v || 'SOFTWELL - Version partenaire SOFTWELL - MADAGASCAR'; }
+  function pieces(lignes) {
+    var ordre = [], par = {}; lignes.forEach(function (l) { var k = l.numBord + '|' + l.piece; if (!par[k]) { par[k] = []; ordre.push(k); } par[k].push(l); });
+    return ordre.map(function (k) { return par[k]; });
+  }
+  function ficheHtml(P, sig, nb_) {
+    var e = P[0], td = 0, tc = 0, now = new Date(), ed = now.toLocaleDateString('fr-FR') + ' à ' + ('0' + now.getHours()).slice(-2) + ':' + ('0' + now.getMinutes()).slice(-2) + ' (UTC+3)';
+    function L(x) { return esc(x || ''); }
+    var rows = P.map(function (l) {
+      td += l.debit; tc += l.credit; var an = /^[67]/.test(l.compte), a = l.ana || {};
+      function ax(nom, c) { return an && c ? esc(c + (nom ? ' - ' + nom : '')) : ''; }
+      function nomAxe(k, c) { var L_ = (AX()[k] || []).filter(function (x) { return x.code === c; })[0]; return L_ ? L_.label : ''; }
+      return '<tr><td>' + esc(l.compte + (libCompte(l.compte) ? ' - ' + libCompte(l.compte) : '') + (l.tiers ? ' - ' + l.tiers : '')) + '</td><td>' + ax(nomAxe('ACTIVITE', a.p1), a.p1) + '</td><td>' + ax(nomAxe('POSTE BUDGETAIRE', a.p2), a.p2) + '</td><td>' + ax(nomAxe('FINANCEMENT', a.p3), a.p3) + '</td><td>' + ax(nomAxe('GEOGRAPHIQUE', a.p4), a.p4) + '</td><td>' + (an ? L(l.ligneBud) : '') + '</td><td>' + L(l.libelle) + '</td><td class="r">' + (l.debit ? nb(l.debit) : '') + '</td><td class="r">' + (l.credit ? nb(l.credit) : '') + '</td></tr>';
+    }).join('');
+    var sg = function (s) { return '<td>' + L(s.titre) + '<br><br><br><b>' + L(s.nom) + '</b></td>'; };
+    return '<div class="fi"><div class="ent">' + esc(entite()) + '</div>' +
+      '<table class="t0"><tr><th>Site</th><th>Journal</th><th>Marché</th><th>Date compta</th><th>N° pièce</th><th>Date pièce</th><th>Réf. facture</th><th>Réf. paiement</th><th>Bénéf. paiement</th><th>Commentaire</th></tr>' +
+      '<tr><td>' + L(e.siteCode + ' - ' + e.site) + '</td><td>' + L(e.journal) + '</td><td>' + L(e.contrat) + '</td><td>' + dt(e.date) + '</td><td>' + L(e.piece) + '</td><td>' + dt(e.datePiece) + '</td><td>' + L(e.reference || e.facture) + '</td><td>' + L(e.mode) + '</td><td>' + L(e.tiers) + '</td><td>' + L(e.libelle) + '</td></tr></table>' +
+      '<table class="t1"><tr><th>Compte</th><th>Acti</th><th>Ss cpte</th><th>Fin.</th><th>CR</th><th>N° ligne bud</th><th>Libellé</th><th class="r">Débit<br>MGA</th><th class="r">Crédit<br>MGA</th></tr>' + rows +
+      '<tr class="tot"><td colspan="7" class="r">Totaux</td><td class="r">' + nb(td) + '</td><td class="r">' + nb(tc) + '</td></tr></table>' +
+      '<p class="ref">' + esc(e.numBord) + ' : (' + dt(e.date) + ' - ' + esc(e.siteCode) + e.numBord.slice(-4) + ') - Saisie le ' + dt(e.date) + ' Par ' + L(e.saisiPar) + '</p>' +
+      '<table class="sg"><tr>' + sg(sig[0]) + sg(sig[1]) + '</tr></table>' +
+      '<div class="pied"><span>SoftAccounting - SoftWell - Madagascar</span><span>Édité le ' + ed + '</span></div></div>';
+  }
+  var CSS_FICHE = '@page{size:A4 landscape;margin:10mm}body{margin:0;font:9.5px/1.35 Arial,Helvetica,sans-serif;color:#000}.fi{page-break-after:always;min-height:185mm;position:relative}.fi:last-child{page-break-after:auto}.ent{font-weight:700;font-size:11px;margin:0 0 6px}table{border-collapse:collapse;width:100%;margin:0 0 8px}th{text-align:left;font-weight:700;padding:3px 4px;vertical-align:bottom;border-bottom:1px solid #000}td{padding:3px 4px;vertical-align:top}.t1 td{border-bottom:1px solid #DDD}.r{text-align:right;white-space:nowrap}.tot td{font-weight:700;border-top:1px solid #000}.ref{margin:6px 0 14px;font-size:9px}.sg td{width:50%;padding-top:4px}.pied{position:absolute;left:0;right:0;bottom:0;display:flex;justify-content:space-between;font-size:8.5px;color:#444;border-top:1px solid #CCC;padding-top:3px}';
+  function docFiche(pages) { return '<!doctype html><html><head><meta charset="utf-8"><title>Fiche d’imputation</title><' + 'style>' + CSS_FICHE + '<' + '/style><' + '/head><' + 'body>' + pages.join('') + '<' + '/body><' + '/html>'; }
+  function ouvrirFiche() {
+    var O = window.FACTURE_OCR; if (!O || !O.fenetre) { toast('Impression indisponible.'); return; }
+    var cochees = res.filter(function (l) { return SEL[l.id]; }), src = cochees.length ? cochees : res; if (!src.length) { toast('Aucune écriture à imprimer : lancez une recherche.'); return; }
+    var PP = pieces(src), sigs = (window.SIGNATAIRES || []).filter(function (s) { return s.actif !== false; }), w = O.fenetre('Imprimer la fiche d’imputation', true, 'printer', 'Fiche d’imputation');
+    var opt = '<option value="">— Aucun —</option>' + sigs.map(function (s) { return '<option value="' + esc(s.code) + '">' + esc(s.code + ' — ' + s.nom + (s.libelle ? ' (' + s.libelle + ')' : '')) + '</option>'; }).join('');
+    w.b.innerHTML = '<p style="margin:0 0 10px;font-size:13px;color:#474C58"><b>' + PP.length + '</b> fiche(s) d’imputation (une page par pièce) à partir de <b>' + src.length + '</b> ligne(s) ' + (cochees.length ? 'cochée(s)' : 'du résultat de la recherche') + '. Choisissez les signataires qui figureront au bas de chaque fiche.</p>' +
+      '<div class="fo-fl"><label>Signataire 1<select class="fo-in" data-fs="s1">' + opt + '</select></label><label>Intitulé du signataire 1<input class="fo-in" data-fs="t1" maxlength="40" placeholder="Ex : Le Comptable"></label>' +
+      '<label>Signataire 2<select class="fo-in" data-fs="s2">' + opt + '</select></label><label>Intitulé du signataire 2<input class="fo-in" data-fs="t2" maxlength="40" placeholder="Ex : Le RAF"></label></div>' +
+      '<div class="fo-sec">Aperçu de la première fiche</div><iframe data-fs="pv" title="Aperçu de la fiche" style="width:100%;height:380px;border:1px solid #D5DBE5;border-radius:8px;background:#fff"></iframe><div data-fs="er"></div>';
+    w.f.innerHTML = '<button type="button" data-fs-x>Annuler</button><button type="button" class="p" data-fs-p><i class="ti ti-printer"></i> Imprimer</button>';
+    var Q = function (k) { return w.b.querySelector('[data-fs="' + k + '"]'); };
+    function sig() { return [1, 2].map(function (i) { var c = Q('s' + i).value, s = sigs.filter(function (x) { return x.code === c; })[0]; return { nom: s ? s.nom : '', titre: Q('t' + i).value.trim() }; }); }
+    function apercu() { var d = Q('pv').contentWindow.document; d.open(); d.write(docFiche([ficheHtml(PP[0], sig())])); d.close(); }
+    [1, 2].forEach(function (i) { Q('s' + i).addEventListener('change', function () { var s = sigs.filter(function (x) { return x.code === this.value; }.bind(this))[0]; Q('t' + i).value = s ? (s.libelle || s.fonction || '') : ''; apercu(); }); Q('t' + i).addEventListener('input', apercu); });
+    if (sigs[0]) { Q('s1').value = sigs[0].code; Q('t1').value = sigs[0].libelle || ''; } if (sigs[1]) { Q('s2').value = sigs[1].code; Q('t2').value = sigs[1].libelle || ''; } apercu();
+    w.f.querySelector('[data-fs-x]').addEventListener('click', O.fermer);
+    w.f.querySelector('[data-fs-p]').addEventListener('click', function () {
+      var s = sig(); if (Q('s1').value && Q('s1').value === Q('s2').value) { Q('er').innerHTML = '<div class="fo-ko">Les deux signataires doivent être différents.</div>'; return; }
+      var f = document.createElement('iframe'); f.style.cssText = 'position:fixed;right:0;bottom:0;width:0;height:0;border:0'; document.body.appendChild(f);
+      var d = f.contentWindow.document; d.open(); d.write(docFiche(PP.map(function (P) { return ficheHtml(P, s); }))); d.close();
+      setTimeout(function () { try { f.contentWindow.focus(); f.contentWindow.print(); } catch (x) {} setTimeout(function () { f.remove(); }, 1500); }, 300);
+      O.fermer(); toast(PP.length + ' fiche(s) d’imputation envoyée(s) à l’impression.');
+    });
+  }
+  q('[data-le-fiche]').addEventListener('click', ouvrirFiche);
+  q('[data-le-modifier]').addEventListener('click', function () {
+    var c = res.filter(function (l) { return SEL[l.id]; });
+    if (!c.length) { toast('Cochez une ligne de la pièce à corriger.'); return; }
+    var cles = {}; c.forEach(function (l) { cles[l.journal + '|' + l.piece + '|' + l.date] = 1; });
+    if (Object.keys(cles).length > 1) { toast('Sélectionnez les lignes d’une seule pièce à la fois.'); return; }
+    var l0 = c[0], pc = donnees().filter(function (x) { return x.journal === l0.journal && x.piece === l0.piece && x.date === l0.date; });
+    if (!window.ECRITURES_MODIF) { toast('Saisie d’écritures indisponible.'); return; }
+    if (window.ECRITURES_MODIF.charger(pc)) location.hash = '#ecritures';
+  });
+  q('[data-le-lignes]').addEventListener('change', function (e) { var id = e.target.getAttribute('data-le-ck'); if (id !== null) { if (e.target.checked) SEL[id] = 1; else delete SEL[id]; } });
+  q('[data-le-tout]').addEventListener('change', function () { var on = this.checked; res.forEach(function (l) { if (on) SEL[l.id] = 1; else delete SEL[l.id]; }); qa('[data-le-ck]').forEach(function (c) { c.checked = on; }); });
+  q('[data-le-filtres]').addEventListener('click', ouvrirFiltres); q('[data-le-fermer]').addEventListener('click', fermerFiltres); q('[data-le-annuler]').addEventListener('click', fermerFiltres);
+  q('[data-le-ov]').addEventListener('keydown', function (e) { if (e.key === 'Escape') fermerFiltres(); });
+  q('[data-le-rech]').addEventListener('click', function () { rechercher(true); });
+  q('[data-le-reinit]').addEventListener('click', reinit);
+  q('[data-le-pdf]').addEventListener('click', function () { exporter('pdf'); }); q('[data-le-xlsx]').addEventListener('click', function () { exporter('xlsx'); });
+  q('[data-le-form]').addEventListener('keydown', function (e) { if (e.key === 'Enter' && e.target.matches('input:not([type=search])')) { e.preventDefault(); rechercher(true); } });
+  var lance = false;
+  function init() { construire(); res = lance ? filtrer() : []; dessiner(); if (!lance && location.hash === '#listeecritures') ouvrirFiltres(); }
+  window.addEventListener('hashchange', function () { if (location.hash === '#listeecritures') init(); });
+  window.addEventListener('exercices-changed', function () { construire(); });
+  ['plans-changed', 'plans-actifs', 'regroupement-changed'].forEach(function (ev) { window.addEventListener(ev, function () { construire(); res = lance ? filtrer() : []; majFa(); dessiner(); }); });
+  window.addEventListener('load', function () { setTimeout(init, 300); }); init();
+})();
+</script>

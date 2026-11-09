@@ -66,6 +66,7 @@
 .ds-col{display:flex;flex-direction:column;gap:14px;min-width:0}.ds-full{grid-column:1 / -1}
 .ds-card{border:1px solid #E9EBF0;border-radius:12px;background:#fff;padding:14px 16px}
 .ds-card h2{margin:0;font-size:15px;font-weight:700;color:#0B1332}.ds-card h3{margin:0;font-size:13.5px;font-weight:700;color:#353944}
+.ds-ck{display:flex;align-items:center;gap:8px;margin-top:14px;font-size:13px;font-weight:600;color:#353944}.ds-ck input{width:16px;height:16px;accent-color:#2E427B}
 .ds-hint{margin:4px 0 0;font-size:11px;line-height:1.35;color:#5B606D}
 .ds-g3{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:10px;margin-top:6px}.ds-g2{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:10px;margin-top:6px}
 .ds-in{width:100%;border:1px solid #D5DBE5;border-radius:8px;padding:6px 9px;font:inherit;font-size:12.5px;background:#fff}.ds-in:disabled{background:#F5F7F9;color:#5B606D}
@@ -216,7 +217,9 @@
     var z = zone(id); if (!z || id === 'Detail1') return;
     elems = elems.filter(function (e) { return e.parentElement !== z; }); z.remove(); reseps(); select(null); selZone = null; fitDetail(); renderSources();
   }
+  var regr = null;
   function setZones(list) {
+    regr = null;
     qa('.df-zone').forEach(function (x) { x.remove(); }); elems.forEach(function (e) { e.remove(); }); elems = []; select(null);
     list.forEach(addSection); reseps(); fitDetail();
   }
@@ -292,7 +295,7 @@
       var el = sel, v = elV(el), ty = el.dataset.type, nom = ty + ' (' + el.dataset.zone + ')', sub = 'Élément — ' + nom, key = ty + ':' + elems.indexOf(el);
       var foot = '<div class="pp-foot"><button type="button" class="pp-btn dng" data-pp-act="suppr"><i class="ti ti-trash"></i> Supprimer</button></div>';
       if (ty === 'texte') return { key: key, title: 'Propriétés', sub: sub, foot: foot, tabs: [
-        { id: 'cont', label: 'Contenu', fields: [{ k: 'content', t: 'textarea', l: 'Contenu', v: v.content }, { k: 'champ', t: 'select', l: 'Insérer un champ', v: '', opts: [['', '— Choisir —']].concat(FIELDS.map(function (x) { return [x, x]; })) }] },
+        { id: 'cont', label: 'Contenu', fields: [{ k: 'content', t: 'textarea', l: 'Contenu', v: v.content }, { t: 'raw', html: '<div class="pp-f"><label class="pp-lab">Champs dynamiques</label><button type="button" class="pp-btn" data-pp-act="champs"><i class="ti ti-braces"></i> Insérer un champ dynamique…</button></div>' }] },
         { id: 'forme', label: 'Mise en forme', fields: G.police(v) }, { id: 'pos', label: 'Position', fields: G.position(v) }] };
       if (ty === 'image') return { key: key, title: 'Propriétés', sub: sub, foot: foot, tabs: [
         { id: 'src', label: 'Source', fields: G.source(v, PRESETS) }, { id: 'dim', label: 'Dimensionnement', fields: G.dimension(v) }, { id: 'pos', label: 'Position', fields: G.position(v, { sansTaille: true }) }] };
@@ -352,6 +355,9 @@
   function ppAct(a) {
     if (a === 'suppr' && sel) { elems = elems.filter(function (x) { return x !== sel; }); sel.remove(); select(null); }
     else if (a === 'zsuppr' && selZone) removeSection(selZone.dataset.dfZone);
+    else if (a === 'champs' && sel && window.SC_CHAMPS) {
+      var cible = sel; window.SC_CHAMPS.ouvrir({ titre: 'Insérer un champ dynamique', onChoisir: function (code) { if (sel !== cible) select(cible); ppKey('champ', code, null, 'change'); } });
+    }
   }
   pp = window.PP.mount(q('[data-df-pbody]'), ppSpec, 'data-pp', ppKey, ppAct);
   q('[data-df-pbody]').addEventListener('input', onPanel); q('[data-df-pbody]').addEventListener('change', onPanel);
@@ -447,6 +453,30 @@
   function fieldForm(zid) {
     return '<div class="ds-g2" style="grid-template-columns:repeat(3,minmax(0,1fr))"><div><label class="ds-lab">Type de champ</label><select class="ds-in"><option>Texte</option><option>Image</option></select></div><div><label class="ds-lab">Nom du champ</label><input class="ds-in" placeholder="Ex : Titre"></div><div><label class="ds-lab">Contenu</label><input class="ds-in" placeholder="Texte affiché"></div></div><button type="button" class="ds-btn" data-ds-addfield="' + zid + '">+ Ajouter le champ</button>';
   }
+
+  /* ---------- regroupement : axe de rupture, niveau d'analyse, niveau de détail, saut de page à chaque rupture ---------- */
+  var AXES = [['', '— Aucun —'], ['1', 'PC — PLAN COMPTABLE'], ['3', 'PLAN1 — ACTIVITE'], ['4', 'PLAN2 — POSTE BUDGETAIRE'], ['5', 'PLAN3 — FINANCEMENT'], ['6', 'PLAN4 — GEOGRAPHIQUE']];
+  function niveauxAxe(a) { return a === '5' ? ['Convention', 'Catégorie'] : (a ? ['Niveau 1', 'Niveau 2', 'Niveau 3'] : []); }
+  function regrState() {
+    var gh = zone('GroupHeader1'), gf = zone('GroupFooter1');
+    if (!regr) regr = gh ? { axe: '5', niv: 'Catégorie', det: '', saut: true } : { axe: '', niv: '', det: '', saut: false };
+    regr.saut = !!(regr.axe && regr.niv);   // un regroupement entraîne toujours un saut de page à chaque rupture
+    return regr;
+  }
+  function syncRegr() {
+    var r = regrState();
+    if (preset === 'A2') { (window.__cfgA2 || (window.__cfgA2 = {})).regr = { axe: r.axe, niv: r.niv, det: r.det, saut: !!r.saut }; return; }
+    if (preset === '102') { (window.__cfg102 || (window.__cfg102 = {})).regr = { axe: r.axe, niv: r.niv, det: r.det, saut: !!r.saut }; return; }
+    var gf = zone('GroupFooter1'), gh = zone('GroupHeader1'); if (gf) gf.dataset.sa = r.saut ? '1' : '0'; if (gh) gh.dataset.sb = '0';
+    window.__soe4F = { sautCat: !!r.saut };
+  }
+  function regrHtml() {
+    var R = regrState(), NIV = niveauxAxe(R.axe), ok = !!(R.axe && R.niv);
+    return '<section class="ds-card ds-full"><h3>Regroupement et niveau de détail</h3><div class="ds-g2"><div><label class="ds-lab">Axe de rupture</label><select class="ds-in" data-ds-axe>' + opts(AXES, R.axe) + '</select></div>' +
+      '<div><label class="ds-lab">Niveau d’analyse</label><select class="ds-in" data-ds-niv' + (R.axe ? '' : ' disabled') + '><option value="">— Aucun —</option>' + NIV.map(function (n) { return '<option' + (n === R.niv ? ' selected' : '') + '>' + esc(n) + '</option>'; }).join('') + '</select></div></div>' +
+      '<label class="ds-lab">Niveau de détail</label><select class="ds-in" data-ds-det><option value="">— Aucun —</option>' + srcCols.map(function (c) { return '<option' + (c.n === R.det ? ' selected' : '') + '>' + esc(c.n) + '</option>'; }).join('') + '</select>' +
+      '<p class="ds-hint">' + (ok ? 'Les lignes sont regroupées par ' + esc(R.niv.toLowerCase()) + ' : une nouvelle page commence automatiquement à chaque changement de ' + esc(R.niv.toLowerCase()) + ' (aperçu live et état imprimé).' : 'Choisissez un axe de rupture et un niveau d’analyse pour regrouper les lignes de l’état.') + '</p></section>';
+  }
   function renderSources() {
     var box = q('[data-df-src]'); if (!box) return;
     var zs = qa('[data-df-zone]'), rows = [{ id: 'TopMargin1', d: 'Marge supérieure', h: mT, m: 't' }];
@@ -467,9 +497,7 @@
       '<div><label class="ds-lab">Nom du colonne (personnalisé)</label><input class="ds-in" data-ds-nom placeholder="Nom affiché dans le tableau"></div>' +
       '<div><label class="ds-lab">Type</label><select class="ds-in" data-ds-type><option value="texte">Texte</option><option value="donnees">Données / Montant</option></select></div></div>' +
       '<div class="ds-act"><button type="button" class="ds-btn" data-ds-add>Enregistrer</button><button type="button" class="ds-btn ds-sec" data-ds-cancel>Annuler</button></div></div>' : colsHtml) + '</section>' +
-      '<section class="ds-card ds-full"><h3>Regroupement et niveau de détail</h3><div class="ds-g2"><div><label class="ds-lab">Axe de rupture</label><select class="ds-in">' + opts([['', '— Aucun —'], ['1', 'PC — PLAN COMPTABLE'], ['3', 'PLAN1 — ACTIVITE'], ['4', 'PLAN2 — POSTE BUDGETAIRE'], ['5', 'PLAN3 — FINANCEMENT'], ['6', 'PLAN4 — GEOGRAPHIQUE']], zone('GroupHeader1') ? '5' : '') + '</select></div>' +
-      '<div><label class="ds-lab">Niveau d’analyse</label><select class="ds-in"' + (zone('GroupHeader1') ? '' : ' disabled') + '><option>— Aucun —</option>' + (zone('GroupHeader1') ? '<option selected>Catégorie</option>' : '') + '</select></div></div>' +
-      '<label class="ds-lab">Niveau de détail</label><select class="ds-in"><option>— Aucun —</option>' + srcCols.map(function (c) { return '<option>' + esc(c.n) + '</option>'; }).join('') + '</select></section>' +
+      regrHtml() +
       '</div>';
     var bm = q('[data-df-mep]'); if (bm) bm.innerHTML = '<div class="ds">' +
       '<div class="ds-col"><section class="ds-card"><h2>Mise en page du document</h2>' +
@@ -487,7 +515,10 @@
   var src = q('[data-df-src]');
   src.parentNode.addEventListener('change', function (e) {
     var t = e.target;
-    if (t.matches('[data-ds-table]')) { var c = q('[data-ds-col]'); c.disabled = !t.value; c.innerHTML = '<option value="">— Choisir —</option>' + (t.value ? COLCHOICES.map(function (x) { return '<option>' + x + '</option>'; }).join('') : ''); }
+    if (t.matches('[data-ds-axe]')) { regrState(); regr.axe = t.value; regr.niv = t.value ? niveauxAxe(t.value).slice(-1)[0] : ''; syncRegr(); renderSources(); }
+    else if (t.matches('[data-ds-niv]')) { regrState(); regr.niv = t.value; syncRegr(); renderSources(); }
+    else if (t.matches('[data-ds-det]')) { regrState(); regr.det = t.value; }
+    else if (t.matches('[data-ds-table]')) { var c = q('[data-ds-col]'); c.disabled = !t.value; c.innerHTML = '<option value="">— Choisir —</option>' + (t.value ? COLCHOICES.map(function (x) { return '<option>' + x + '</option>'; }).join('') : ''); }
     else if (t.matches('[data-ds-paper]') || t.matches('[data-ds-orient]')) { setPaper(q('[data-ds-paper]').value, q('[data-ds-orient]').value); renderSources(); }
     else if (t.dataset.dsM) { var v = Math.max(0, num(t.value, 0)); if (t.dataset.dsM === 't') mT = v; else if (t.dataset.dsM === 'b') mB = v; else if (t.dataset.dsM === 'l') mL = v; else mR = v; fitDetail(); renderSources(); }
     else if (t.dataset.dsH) { zone(t.dataset.dsH).style.minHeight = Math.max(10, num(t.value, 40)) + 'px'; fitDetail(); renderSources(); }
@@ -535,6 +566,159 @@
     srcCols = COLS_4F.map(function (c, k) { return { t: 'Demande de remboursement', s: c.f.replace(/[\[\]]/g, ''), n: c.h, d: k >= 3 && k <= 7 }; });
     renderSources();
   }
+
+  /* ---------- modèle préparamétré « A2 — État récapitulatif des dépenses » (procédure BAD) ---------- */
+  var COLS_A2 = [{ h: 'Poste N°', f: '[N° poste]', w: 3 }, { h: 'Fournisseur / Prestataire de Services', f: '[Fournisseur]', w: 9 }, { h: '8. Pays d’origine', f: '[Pays d’origine]', w: 6 },
+    { h: '9. Description des biens/services/travaux', f: '[Description]', w: 12 }, { h: '10. Référence Contrat de l’Emprunteur', f: '[Réf. contrat emprunteur]', w: 7 }, { h: '11. Référence Contrat de la BAD', f: '[Réf. contrat BAD]', w: 7 },
+    { h: '12. Montant Total du Contrat', f: '[Montant contrat]', w: 8 }, { h: '13. Part financée par la Banque', f: '[Part Banque]', w: 7 }, { h: '14. Montant déjà payé par la Banque', f: '[Déjà payé]', w: 7 },
+    { h: '15. Réf. N° Facture', f: '[Réf. facture]', w: 8 }, { h: '16. Date de Facture', f: '[Date facture]', w: 6 }, { h: '17. Montant demandé pour paiement', f: '[Montant demandé]', w: 7 },
+    { h: '18. Date de paiement', f: '[Date paiement]', w: 6 }, { h: '19. Preuve de paiement', f: '[Preuve de paiement]', w: 7 }];
+  var COLS_A2_GRP = [{ h: '7. Biens/Services/Travaux', f: '', w: 30 }, { h: 'Contrat / Bon de commande', f: '', w: 36 }, { h: 'Facture', f: '', w: 14 }, { h: 'Paiement', f: '', w: 20 }];
+  function applyA2() {
+    preset = 'A2'; window.__soe4F = { sautCat: false }; mT = 30; mB = 24; mL = 24; mR = 24; setPaper('A4', 'landscape');
+    setZones([{ id: 'PageHeader1', h: 200 }, { id: 'Detail1' }, { id: 'PageFooter1', h: 116 }]);
+    regr = { axe: '5', niv: 'Catégorie', det: '', saut: true }; syncRegr();
+    put('PageHeader1', 'texte', 0, 6, 260, 18, 'Date     [Date d’édition]');
+    put('PageHeader1', 'texte', 0, 26, 260, 18, 'Page     [Page]  De  [NbPages]');
+    put('PageHeader1', 'texte', 300, 8, 480, 26, 'A2 État Récapitulatif des Dépenses', { b: '1', al: 'center', fs: '16' });
+    put('PageHeader1', 'texte', 800, 6, 275, 18, '1. Type de demande :', { cls: 'b' });
+    put('PageHeader1', 'texte', 800, 26, 275, 16, '[Case type 1] Remboursement');
+    put('PageHeader1', 'texte', 800, 42, 275, 16, '[Case type 2] Compte spécial');
+    put('PageHeader1', 'texte', 800, 58, 275, 16, '[Case type 3] Justification sans réapprovisionnement');
+    put('PageHeader1', 'texte', 800, 74, 275, 16, '[Case type 4] Paiement direct');
+    put('PageHeader1', 'texte', 0, 62, 700, 18, '2. Numéro prêt/don          [N° prêt/don]');
+    put('PageHeader1', 'texte', 0, 82, 780, 18, '4. Titre de Projet          [Titre du projet]');
+    put('PageHeader1', 'texte', 0, 102, 780, 18, '5. Catégorie / Sous-Projet          [Catégorie / Sous-projet]');
+    put('PageHeader1', 'texte', 800, 102, 275, 18, '3. Demande N°          [N° demande]');
+    put('PageHeader1', 'texte', 800, 122, 275, 18, '6. Devise          [Devise de la demande]');
+    put('PageHeader1', 'tableau', 0, 142, 1075, 22, '', { cols: JSON.stringify(COLS_A2_GRP), part: 'head', fs: '9' });
+    put('PageHeader1', 'tableau', 0, 164, 1075, 34, '', { cols: JSON.stringify(COLS_A2), part: 'head', fs: '9' });
+    put('Detail1', 'tableau', 0, 30, 1075, 36, '', { cols: JSON.stringify(COLS_A2), part: 'row', fs: '9' });
+    put('PageFooter1', 'texte', 0, 6, 320, 18, 'Responsable du Projet', { cls: 'b' });
+    put('PageFooter1', 'texte', 0, 26, 320, 18, 'Signataires autorisés');
+    put('PageFooter1', 'texte', 0, 48, 220, 34, 'Nom :\nSignature :');
+    put('PageFooter1', 'texte', 235, 48, 220, 34, 'Nom :\nSignature :');
+    put('PageFooter1', 'texte', 470, 48, 220, 34, 'Nom :\nSignature :');
+    put('PageFooter1', 'texte', 710, 6, 250, 18, '19. Total paiements de la présente page');
+    put('PageFooter1', 'texte', 955, 6, 120, 18, '[Total page]', { cls: 'b r' });
+    put('PageFooter1', 'texte', 710, 26, 250, 18, '20. Cumul des pages précédentes');
+    put('PageFooter1', 'texte', 955, 26, 120, 18, '[Cumul pages précédentes]', { cls: 'b r' });
+    put('PageFooter1', 'texte', 710, 46, 250, 18, '21. Montant Total');
+    put('PageFooter1', 'texte', 955, 46, 120, 18, '[Montant total]', { cls: 'b r' });
+    put('PageFooter1', 'texte', 0, 92, 400, 18, '[Utilisateur]');
+    put('PageFooter1', 'texte', 700, 92, 375, 18, 'Edité le [Date d’édition] à [Heure] (UTC+3)', { cls: 'r' });
+    srcCols = COLS_A2.map(function (c) { return { t: 'Demande de remboursement', s: c.f.replace(/[\[\]]/g, ''), n: c.h.replace(/^\d+\. /, ''), d: false }; });
+    renderSources();
+  }
+  /* ---------- modèle préparamétré « A3 — Récapitulatif du formulaire A3 » (procédure BAD) ---------- */
+  var COLS_A3 = [{ h: '(a) Description détaillée', f: '[Description]', w: 30 }, { h: '(b) Quantité', f: '[Quantité]', w: 7 }, { h: '(c) Pays d’origine des biens', f: '[Pays d’origine]', w: 12 }, { h: '(d) Pays/Fourn.', f: '[Pays fournisseur]', w: 11 },
+    { h: '(e) Total budgétisé', f: '[Total budgétisé]', w: 11 }, { h: '(f) Portion FAD', f: '[Portion FAD]', w: 10 }, { h: '(g) Montant avance', f: '[Montant avance]', w: 10 }, { h: '(h) Date Approb.', f: '[Date approbation]', w: 9 }];
+  function applyA3() {
+    preset = 'A3'; window.__soe4F = { sautCat: false }; mT = 30; mB = 24; mL = 24; mR = 24; setPaper('A4', 'landscape');
+    setZones([{ id: 'PageHeader1', h: 190 }, { id: 'Detail1' }, { id: 'ReportFooter1', h: 150 }, { id: 'PageFooter1', h: 40 }]);
+    put('PageHeader1', 'texte', 0, 4, 1075, 18, '[Intitulé du projet]', { cls: 'b' });
+    put('PageHeader1', 'texte', 0, 32, 240, 18, 'ANNEXE 3', { cls: 'b' });
+    put('PageHeader1', 'texte', 330, 32, 420, 20, 'Récapitulatif du formulaire A3', { b: '1', al: 'center', fs: '14' });
+    put('PageHeader1', 'texte', 850, 32, 225, 18, 'Formulaire A3', { cls: 'b r' });
+    put('PageHeader1', 'texte', 300, 58, 480, 20, '[Fonds / facilité]', { b: '1', al: 'center', fs: '13' });
+    put('PageHeader1', 'texte', 0, 90, 300, 16, 'Date     __/__/____');
+    put('PageHeader1', 'texte', 0, 110, 520, 16, '1. Numéro prêt / don     [N° prêt/don]');
+    put('PageHeader1', 'texte', 330, 90, 520, 32, '2. Titre de Projet     [Titre du projet]');
+    put('PageHeader1', 'texte', 880, 90, 195, 16, '3. Demande N°     [N° demande]');
+    put('PageHeader1', 'texte', 0, 134, 520, 16, '4. Catégorie / Sous-Projet     [Catégorie / Sous-projet]');
+    put('PageHeader1', 'texte', 330, 134, 300, 16, '5. Devise     [Devise de la demande]');
+    put('PageHeader1', 'texte', 880, 134, 195, 16, '6. Page     [Page]/[NbPages]');
+    put('PageHeader1', 'tableau', 0, 156, 1075, 30, '', { cols: JSON.stringify(COLS_A3), part: 'head', fs: '9' });
+    put('Detail1', 'tableau', 0, 30, 1075, 36, '', { cols: JSON.stringify(COLS_A3), part: 'row', fs: '9' });
+    put('ReportFooter1', 'texte', 330, 6, 260, 18, '11. TOTAL', { cls: 'b r' });
+    put('ReportFooter1', 'texte', 600, 6, 475, 18, '[Total budgétisé]     [Total portion FAD]     [Total avance]', { cls: 'b' });
+    put('ReportFooter1', 'texte', 0, 50, 320, 18, '12. Visa du Responsable du projet');
+    put('ReportFooter1', 'texte', 330, 40, 200, 34, 'Nom :\nSignature :');
+    put('ReportFooter1', 'texte', 0, 100, 320, 18, '13. Signataires autorisés');
+    put('ReportFooter1', 'texte', 330, 90, 200, 34, 'Nom :\nSignature :');
+    put('ReportFooter1', 'texte', 540, 90, 200, 34, 'Nom :\nSignature :');
+    put('PageFooter1', 'texte', 0, 8, 400, 18, '[Utilisateur]');
+    put('PageFooter1', 'texte', 700, 8, 375, 18, 'Edité le [Date d’édition] à [Heure] (UTC+3)', { cls: 'r' });
+    srcCols = COLS_A3.map(function (c) { return { t: 'Demande de remboursement', s: c.f.replace(/[\[\]]/g, ''), n: c.h.replace(/^\([a-h]\) /, ''), d: false }; });
+    renderSources();
+  }
+  // aperçu paginé (lignes par page : paramétrage du modèle A2, 10 par défaut) ; totaux de page, cumul des pages précédentes et montant total
+  function a2n(v) { return v === '' || v == null ? '' : nf(+v, 2); }
+  function a2Pages(Z) {
+    var S = window.__sampleA2 || [], cfg = window.__cfgA2 || {}, per = Math.max(3, Math.min(25, +cfg.rows || 10)), pages = [], i;
+    var rg = cfg.regr || regrState(), grouped = !!(rg.axe && rg.niv), labels = [], cle = function (r) { return rg.niv === 'Catégorie' ? (r.cat || '') : rg.niv === 'Convention' ? (r.conv || '') : ''; };
+    if (grouped) { var ordre = [], par = {}; S.forEach(function (r) { var k = cle(r); if (!par[k]) { par[k] = []; ordre.push(k); } par[k].push(r); }); ordre.forEach(function (k) { for (i = 0; i < par[k].length; i += per) { pages.push(par[k].slice(i, i + per)); labels.push(k); } }); }
+    else for (i = 0; i < S.length; i += per) { pages.push(S.slice(i, i + per)); labels.push(grouped && S[i] ? cle(S[i]) : ''); }
+    if (!pages.length) { pages.push([]); labels.push(''); }
+    var N = pages.length, cum = 0, p3 = function (x) { return ('00' + x).slice(-3); }, TY = ['Remboursement', 'Compte spécial', 'Justification sans réapprovisionnement', 'Paiement direct'];
+    var glob = Object.assign({}, GLOB, { '[N° prêt/don]': cfg.pret || '', '[Titre du projet]': cfg.titre || '', '[Catégorie / Sous-projet]': cfg.cat || '', '[Devise de la demande]': cfg.devise || 'UC', '[N° demande]': '0006' });
+    TY.forEach(function (t, k) { glob['[Case type ' + (k + 1) + ']'] = t === cfg.type ? '☒' : '☐'; });
+    return '<div class="pv-wrap">' + pages.map(function (pg, pi) {
+      var tot = pg.reduce(function (a, r) { return a + (+r.montant || 0); }, 0), prec = cum; cum += tot;
+      var rows = pg.map(function (r, k) { return { a2: r, idx: pi * per + k }; });
+      var base = Object.assign({}, glob, { '[Catégorie / Sous-projet]': labels[pi] || cfg.cat || '', '[Page]': p3(pi + 1), '[NbPages]': p3(N), '[Total page]': nf(tot), '[Cumul pages précédentes]': cfg.cumul === false ? '' : nf(prec), '[Montant total]': cfg.cumul === false ? '' : nf(prec + tot) }), h = '';
+      if (Z.PageHeader1) h += secHtml(Z.PageHeader1, base);
+      h += detailHtml(Z.Detail1, rows);
+      if (Z.PageFooter1) h += '<div style="margin-top:14px">' + secHtml(Z.PageFooter1, base) + '</div>';
+      return '<div class="pv-page" style="width:' + (PW - mL - mR) + 'px;padding:' + mT + 'px ' + mR + 'px ' + mB + 'px ' + mL + 'px;box-sizing:content-box">' + h + '</div>';
+    }).join('') + '</div>';
+  }
+
+  /* ---------- modèle préparamétré « 102/A — Relevé des dépenses » (procédure FIDA) ---------- */
+  var COLS_102 = [{ h: 'Élément n°', f: '[N° élément]', w: 5 }, { h: 'Description', f: '[Description]', w: 20 }, { h: 'Valeur du contrat si applicable (MGA ou USD)', f: '[Valeur du contrat]', w: 9 },
+    { h: 'Dépenses totales (MGA)', f: '[Dépenses totales]', w: 9 }, { h: 'Pourcentage de financement du FIDA', f: '[% financement FIDA]', w: 6 }, { h: 'Remboursable au titre du financement du FIDA (MGA)', f: '[Remboursable FIDA]', w: 9 },
+    { h: 'Référence de paiement', f: '[Référence de paiement]', w: 14 }, { h: 'Date de paiement', f: '[Date de paiement]', w: 7 }, { h: 'Taux de change', f: '[Taux de change]', w: 6 },
+    { h: 'Montant équivalent de la colonne 6 en (USD)', f: '[Montant USD]', w: 8 }, { h: 'Observations / autres références', f: '[Observations]', w: 7 }];
+  var COLS_102_NUM = COLS_102.map(function (c, k) { return { h: String(k + 1), f: '', w: c.w }; });
+  function apply102() {
+    preset = '102'; window.__soe4F = { sautCat: true }; mT = 30; mB = 24; mL = 24; mR = 24; setPaper('A4', 'landscape');
+    setZones([{ id: 'PageHeader1', h: 218 }, { id: 'Detail1' }, { id: 'GroupFooter1', h: 200 }, { id: 'PageFooter1', h: 36 }]);
+    regr = { axe: '5', niv: 'Catégorie', det: '', saut: true }; syncRegr();
+    put('PageHeader1', 'texte', 0, 6, 300, 18, '[Organisation]');
+    put('PageHeader1', 'texte', 300, 8, 480, 26, 'FORMULAIRE 102/A - RELEVE DES DEPENSES', { b: '1', al: 'center', fs: '16' });
+    put('PageHeader1', 'texte', 880, 6, 195, 18, 'Date   [Date d’édition]', { cls: 'r' });
+    put('PageHeader1', 'texte', 250, 38, 580, 18, 'Prêt FIDA n°   [N° prêt FIDA]', { b: '1', al: 'center' });
+    put('PageHeader1', 'texte', 250, 58, 580, 16, '(POUR LE RÉAPPROVISIONNEMENT DU COMPTE DÉSIGNÉ)', { al: 'center' });
+    put('PageHeader1', 'texte', 0, 88, 560, 20, '[Catégorie] - [Libellé catégorie]', { cls: 'b' });
+    put('PageHeader1', 'texte', 0, 108, 560, 16, '(Description de la catégorie)');
+    put('PageHeader1', 'texte', 0, 128, 560, 18, 'Période considérée   [Période]');
+    put('PageHeader1', 'texte', 740, 88, 335, 18, 'Demande No.   - [N° demande] -');
+    put('PageHeader1', 'texte', 740, 108, 335, 18, 'Categorie No.   [Catégorie]');
+    put('PageHeader1', 'texte', 740, 128, 335, 18, 'Feuille récapitulative No.   [N° feuille]/[Nb feuilles]');
+    put('PageHeader1', 'tableau', 0, 154, 1075, 18, '', { cols: JSON.stringify(COLS_102_NUM), part: 'head', fs: '9' });
+    put('PageHeader1', 'tableau', 0, 174, 1075, 40, '', { cols: JSON.stringify(COLS_102), part: 'head', fs: '9' });
+    put('Detail1', 'tableau', 0, 30, 1075, 36, '', { cols: JSON.stringify(COLS_102), part: 'row', fs: '9' });
+    put('GroupFooter1', 'texte', 0, 6, 700, 18, 'TOTAL DE LA CATEGORIE [Catégorie]', { cls: 'b' });
+    put('GroupFooter1', 'texte', 800, 6, 275, 18, '[Σ Montant USD]', { cls: 'b r' });
+    put('GroupFooter1', 'texte', 0, 34, 1075, 120, '[Texte de certification]', { fs: '9' });
+    put('GroupFooter1', 'texte', 0, 168, 300, 18, 'Certifié par', { cls: 'b' });
+    put('GroupFooter1', 'texte', 400, 168, 300, 18, 'Certifié par', { cls: 'b' });
+    put('GroupFooter1', 'texte', 800, 168, 275, 18, 'Signé par', { cls: 'b' });
+    put('PageFooter1', 'texte', 0, 8, 520, 18, '[Utilisateur] - SOFTWELL - Madagascar');
+    put('PageFooter1', 'texte', 700, 8, 375, 18, 'Edité le [Date d’édition] à [Heure] (UTC+3)', { cls: 'r' });
+    srcCols = COLS_102.map(function (c) { return { t: 'Demande de remboursement', s: c.f.replace(/[\[\]]/g, ''), n: c.h, d: false }; });
+    renderSources();
+  }
+  // aperçu paginé : une feuille (ou plus) par catégorie, « Feuille récapitulative No. n/N » propre à la catégorie, total et certification sur la dernière feuille
+  function f1n(v, d) { return v === '' || v == null ? '' : nf(+v, d == null ? 2 : d); }
+  function p102Pages(Z) {
+    var S = window.__sample102 || [], cfg = window.__cfg102 || {}, per = Math.max(3, Math.min(20, +cfg.rows || 6)), rg = cfg.regr || regrState(), grouped = !!(rg.axe && rg.niv), ordre = [], par = {}, sheets = [], i;
+    S.forEach(function (r) { var k = grouped ? (r.cat || '') : ''; if (!par[k]) { par[k] = []; ordre.push(k); } par[k].push(r); });
+    if (!ordre.length) { ordre.push(''); par[''] = []; }
+    ordre.forEach(function (k) {
+      var g = par[k], n = Math.max(1, Math.ceil(g.length / per)), tot = g.reduce(function (a, r) { return a + (+r.usd || 0); }, 0);
+      for (i = 0; i < n; i++) sheets.push({ k: k, rows: g.slice(i * per, (i + 1) * per), n: i + 1, N: n, first: i * per, last: i === n - 1, tot: tot });
+    });
+    var glob = Object.assign({}, GLOB, { '[Organisation]': cfg.org || '', '[N° prêt FIDA]': cfg.pret || '', '[Période]': cfg.periode || '', '[N° demande]': cfg.demande || '', '[Texte de certification]': cfg.cert === false ? '' : (window.__CERT102 || '') });
+    return '<div class="pv-wrap">' + sheets.map(function (sh) {
+      var base = Object.assign({}, glob, { '[Catégorie]': sh.k, '[Libellé catégorie]': (window.__cat102 || {})[sh.k] || '', '[N° feuille]': sh.n, '[Nb feuilles]': sh.N, '[Σ Montant USD]': nf(sh.tot) }), h = '';
+      if (Z.PageHeader1) h += secHtml(Z.PageHeader1, base);
+      h += detailHtml(Z.Detail1, sh.rows.map(function (r, k) { return { f102: r, idx: sh.first + k }; }));
+      if (sh.last && Z.GroupFooter1) h += secHtml(Z.GroupFooter1, base);
+      if (Z.PageFooter1) h += '<div style="margin-top:14px">' + secHtml(Z.PageFooter1, base) + '</div>';
+      return '<div class="pv-page" style="width:' + (PW - mL - mR) + 'px;padding:' + mT + 'px ' + mR + 'px ' + mB + 'px ' + mL + 'px;box-sizing:content-box">' + h + '</div>';
+    }).join('') + '</div>';
+  }
   /* ---------- modèle officiel DGI « Annexe IRSA » (fichier DGI_Annexe_IRSA.xls, feuille IRSA, 13 colonnes) ---------- */
   var COLS_IRSA = [{ h: 'Nom et prénom du travailleur', f: '[Nom et prénom]', w: 14 }, { h: 'Fonction', f: '[Fonction]', w: 10 }, { h: 'N° CIN ou carte de résident', f: '[N° CIN]', w: 8 }, { h: 'N° d’identification CNaPS', f: '[N° CNaPS]', w: 8 },
     { h: 'Rémunération brute en numéraire (B)', f: '[Rémunération brute]', w: 8 }, { h: 'Valeur des avantages en nature imposables (C)', f: '[Avantages en nature]', w: 7 }, { h: 'Retenue pension ou retraite (D)', f: '[Retenue pension]', w: 7 },
@@ -578,6 +762,28 @@
     srcCols = COLS_TVA.map(function (c) { return { t: 'TVA', s: c.f.replace(/[[]]/g, ''), n: c.h, d: false }; });
     renderSources();
   }
+/* Canevas « Droit de communication » (DGI) : fichiers officiels du dossier DROIT DE COMMUNICATION — généré par gen-dcom.cjs */
+  window.__DCOM = {"ADR":{"nom":"Achats de marchandises destinées à la revente","grp":"A–B : possédant un NIFONLINE · C–E : locaux sans NIFONLINE · F–G : autres · H : étrangers (NIFONLINE du représentant accrédité) · J–M : adresse complète · O–P : montants HT des sommes","cols":[{"h":"NIF","f":"[NIF]","w":9,"n":0},{"h":"Numéro statistique","f":"[Numéro statistique]","w":12,"n":0},{"h":"CIN","f":"[CIN]","w":9,"n":0},{"h":"Date CIN","f":"[Date CIN]","w":7,"n":0},{"h":"Lieu de délivrance CIN","f":"[Lieu délivrance CIN]","w":8,"n":0},{"h":"Nature","f":"[Nature]","w":6,"n":0},{"h":"Référence","f":"[Référence]","w":8,"n":0},{"h":"NIFONLINE du représentant accrédité auprès du MFB (sinon vide)","f":"[NIFONLINE représentant]","w":10,"n":0},{"h":"Raison sociale / Nom commercial","f":"[Raison sociale]","w":14,"n":0},{"h":"Adresse","f":"[Adresse]","w":12,"n":0},{"h":"Ville","f":"[Ville]","w":8,"n":0},{"h":"Ex-province","f":"[Ex-province]","w":8,"n":0},{"h":"Pays","f":"[Pays]","w":7,"n":0},{"h":"Nature des marchandises","f":"[Nature des marchandises]","w":12,"n":0},{"h":"Montant HT des sommes comptabilisées","f":"[Sommes comptabilisées]","w":10,"n":1},{"h":"Montant HT des sommes versées","f":"[Sommes versées]","w":10,"n":1}],"sample":[["4000123456","47111 11 2010 0 01877","","","","","FA-2026-0451","","SOCIÉTÉ ALPHA SARL","Lot II A 12 Antanimena","Antananarivo","Antananarivo","MADAGASCAR","Fournitures de bureau",3200000,1920000],["","","101234567890","12/03/2015","Antananarivo","","FA-2026-0502","","ENTREPRISE RAKOTO","Rue Ravoninahitriniarivo","Toamasina","Toamasina","MADAGASCAR","Fournitures de bureau",850000,510000],["","","","","","","INV-8821","4000987654","OFFICE SUPPLY LTD","12 Royal Road","Port-Louis","","MAURICE","Fournitures de bureau",12400000,12400000]]},"AI":{"nom":"Achats immobilisés","grp":"A–B : possédant un NIFONLINE · C–E : locaux sans NIFONLINE · F–G : autres · H : étrangers (NIFONLINE du représentant accrédité) · J–M : adresse complète · O–P : montants HT des sommes","cols":[{"h":"NIF","f":"[NIF]","w":9,"n":0},{"h":"Numéro statistique","f":"[Numéro statistique]","w":12,"n":0},{"h":"CIN","f":"[CIN]","w":9,"n":0},{"h":"Date CIN","f":"[Date CIN]","w":7,"n":0},{"h":"Lieu de délivrance CIN","f":"[Lieu délivrance CIN]","w":8,"n":0},{"h":"Nature","f":"[Nature]","w":6,"n":0},{"h":"Référence","f":"[Référence]","w":8,"n":0},{"h":"NIFONLINE du représentant accrédité auprès du MFB (sinon vide)","f":"[NIFONLINE représentant]","w":10,"n":0},{"h":"Raison sociale / Nom commercial","f":"[Raison sociale]","w":14,"n":0},{"h":"Adresse","f":"[Adresse]","w":12,"n":0},{"h":"Ville","f":"[Ville]","w":8,"n":0},{"h":"Ex-province","f":"[Ex-province]","w":8,"n":0},{"h":"Pays","f":"[Pays]","w":7,"n":0},{"h":"Nature des achats immobilisés","f":"[Nature des achats]","w":12,"n":0},{"h":"Montant HT des sommes comptabilisées","f":"[Sommes comptabilisées]","w":10,"n":1},{"h":"Montant HT des sommes versées","f":"[Sommes versées]","w":10,"n":1}],"sample":[["4000123456","47111 11 2010 0 01877","","","","","FA-2026-0451","","SOCIÉTÉ ALPHA SARL","Lot II A 12 Antanimena","Antananarivo","Antananarivo","MADAGASCAR","Matériel informatique",3200000,1920000],["","","101234567890","12/03/2015","Antananarivo","","FA-2026-0502","","ENTREPRISE RAKOTO","Rue Ravoninahitriniarivo","Toamasina","Toamasina","MADAGASCAR","Matériel informatique",850000,510000],["","","","","","","INV-8821","4000987654","OFFICE SUPPLY LTD","12 Royal Road","Port-Louis","","MAURICE","Matériel informatique",12400000,12400000]]},"AC":{"nom":"Achats non destinés à la revente","grp":"A–B : possédant un NIFONLINE · C–E : locaux sans NIFONLINE · F–G : autres · H : étrangers (NIFONLINE du représentant accrédité) · J–M : adresse complète · O–P : montants HT des sommes","cols":[{"h":"NIF","f":"[NIF]","w":9,"n":0},{"h":"Numéro statistique","f":"[Numéro statistique]","w":12,"n":0},{"h":"CIN","f":"[CIN]","w":9,"n":0},{"h":"Date CIN","f":"[Date CIN]","w":7,"n":0},{"h":"Lieu de délivrance CIN","f":"[Lieu délivrance CIN]","w":8,"n":0},{"h":"Nature","f":"[Nature]","w":6,"n":0},{"h":"Référence","f":"[Référence]","w":8,"n":0},{"h":"NIFONLINE du représentant accrédité auprès du MFB (sinon vide)","f":"[NIFONLINE représentant]","w":10,"n":0},{"h":"Raison sociale / Nom commercial","f":"[Raison sociale]","w":14,"n":0},{"h":"Adresse","f":"[Adresse]","w":12,"n":0},{"h":"Ville","f":"[Ville]","w":8,"n":0},{"h":"Ex-province","f":"[Ex-province]","w":8,"n":0},{"h":"Pays","f":"[Pays]","w":7,"n":0},{"h":"Nature des achats consommés","f":"[Nature des achats]","w":12,"n":0},{"h":"Montant HT des sommes comptabilisées","f":"[Sommes comptabilisées]","w":10,"n":1},{"h":"Montant HT des sommes versées","f":"[Sommes versées]","w":10,"n":1}],"sample":[["4000123456","47111 11 2010 0 01877","","","","","FA-2026-0451","","SOCIÉTÉ ALPHA SARL","Lot II A 12 Antanimena","Antananarivo","Antananarivo","MADAGASCAR","Électricité, eau et télécommunications",3200000,1920000],["","","101234567890","12/03/2015","Antananarivo","","FA-2026-0502","","ENTREPRISE RAKOTO","Rue Ravoninahitriniarivo","Toamasina","Toamasina","MADAGASCAR","Électricité, eau et télécommunications",850000,510000],["","","","","","","INV-8821","4000987654","OFFICE SUPPLY LTD","12 Royal Road","Port-Louis","","MAURICE","Électricité, eau et télécommunications",12400000,12400000]]},"DEB":{"nom":"Débours","grp":"A–B : possédant un NIFONLINE · C–E : locaux sans NIFONLINE · F–G : autres · H : étrangers (NIFONLINE du représentant accrédité) · J–M : adresse complète · O–P : montants HT des sommes","cols":[{"h":"NIF","f":"[NIF]","w":9,"n":0},{"h":"Numéro statistique","f":"[Numéro statistique]","w":12,"n":0},{"h":"CIN","f":"[CIN]","w":9,"n":0},{"h":"Date CIN","f":"[Date CIN]","w":7,"n":0},{"h":"Lieu de délivrance CIN","f":"[Lieu délivrance CIN]","w":8,"n":0},{"h":"Nature","f":"[Nature]","w":6,"n":0},{"h":"Référence","f":"[Référence]","w":8,"n":0},{"h":"NIFONLINE du représentant accrédité auprès du MFB (sinon vide)","f":"[NIFONLINE représentant]","w":10,"n":0},{"h":"Raison sociale / Nom commercial","f":"[Raison sociale]","w":14,"n":0},{"h":"Adresse","f":"[Adresse]","w":12,"n":0},{"h":"Ville","f":"[Ville]","w":8,"n":0},{"h":"Ex-province","f":"[Ex-province]","w":8,"n":0},{"h":"Pays","f":"[Pays]","w":7,"n":0},{"h":"Nature des services rendus","f":"[Nature des services]","w":12,"n":0},{"h":"Montant HT des sommes comptabilisées","f":"[Sommes comptabilisées]","w":10,"n":1},{"h":"Montant HT des sommes versées","f":"[Sommes versées]","w":10,"n":1}],"sample":[["4000123456","47111 11 2010 0 01877","","","","","FA-2026-0451","","SOCIÉTÉ ALPHA SARL","Lot II A 12 Antanimena","Antananarivo","Antananarivo","MADAGASCAR","Frais de transit et de douane",3200000,1920000],["","","101234567890","12/03/2015","Antananarivo","","FA-2026-0502","","ENTREPRISE RAKOTO","Rue Ravoninahitriniarivo","Toamasina","Toamasina","MADAGASCAR","Frais de transit et de douane",850000,510000],["","","","","","","INV-8821","4000987654","OFFICE SUPPLY LTD","12 Royal Road","Port-Louis","","MAURICE","Frais de transit et de douane",12400000,12400000]]},"MV":{"nom":"Marchandises vendues","grp":"A–B : clients possédant un NIFONLINE · C–E : clients sans NIFONLINE · F–G : autres · H : clients étrangers (NIFONLINE du représentant accrédité) · K–O : adresse complète","cols":[{"h":"NIF","f":"[NIF]","w":9,"n":0},{"h":"Numéro statistique","f":"[Numéro statistique]","w":12,"n":0},{"h":"CIN","f":"[CIN]","w":9,"n":0},{"h":"Date CIN","f":"[Date CIN]","w":7,"n":0},{"h":"Lieu de délivrance CIN","f":"[Lieu délivrance CIN]","w":8,"n":0},{"h":"Nature","f":"[Nature]","w":6,"n":0},{"h":"Référence","f":"[Référence]","w":8,"n":0},{"h":"NIFONLINE du représentant accrédité auprès du MFB (sinon vide)","f":"[NIFONLINE représentant]","w":10,"n":0},{"h":"Raison sociale / Nom","f":"[Raison sociale]","w":12,"n":0},{"h":"Nom commercial","f":"[Nom commercial]","w":10,"n":0},{"h":"Adresse","f":"[Adresse]","w":12,"n":0},{"h":"Fokontany","f":"[Fokontany]","w":8,"n":0},{"h":"Ville","f":"[Ville]","w":8,"n":0},{"h":"Ex-province","f":"[Ex-province]","w":8,"n":0},{"h":"Pays","f":"[Pays]","w":7,"n":0},{"h":"Mode de paiement","f":"[Mode de paiement]","w":8,"n":0},{"h":"Nature des marchandises","f":"[Nature des marchandises]","w":12,"n":0},{"h":"Montant hors TVA","f":"[Montant hors TVA]","w":9,"n":1},{"h":"TVA","f":"[TVA]","w":8,"n":1}],"sample":[["4000123456","47111 11 2010 0 01877","","","","","FA-2026-0451","","SOCIÉTÉ ALPHA SARL","ALPHA","Lot II A 12 Antanimena","Antanimena","Antananarivo","Antananarivo","MADAGASCAR","VIREMENT","Vente en gros de riz",4800000,960000],["","","101234567890","12/03/2015","Antananarivo","","FA-2026-0502","","ENTREPRISE RAKOTO","RAKOTO SERVICES","Rue Ravoninahitriniarivo","Tanambao","Toamasina","Toamasina","MADAGASCAR","CHEQUE","Vente en gros de riz",1275000,255000],["","","","","","","INV-8821","4000987654","OFFICE SUPPLY LTD","OFFICE SUPPLY","12 Royal Road","","Port-Louis","","MAURICE","ESPECE","Vente en gros de riz",18600000,0]]},"PSV":{"nom":"Prestations de services vendues","grp":"A–B : clients possédant un NIFONLINE · C–E : clients sans NIFONLINE · F–G : autres · H : clients étrangers (NIFONLINE du représentant accrédité) · K–O : adresse complète","cols":[{"h":"NIF","f":"[NIF]","w":9,"n":0},{"h":"Numéro statistique","f":"[Numéro statistique]","w":12,"n":0},{"h":"CIN","f":"[CIN]","w":9,"n":0},{"h":"Date CIN","f":"[Date CIN]","w":7,"n":0},{"h":"Lieu de délivrance CIN","f":"[Lieu délivrance CIN]","w":8,"n":0},{"h":"Nature","f":"[Nature]","w":6,"n":0},{"h":"Référence","f":"[Référence]","w":8,"n":0},{"h":"NIFONLINE du représentant accrédité auprès du MFB (sinon vide)","f":"[NIFONLINE représentant]","w":10,"n":0},{"h":"Raison sociale / Nom","f":"[Raison sociale]","w":12,"n":0},{"h":"Nom commercial","f":"[Nom commercial]","w":10,"n":0},{"h":"Adresse","f":"[Adresse]","w":12,"n":0},{"h":"Fokontany","f":"[Fokontany]","w":8,"n":0},{"h":"Ville","f":"[Ville]","w":8,"n":0},{"h":"Ex-province","f":"[Ex-province]","w":8,"n":0},{"h":"Pays","f":"[Pays]","w":7,"n":0},{"h":"Mode de paiement","f":"[Mode de paiement]","w":8,"n":0},{"h":"Nature des prestations","f":"[Nature des prestations]","w":12,"n":0},{"h":"Montant hors TVA","f":"[Montant hors TVA]","w":9,"n":1},{"h":"TVA","f":"[TVA]","w":8,"n":1}],"sample":[["4000123456","47111 11 2010 0 01877","","","","","FA-2026-0451","","SOCIÉTÉ ALPHA SARL","ALPHA","Lot II A 12 Antanimena","Antanimena","Antananarivo","Antananarivo","MADAGASCAR","VIREMENT","Prestation de maintenance",4800000,960000],["","","101234567890","12/03/2015","Antananarivo","","FA-2026-0502","","ENTREPRISE RAKOTO","RAKOTO SERVICES","Rue Ravoninahitriniarivo","Tanambao","Toamasina","Toamasina","MADAGASCAR","CHEQUE","Prestation de maintenance",1275000,255000],["","","","","","","INV-8821","4000987654","OFFICE SUPPLY LTD","OFFICE SUPPLY","12 Royal Road","","Port-Louis","","MAURICE","ESPECE","Prestation de maintenance",18600000,0]]},"PL":{"nom":"Produits locaux","grp":"A–B : vendeurs possédant un NIFONLINE · C–E : vendeurs sans NIFONLINE · G–J : adresse complète · L–M : montants","cols":[{"h":"NIF","f":"[NIF]","w":9,"n":0},{"h":"Numéro statistique","f":"[Numéro statistique]","w":12,"n":0},{"h":"CIN","f":"[CIN]","w":9,"n":0},{"h":"Date CIN","f":"[Date CIN]","w":7,"n":0},{"h":"Lieu de délivrance CIN","f":"[Lieu délivrance CIN]","w":8,"n":0},{"h":"Nom, prénoms / Raison sociale / Nom commercial","f":"[Nom ou raison sociale]","w":14,"n":0},{"h":"Adresse","f":"[Adresse]","w":12,"n":0},{"h":"Ville","f":"[Ville]","w":8,"n":0},{"h":"Ex-province","f":"[Ex-province]","w":8,"n":0},{"h":"Pays","f":"[Pays]","w":7,"n":0},{"h":"Nature des produits","f":"[Nature des produits]","w":12,"n":0},{"h":"Montant hors TVA","f":"[Montant hors TVA]","w":9,"n":1},{"h":"TVA","f":"[TVA]","w":8,"n":1}],"sample":[["4000123456","47111 11 2010 0 01877","","","","SOCIÉTÉ ALPHA SARL","Lot II A 12 Antanimena","Antananarivo","Antananarivo","MADAGASCAR","Vanille, girofle",3200000,640000],["","","101234567890","12/03/2015","Antananarivo","RAKOTO Jean Marc","Rue Ravoninahitriniarivo","Toamasina","Toamasina","MADAGASCAR","Vanille, girofle",850000,170000],["","","","","","OFFICE SUPPLY LTD","12 Royal Road","Port-Louis","","MAURICE","Vanille, girofle",12400000,0]]},"SVT":{"nom":"Sommes versées à des tiers","grp":"A–B : possédant un NIFONLINE · C–E : locaux sans NIFONLINE · F–G : autres · H : étrangers (NIFONLINE du représentant accrédité) · J–M : adresse complète · O–P : montants HT des sommes","cols":[{"h":"NIF","f":"[NIF]","w":9,"n":0},{"h":"Numéro statistique","f":"[Numéro statistique]","w":12,"n":0},{"h":"CIN","f":"[CIN]","w":9,"n":0},{"h":"Date CIN","f":"[Date CIN]","w":7,"n":0},{"h":"Lieu de délivrance CIN","f":"[Lieu délivrance CIN]","w":8,"n":0},{"h":"Nature","f":"[Nature]","w":6,"n":0},{"h":"Référence","f":"[Référence]","w":8,"n":0},{"h":"NIFONLINE du représentant accrédité auprès du MFB (sinon vide)","f":"[NIFONLINE représentant]","w":10,"n":0},{"h":"Raison sociale / Nom commercial","f":"[Raison sociale]","w":14,"n":0},{"h":"Adresse","f":"[Adresse]","w":12,"n":0},{"h":"Ville","f":"[Ville]","w":8,"n":0},{"h":"Ex-province","f":"[Ex-province]","w":8,"n":0},{"h":"Pays","f":"[Pays]","w":7,"n":0},{"h":"Nature des services rendus","f":"[Nature des services]","w":12,"n":0},{"h":"Montant HT des sommes comptabilisées","f":"[Sommes comptabilisées]","w":10,"n":1},{"h":"Montant HT des sommes versées","f":"[Sommes versées]","w":10,"n":1}],"sample":[["4000123456","47111 11 2010 0 01877","","","","","FA-2026-0451","","SOCIÉTÉ ALPHA SARL","Lot II A 12 Antanimena","Antananarivo","Antananarivo","MADAGASCAR","Honoraires de conseil",3200000,1920000],["","","101234567890","12/03/2015","Antananarivo","","FA-2026-0502","","ENTREPRISE RAKOTO","Rue Ravoninahitriniarivo","Toamasina","Toamasina","MADAGASCAR","Honoraires de conseil",850000,510000],["","","","","","","INV-8821","4000987654","OFFICE SUPPLY LTD","12 Royal Road","Port-Louis","","MAURICE","Honoraires de conseil",12400000,12400000]]},"PLP":{"nom":"Produits locaux par produit (récapitulation)","grp":"Récapitulation par produits : codes CN des produits, nature, unité de quantité ; produits achetés auprès des commerçants, collecteurs et producteurs identifiés (détails des feuillets) et auprès des producteurs non identifiés.","cols":[{"h":"Code CN du produit","f":"[Code CN]","w":8,"n":0},{"h":"Nature des produits","f":"[Nature du produit]","w":16,"n":0},{"h":"Unité de quantité","f":"[Unité]","w":6,"n":0},{"h":"Identifiés — quantité","f":"[Quantité identifiés]","w":9,"n":1},{"h":"Identifiés — valeur en Ariary","f":"[Valeur identifiés]","w":11,"n":1},{"h":"Non identifiés — quantité","f":"[Quantité non identifiés]","w":9,"n":1},{"h":"Non identifiés — valeur en Ariary","f":"[Valeur non identifiés]","w":11,"n":1}],"sample":[["011 100","Paddy","Kg",0,0,0,0],["011 200","Mais et millet","Kg",0,0,0,0],["011 500","Blé","Kg",0,0,0,0],["012 100","Pomme de terre","Kg",0,0,0,0],["012 200","Manioc","Kg",0,0,0,0],["012 300","Patate et saonjo","Kg",0,0,0,0],["012 400","Haricots secs","Kg",0,0,0,0],["012 500","Pois du cap secs","Kg",0,0,0,0],["012 600","Lentilles","Kg",0,0,0,0],["013 110","Oignons","Kg",0,0,0,0],["013 120","Ails","Kg",0,0,0,0],["013 130","Autres légumes racines(betteraves)","Kg",0,0,0,0],["013 210","Tomates","Kg",0,0,0,0],["013 220","Autres légumes fruits(concombres)","Kg",0,0,0,0],["013 300","Bredes","Kg",0,0,0,0],["013 310","Autres légumes feuilles et tiges(choux)","Kg",0,0,0,0],["013 400","Légumineuses fraîches (haricots verts)","Kg",0,0,0,0],["014 100","Bananes","Kg",0,0,0,0],["014 200","Oranges","Kg",0,0,0,0],["014 210","Mandarines","Kg",0,0,0,0],["014 220","Citrons et autres agrumes","Kg",0,0,0,0],["014 300","Pommes et poires","Kg",0,0,0,0],["014 400","Raisins","Kg",0,0,0,0],["014 500","Ananas","Kg",0,0,0,0],["014 600","Letchis","Kg",0,0,0,0],["014 700","Pêches-Prunes-Abricots","Kg",0,0,0,0],["014 800","Mangues","Kg",0,0,0,0],["014 810","Grenadelles","Kg",0,0,0,0],["015 100","Café","Kg",1200,6900000,0,0],["015 200","Vanille","Kg",85,41000000,12,5400000],["015 310","Girofle","Kg",0,0,0,0],["015 320","Essence de girofle","Kg",0,0,0,0],["015 400","Cacao en fèves","Kg",0,0,0,0],["015 500","Tabac brut","Kg",0,0,0,0],["015 600","Poivres","Kg",0,0,0,0],["015 700","Cannelles","Kg",0,0,0,0],["015 800","Piments","Kg",0,0,0,0],["016 100","Arachides","Kg",0,0,0,0],["016 300","Anacarde","Kg",0,0,0,0],["016 400","Coprah","Kg",0,0,0,0],["016 500","Aleurite","Kg",0,0,0,0],["016 600","Ricin","Kg",0,0,0,0],["016 700","Soja","Kg",0,0,0,0],["017 300","Canne à sucre","Tonne",0,0,0,0],["017 400","Essence à parfums","Tonne",0,0,0,0],["021 100","Bovins","Tête",40,52000000,15,18000000],["021 200","Porcins","Tête",0,0,0,0],["021 300","Ovins et caprins","Tête",0,0,0,0],["021 400","Volailles","Tête",0,0,0,0],["022 100","Lait frais","Litre",0,0,0,0],["022 300","Œufs","Unité",0,0,0,0],["023 100","Poissons","Kg",0,0,0,0],["023 200","Crustacés et mollusques","Kg",0,0,0,0],["031 100","Bois bruts","m3",0,0,0,0],["031 010","Baobab","m3",0,0,0,0],["031 100","Bois de chauffage et charbon de bois","Kg",0,0,0,0],["031 200","Miel et cire d'abeilles","Kg",0,0,0,0],["031 300","Raphia","Kg",0,0,0,0],["031 400","Paka","Kg",0,0,0,0],["031 500","Ylang Ylang (fleurs)","Kg",0,0,0,0],["031 600","Plantes médicinales","Kg",0,0,0,0],["043 100","Sisal","Kg",0,0,0,0],["111 000","Graphite","Kg",0,0,0,0],["112 000","Mica","Kg",0,0,0,0],["113 400","Argiles,kaolin,etc","Kg",0,0,0,0],["113 600","Marbres et autres pierres calcaires","Kg",0,0,0,0],["114 100","Quartz","Kg",0,0,0,0],["114 200","Grenat","Kg",0,0,0,0],["114 300","Cristal de roche","Kg",0,0,0,0],["114 900","Autres pierres précieuses","Kg",0,0,0,0],["211 100","Riz","Kg",25000,31250000,0,0],["211 200","Sons,résidus de céréales,paille de riz","Kg",0,0,0,0],["215 100","Sel","Kg",0,0,0,0],["312 500","Tourteaux","Kg",0,0,0,0],["411 100","Coton","Kg",0,0,0,0],["411 110","Rabanes","Kg",0,0,0,0],["411 110","Rabanes","Kg",0,0,0,0],["412 610","Soie","Kg",0,0,0,0],["421 110","Peaux de crocodiles","Kg",0,0,0,0],["421 120","Autres peaux et cuirs préparés","Kg",0,0,0,0]]}};
+  var dcomKey = '';
+  /* ---------- modèles officiels DGI « Droit de communication » (canevas annexes ADR, AI, AC, DEB, MV, PSV, PL, PLP, SVT) ---------- */
+  function applyDCOM(key) {
+    var M = window.__DCOM[key]; if (!M) return applyDefault();
+    preset = 'DCOM'; dcomKey = key; GLOB['[NIF]'] = '4000123456'; window.__soe4F = { sautCat: false }; mT = 40; mB = 30; mL = 24; mR = 24; setPaper('A4', 'landscape');
+    setZones([{ id: 'ReportHeader1', h: 150 }, { id: 'Detail1' }, { id: 'ReportFooter1', h: 60 }, { id: 'PageFooter1', h: 38 }]);
+    put('ReportHeader1', 'texte', 0, 8, 800, 18, 'DIRECTION GÉNÉRALE DES IMPÔTS — Droit de communication — Annexe « ' + M.nom + ' » (' + key + ')', { cls: 'b' });
+    put('ReportHeader1', 'texte', 0, 32, 800, 18, 'Déclarant : [Société] — NIF : [NIF] — Période : [Début période] au [Fin période]');
+    put('ReportHeader1', 'texte', 930, 8, 145, 18, 'Page [Page]/[NbPages]', { cls: 'r' });
+    put('ReportHeader1', 'texte', 0, 54, 1075, 30, M.grp, { fs: '8' });
+    put('ReportHeader1', 'ligne', 0, 88, 1075, 2, '');
+    put('ReportHeader1', 'tableau', 0, 92, 1075, 56, '', { cols: JSON.stringify(M.cols), part: 'head', fs: '7' });
+    put('Detail1', 'tableau', 0, 4, 1075, 24, '', { cols: JSON.stringify(M.cols), part: 'row', fs: '7' });
+    var tot = M.cols.filter(function (c) { return c.n; }).map(function (c) { return c.h + ' : [Σ ' + c.f.slice(1, -1) + ']'; }).join('   —   ');
+    put('ReportFooter1', 'texte', 0, 10, 1075, 30, 'Totaux  ' + tot, { cls: 'b', fs: '8' });
+    put('PageFooter1', 'texte', 0, 8, 520, 18, 'Edité le [Date d’édition] à [Heure] (UTC+3)');
+    put('PageFooter1', 'texte', 700, 8, 375, 18, '[Utilisateur] - SOFTWELL - Madagascar', { cls: 'r' });
+    srcCols = M.cols.map(function (c) { return { t: 'DCOM ' + key, s: c.f.replace(/[[]]/g, ''), n: c.h, d: false }; });
+    renderSources();
+  }
   function applyDefault() {
     preset = null; mT = 40; mB = 30; mL = 24; mR = 24; setPaper('A4', 'portrait');
     setZones([{ id: 'ReportHeader1', h: 110 }, { id: 'Detail1' }, { id: 'PageFooter1', h: 44 }]); srcCols = []; renderSources();
@@ -586,8 +792,11 @@
   /* ---------- aperçu live : rendu du modèle conçu avec des données d'exemple ---------- */
   function nf(v, d) { var p = Math.abs(v).toFixed(d == null ? 2 : d).split('.'); p[0] = p[0].replace(/\B(?=(\d{3})+(?!\d))/g, ' '); return (v < 0 ? '-' : '') + p.join(','); }
   var GLOB = { '[N° demande]': '0038', '[Début période]': '01/06/2026', '[Fin période]': '30/06/2026', '[Code financement]': '01', '[Convention]': 'E083-MG', '[Monnaie de suivi]': 'USD', '[Société]': 'SOFTWELL', '[Programme]': 'FOOD SYSTEM RESILIENCE PROGRAM', '[Pays]': 'MADAGASCAR', '[Responsable financier]': 'RAVELOSON Ndretsa Mamy Tantely', '[Date d’édition]': '13/10/2026', '[Heure]': '13:50', '[Utilisateur]': 'MICHAEL' };
-  function subst(t, d) { return String(t).replace(/\[[^\]]+\]/g, function (m) { return d.hasOwnProperty(m) ? d[m] : m; }); }
+  function subst(t, d) { return String(t).replace(/\[[^\]]+\]/g, function (m) { return d.hasOwnProperty(m) ? d[m] : ((window.SC_CHAMPS && window.SC_CHAMPS.exemple(m)) || m); }); }
   function rowDict(r, i) {
+    if (r.f102) { var b = r.f102; return { '[N° élément]': r.idx + 1, '[Description]': b.desc, '[Valeur du contrat]': f1n(b.contrat), '[Dépenses totales]': f1n(b.dep), '[% financement FIDA]': f1n(b.pct), '[Remboursable FIDA]': f1n(b.remb), '[Référence de paiement]': b.ref, '[Date de paiement]': b.date, '[Taux de change]': f1n(b.taux, 4), '[Montant USD]': f1n(b.usd), '[Observations]': b.obs }; }
+    if (r.a2) { var a = r.a2; return { '[N° poste]': r.idx + 1, '[Fournisseur]': a.fourn, '[Pays d’origine]': a.pays, '[Description]': a.desc, '[Réf. contrat emprunteur]': a.refEmp, '[Réf. contrat BAD]': a.refBad, '[Montant contrat]': a2n(a.mtContrat), '[Part Banque]': a2n(a.part), '[Déjà payé]': a2n(a.dejaPaye), '[Réf. facture]': a.refFact, '[Date facture]': a.dFact, '[Montant demandé]': a2n(a.montant), '[Date paiement]': a.dPaie, '[Preuve de paiement]': a.preuve }; }
+    if (r.dcom) { var o3 = {}; window.__DCOM[dcomKey].cols.forEach(function (c, j) { var v = r.dcom[j]; o3[c.f] = c.n && typeof v === 'number' ? nf(v, 0) : v; }); return o3; }
     if (r.tva) { var o2 = {}; COLS_TVA.forEach(function (c, j) { var v = r.tva[j]; o2[c.f] = (j === 6 || j === 7) ? nf(v, 0) : v; }); return o2; }
     if (r.irsa) { var a = r.irsa, k = ['[Nom et prénom]', '[Fonction]', '[N° CIN]', '[N° CNaPS]', '[Rémunération brute]', '[Avantages en nature]', '[Retenue pension]', '[Cotisation sanitaire]', '[Revenu net imposable]', '[Impôt brut]', '[Personnes à charge]', '[Réduction charge]', '[Impôt net]'], o = {}; k.forEach(function (n, j) { o[n] = typeof a[j] === 'number' && j !== 10 ? nf(a[j], 0) : a[j]; }); return o; }
     var cur = (/ ([A-Z]{3})$/.exec(r.marche) || [])[1] || '';
@@ -626,19 +835,22 @@
   }
   function renderPreview() {
     var box = q('[data-df-view="apercu"]');
-    var rows = preset === 'TVA' ? window.__sampleTVA.map(function (a) { return { tva: a, usd: a[6], tvaAmt: a[7] }; }) : preset === 'IRSA' ? window.__sampleIRSA.map(function (a) { return { irsa: a, usd: a[12] }; }) : (window.__sample4F && window.__sample4F.length) ? window.__sample4F : [{ cat: '01', ben: 'Bénéficiaire exemple', desc: 'Description exemple', marche: '0,00 MGA', net: 100000, fin: 100000, usd: 22.36, pct: 100, date: '01/06/2026', rel: 'REL01', taux: 4472, ref: '', fac: '' }];
+    var rows = preset === 'DCOM' ? window.__DCOM[dcomKey].sample.map(function (a) { return { dcom: a, usd: 0 }; }) : preset === 'TVA' ? window.__sampleTVA.map(function (a) { return { tva: a, usd: a[6], tvaAmt: a[7] }; }) : preset === 'IRSA' ? window.__sampleIRSA.map(function (a) { return { irsa: a, usd: a[12] }; }) : (window.__sample4F && window.__sample4F.length) ? window.__sample4F : [{ cat: '01', ben: 'Bénéficiaire exemple', desc: 'Description exemple', marche: '0,00 MGA', net: 100000, fin: 100000, usd: 22.36, pct: 100, date: '01/06/2026', rel: 'REL01', taux: 4472, ref: '', fac: '' }];
     var Z = {}; qa('[data-df-zone]').forEach(function (z) { Z[z.dataset.dfZone] = z; });
     if (!Z.Detail1) { box.innerHTML = '<div class="df-card"><h2>Aperçu live</h2><p style="margin:0;color:#64748b">Aucune section Détail.</p></div>'; return; }
-    var grouped = !!(Z.GroupHeader1 || Z.GroupFooter1), groups = [];
+    if (preset === 'A3') { box.innerHTML = '<div class="pv-wrap">' + window.__renderA3(window.__sampleA3 || [], { demande: '0031' }, window.__cfgA3) + '</div>'; return; }
+    if (preset === 'A2') { box.innerHTML = a2Pages(Z); return; }
+    if (preset === '102') { box.innerHTML = p102Pages(Z); return; }
+    var grouped = !!(Z.GroupHeader1 || Z.GroupFooter1) && regrState().axe !== '', groups = [];
     if (grouped) rows.forEach(function (r) { var g = groups.filter(function (x) { return x.cat === r.cat; })[0]; if (!g) { g = { cat: r.cat, rows: [] }; groups.push(g); } g.rows.push(r); }); else groups = [{ cat: '', rows: rows }];
-    var pages = (Z.GroupFooter1 && Z.GroupFooter1.dataset.sa === '1') || (Z.GroupHeader1 && Z.GroupHeader1.dataset.sb === '1') ? groups.map(function (g) { return [g]; }) : [groups];
+    var pages = grouped && regrState().saut ? groups.map(function (g) { return [g]; }) : [groups];
     var N = pages.length;
     box.innerHTML = '<div class="pv-wrap">' + pages.map(function (gs, pi) {
       var base = Object.assign({}, GLOB, { '[Page]': pi + 1, '[NbPages]': N }), h = '';
       if (pi === 0 && Z.ReportHeader1) h += secHtml(Z.ReportHeader1, base);
       if (Z.PageHeader1) h += secHtml(Z.PageHeader1, base);
       gs.forEach(function (g) {
-        var tot = g.rows.reduce(function (a, r) { return a + r.usd; }, 0), gd = Object.assign({}, base, { '[Catégorie]': g.cat, '[Libellé catégorie]': g.cat ? '(' + parseInt(g.cat, 10) + ') Biens, travaux, services non-consultants, part' : '', '[Σ Montant USD]': nf(tot) }); if (preset === 'IRSA') { base['[Σ Impôt net]'] = nf(tot, 0) + ' Ar'; } if (preset === 'TVA') { base['[Σ Montant HT]'] = nf(tot, 0) + ' Ar'; base['[Σ TVA]'] = nf(g.rows.reduce(function (a, x) { return a + x.tvaAmt; }, 0), 0) + ' Ar'; }
+        var tot = g.rows.reduce(function (a, r) { return a + r.usd; }, 0), gd = Object.assign({}, base, { '[Catégorie]': g.cat, '[Libellé catégorie]': g.cat ? '(' + parseInt(g.cat, 10) + ') Biens, travaux, services non-consultants, part' : '', '[Σ Montant USD]': nf(tot) }); if (preset === 'DCOM') { window.__DCOM[dcomKey].cols.forEach(function (c, j) { if (c.n) base['[Σ ' + c.f.slice(1, -1) + ']'] = nf(g.rows.reduce(function (a, x) { return a + (+x.dcom[j] || 0); }, 0), 0) + (/quantité/i.test(c.h) ? '' : ' Ar'); }); } if (preset === 'IRSA') { base['[Σ Impôt net]'] = nf(tot, 0) + ' Ar'; } if (preset === 'TVA') { base['[Σ Montant HT]'] = nf(tot, 0) + ' Ar'; base['[Σ TVA]'] = nf(g.rows.reduce(function (a, x) { return a + x.tvaAmt; }, 0), 0) + ' Ar'; }
         if (Z.GroupHeader1) h += secHtml(Z.GroupHeader1, gd);
         h += detailHtml(Z.Detail1, g.rows);
         if (Z.GroupFooter1) h += secHtml(Z.GroupFooter1, gd);
@@ -651,7 +863,7 @@
 
   /* ---------- JSON, modes, divers ---------- */
   function json() {
-    return JSON.stringify({ numero: model.code, nom: model.nom, format: paper, orientation: orient, marges: { haut: mT, bas: mB, gauche: mL, droite: mR },
+    return JSON.stringify({ numero: model.code, nom: model.nom, format: paper, orientation: orient, marges: { haut: mT, bas: mB, gauche: mL, droite: mR }, regroupement: (function () { var r = regrState(); return { axe: r.axe, niveau: r.niv, detail: r.det, sautParRupture: !!r.saut }; })(),
       sections: qa('[data-df-zone]').map(function (z) { return { id: z.dataset.dfZone, hauteur: parseInt(z.style.minHeight), repeter: z.dataset.rep === '1', sautAvant: z.dataset.sb === '1', sautApres: z.dataset.sa === '1', regrouper: z.dataset.grp || undefined }; }),
       elements: elems.filter(function (x) { return x.isConnected; }).map(function (x) {
         var d = x.dataset, o = { type: d.type, zone: d.zone, x: parseInt(x.style.left), y: parseInt(x.style.top), largeur: parseInt(x.style.width) };
@@ -683,8 +895,8 @@
   });
   function load() {
     var m = window.__mfDesigner; if (!m) return;
-    var want = /4F/.test(m.nom) ? '4F' : /IRSA/.test(m.code + m.nom) ? 'IRSA' : /TVA/.test(m.code + m.nom) ? 'TVA' : null;
-    if (m.code !== model.code || m.nom !== model.nom || want !== preset) { if (want === '4F') apply4F(); else if (want === 'IRSA') applyIRSA(); else if (want === 'TVA') applyTVA(); else applyDefault(); }
+    var want = /^DCOM_/.test(m.code) ? 'DCOM' : /^A3/.test(m.nom) ? 'A3' : /^A2/.test(m.nom) ? 'A2' : /^102/.test(m.nom) ? '102' : /4F/.test(m.nom) ? '4F' : /IRSA/.test(m.code + m.nom) ? 'IRSA' : /TVA/.test(m.code + m.nom) ? 'TVA' : null; if (/^DCOM_/.test(m.code)) want = 'DCOM';
+    if (m.code !== model.code || m.nom !== model.nom || want !== preset) { if (want === 'A3') applyA3(); else if (want === 'A2') applyA2(); else if (want === '102') apply102(); else if (want === '4F') apply4F(); else if (want === 'IRSA') applyIRSA(); else if (want === 'DCOM') applyDCOM(m.code.replace(/^DCOM_/, '')); else if (want === 'TVA') applyTVA(); else applyDefault(); }
     model = m; head();
   }
   window.addEventListener('hashchange', function () { if (location.hash === '#designer') { load(); applyZoom(); } });

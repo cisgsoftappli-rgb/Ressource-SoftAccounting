@@ -55,41 +55,50 @@
   var q = function (s) { return root.querySelector(s); };
   var MODELS = [];
   function esc(s) { var d = document.createElement('div'); d.textContent = s == null ? '' : s; return d.innerHTML; }
-  var RECAP = /EJCD|récapitulatif|déclaration/i;
+  var RECAP = /EJCD|récapitulatif|déclaration|^104/i;
+  function pn() { return window.__procNow ? window.__procNow() : ''; }
   function procModels() {
     var map = {}, order = [];
-    (window.__pfProcs || []).forEach(function (p) { p.models.forEach(function (m) {
-      if (RECAP.test(m)) return; var k = p.proc + '|' + m;
+    (window.__pfProcs || []).filter(function (p) { return !pn() || p.proc === pn(); }).forEach(function (p) { p.models.forEach(function (m) {
+      if (RECAP.test(m) && !/^A[23]/.test(m)) return; var k = p.proc + '|' + m;
       if (!map[k]) { map[k] = { id: 'p' + k, nom: m, src: 'Procédure ' + p.proc, bai: [], proc: true }; order.push(k); } map[k].bai.push(p.conv);
     }); });
     return order.map(function (k) { map[k].bai = map[k].bai.join(', '); return map[k]; });
   }
   function draw() {
-    var f = q('[data-so-q]').value.trim().toLowerCase(), ALL = procModels().concat(MODELS);
+    var f = q('[data-so-q]').value.trim().toLowerCase(), ALL = procModels().concat(MODELS.filter(function (m) { return !m.procOf || m.procOf === pn(); }));
+    var sub = q('.so-sub'); if (sub) { if (!sub.dataset.base) sub.dataset.base = sub.textContent; sub.textContent = sub.dataset.base + (pn() ? ' Procédure financière : ' + pn() + '.' : ''); }
     var l = ALL.filter(function (m) { return !f || (m.nom + ' ' + m.src + ' ' + m.bai).toLowerCase().indexOf(f) >= 0; });
     q('[data-so-empty]').style.display = l.length ? 'none' : '';
-    q('[data-so-empty]').innerHTML = ALL.length ? '<b>Aucun modèle trouvé</b><span>Modifiez votre recherche.</span>' : '<b>Aucun modèle trouvé</b><span>Créez un modèle pour commencer la personnalisation.</span>';
+    q('[data-so-empty]').innerHTML = ALL.length ? '<b>Aucun modèle trouvé</b><span>Modifiez votre recherche.</span>' : '<b>Aucun modèle pour la procédure ' + esc(pn()) + '</b><span>Cochez des modèles dans Paramétrages › Paramètres financiers › Procédures financières, ou créez un modèle.</span>';
     q('[data-so-tw]').style.display = l.length ? '' : 'none';
     q('[data-so-rows]').innerHTML = l.map(function (m) {
-      return '<tr><td><b>' + esc(m.nom) + '</b></td><td><span class="so-pill">' + esc(m.src) + '</span></td><td>' + esc(m.bai) + '</td><td class="a">' + (/4F/.test(m.nom) ? '<button type="button" class="so-ico" data-so-prev="' + esc(m.nom) + '">Aperçu</button>' : '') + '<button type="button" class="so-ico" data-so-open="' + m.id + '">Concepteur</button><button type="button" class="so-ico" data-so-dup="' + m.id + '">Dupliquer</button>' + (m.proc ? '' : '<button type="button" class="so-ico d" data-so-del="' + m.id + '">Supprimer</button>') + '</td></tr>';
+      return '<tr><td><b>' + esc(m.nom) + '</b></td><td><span class="so-pill">' + esc(m.src) + '</span></td><td>' + esc(m.bai) + '</td><td class="a">' + (/4F|^A[23]|^102/.test(m.nom) ? '<button type="button" class="so-ico" data-so-prev="' + esc(m.nom) + '">Aperçu</button>' : '') + ('<button type="button" class="so-ico" data-so-open="' + m.id + '">Ouvrir le designer</button><button type="button" class="so-ico" data-so-dup="' + m.id + '">Dupliquer</button>') + (m.proc ? '' : '<button type="button" class="so-ico d" data-so-del="' + m.id + '">Supprimer</button>') + '</td></tr>';
     }).join('');
   }
   q('[data-so-q]').addEventListener('input', draw);
+  window.addEventListener('hashchange', function () { if (location.hash === '#soemodel') draw(); });
+  document.addEventListener('click', function (e) { if (e.target.closest && e.target.closest('[data-proc]')) setTimeout(draw, 0); });
+  window.addEventListener('pf-change', draw); window.addEventListener('load', draw); setTimeout(draw, 600);
   q('[data-so-new]').addEventListener('click', function () { q('[data-so-nom]').value = ''; q('[data-so-err]').style.display = 'none'; q('[data-so-ov]').style.display = 'flex'; q('[data-so-nom]').focus(); });
   q('[data-so-cancel]').addEventListener('click', function () { q('[data-so-ov]').style.display = 'none'; });
   q('[data-so-ok]').addEventListener('click', function () {
     var n = q('[data-so-nom]').value.trim();
     if (!n) { q('[data-so-err]').style.display = 'block'; return; }
-    MODELS.push({ id: Date.now() + '' + MODELS.length, nom: n, src: q('[data-so-src]').value, bai: q('[data-so-bai]').value });
+    MODELS.push({ id: Date.now() + '' + MODELS.length, nom: n, src: q('[data-so-src]').value, bai: q('[data-so-bai]').value, procOf: pn() });
     q('[data-so-ov]').style.display = 'none'; draw();
   });
   q('[data-so-rows]').addEventListener('click', function (e) {
-    var pv = e.target.closest('[data-so-prev]'); if (pv && window.__open4F) { window.__open4F(pv.dataset.soPrev); return; }
+    var pa = e.target.closest('[data-so-par]'); if (pa && window.__openA2) { window.__openA2(pa.dataset.soPar, 'par'); return; }
+    var pv = e.target.closest('[data-so-prev]'); if (pv && /^A3/.test(pv.dataset.soPrev) && window.__openA3) { window.__openA3(pv.dataset.soPrev, 'prev'); return; }
+    if (pv && /^A2/.test(pv.dataset.soPrev) && window.__openA2) { window.__openA2(pv.dataset.soPrev, 'prev'); return; }
+    if (pv && /^102/.test(pv.dataset.soPrev) && window.__open102) { window.__open102(pv.dataset.soPrev, 'prev'); return; }
+    if (pv && window.__open4F) { window.__open4F(pv.dataset.soPrev); return; }
     var du = e.target.closest('[data-so-dup]');
     if (du) {
       var sm = procModels().concat(MODELS).filter(function (x) { return x.id === du.dataset.soDup; })[0];
       window.__dupModele({ source: { code: sm.code || '', nom: sm.nom }, exists: function (c) { return MODELS.some(function (m) { return String(m.code || '').toLowerCase() === c.toLowerCase(); }); }, onOk: function (c, n) {
-        MODELS.push({ id: Date.now() + '' + MODELS.length, code: c, nom: n, src: sm.proc ? 'Demande de remboursement' : sm.src, bai: sm.bai }); draw();
+        MODELS.push({ id: Date.now() + '' + MODELS.length, code: c, nom: n, src: sm.proc ? 'Demande de remboursement' : sm.src, bai: sm.bai, procOf: pn() }); draw();
       } });
       return;
     }

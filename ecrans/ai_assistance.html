@@ -1,0 +1,572 @@
+<!--
+  Écrans « SoftAccounting AI » : Assistance comptable AI / Assistance financière AI / Assistance fonctionnelle AI.
+  Modèle unique instancié trois fois par build.cjs (marqueur AIID : aicompta, aifin, aifonc). Conversation pleine page, réponses simulées par règles
+  à partir des données en mémoire de la maquette (pièces, exercices, plan comptable, menu) ; rien n'est envoyé hors du navigateur.
+  Repli commun : recherche des écrans du menu (liens [data-nav]). Préfixe aa- / data-aa. Ne pas nommer de fonction « $$ » (build.cjs).
+-->
+<style>
+[data-aa] .aa-wrap{display:grid;grid-template-columns:minmax(0,1fr) 300px;gap:16px;align-items:start}
+[data-aa] .aa-chat{border:1px solid #E1E5EE;border-radius:14px;background:#fff;display:flex;flex-direction:column;height:var(--aa-h,calc(100vh - 230px));min-height:440px;overflow:hidden}[data-aa] .aa-sg{height:var(--aa-h,calc(100vh - 230px));min-height:440px;box-sizing:border-box;overflow-y:auto;overscroll-behavior:contain}
+[data-aa] .aa-hd{display:flex;align-items:center;gap:12px;padding:14px 18px;background:#0B1332;color:#fff}
+[data-aa] .aa-lg{display:flex;align-items:center;justify-content:center;width:38px;height:38px;border-radius:50%;background:#2E427B;font-size:19px;flex:none}
+[data-aa] .aa-hd b{display:block;font-size:15px;line-height:1.2}[data-aa] .aa-hd small{display:block;font-size:12px;color:#C9D1EA}[data-aa] .aa-hd .aa-t{flex:1;min-width:0}
+[data-aa] .aa-hd button{height:32px;border:1px solid rgba(255,255,255,.3);border-radius:8px;background:rgba(255,255,255,.1);color:#fff;font-weight:600;font-size:12px;padding:0 12px;cursor:pointer}
+[data-aa] .aa-ms{flex:1;overflow:auto;padding:18px;background:#F5F7F9;display:flex;flex-direction:column;gap:12px}
+[data-aa] .aa-m{display:flex;gap:8px;align-items:flex-end}[data-aa] .aa-m.u{justify-content:flex-end}
+[data-aa] .aa-av{display:flex;align-items:center;justify-content:center;width:28px;height:28px;border-radius:50%;background:#0B1332;color:#fff;font-size:14px;flex:none}
+[data-aa] .aa-b{max-width:78%;padding:12px 14px;border-radius:14px;background:#fff;border:1px solid #E9EBF0;font-size:14px;line-height:1.5;box-shadow:0 1px 2px rgba(11,19,50,.06)}
+[data-aa] .aa-b p{margin:0 0 6px}[data-aa] .aa-b p:last-of-type{margin-bottom:0}[data-aa] .aa-b ul,[data-aa] .aa-b ol{margin:6px 0 0;padding-left:20px}[data-aa] .aa-b li{margin:2px 0}
+[data-aa] .aa-b small{display:block;margin-top:6px;font-size:11px;color:#8A90A0;text-align:right}
+[data-aa] .aa-m.u .aa-b{background:#2E427B;border-color:#2E427B;color:#fff}[data-aa] .aa-m.u .aa-b small{color:#C9D1EA}
+[data-aa] .aa-b table{border-collapse:collapse;margin:8px 0 2px;font-size:13px;width:100%}[data-aa] .aa-b th,[data-aa] .aa-b td{border-bottom:1px solid #E9EBF0;padding:5px 8px;text-align:left}[data-aa] .aa-b td.r,[data-aa] .aa-b th.r{text-align:right;font-variant-numeric:tabular-nums}
+[data-aa] .aa-lien{display:inline-flex;align-items:center;gap:4px;margin:8px 8px 0 0;padding:6px 10px;border:1px solid #2E427B;border-radius:8px;background:#fff;color:#2E427B;font-weight:600;font-size:12px;text-decoration:none;cursor:pointer}[data-aa] .aa-lien:hover{background:#E3EBFE}
+[data-aa] .aa-pt{display:flex;gap:4px;padding:4px 2px}[data-aa] .aa-pt i{width:7px;height:7px;border-radius:50%;background:#8A90A0;animation:aapt 1s infinite ease-in-out}[data-aa] .aa-pt i:nth-child(2){animation-delay:.15s}[data-aa] .aa-pt i:nth-child(3){animation-delay:.3s}@keyframes aapt{0%,80%,100%{opacity:.25}40%{opacity:1}}
+[data-aa] .aa-sf{display:flex;gap:8px;padding:12px 16px;background:#fff;border-top:1px solid #E9EBF0}
+[data-aa] .aa-in{flex:1;min-width:0;height:44px;box-sizing:border-box;border:1px solid #878D9A;border-radius:10px;padding:0 12px;font-size:14px;color:#353944;background:#fff}
+[data-aa] .aa-env{width:44px;height:44px;flex:none;border:0;border-radius:50%;background:#2E427B;color:#fff;font-size:18px;cursor:pointer}[data-aa] .aa-env:disabled{background:#C5CAD6;cursor:not-allowed}
+[data-aa] .aa-pd{margin:0;padding:0 16px 10px;background:#fff;text-align:center;font-size:11px;color:#8A90A0}
+[data-aa] .aa-sg{border:1px solid #E1E5EE;border-radius:14px;background:#fff;padding:14px 16px}
+[data-aa] .aa-sg h3{margin:0 0 10px;font-size:11px;font-weight:700;letter-spacing:.06em;text-transform:uppercase;color:#5B606D}
+[data-aa] .aa-sg button{display:block;width:100%;text-align:left;margin:0 0 8px;min-height:34px;padding:6px 12px;border:1px solid #C5CAD6;border-radius:10px;background:#fff;color:#353944;font-size:13px;cursor:pointer}[data-aa] .aa-sg button:hover{background:#E3EBFE;border-color:#2E427B;color:#2E427B}
+[data-aa] .aa-fig{margin:10px 0 4px;padding:10px 10px 6px;border:1px solid #E9EBF0;border-radius:10px;background:#fff}[data-aa] .aa-fig figcaption{margin:0 0 4px;font-size:12px;font-weight:700;color:#0B1332}[data-aa] .aa-fig svg{display:block;width:100%;height:auto;max-width:560px}[data-aa] .aa-fig text{font-family:inherit}
+[data-aa] .aa-lgd{display:flex;flex-wrap:wrap;gap:4px 12px;margin:2px 0 0;font-size:11px;color:#474C58}[data-aa] .aa-lgd span{display:inline-flex;align-items:center;gap:5px}[data-aa] .aa-lgd i{width:10px;height:10px;border-radius:2px;display:inline-block}
+[data-aa] .aa-ap{margin-left:-4px;padding:6px 8px}
+[data-aa] .aa-cap{margin:10px 0 4px;border:1px solid #CBD2E1;border-radius:10px;overflow:hidden;background:#fff;box-shadow:0 2px 8px rgba(11,19,50,.1);cursor:zoom-in}
+[data-aa] .aa-capb{display:flex;align-items:center;gap:8px;padding:6px 10px;background:#EEF1F8;border-bottom:1px solid #D5D9E3;font-size:11px;color:#474C58}[data-aa] .aa-capb i{width:8px;height:8px;border-radius:50%;background:#C5CAD6;display:inline-block}[data-aa] .aa-capb span{margin-left:6px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+[data-aa] .aa-capv{position:relative;overflow:hidden;background:#F5F7F9}[data-aa] .aa-capv>div{position:absolute;left:0;top:0;transform-origin:0 0;pointer-events:none}
+[data-aa] .aa-capf{padding:5px 10px;font-size:11px;color:#5B606D;border-top:1px solid #E9EBF0;display:flex;justify-content:space-between;gap:8px}
+.aa-lb{position:fixed;inset:0;z-index:2000;background:rgba(11,19,50,.7);display:flex;align-items:center;justify-content:center;padding:20px}.aa-lb>div{background:#fff;border-radius:12px;max-width:96vw;max-height:92vh;overflow:auto;position:relative}.aa-lb button{position:sticky;top:8px;float:right;margin:8px;z-index:3;height:32px;padding:0 12px;border:1px solid #D5D9E3;border-radius:8px;background:#fff;cursor:pointer;font-weight:600}.aa-lb .aa-lbc{position:relative;transform-origin:0 0;pointer-events:none}
+@media (max-width:1000px){[data-aa] .aa-wrap{grid-template-columns:1fr}[data-aa] .aa-chat{height:70vh!important}[data-aa] .aa-sg{height:auto;max-height:50vh;min-height:0}}
+</style>
+
+<div class="bp-root" data-aa="AIID">
+  <h1 style="position:absolute;width:1px;height:1px;overflow:hidden;clip-path:inset(50%);margin:0">AITITRE</h1>
+  <div class="aa-wrap">
+    <section class="aa-chat" aria-label="AITITRE">
+      <header class="aa-hd"><span class="aa-lg"><i class="ti ti-sparkles" aria-hidden="true"></i></span><div class="aa-t"><b>AITITRE</b><small data-aa-sous></small></div><button type="button" data-aa-eff>Effacer</button></header>
+      <div class="aa-ms" data-aa-ms role="log" aria-live="polite"></div>
+      <form class="aa-sf" data-aa-f><input class="aa-in" data-aa-in type="text" placeholder="Posez votre question..." aria-label="Votre question" autocomplete="off"><button class="aa-env" type="submit" data-aa-env aria-label="Envoyer" disabled><i class="ti ti-send" aria-hidden="true"></i></button></form>
+      <p class="aa-pd">Données internes uniquement — Aucune IA externe</p>
+    </section>
+    <aside class="aa-sg"><h3>Suggestions</h3><div data-aa-sg></div></aside>
+  </div>
+</div>
+
+<script>
+(function () {
+  window.__aaT0 = window.__aaT0 || Date.now(); var root = document.querySelector('[data-aa="AIID"]'); if (!root) return;
+  function q(s) { return root.querySelector(s); }
+  // l'assistant remplit toute la hauteur disponible de l'écran (jusqu'au pied de page), quel que soit le zoom
+  function fit() {
+    var ch = q('.aa-chat'); if (!ch || !ch.offsetParent) return;
+    var sc = root.closest('.softcompta-content-scroll'), h;
+    if (sc) { var haut = ch.getBoundingClientRect().top - sc.getBoundingClientRect().top + sc.scrollTop; h = sc.clientHeight - haut - 16; }
+    else h = window.innerHeight - ch.getBoundingClientRect().top - 24;
+    root.style.setProperty('--aa-h', Math.max(440, Math.floor(h)) + 'px');
+  }
+  window.addEventListener('resize', fit); window.addEventListener('hashchange', function () { setTimeout(fit, 0); setTimeout(fit, 250); });
+  (function () { var sc = root.closest('.softcompta-content-scroll'); if (sc && window.ResizeObserver) new ResizeObserver(fit).observe(sc); })();
+  setTimeout(fit, 0); setTimeout(fit, 400);
+  function esc(s) { return String(s == null ? '' : s).replace(/[&<>"]/g, function (c) { return { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c]; }); }
+  function heure() { var d = new Date(); return ('0' + d.getHours()).slice(-2) + ':' + ('0' + d.getMinutes()).slice(-2); }
+  function M(x) { return (Math.round(x / 1e5) / 10).toLocaleString('fr-FR', { minimumFractionDigits: 1, maximumFractionDigits: 1 }) + ' M'; }
+  function P(x) { return (Math.round(x * 10) / 10).toLocaleString('fr-FR', { minimumFractionDigits: 1, maximumFractionDigits: 1 }) + ' %'; }
+  function L(l) { return l.map(function (x) { return '<a class="aa-lien" href="#' + x[0] + '">' + esc(x[1]) + ' <i class="ti ti-arrow-right" aria-hidden="true"></i></a><button type="button" class="aa-lien aa-ap" data-aa-cap="' + x[0] + '" title="Aperçu de l’écran" aria-label="Aperçu de ' + esc(x[1]) + '"><i class="ti ti-photo" aria-hidden="true"></i></button>'; }).join(''); }
+  function T(h, rows) { return '<table><thead><tr>' + h.map(function (c, i) { return '<th' + (i ? ' class="r"' : '') + '>' + esc(c) + '</th>'; }).join('') + '</tr></thead><tbody>' + rows.map(function (r) { return '<tr>' + r.map(function (c, i) { return '<td' + (i ? ' class="r"' : '') + '>' + esc(c) + '</td>'; }).join('') + '</tr>'; }).join('') + '</tbody></table>'; }
+  function pieces() { var p = window.ECRITURES_PIECES; return Array.isArray(p) ? p : p && typeof p === 'object' ? Object.keys(p).map(function (k) { return p[k]; }) : []; }
+  function exercices() { try { return (window.EXERCICES_API && window.EXERCICES_API.liste()) || []; } catch (e) { return []; } }
+  // exercice N / N-1 de démonstration (MGA) — mêmes ordres de grandeur que l'assistant général
+  var FIN = { immo: 1240e6, stocks: 210e6, clients: 520e6, autres: 95e6, treso: 380e6, cp: 1310.4e6, df: 620e6, fourn: 330e6, fisc: 140e6, adet: 44.6e6, ca: 3150e6, ch: 2905e6, dot: 12.6e6, rf: -62e6, imp: 97.6e6 };
+  function menu(mot) {
+    var res = [], vu = {}; mot = mot.toLowerCase();
+    [].forEach.call(document.querySelectorAll('a[data-nav]'), function (a) { var id = a.getAttribute('data-nav'), t = a.textContent.replace(/\s+/g, ' ').trim(); if (id && t && !vu[id] && t.toLowerCase().indexOf(mot) >= 0) { vu[id] = 1; res.push([id, t]); } });
+    return res.slice(0, 6);
+  }
+  function mots(t) { return t.toLowerCase().replace(/[^a-zà-ÿ0-9 ]/g, ' ').split(/\s+/).filter(function (w) { return w.length > 3 && !/^(comment|quel|quelle|quels|dans|pour|avec|dont|cette|faire|puis|dois|peux|veux|vous|nous|les|des|une|est|sont)$/.test(w); }); }
+  function repli(t) {
+    var vu = {}, res = []; mots(t).forEach(function (m) { menu(m.slice(0, Math.max(4, m.length - 1))).forEach(function (r) { if (!vu[r[0]]) { vu[r[0]] = 1; res.push(r); } }); });
+    return res.length ? '<p>Je n’ai pas de réponse détaillée, mais ces écrans peuvent vous aider :</p>' + L(res.slice(0, 6)) : '<p>Je n’ai pas compris la question. Essayez avec un mot-clé (écriture, lettrage, clôture, budget…) ou utilisez les suggestions.</p>';
+  }
+  // ===== Contenus riches : graphiques SVG, aperçus (captures) d'écrans du logiciel, schéma des interdépendances =====
+  var PAL = ['#2E427B', '#4A7FBF', '#C77D0A', '#B63132', '#1E7B4B', '#8A90A0', '#7A5AA6', '#2A9D8F'];
+  function tr(t, n) { t = String(t); return t.length > n ? t.slice(0, n - 1) + '…' : t; }
+  function l1(n) { if (n.length <= 19) return n; var i = n.lastIndexOf(' ', 19); return i > 4 ? n.slice(0, i) : n.slice(0, 19); }
+  function l2(n) { return n.length <= 19 ? '' : n.slice(l1(n).length).trim(); }
+  function fnum(v) { return Math.abs(v) >= 1000 ? Math.round(v).toLocaleString('fr-FR') : (Math.round(v * 10) / 10).toLocaleString('fr-FR'); }
+  function fig(titre, svg, legende) { return '<figure class="aa-fig" role="group" aria-label="' + esc(titre) + '"><figcaption>' + esc(titre) + '</figcaption>' + svg + (legende ? '<div class="aa-lgd">' + legende.map(function (l) { return '<span><i style="background:' + l[1] + '"></i>' + esc(l[0]) + '</span>'; }).join('') + '</div>' : '') + '</figure>'; }
+  var CH = {
+    // barres horizontales : items = [{l, v, c}]
+    bars: function (titre, items, o) {
+      o = o || {}; if (!items.length) return ''; var W = 520, lw = 190, rh = 24, H = items.length * rh + 8, mx = Math.max.apply(null, items.map(function (i) { return Math.abs(i.v); })) || 1, bw = W - lw - 70;
+      var g = items.map(function (it, i) { var y = 4 + i * rh, w = Math.max(2, Math.abs(it.v) / mx * bw); return '<text x="' + (lw - 8) + '" y="' + (y + 15) + '" text-anchor="end" font-size="11" fill="#353944">' + esc(tr(it.l, 30)) + '</text><rect x="' + lw + '" y="' + (y + 3) + '" width="' + w + '" height="15" rx="3" fill="' + (it.c || PAL[0]) + '"></rect><text x="' + (lw + w + 6) + '" y="' + (y + 15) + '" font-size="11" fill="#0B1332" font-weight="600">' + esc(it.t || fnum(it.v)) + (o.u || '') + '</text>'; }).join('');
+      return fig(titre, '<svg viewBox="0 0 ' + W + ' ' + H + '" role="img" aria-label="' + esc(titre) + '">' + g + '</svg>', o.leg);
+    },
+    // colonnes groupées : cats = [libellés], series = [{n, c, v:[]}]
+    groups: function (titre, cats, series, o) {
+      o = o || {}; var W = 520, H = 190, pl = 40, pb = 28, pt = 12, mx = Math.max.apply(null, [].concat.apply([], series.map(function (s) { return s.v.map(function (x) { return Math.abs(x || 0); }); }))) || 1, ch = H - pb - pt, gw = (W - pl - 10) / cats.length, bw = Math.min(28, (gw - 14) / series.length);
+      var g = '<line x1="' + pl + '" y1="' + (H - pb) + '" x2="' + (W - 6) + '" y2="' + (H - pb) + '" stroke="#C5CAD6"></line>' + [0.5, 1].map(function (k) { var y = H - pb - ch * k; return '<line x1="' + pl + '" y1="' + y + '" x2="' + (W - 6) + '" y2="' + y + '" stroke="#EEF0F5"></line><text x="' + (pl - 4) + '" y="' + (y + 3) + '" text-anchor="end" font-size="9" fill="#5B606D">' + esc(fnum(mx * k)) + '</text>'; }).join('');
+      cats.forEach(function (c, i) { var x0 = pl + i * gw + (gw - bw * series.length) / 2; series.forEach(function (s, j) { var v = s.v[i] || 0, h = Math.abs(v) / mx * ch; g += '<rect x="' + (x0 + j * bw) + '" y="' + (H - pb - h) + '" width="' + (bw - 2) + '" height="' + h + '" rx="2" fill="' + (s.c || PAL[j]) + '"></rect><text x="' + (x0 + j * bw + (bw - 2) / 2) + '" y="' + (H - pb - h - 3) + '" text-anchor="middle" font-size="8.5" fill="#0B1332">' + esc(fnum(v)) + '</text>'; }); g += '<text x="' + (pl + i * gw + gw / 2) + '" y="' + (H - 10) + '" text-anchor="middle" font-size="10" fill="#353944">' + esc(tr(c, 16)) + '</text>'; });
+      return fig(titre, '<svg viewBox="0 0 ' + W + ' ' + H + '" role="img" aria-label="' + esc(titre) + '">' + g + '</svg>', series.map(function (s, j) { return [s.n, s.c || PAL[j]]; }));
+    },
+    // anneau : parts = [{l, v, c}]
+    donut: function (titre, parts, centre) {
+      parts = parts.filter(function (p) { return p.v > 0; }); var tot = parts.reduce(function (a, p) { return a + p.v; }, 0); if (!tot) return '';
+      var r = 52, cx = 70, cy = 70, C = 2 * Math.PI * r, off = 0;
+      var arcs = parts.map(function (p, i) { var d = p.v / tot * C, el = '<circle cx="' + cx + '" cy="' + cy + '" r="' + r + '" fill="none" stroke="' + (p.c || PAL[i % PAL.length]) + '" stroke-width="22" stroke-dasharray="' + d + ' ' + (C - d) + '" stroke-dashoffset="' + (-off) + '" transform="rotate(-90 ' + cx + ' ' + cy + ')"></circle>'; off += d; return el; }).join('');
+      var leg = parts.map(function (p, i) { return '<text x="150" y="' + (28 + i * 18) + '" font-size="11" fill="#353944"><tspan fill="' + (p.c || PAL[i % PAL.length]) + '">■</tspan> ' + esc(tr(p.l, 26)) + ' — ' + esc(p.t || fnum(p.v)) + '</text>'; }).join('');
+      return fig(titre, '<svg viewBox="0 0 440 ' + Math.max(140, 40 + parts.length * 18) + '" role="img" aria-label="' + esc(titre) + '">' + arcs + '<text x="' + cx + '" y="' + (cy + 5) + '" text-anchor="middle" font-size="16" font-weight="700" fill="#0B1332">' + esc(centre == null ? fnum(tot) : centre) + '</text>' + leg + '</svg>');
+    },
+    // jauge : valeur sur [min, max], zones = [[jusqu'à, couleur]]
+    gauge: function (titre, v, min, max, zones, txt) {
+      var W = 200, cx = 100, cy = 100, r = 74, a = function (x) { return Math.PI * (1 - (x - min) / (max - min)); }, pt = function (x, rr) { return [cx + rr * Math.cos(a(x)), cy - rr * Math.sin(a(x))]; }, g = '', deb = min;
+      zones.forEach(function (z) { var p1 = pt(deb, r), p2 = pt(Math.min(z[0], max), r); g += '<path d="M ' + p1[0] + ' ' + p1[1] + ' A ' + r + ' ' + r + ' 0 0 1 ' + p2[0] + ' ' + p2[1] + '" fill="none" stroke="' + z[1] + '" stroke-width="16"></path>'; deb = Math.min(z[0], max); });
+      var vv = Math.max(min, Math.min(max, v)), n = pt(vv, r - 10);
+      return fig(titre, '<svg viewBox="0 0 200 120" role="img" aria-label="' + esc(titre + ' : ' + (txt || v)) + '" style="max-width:240px">' + g + '<line x1="' + cx + '" y1="' + cy + '" x2="' + n[0] + '" y2="' + n[1] + '" stroke="#0B1332" stroke-width="3" stroke-linecap="round"></line><circle cx="' + cx + '" cy="' + cy + '" r="5" fill="#0B1332"></circle><text x="' + cx + '" y="' + (cy + 16) + '" text-anchor="middle" font-size="13" font-weight="700" fill="#0B1332">' + esc(txt || fnum(v)) + '</text></svg>');
+    },
+    // schéma des interdépendances entre modules ; mod = module surligné (impacts en rouge, prérequis en vert)
+    graphe: function (mod) {
+      var GU = window.AI_GUIDES; if (!GU) return '';
+      var P = { admin: [0, 20], param: [0, 90], cours: [0, 160], caisse: [1, 20], immo: [1, 90], circuit: [1, 160], saisie: [2, 90], lettrage: [3, 20], rappro: [3, 85], travaux: [3, 150], contrats: [3, 215], etatsc: [4, 85], etatsf: [5, 40], projets: [5, 180], rsf: [6, 110], ai: [6, 190] }, w = 92, h = 30, X = function (m) { return 8 + P[m][0] * 108; }, Y = function (m) { return P[m][1] + 8; };
+      var av = {}, am = {}; if (mod) { GU.impactes(mod, 'aval').forEach(function (x) { av[x.m] = 1; }); GU.impactes(mod, 'amont').forEach(function (x) { am[x.m] = 1; }); }
+      var e = GU.liens.map(function (l) {
+        var a = l[0], b = l[1], x1 = X(a) + w, y1 = Y(a) + h / 2, x2 = X(b), y2 = Y(b) + h / 2, rouge = mod && (a === mod || av[a]) && av[b], vert = mod && (b === mod || am[b]) && am[a], col = rouge ? '#B63132' : vert ? '#1E7B4B' : '#C5CAD6', sw = rouge || vert ? 2 : 1;
+        if (P[b][0] > P[a][0]) return '<path d="M ' + x1 + ' ' + y1 + ' C ' + (x1 + 30) + ' ' + y1 + ' ' + (x2 - 30) + ' ' + y2 + ' ' + x2 + ' ' + y2 + '" fill="none" stroke="' + col + '" stroke-width="' + sw + '" marker-end="url(#aam' + (rouge ? 'r' : vert ? 'v' : 'g') + ')"></path>';
+        var xa = X(a) + w / 2, xb = X(b) + w / 2, ya = Y(a) + h, yb = Y(b) + h; return '<path d="M ' + xa + ' ' + ya + ' C ' + xa + ' ' + (ya + 40) + ' ' + xb + ' ' + (yb + 40) + ' ' + xb + ' ' + yb + '" fill="none" stroke="' + col + '" stroke-width="' + sw + '" stroke-dasharray="4 3" marker-end="url(#aam' + (rouge ? 'r' : vert ? 'v' : 'g') + ')"></path>';
+      }).join('');
+      var nd = Object.keys(P).map(function (m) { var fill = m === mod ? '#2E427B' : av[m] ? '#FDE8E8' : am[m] ? '#E3F3EA' : '#EEF1F8', tx = m === mod ? '#fff' : '#0B1332', nom = GU.modules[m][0]; return '<g><rect x="' + X(m) + '" y="' + Y(m) + '" width="' + w + '" height="' + h + '" rx="6" fill="' + fill + '" stroke="' + (m === mod ? '#2E427B' : av[m] ? '#B63132' : am[m] ? '#1E7B4B' : '#C5CAD6') + '"></rect><text x="' + (X(m) + w / 2) + '" y="' + (Y(m) + 13) + '" text-anchor="middle" font-size="9" font-weight="600" fill="' + tx + '">' + esc(l1(nom)) + '</text><text x="' + (X(m) + w / 2) + '" y="' + (Y(m) + 24) + '" text-anchor="middle" font-size="8" fill="' + (m === mod ? '#C9D1EA' : '#5B606D') + '">' + esc(tr(l2(nom), 22)) + '</text></g>'; }).join('');
+      var defs = ['g:#9AA1B2', 'r:#B63132', 'v:#1E7B4B'].map(function (d) { var p = d.split(':'); return '<marker id="aam' + p[0] + '" viewBox="0 0 8 8" refX="7" refY="4" markerWidth="6" markerHeight="6" orient="auto"><path d="M0,0 L8,4 L0,8 z" fill="' + p[1] + '"></path></marker>'; }).join('');
+      return fig(mod ? 'Propagation autour de « ' + GU.modules[mod][0] + ' »' : 'Carte des interdépendances', '<svg viewBox="0 0 770 262" role="img" aria-label="Schéma des flux entre modules" style="max-width:none">' + '<defs>' + defs + '</defs>' + e + nd + '</svg>', mod ? [['Module choisi', '#2E427B'], ['Impacté en aval', '#B63132'], ['Prérequis en amont', '#1E7B4B']] : [['Flux direct', '#9AA1B2'], ['Retour (pointillé)', '#C5CAD6']]);
+    }
+  };
+  // aperçu d'un écran du logiciel : copie conforme de l'écran tel qu'il est affiché dans l'application (état courant), miniaturisée ; clic = agrandissement
+  function crumbDe(id) { var c = [].filter.call(document.querySelectorAll('[data-crumb]'), function (x) { return x.dataset.crumb === id; })[0]; return c ? c.textContent.replace(/\s+/g, ' ').trim() : id; }
+  function capture(id, hmax) {
+    if (!document.querySelector('[data-screen="' + id + '"]')) return '';
+    return '<div class="aa-cap" data-aa-capid="' + esc(id) + '" data-hmax="' + (hmax || 300) + '" role="button" tabindex="0" aria-label="Agrandir l’aperçu de l’écran"><div class="aa-capb"><i></i><i></i><i></i><span>' + esc(crumbDe(id)) + '</span></div><div class="aa-capv"></div><div class="aa-capf"><span>Aperçu de l’écran — état actuel</span><span>Cliquer pour agrandir · <a href="#' + esc(id) + '">Ouvrir l’écran</a></span></div></div>';
+  }
+  function cloneEcran(id) {
+    var src = document.querySelector('[data-screen="' + id + '"]'); if (!src) return null; var c = src.cloneNode(true);
+    c.style.display = 'block'; c.removeAttribute('data-screen'); [].forEach.call(c.querySelectorAll('script,style'), function (x) { x.remove(); });
+    [].forEach.call(c.querySelectorAll('[id]'), function (x) { x.removeAttribute('id'); }); [].forEach.call(c.querySelectorAll('[data-aa]'), function (x) { x.removeAttribute('data-aa'); });
+    [].forEach.call(c.querySelectorAll('[class*="-ov"],[class*="modal"],[role="dialog"],.pg-bar,.cb-pan'), function (x) { x.style.display = 'none'; });
+    var oi = src.querySelectorAll('input,select,textarea'), ci = c.querySelectorAll('input,select,textarea');
+    [].forEach.call(ci, function (x, i) { var o = oi[i]; if (!o) return; if (x.tagName === 'SELECT') { x.selectedIndex = o.selectedIndex; [].forEach.call(x.options, function (op, k) { if (k === o.selectedIndex) op.setAttribute('selected', ''); else op.removeAttribute('selected'); }); } else if (x.type === 'checkbox' || x.type === 'radio') { if (o.checked) x.setAttribute('checked', ''); else x.removeAttribute('checked'); } else if (x.tagName === 'TEXTAREA') x.textContent = o.value; else x.setAttribute('value', o.value); });
+    return c;
+  }
+  function remplirCaps(m) {
+    [].forEach.call(m.querySelectorAll('.aa-cap[data-aa-capid]'), function (cap) {
+      var v = cap.querySelector('.aa-capv'), c = cloneEcran(cap.dataset.aaCapid); if (!c) return; var W = 1180, inner = document.createElement('div'); inner.style.width = W + 'px'; inner.appendChild(c); v.appendChild(inner);
+      var sc = (v.clientWidth || 480) / W; inner.style.transform = 'scale(' + sc + ')'; v.style.height = Math.min(+cap.dataset.hmax, Math.max(120, Math.round(inner.offsetHeight * sc))) + 'px';
+    });
+  }
+  function agrandir(id) {
+    var c = cloneEcran(id); if (!c) return; var lb = document.createElement('div'); lb.className = 'aa-lb'; lb.setAttribute('role', 'dialog'); lb.setAttribute('aria-label', 'Aperçu agrandi');
+    var box = document.createElement('div'), W = 1180, vw = Math.min(window.innerWidth - 48, 1180), sc = vw / W, inner = document.createElement('div'); inner.className = 'aa-lbc'; inner.style.width = W + 'px'; inner.appendChild(c); inner.style.transform = 'scale(' + sc + ')';
+    var wrap = document.createElement('div'); wrap.style.cssText = 'width:' + vw + 'px;overflow:hidden;position:relative'; wrap.appendChild(inner); var btn = document.createElement('button'); btn.type = 'button'; btn.textContent = 'Fermer ×'; box.appendChild(btn); box.appendChild(wrap); lb.appendChild(box); document.body.appendChild(lb);
+    wrap.style.height = Math.round(inner.offsetHeight * sc) + 'px'; var fin = function () { lb.remove(); document.removeEventListener('keydown', esc2); }, esc2 = function (e) { if (e.key === 'Escape') fin(); }; btn.addEventListener('click', fin); lb.addEventListener('click', function (e) { if (e.target === lb) fin(); }); document.addEventListener('keydown', esc2); btn.focus();
+  }
+  var CONF = {
+    aicompta: {
+      sous: 'Écritures, journaux, lettrage, clôtures, plan comptable',
+      accueil: '<p>Bonjour ! Je suis votre <b>assistance comptable</b>.</p><p>Je vous guide sur la saisie des écritures, le lettrage, le rapprochement bancaire, les clôtures et le plan comptable, à partir des données de la base.</p>',
+      sugg: ['Comment saisir une écriture ?', 'Combien d’écritures sont enregistrées ?', 'Comment lettrer des comptes ?', 'Comment faire un rapprochement bancaire ?', 'Comment clôturer un exercice ?', 'Comptes par classe', 'Comment saisir la TVA ?', 'Comment gérer la petite caisse ?', 'Où saisir les cours de change ?'],
+      regles: [
+        [/combien.*(écriture|pièce|piece)|nombre.*(écriture|pièce)|écritures? enregistr/, function () { var p = pieces(); return '<p>La base contient <b>' + p.length + '</b> pièce(s) comptable(s) saisie(s) dans cette session.</p>' + L([['listeecritures', 'Liste des écritures'], ['ecritures', 'Saisie d’écritures']]); }],
+        [/saisir.*écriture|saisie.*écriture|passer.*écriture|nouvelle écriture/, function () { return '<p>Pour saisir une écriture :</p><ol><li>Ouvrez <b>Saisie d’écritures</b> et choisissez le journal, la date et la pièce.</li><li>Ajoutez les lignes (compte, tiers, montant débit / crédit, axes analytiques).</li><li>Vérifiez l’équilibre débit = crédit puis <b>Enregistrer la pièce</b>.</li></ol>' + L([['ecritures', 'Saisie d’écritures'], ['listeecritures', 'Liste des écritures']]); }],
+        [/lettr/, function () { return '<p>Le <b>lettrage</b> rapproche des lignes d’un même compte de tiers dont le solde est nul. Paramétrez d’abord les règles, puis lettrez manuellement ou automatiquement ; le <b>prélettrage</b> sert à regrouper provisoirement des lignes.</p>' + L([['lettparam', 'Paramètre de lettrage'], ['lettmanuel', 'Lettrage'], ['prelettrage', 'Prélettrage']]); }],
+        [/rapproch|relev[ée]|pointage|banque/, function () { return '<p>Le <b>rapprochement bancaire</b> se fait par compte bancaire : configuration, pointage des lignes du relevé (import, OCR, proposition automatique), génération des écritures manquantes puis situation du rapprochement.</p>' + L([['rapprochement', 'Configuration'], ['releves', 'Pointage'], ['situation', 'Situation'], ['banques', 'Liste des banques']]); }],
+        [/cl[oô]tur|exercice/, function () { var e = exercices(), s = e.length ? '<p>Exercices connus : ' + e.map(function (x) { return esc(x.code || x.libelle || x.annee || x.nom || ''); }).filter(Boolean).join(', ') + '.</p>' : ''; return '<p>Les clôtures se font du plus fin au plus large : <b>clôture mensuelle / périodique</b>, puis <b>à nouveau</b> et <b>clôture annuelle</b> de l’exercice.</p>' + s + L([['clotmens', 'Clôture mensuelle'], ['clotper', 'Clôture périodique'], ['anouveaux', 'À nouveau'], ['clotannuelle', 'Clôture annuelle'], ['exercices', 'Exercices comptables']]); }],
+        [/classe|plan comptable|combien.*comptes?|nombre.*comptes?/, function () {
+          var pc = window.PLAN_COMPTABLE; pc = Array.isArray(pc) ? pc : []; if (!pc.length) return '<p>Le plan comptable n’est pas encore chargé.</p>' + L([['pl_comptable', 'Plan comptable']]);
+          var c = {}; pc.forEach(function (r) { var k = String(r.code || '').charAt(0); if (k) c[k] = (c[k] || 0) + 1; });
+          return '<p>Le plan comptable compte <b>' + pc.length + '</b> compte(s).</p>' + T(['Classe', 'Comptes'], Object.keys(c).sort().map(function (k) { return ['Classe ' + k, String(c[k])]; })) + L([['pl_comptable', 'Plan comptable']]); }],
+        [/tva|taxe/, function () { return '<p>Les taxes se paramètrent par <b>type de taxe</b> (comptes de collecte et de déduction) ; elles sont ensuite proposées automatiquement à la saisie des pièces d’achat et de vente.</p>' + L([['typetaxe', 'Type de taxe'], ['taxes', 'Taxes']]); }],
+        [/caisse/, function () { return '<p>La <b>petite caisse</b> fonctionne par lot : types d’opération, saisie des mouvements, fermeture du lot et <b>PV de caisse</b> (billetage, signataires), puis génération des écritures.</p>' + L([['caissetypes', 'Types d’opération'], ['caissesaisie', 'Saisie'], ['pvcaisse', 'PV de caisse'], ['caissegen', 'Génération des écritures']]); }],
+        [/cours|devise|change/, function () { return '<p>Saisissez les cours officiels dans <b>Gestion des cours</b> ; le contrôle « Cours appliqué » signale les écarts supérieurs au seuil de tolérance (± 3 % par défaut).</p>' + L([['cours', 'Saisie des cours'], ['conversion', 'Conversion'], ['coursapplique', 'Cours appliqué'], ['devise', 'Devises']]); }],
+        [/balance|grand livre|journal|échéanc/, function () { return '<p>Les états comptables se trouvent dans le module <b>États comptables</b>.</p>' + L([['balance', 'Balance générale'], ['balaux', 'Balance auxiliaire'], ['glg', 'Grand livre général'], ['journal', 'Journaux'], ['echeancier', 'Échéancier et balance âgée']]); }]
+      ]
+    },
+    aifin: {
+      sous: 'Analyse financière, ratios, suivi budgétaire et utilisation des fonds',
+      accueil: '<p>Bonjour ! Je suis votre <b>assistance financière</b>.</p><p>J’analyse l’équilibre financier, la rentabilité, les ratios, le suivi budgétaire et l’utilisation des fonds des projets. Les chiffres présentés sont des données de démonstration.</p>',
+      sugg: ['Équilibre financier (FR, BFR, trésorerie)', 'Rentabilité et résultat net', 'Ratios de liquidité et d’endettement', 'Où suivre l’exécution du budget ?', 'Comment suivre l’utilisation des fonds ?', 'Où sont les états financiers ?', 'Quelle est ma trésorerie ?'],
+      regles: [
+        [/fonds de roulement|\bfr\b|bfr|équilibre|equilibre/, function () { var fr = FIN.cp + FIN.df - FIN.immo, bfr = FIN.stocks + FIN.clients + FIN.autres - FIN.fourn - FIN.fisc - FIN.adet; return '<p>Équilibre financier (démonstration) :</p>' + T(['Indicateur', 'Montant (MGA)'], [['Fonds de roulement (FR)', M(fr)], ['Besoin en fonds de roulement (BFR)', M(bfr)], ['Trésorerie nette (FR − BFR)', M(fr - bfr)]]) + '<p>' + (fr >= bfr ? 'Le fonds de roulement couvre le besoin : la situation est équilibrée.' : 'Le fonds de roulement ne couvre pas le besoin : surveillez la trésorerie.') + '</p>' + L([['bilparam', 'Bilan']]); }],
+        [/rentabilit|résultat|resultat|marge/, function () { var rex = FIN.ca - FIN.ch - FIN.dot, rn = rex + FIN.rf - FIN.imp; return T(['Poste', 'Montant (MGA)'], [['Chiffre d’affaires', M(FIN.ca)], ['Résultat d’exploitation', M(rex)], ['Résultat financier', M(FIN.rf)], ['Résultat net', M(rn)]]) + '<p>Marge nette : <b>' + P(rn / FIN.ca * 100) + '</b> du chiffre d’affaires.</p>' + L([['crparam', 'Compte de résultat']]); }],
+        [/liquidit|solvabilit|endettement|ratio/, function () { var ac = FIN.stocks + FIN.clients + FIN.autres + FIN.treso, pc = FIN.fourn + FIN.fisc + FIN.adet, tot = FIN.immo + ac; return T(['Ratio', 'Valeur'], [['Liquidité générale (actif circulant / dettes CT)', (ac / pc).toLocaleString('fr-FR', { maximumFractionDigits: 2 })], ['Autonomie financière (capitaux propres / total)', P(FIN.cp / tot * 100)], ['Endettement (dettes financières / capitaux propres)', P(FIN.df / FIN.cp * 100)]]) + L([['bilparam', 'Bilan']]); }],
+        [/tr[ée]sorerie|treso/, function () { return '<p>La trésorerie de clôture est de <b>' + M(FIN.treso) + ' MGA</b> (démonstration). Le tableau de flux détaille son évolution.</p>' + L([['tftparam', 'Tableau de flux de trésorerie'], ['bilparam', 'Bilan']]); }],
+        [/budget|ex[ée]cution|suivi budg/, function () { return '<p>Le <b>Suivi budgétaire</b> (RSF) analyse, selon le critère de votre choix (financier, budget, activité…), les réalisations, le budget, le disponible et le taux d’exécution de la période, de l’exercice et du projet.</p>' + L([['rsfsb', 'Suivi budgétaire'], ['budgetconv', 'Budget de la convention']]); }],
+        [/utilisation|fonds|d[ée]caiss|bailleur|convention|pad/, function () { return '<p>L’état d’<b>utilisation de fonds</b> (RSF) édite le prévu, l’effectif et l’écart par niveau du plan d’activité ; le cumulatif peut être rempli par le <b>PAD</b> ou par le <b>budget cumulatif</b>.</p>' + L([['rsfuf', 'Utilisation de fonds'], ['rsfer', 'Tableau emplois ressources'], ['etatdep', 'État de dépense']]); }],
+        [/bilan|compte de r[ée]sultat|flux|emplois|[ée]tats? financiers?/, function () { return '<p>Les états financiers se paramètrent puis s’éditent dans le module <b>États financiers</b>.</p>' + L([['bilparam', 'Bilan'], ['crparam', 'Compte de résultat'], ['erparam', 'Emplois et ressources'], ['tftparam', 'Flux de trésorerie']]); }]
+      ]
+    },
+    aifonc: {
+      sous: 'Où trouver et comment utiliser les fonctionnalités du logiciel',
+      accueil: '<p>Bonjour ! Je suis votre <b>assistance fonctionnelle</b>.</p><p>Dites-moi ce que vous voulez faire : je vous indique l’écran, les étapes et je vous y emmène. Exemple : « comment créer un circuit de validation ? ».</p>',
+      sugg: ['Comment activer ou masquer un module ?', 'Comment créer un circuit de validation ?', 'Comment imprimer une fiche d’imputation ?', 'Comment créer un modèle de pièce de caisse ?', 'Où gérer les utilisateurs et les droits ?', 'Où paramétrer les devises ?', 'Comment changer de produit ?', 'Comment importer des écritures ?'],
+      regles: [
+        [/module|activer|masquer|d[ée]sactiver/, function () { return '<p>Dans <b>Administration de l’entité › Modules</b>, chaque module dispose d’un interrupteur : désactivé, il disparaît du menu latéral.</p>' + L([['entite', 'Administration de l’entité']]); }],
+        [/produit|entreprise|edition/, function () { return '<p>Le sélecteur de produit (en haut à gauche) bascule entre <b>SoftAccounting</b> et <b>SoftAccounting Entreprise</b> ; ce dernier masque les modules et paramètres réservés aux projets et bailleurs.</p>'; }],
+        [/circuit|validation|checklist/, function () { return '<p>Un <b>circuit de validation</b> se paramètre par étapes (validateurs, checklist, commentaire obligatoire) puis se traite pièce par pièce.</p>' + L([['circparam', 'Paramètre Circuit'], ['circtrait', 'Traitement']]); }],
+        [/imput|fiche/, function () { return '<p>Dans la <b>Liste des écritures</b>, filtrez, sélectionnez les lignes puis cliquez sur <b>Imprimer la fiche d’imputation</b> ; une fenêtre vous demande les signataires avant l’impression.</p>' + L([['listeecritures', 'Liste des écritures']]); }],
+        [/pi[èe]ce de caisse|mod[èe]le.*(word|rtf|pi[èe]ce)|publipostage/, function () { return '<p>Les <b>modèles de pièce de caisse</b> se créent, s’importent (Word / RTF) et s’exportent ; les champs dynamiques s’insèrent par publipostage.</p>' + L([['caissemodeles', 'Modèles de pièce'], ['caissesaisie', 'Saisie de caisse']]); }],
+        [/utilisateur|acc[èe]s|droit|profil/, function () { return L([['acces', 'Gestion des accès']]); }],
+        [/devise|pays|signataire|banque/, function () { return '<p>Ces référentiels se trouvent dans <b>Paramétrages › Paramètres généraux</b>.</p>' + L([['devise', 'Devises'], ['pays', 'Pays'], ['signataires', 'Signataires'], ['banques', 'Banques']]); }],
+        [/import|export/, function () { return '<p>La plupart des listes proposent <b>Importer</b> et <b>Exporter</b> (PDF / Excel). La saisie d’écritures accepte aussi l’import de pièces.</p>' + L([['ecritures', 'Saisie d’écritures']]); }],
+        [/trace|journal de trace|audit/, function () { return L([['traces', 'Paramétrage des traces'], ['jtraces', 'Journal de traces']]); }]
+      ]
+    }
+  }['AIID'];
+  // ===== Assistance comptable : référentiel d'analyses + détection d'anomalies branchée sur les modules du logiciel =====
+  var BADGE = null;
+  if ('AIID' === 'aicompta' && window.AI_REF) (function () {
+    var REF = window.AI_REF, CLK = 'softcompta.aiChecklist';
+    function fdate(d) { return ('0' + d.getDate()).slice(-2) + '/' + ('0' + (d.getMonth() + 1)).slice(-2) + '/' + d.getFullYear(); }
+    function echeance(c) { var j = c.criticite === 'Élevée' ? 7 : c.criticite === 'Moyenne' ? 15 : 30, d = new Date(); d.setDate(d.getDate() + j); return fdate(d); }
+    function coul(t) { return t === 'Bloquant' ? '#B63132' : t === 'Avertissement' ? '#8A5A12' : t === 'Périodique' ? '#2E427B' : '#5B606D'; }
+    function pastille(t) { return '<span style="display:inline-block;padding:1px 8px;border-radius:999px;font-size:11px;font-weight:600;border:1px solid ' + coul(t) + ';color:' + coul(t) + '">' + esc(t) + '</span>'; }
+    function liste(a) { return '<ul>' + a.map(function (x) { return '<li>' + esc(x) + '</li>'; }).join('') + '</ul>'; }
+    function lancer() { var r = REF.executer(); majBadge(r); return r; }
+    function total(r) { return r.resultats.reduce(function (a, x) { return a + x.n; }, 0); }
+    function resume(r) {
+      var tot = total(r), bl = r.resultats.filter(function (x) { return x.c.type === 'Bloquant'; }).reduce(function (a, x) { return a + x.n; }, 0), ok = r.resultats.filter(function (x) { return !x.na && x.n === 0; }).length, na = r.resultats.filter(function (x) { return x.na; }).length;
+      return '<p><b>' + tot + ' anomalie(s)</b> détectée(s)' + (bl ? ', dont <b style="color:#B63132">' + bl + ' bloquante(s)</b>' : '') + ' sur ' + r.resultats.length + ' contrôles automatiques (' + ok + ' conforme(s)' + (na ? ', ' + na + ' sans donnée' : '') + ').</p>';
+    }
+    function graphRapport(rs) {
+      var a = rs.filter(function (x) { return x.n > 0; }).sort(function (x, y) { return y.n - x.n; }), tp = { 'Bloquant': '#B63132', 'Avertissement': '#C77D0A', 'Informatif': '#8A90A0', 'Périodique': '#2E427B' }, par = {};
+      a.forEach(function (x) { par[x.c.type] = (par[x.c.type] || 0) + x.n; });
+      return CH.bars('Anomalies par contrôle', a.slice(0, 8).map(function (x) { return { l: x.c.code + ' ' + x.c.objectif, v: x.n, c: tp[x.c.type] }; }), { leg: Object.keys(tp).map(function (k) { return [k, tp[k]]; }) }) + CH.donut('Répartition par type de contrôle', Object.keys(par).map(function (k) { return { l: k, v: par[k], c: tp[k] }; }), String(a.reduce(function (z, x) { return z + x.n; }, 0)));
+    }
+    function rapport(r, only) {
+      var rs = r.resultats.filter(function (x) { return !only || only.indexOf(x.c.code) >= 0; });
+      var h = resume(r) + graphRapport(rs) + '<table><thead><tr><th>Code</th><th>Contrôle</th><th>Type</th><th>Criticité</th><th class="r">Anomalies</th></tr></thead><tbody>' + rs.map(function (x) {
+        return '<tr><td>' + esc(x.c.code) + '</td><td>' + esc(x.c.objectif) + '</td><td>' + pastille(x.c.type) + '</td><td>' + esc(x.c.criticite) + '</td><td class="r">' + (x.na ? 'n/a' : x.n === 0 ? '✔ 0' : '<b style="color:#B63132">' + x.n + '</b>') + '</td></tr>';
+      }).join('') + '</tbody></table>';
+      rs.filter(function (x) { return x.n > 0; }).forEach(function (x) {
+        var lk = REF.liens[x.c.code];
+        h += '<details style="margin-top:8px"><summary><b>' + esc(x.c.code) + '</b> — ' + esc(x.c.objectif) + ' (' + x.n + ')</summary><p style="margin:4px 0"><i>Règle :</i> ' + esc(x.c.regle) + '</p><p style="margin:2px 0;font-size:12px;color:#5B606D">Source : ' + esc(x.src) + '</p>' + liste(x.details.slice(0, 6).map(function (d) { return (d.piece ? d.piece + ' — ' : '') + d.msg; })) + (x.n > 6 ? '<p style="margin:2px 0;font-size:12px">… et ' + (x.n - 6) + ' autre(s) (voir l’export Excel).</p>' : '') + '<p style="margin:4px 0"><i>Action corrective :</i> ' + esc(x.c.action) + ' <i>— Responsable :</i> ' + esc(x.c.responsable) + ' <i>— Échéance :</i> ' + echeance(x.c) + '</p>' + (lk ? L([[lk[0], 'Corriger : ' + lk[1]]]) : '') + '</details>';
+      });
+      var na = rs.filter(function (x) { return x.na; }); if (na.length) h += '<p style="font-size:12px;color:#5B606D">Sans donnée : ' + na.map(function (x) { return esc(x.src); }).join(' ; ') + '.</p>';
+      h += '<p style="font-size:12px;color:#5B606D">Source des écritures : ' + (r.source === 'saisies' ? 'pièces saisies dans « Saisie d’écritures »' : 'jeu de démonstration (aucune pièce saisie) — les modules Rapprochement, Caisse, Immobilisations, Clôtures, Circuit et Traces sont lus en direct') + '. Flux : détection → rapport → plan de correction → validation comptable → archivage des preuves.</p>';
+      return h + '<button type="button" class="aa-lien" data-aa-xl>Exporter le rapport et le plan de correction (Excel)</button><button type="button" class="aa-lien" data-aa-relancer>Relancer les contrôles</button>';
+    }
+    function exporterRapport() {
+      var r = REF.dernier || lancer(), X = window.EXPORT_TABLEAU; if (!X) return;
+      var T = ['Code', 'Volet', 'Contrôle', 'Type', 'Criticité', 'Objet', 'Anomalie', 'Action corrective', 'Responsable', 'Échéance', 'Validation', 'Statut', 'Source'], rows = [];
+      r.resultats.forEach(function (x) { x.details.forEach(function (d) { rows.push([x.c.code, x.c.volet, x.c.objectif, x.c.type, x.c.criticite, d.piece, d.msg, x.c.action, x.c.responsable, echeance(x.c), x.c.validation, 'À corriger', x.src]); }); });
+      if (!rows.length) rows.push(['', '', 'Aucune anomalie détectée', '', '', '', '', '', '', '', '', 'Conforme', '']);
+      X.xlsx('rapport_analyse_comptable.xlsx', 'Rapport d’analyse', T, rows);
+    }
+    function matrice() {
+      var tpm = { 'Bloquant': '#B63132', 'Avertissement': '#C77D0A', 'Informatif': '#8A90A0', 'Périodique': '#2E427B' }, cpt = {}; REF.controles.forEach(function (c) { cpt[c.type] = (cpt[c.type] || 0) + 1; });
+      return CH.donut('Contrôles par type', Object.keys(cpt).map(function (k) { return { l: k, v: cpt[k], c: tpm[k] }; }), String(REF.controles.length)) + '<p>Matrice de contrôle comptable — <b>' + REF.controles.length + '</b> contrôles (' + REF.controles.filter(function (c) { return c.auto; }).length + ' exécutés automatiquement, les autres en revue périodique) :</p><table><thead><tr><th>Code</th><th>Volet</th><th>Contrôle</th><th>Type</th><th>Criticité</th><th>Fréquence</th></tr></thead><tbody>' + REF.controles.map(function (c) { return '<tr><td>' + esc(c.code) + '</td><td>' + esc(c.volet) + '</td><td>' + esc(c.objectif) + '</td><td>' + pastille(c.type) + '</td><td>' + esc(c.criticite) + '</td><td>' + esc(c.frequence) + '</td></tr>'; }).join('') + '</tbody></table><p style="font-size:12px;color:#5B606D">Demandez le détail d’un contrôle, par exemple « ANA-CPT-001 ».</p>';
+    }
+    function fiche(c) {
+      var rows = [['Code analyse', c.code], ['Volet', c.volet], ['Objectif', c.objectif], ['Périmètre', c.perimetre], ['Fréquence', c.frequence], ['Responsable', c.responsable], ['Criticité', c.criticite], ['Type de contrôle', c.type], ['Règle de contrôle', c.regle], ['Résultat attendu', c.attendu], ['Action corrective', c.action], ['Validation', c.validation], ['Traçabilité', c.trace], ['Exécution', c.auto ? 'Automatique (branché sur les modules du logiciel)' : 'Revue périodique (non automatisée)']];
+      var lk = REF.liens[c.code]; return (lk ? capture(lk[0]) : '') + '<table><tbody>' + rows.map(function (x) { return '<tr><th style="width:34%">' + esc(x[0]) + '</th><td>' + esc(x[1]) + '</td></tr>'; }).join('') + '</tbody></table>' + (c.auto ? '<button type="button" class="aa-lien" data-aa-run="' + esc(c.code) + '">Exécuter ce contrôle</button>' : '') + (lk ? L([[lk[0], lk[1]]]) : '');
+    }
+    function volet(v) {
+      var h = '<p><b>' + esc(v.t) + '</b></p><p><i>Analyses</i></p>' + liste(v.a) + '<p style="margin-top:8px"><i>Bonnes pratiques</i></p>' + liste(v.b) + '<p style="margin-top:8px"><i>Indicateur</i> : ' + esc(v.i) + '</p>';
+      var r = REF.dernier || lancer(), lig = v.c.map(function (code) { var x = r.resultats.filter(function (y) { return y.c.code === code; })[0], c = REF.controle(code); return x ? '<li><b>' + esc(code) + '</b> — ' + esc(c.objectif) + ' : ' + (x.na ? 'aucune donnée dans le module' : x.n === 0 ? '✔ conforme' : '<b style="color:#B63132">' + x.n + ' anomalie(s)</b>') + '</li>' : '<li><b>' + esc(code) + '</b> — ' + esc(c.objectif) + ' : revue périodique à réaliser</li>'; }).join('');
+      if (lig) h += '<p style="margin-top:8px"><i>Contrôles liés (état actuel)</i></p><ul>' + lig + '</ul>';
+      return h + (v.l[0] ? capture(v.l[0][0]) : '') + L(v.l) + '<button type="button" class="aa-lien" data-aa-rap="' + esc(v.id) + '">Voir les anomalies de ce volet</button>';
+    }
+    var CK_LIEN = { 2: 'ANA-TRE-001', 3: 'ANA-TRE-002', 5: 'ANA-IMM-001', 10: 'ANA-CPT-006', 12: 'ANA-CPT-009', 14: 'ANA-CLO-001' };
+    function etatCk() { try { return JSON.parse(localStorage.getItem(CLK) || '[]'); } catch (e) { return []; } }
+    function checklist() {
+      var et = etatCk(), r = REF.dernier || lancer();
+      return '<p><b>Checklist de clôture mensuelle</b> — <span data-aa-ckp>' + et.length + '/' + REF.checklist.length + '</span> point(s) validé(s). Les points marqués « auto » sont évalués par les contrôles du logiciel.</p>' + '<div data-aa-ck>' + REF.checklist.map(function (t, i) {
+        var code = CK_LIEN[i], x = code && r.resultats.filter(function (y) { return y.c.code === code; })[0], st = x ? (x.na ? ' <small style="color:#5B606D">auto : sans donnée</small>' : x.n === 0 ? ' <small style="color:#1E7B4B">auto : ✔ conforme</small>' : ' <small style="color:#B63132">auto : ' + x.n + ' anomalie(s)</small>') : '';
+        return '<label style="display:flex;gap:8px;align-items:flex-start;padding:3px 0"><input type="checkbox" data-aa-ckc="' + i + '"' + (et.indexOf(i) >= 0 ? ' checked' : '') + ' style="margin-top:3px"><span>' + esc(t) + st + '</span></label>';
+      }).join('') + '</div><button type="button" class="aa-lien" data-aa-ckraz>Tout décocher</button>';
+    }
+    function kpis() {
+      var r = REF.dernier || lancer(), k = r.kpi, val = { rapprochement: k.rapprochement == null ? 'n/a' : P(k.rapprochement), justification: P(k.justification), anomalies: P(k.anomalies), suspens: k.enSuspens + ' anomalie(s)' };
+      return (k.rapprochement != null ? CH.gauge('Taux de rapprochement', k.rapprochement, 0, 100, [[50, '#B63132'], [80, '#C77D0A'], [100, '#1E7B4B']], P(k.rapprochement)) : '') + CH.gauge('Taux de justification', k.justification, 0, 100, [[70, '#B63132'], [90, '#C77D0A'], [100, '#1E7B4B']], P(k.justification)) + '<table><thead><tr><th>KPI</th><th>Définition / formule</th><th class="r">Valeur actuelle</th></tr></thead><tbody>' + REF.kpis.map(function (x) { return '<tr><td>' + esc(x.t) + '</td><td>' + esc(x.f) + '</td><td class="r">' + esc(val[x.id] || '—') + '</td></tr>'; }).join('') + '</tbody></table><p style="font-size:12px;color:#5B606D">' + esc(REF.kpiNote) + ' Les valeurs « — » dépendent de modules ou de données non disponibles dans la maquette.</p>';
+    }
+    function majBadge(r) {
+      var a = document.querySelector('a[data-nav="aicompta"]'); if (!a) return; var ob = a.querySelector('.aa-badge'); if (ob) ob.remove(); return; var n = total(r || REF.dernier || { resultats: [] }), b = a.querySelector('.aa-badge');
+      if (!b) { b = document.createElement('span'); b.className = 'aa-badge'; b.style.cssText = 'margin-left:8px;padding:0 7px;border-radius:999px;background:#B63132;color:#fff;font-size:11px;font-weight:700;line-height:18px'; a.appendChild(b); }
+      b.textContent = n; b.style.display = n ? '' : 'none'; b.title = n + ' anomalie(s) comptable(s) détectée(s)';
+    }
+    function ecoute() { ['hashchange', 'caisse-lots-changed', 'circuit-changed', 'fiches-immobilisation-changed', 'ecritures-immobilisation-generees', 'reassignations-immobilisation-changed', 'cloture-changed', 'journaux-changed'].forEach(function (ev) { window.addEventListener(ev, function () { clearTimeout(ecoute.t); ecoute.t = setTimeout(function () { var r = lancer(); if (location.hash === '#aicompta' && ev !== 'hashchange' && Date.now() - window.__aaT0 > 6000) bulle('<p>Les données d’un module ont changé : nouvelle analyse automatique.</p>' + resume(r)); }, 400); }); }); }
+    window.addEventListener('load', function () { setTimeout(function () { lancer(); ecoute(); }, 600); });
+    CONF.accueilFn = function () { var r = lancer(); return CONF.accueil + resume(r) + '<p>Demandez « lancer les contrôles » pour le rapport détaillé et le plan de correction.</p>'; };
+    CONF.hooks = {
+      xl: exporterRapport,
+      relancer: function () { bulle(rapport(lancer())); },
+      run: function (code) { bulle(rapport(lancer(), [code])); },
+      rap: function (id) { var v = REF.volets.filter(function (x) { return x.id === id; })[0]; bulle(rapport(lancer(), v ? v.c : null)); },
+      ck: function (e) { var c = e.target.closest('[data-aa-ckc]'); if (!c) return; var et = etatCk(), i = +c.dataset.aaCkc, k = et.indexOf(i); if (c.checked && k < 0) et.push(i); if (!c.checked && k >= 0) et.splice(k, 1); try { localStorage.setItem(CLK, JSON.stringify(et)); } catch (x) {} var p = c.closest('.aa-b').querySelector('[data-aa-ckp]'); if (p) p.textContent = et.length + '/' + REF.checklist.length; },
+      ckraz: function (b) { try { localStorage.removeItem(CLK); } catch (x) {} [].forEach.call(b.closest('.aa-b').querySelectorAll('[data-aa-ckc]'), function (c) { c.checked = false; }); var p = b.closest('.aa-b').querySelector('[data-aa-ckp]'); if (p) p.textContent = '0/' + REF.checklist.length; }
+    };
+    CONF.sugg = ['#Détection d’anomalies', 'Lancer les contrôles comptables', 'Quelles anomalies sur la trésorerie ?', 'Exporter le rapport d’analyse', '#Référentiel', 'Principes de contrôle', 'Matrice de contrôle', 'Indicateurs de performance (KPI)', 'Typologie des contrôles', 'Checklist de clôture mensuelle', 'Bonnes pratiques dans le logiciel', 'Gouvernance et rôles', 'Limites d’application (PCG 2005)', '#Analyses par volet', 'Analyse des fournisseurs', 'Analyse des clients', 'Trésorerie, banque et caisse', 'Immobilisations', 'Fiscalité et TVA', 'Projets et financements', '#Utilisation du logiciel', 'Comment saisir une écriture ?', 'Comment lettrer des comptes ?', 'Comment clôturer un exercice ?'];
+    var regles = [
+      [/checklist|liste de cl[ôo]ture|points? de cl[ôo]ture/, function () { return checklist(); }],
+      [/exporter.*(rapport|plan|anomal)|plan de correction|rapport d.analyse/, function () { var r = REF.dernier || lancer(); exporterRapport(); return '<p>Le rapport d’analyse et le plan de correction ont été exportés (Excel).</p>' + resume(r); }],
+      [/ana-[a-z]{3}-\d{3}/, function (t) { var c = REF.controle(/ana-[a-z]{3}-\d{3}/i.exec(t)[0].toUpperCase()); return c ? fiche(c) : '<p>Ce code ne figure pas dans la matrice de contrôle.</p>' + matrice(); }],
+      [/matrice|catalogue des contr[ôo]les|r[èe]gles? de contr[ôo]le|liste des contr[ôo]les/, function () { return matrice(); }],
+      [/lancer|ex[ée]cuter|contr[ôo]ler (la|les|mes)|v[ée]rifi(er|e) (la|les|mes)|anomalies?|incoh[ée]rences?|erreurs?|diagnostic|probl[èe]mes?|doublons?|non justifi|d[ée]s[ée]quilibr/, function (t) {
+        var r = lancer(), vl = REF.volets.filter(function (v) { return v.k.test(t) && v.id !== 'general'; })[0]; return rapport(r, vl ? vl.c : null); }],
+      [/kpi|indicateurs? de performance|tableau de bord des contr|indicateurs?\b/, function () { return kpis(); }],
+      [/principes?|objectifs? du r[ée]f[ée]rentiel|r[ée]f[ée]rentiel/, function () { return '<p><b>Objectifs du référentiel</b></p>' + liste(REF.objectifs) + '<p style="margin-top:8px"><b>Principes de contrôle</b></p><ul>' + REF.principes.map(function (p) { return '<li><b>' + esc(p[0]) + '</b> : ' + esc(p[1]) + '</li>'; }).join('') + '</ul>'; }],
+      [/typologie|bloquant|avertissement|informatif|p[ée]riodique/, function () { return T(['Type', 'Usage recommandé'], REF.typologie).replace(/ class="r"/g, ''); }],
+      [/flux|architecture|niveaux du r[ée]f/, function () { return '<p><b>Architecture en quatre niveaux</b></p><ol>' + REF.niveaux.map(function (x) { return '<li>' + esc(x) + '</li>'; }).join('') + '</ol><p style="margin-top:8px"><b>Flux de contrôle</b></p><p>' + REF.flux.map(esc).join(' → ') + '</p>'; }],
+      [/gouvernance|mise en (œuvre|oeuvre)|r[ôo]les?|responsabilit[ée]s?/, function () { return '<p><b>Mise en œuvre</b></p><ol>' + REF.gouvernance.map(function (x) { return '<li>' + esc(x) + '</li>'; }).join('') + '</ol><p style="margin-top:8px"><b>Rôles suggérés</b></p>' + T(['Rôle', 'Responsabilités'], REF.roles).replace(/ class="r"/g, ''); }],
+      [/limites?|pcg|madagascar|r[ée]f[ée]rences? l[ée]gales?/, function () { return '<p>' + esc(REF.limites) + '</p>'; }],
+      [/bonnes pratiques?.*(logiciel|param[èe]tr)|dans le logiciel|bonnes pratiques$|bonnes pratiques logiciel/, function () { return '<table><thead><tr><th>Domaine</th><th>Contrôle ou bonne pratique</th><th>Écran</th></tr></thead><tbody>' + REF.logiciel.map(function (x) { return '<tr><td>' + esc(x[0]) + '</td><td>' + esc(x[1]) + '</td><td>' + (x[2].map(function (l) { return '<a href="#' + l[0] + '">' + esc(l[1]) + '</a>'; }).join(', ') || '—') + '</td></tr>'; }).join('') + '</tbody></table>'; }],
+      [/analyses? transversales?|contr[ôo]le interne|audit|habilitations?|s[ée]paration des t[âa]ches|analyse financi[èe]re|rapprochements?\b.*(g[ée]n[ée]ral|tous)/, function (t) { var x = REF.transversales.filter(function (y) { return y.k.test(t); })[0] || REF.transversales[3]; return '<p><b>' + esc(x.t) + '</b></p>' + liste(x.p) + L([['circparam', 'Paramètre Circuit'], ['acces', 'Gestion des accès'], ['jtraces', 'Journal de traces']]); }],
+      [/analys|bonnes pratiques|indicateur|volet|contr[ôo]le/, function (t) { var v = REF.volets.filter(function (x) { return x.k.test(t); })[0]; return v ? volet(v) : null; }]
+    ];
+    // les volets sont aussi reconnus par simple mot-clé (« fournisseurs », « immobilisations », « TVA »…), avant les règles d'usage du logiciel
+    var voletsKw = [/fournisseur|clients?\b|cr[ée]ances|tr[ée]sorerie|caisse|immobilisation|amortissement|stocks?\b|fiscalit|\btva\b|charges? [àa] payer|produits? [àa] recevoir|analytique|budget|engagements?|projets?|bailleurs?|paie|salaires?|emprunts?|capitaux|bilan|[ée]tats? financiers/, function (t) { var v = REF.volets.filter(function (x) { return x.k.test(t); })[0]; return v ? volet(v) : null; }];
+    CONF.regles = regles.concat([voletsKw], CONF.regles);
+  })();
+  // ===== Assistance financière : référentiel avancé d'analyse financière + diagnostic branché sur les données du logiciel =====
+  if ('AIID' === 'aifin' && window.AI_FIN) (function () {
+    var FIN2 = window.AI_FIN, CLK = 'softcompta.aiChecklistFin';
+    function fdate(d) { return ('0' + d.getDate()).slice(-2) + '/' + ('0' + (d.getMonth() + 1)).slice(-2) + '/' + d.getFullYear(); }
+    function plus(j) { var d = new Date(); d.setDate(d.getDate() + j); return fdate(d); }
+    function liste(a) { return '<ul>' + a.map(function (x) { return '<li>' + esc(x) + '</li>'; }).join('') + '</ul>'; }
+    function nbv(v, u) { if (v == null || isNaN(v)) return 'n/d'; var a = u === 'x' ? (Math.round(v * 100) / 100).toLocaleString('fr-FR', { minimumFractionDigits: 2 }) + ' x' : u === '%' ? (Math.round(v * 10) / 10).toLocaleString('fr-FR', { minimumFractionDigits: 1 }) + ' %' : u === 'j' ? Math.round(v) + ' j' : Math.round(v).toLocaleString('fr-FR') + ' M'; return a; }
+    var COUL = { ok: ['#1E7B4B', 'Conforme'], attention: ['#8A5A12', 'Attention'], alerte: ['#B63132', 'Alerte'], critique: ['#7A0F10', 'Critique'], info: ['#5B606D', 'Info'], na: ['#8A90A0', 'n/d'] };
+    function badge(st) { var c = COUL[st] || COUL.na; return '<span style="display:inline-block;padding:1px 8px;border-radius:999px;font-size:11px;font-weight:600;border:1px solid ' + c[0] + ';color:' + c[0] + '">' + c[1] + '</span>'; }
+    function niv(n) { var c = n === 'Élevé' ? '#B63132' : n === 'Modéré' ? '#8A5A12' : '#1E7B4B'; return '<b style="color:' + c + '">' + n + '</b>'; }
+    function calcul() { var r = FIN2.calculer(); majBadge(r); return r; }
+    function ratioTable(r, ids) {
+      var rs = r.ratios.filter(function (x) { return !ids || ids.indexOf(x.r.id) >= 0; });
+      return '<table><thead><tr><th>Indicateur</th><th>Formule</th><th class="r">N</th><th class="r">N-1</th><th>Repère</th><th>Statut</th></tr></thead><tbody>' + rs.map(function (x) { return '<tr><td>' + esc(x.r.t) + '</td><td>' + esc(x.r.f) + '</td><td class="r">' + nbv(x.v, x.r.u) + '</td><td class="r">' + nbv(x.vp, x.r.u) + '</td><td>' + esc(x.r.rep) + '</td><td>' + badge(x.st) + '</td></tr>'; }).join('') + '</tbody></table>';
+    }
+    function entete(r) { return '<p>Risque financier global : ' + niv(r.niveau) + ' — <b>' + r.actives.length + '</b> signal(aux) d’alerte actif(s), ' + r.nbAlertes + ' ratio(s) en alerte, ' + r.nbAttention + ' en attention.</p><p style="font-size:12px;color:#5B606D">Base : ' + esc(r.src) + '.</p>'; }
+    function reco(s) {
+      var x = s.reco, rows = [['Constat', s.t + (s.info ? ' — ' + s.info : '')], ['Indicateur', x.ind], ['Cause', x.cause], ['Risque', x.risque], ['Recommandation', x.reco], ['Responsable', x.resp], ['Échéance', plus(x.jours)], ['Impact attendu', 'Retour de « ' + x.ind + ' » dans la zone de référence'], ['Suivi', x.ind + ' — contrôle mensuel, statut à renseigner']];
+      return '<details style="margin-top:6px"><summary><b>' + esc(s.code) + '</b> — ' + esc(s.t) + '</summary><table><tbody>' + rows.map(function (a) { return '<tr><th style="width:30%">' + esc(a[0]) + '</th><td>' + esc(a[1]) + '</td></tr>'; }).join('') + '</tbody></table></details>';
+    }
+    function statuts(r) {
+      var c = { ok: 0, attention: 0, alerte: 0, critique: 0, info: 0, na: 0 }; r.ratios.forEach(function (x) { c[x.st] = (c[x.st] || 0) + 1; });
+      var cl = { ok: '#1E7B4B', attention: '#C77D0A', alerte: '#B63132', critique: '#7A0F10', info: '#8A90A0', na: '#C5CAD6' };
+      return CH.donut('Statut des ratios vs seuils d’alerte', Object.keys(c).map(function (k) { return { l: COUL[k][1], v: c[k], c: cl[k] }; }), r.ratios.length + ' ratios');
+    }
+    function chartDomaine(d, r) {
+      var N = r.N, N1 = r.N1, g = function (id) { return r.ratios.filter(function (x) { return x.r.id === id; })[0]; };
+      if (d.id === 'rentabilite') { var ids = ['mbrute', 'mebitda', 'mebit', 'mnette']; return CH.groups('Marges (% du chiffre d’affaires)', ['Marge brute', 'EBITDA', 'EBIT', 'Nette'], [{ n: 'N', c: '#2E427B', v: ids.map(function (i) { return g(i).v || 0; }) }].concat(N1 ? [{ n: 'N-1', c: '#9AA1B2', v: ids.map(function (i) { return g(i).vp || 0; }) }] : [])); }
+      if (d.id === 'structure') return CH.donut('Structure du financement', [{ l: 'Capitaux propres', v: N.cp, c: '#2E427B' }, { l: 'Dettes financières', v: N.df, c: '#B63132' }, { l: 'Fournisseurs', v: N.fourn, c: '#C77D0A' }, { l: 'Dettes fiscales et autres', v: N.fisc + N.adet, c: '#8A90A0' }], 'Passif');
+      if (d.id === 'liquidite') return CH.bars('Ratios de liquidité (repère : 1)', ['liqgen', 'liqred', 'liqimm'].map(function (i) { var x = g(i); return { l: x.r.t, v: x.v || 0, t: nbv(x.v, 'x'), c: x.v != null && x.v < 1 ? '#C77D0A' : '#1E7B4B' }; }));
+      if (d.id === 'flux' && !isNaN(N.fluxOp)) return CH.groups('Flux de l’exercice (M)', ['Flux opérationnel', 'Investissements', 'FCF'], [{ n: 'N', c: '#2E427B', v: [N.fluxOp, N.capex, N.fcf] }]);
+      if (d.id === 'bfr') return CH.bars('Cycle d’exploitation (jours)', ['dso', 'dio', 'dpo', 'cycle'].map(function (i, k) { var x = g(i); return { l: x.r.t.split(' — ')[0], v: x.v || 0, t: nbv(x.v, 'j'), c: ['#2E427B', '#4A7FBF', '#C77D0A', '#B63132'][k] }; }));
+      return '';
+    }
+    function diagnostic(r) {
+      var h = entete(r) + statuts(r);
+      if (r.actives.length) h += '<table><thead><tr><th>Signal d’alerte détecté</th><th>Constat chiffré</th></tr></thead><tbody>' + r.actives.map(function (s) { return '<tr><td>' + esc(s.t) + '</td><td>' + esc(s.info) + '</td></tr>'; }).join('') + '</tbody></table>' + '<p style="margin-top:8px"><b>Recommandations</b> (format standard : constat, indicateur, cause, risque, recommandation, responsable, échéance, impact, suivi) :</p>' + r.actives.map(reco).join('');
+      else h += '<p>Aucun signal d’alerte actif : ratios cohérents, trésorerie suffisante et dette soutenable (suivi régulier recommandé).</p>';
+      var nd = r.signaux.filter(function (s) { return !s.on; }).length; h += '<p style="font-size:12px;color:#5B606D">' + nd + ' autre(s) signal(aux) du référentiel évalué(s) sans alerte.</p>';
+      var M = r.mods, l = []; if (M.banques != null) l.push('soldes bancaires constatés (relevés) : ' + nbv(M.banques, 'M') + ' sur ' + M.comptes + ' compte(s)'); if (M.caisse != null) l.push('caisse : ' + nbv(M.caisse, 'M')); if (M.fiches) l.push(M.fiches + ' fiche(s) d’immobilisation' + (M.capex ? ' — CAPEX de l’exercice ' + nbv(M.capex, 'M') : ''));
+      if (l.length) h += '<p style="font-size:12px;color:#5B606D">Modules lus en direct : ' + l.join(' ; ') + '.</p>';
+      return h + '<button type="button" class="aa-lien" data-aa-xr>Exporter les recommandations (Excel)</button><button type="button" class="aa-lien" data-aa-xl>Exporter les ratios (Excel)</button><button type="button" class="aa-lien" data-aa-relancer>Relancer le diagnostic</button>';
+    }
+    function domaine(d) {
+      var r = FIN2.dernier || calcul(), h = '<p><b>' + esc(d.t) + '</b></p><p>' + esc(d.obj) + '</p>';
+      h += chartDomaine(d, r);
+      if (d.ind.length) h += ratioTable(r, d.ind);
+      h += '<p style="margin-top:8px"><i>Axes d’analyse</i></p>' + liste(d.axes);
+      var vivants = r.signaux.filter(function (s) { return s.dom === d.id; });
+      if (d.sig.length || vivants.length) h += '<p style="margin-top:8px"><i>Signaux d’alerte</i></p><ul>' + d.sig.map(function (t) { return '<li>' + esc(t) + '</li>'; }).join('') + '</ul>' + (vivants.length ? '<p style="margin-top:4px"><i>État actuel</i> : ' + vivants.map(function (s) { return (s.on ? '<b style="color:#B63132">⚠ ' : '✔ ') + esc(s.t) + (s.on ? '</b>' : '') + (s.info ? ' (' + esc(s.info) + ')' : ''); }).join(' ; ') + '</p>' : '');
+      h += '<p style="margin-top:8px"><i>Actions possibles</i> : ' + esc(d.act) + '</p>';
+      return h + L(d.l) + '<button type="button" class="aa-lien" data-aa-relancer>Voir le diagnostic complet</button>';
+    }
+    function dashboard() {
+      var r = FIN2.dernier || calcul(), g = function (id) { var x = r.ratios.filter(function (y) { return y.r.id === id; })[0]; return nbv(x.v, x.r.u); }, N = r.N, N1 = r.N1;
+      var val = { 'Activité': 'CA ' + nbv(N.ca, 'M') + (N1 ? ' (' + (Math.round((N.ca / N1.ca - 1) * 1000) / 10) + ' %)' : ''), 'Rentabilité': 'EBITDA ' + nbv(N.ebitda, 'M') + ' ; marge nette ' + g('mnette') + ' ; ROCE ' + g('roce'), 'Structure': 'Dette nette ' + nbv(N.detteNette, 'M') + ' ; gearing ' + g('gearing'), 'Liquidité': 'Trésorerie ' + nbv(N.treso, 'M') + ' ; liquidité générale ' + g('liqgen'), 'BFR': 'DSO ' + g('dso') + ' ; DIO ' + g('dio') + ' ; DPO ' + g('dpo') + ' ; BFR ' + nbv(N.bfr, 'M'), 'Trésorerie': 'Flux opérationnel ' + g('fluxop') + ' ; FCF ' + g('fcf'), 'Investissements': 'CAPEX ' + nbv(N.capex, 'M') + (r.budget ? ' / budget ' + nbv(r.budget.capex, 'M') : ''), 'Risques': r.actives.length + ' signal(aux) actif(s) — niveau ' + r.niveau };
+      return '<table><thead><tr><th>Domaine</th><th>KPI</th><th>Fréquence</th><th>Valeurs actuelles</th></tr></thead><tbody>' + FIN2.dashboard.map(function (x) { return '<tr><td>' + esc(x[0]) + '</td><td>' + esc(x[1]) + '</td><td>' + esc(x[2]) + '</td><td>' + esc(val[x[0]] || '') + '</td></tr>'; }).join('') + '</tbody></table><p style="margin-top:8px"><i>Bonnes pratiques de pilotage</i></p>' + liste(FIN2.pilotage);
+    }
+    function ecarts() {
+      var r = FIN2.dernier || calcul(); if (!r.budget) return '<p>Aucun budget n’est disponible pour la base de calcul actuelle. Le <b>Suivi budgétaire</b> (RSF) détaille réalisé, budget, disponible et exécution.</p>' + L([['rsfsb', 'Suivi budgétaire']]);
+      var N = r.N, B = r.budget, rows = [['Chiffre d’affaires', N.ca, B.ca], ['EBITDA', N.ebitda, B.ebitda], ['Résultat net', N.rn, B.rn], ['Investissements (CAPEX)', N.capex, B.capex]];
+      return CH.groups('Réalisé et budget (M)', rows.map(function (x) { return x[0].replace('Investissements (CAPEX)', 'CAPEX'); }), [{ n: 'Réalisé', c: '#2E427B', v: rows.map(function (x) { return x[1]; }) }, { n: 'Budget', c: '#C77D0A', v: rows.map(function (x) { return x[2]; }) }]) + '<p><b>Écarts réalisé / budget</b> (écart = réalisé − budget ; le pourcentage n’est calculé que si le budget n’est pas proche de zéro) :</p><table><thead><tr><th>Poste</th><th class="r">Réalisé</th><th class="r">Budget</th><th class="r">Écart</th><th class="r">Écart %</th></tr></thead><tbody>' + rows.map(function (x) { var e = x[1] - x[2]; return '<tr><td>' + esc(x[0]) + '</td><td class="r">' + nbv(x[1], 'M') + '</td><td class="r">' + nbv(x[2], 'M') + '</td><td class="r">' + nbv(e, 'M') + '</td><td class="r">' + (Math.abs(x[2]) < 1 ? '—' : nbv(e / x[2] * 100, '%')) + '</td></tr>'; }).join('') + '</tbody></table><p style="margin-top:8px">Décomposez ensuite les écarts : volume, prix, mix, coûts, productivité, calendrier, éléments exceptionnels.</p>' + L([['rsfsb', 'Suivi budgétaire'], ['rsfuf', 'Utilisation de fonds']]);
+    }
+    function scenarios() {
+      var S = FIN2.scenarios(); return CH.groups('Scénarios N+1 (M)', S.map(function (x) { return x.nom; }), [{ n: 'CA', c: '#2E427B', v: S.map(function (x) { return x.ca; }) }, { n: 'EBITDA', c: '#4A7FBF', v: S.map(function (x) { return x.ebitda; }) }, { n: 'Résultat net', c: '#1E7B4B', v: S.map(function (x) { return x.rn; }) }]) + '<p><b>Scénarios sur N+1</b> (projection simple à partir de l’exercice N ; hypothèses explicites) :</p><table><thead><tr><th>Scénario</th><th>Hypothèses</th><th class="r">CA</th><th class="r">EBITDA</th><th class="r">Résultat net</th><th class="r">Flux opérationnel</th></tr></thead><tbody>' + S.map(function (x) { return '<tr><td>' + esc(x.nom) + '</td><td>' + esc(x.hyp) + '</td><td class="r">' + nbv(x.ca, 'M') + '</td><td class="r">' + nbv(x.ebitda, 'M') + '</td><td class="r">' + nbv(x.rn, 'M') + '</td><td class="r">' + nbv(x.flux, 'M') + '</td></tr>'; }).join('') + '</tbody></table><p style="margin-top:8px">Dispositif recommandé : budget annuel et révisions trimestrielles, forecast glissant à 12 mois, plan de trésorerie à 13 semaines, hypothèses sur croissance, marges, inflation, change, délais clients, investissements et financement.</p>';
+    }
+    function vanCalc(t) {
+      var i = t.search(/flux/), j = t.search(/taux/), pre = i >= 0 ? t.slice(0, i) : t, nums = function (x) { return (x.replace(/\u00a0/g, '').match(/-?\d+(?:[.,]\d+)?/g) || []).map(function (v) { return parseFloat(v.replace(',', '.')); }); };
+      var inv = nums(pre.replace(/(van|tri|payback|roi)/g, ''))[0], fl = i >= 0 ? nums(t.slice(i + 4, j > i ? j : t.length)) : [], tx = j >= 0 ? nums(t.slice(j + 4))[0] : FIN2.params.wacc;
+      if (!inv || !fl.length) return null;
+      var v = FIN2.van(inv, fl, tx);
+      return '<p>Investissement <b>' + inv + '</b>, flux ' + fl.join(' ; ') + ', taux d’actualisation ' + tx + ' %.</p><table><tbody><tr><th>VAN</th><td>' + (Math.round(v.van * 100) / 100).toLocaleString('fr-FR') + '</td></tr><tr><th>TRI</th><td>' + (v.tri == null ? 'non défini' : (Math.round(v.tri * 10) / 10) + ' %') + '</td></tr><tr><th>Payback</th><td>' + (v.payback == null ? 'non récupéré sur la période' : (Math.round(v.payback * 10) / 10) + ' période(s)') + '</td></tr><tr><th>ROI</th><td>' + (v.roi == null ? 'n/d' : (Math.round(v.roi * 10) / 10) + ' %') + '</td></tr></tbody></table><p>' + (v.van > 0 ? 'La VAN est positive à ce taux : le projet crée de la valeur selon ces hypothèses.' : 'La VAN est négative à ce taux : le projet détruit de la valeur selon ces hypothèses.') + ' À compléter par la sensibilité aux hypothèses (volume, prix, coûts, taux, change) et l’impact sur le BFR, la liquidité et les covenants.</p>';
+    }
+    function etatCk() { try { return JSON.parse(localStorage.getItem(CLK) || '[]'); } catch (e) { return []; } }
+    function checklist() { var et = etatCk(); return '<p><b>Checklist de clôture d’une analyse</b> — <span data-aa-ckp>' + et.length + '/' + FIN2.checklist.length + '</span> point(s) validé(s).</p><div data-aa-ck>' + FIN2.checklist.map(function (t, i) { return '<label style="display:flex;gap:8px;align-items:flex-start;padding:3px 0"><input type="checkbox" data-aa-ckc="' + i + '"' + (et.indexOf(i) >= 0 ? ' checked' : '') + ' style="margin-top:3px"><span>' + esc(t) + '</span></label>'; }).join('') + '</div><button type="button" class="aa-lien" data-aa-ckraz>Tout décocher</button>'; }
+    function exporter(kind) {
+      var r = FIN2.dernier || calcul(), X = window.EXPORT_TABLEAU; if (!X) return;
+      if (kind === 'reco') { var rows = r.actives.map(function (s) { var x = s.reco; return [s.code, s.t + (s.info ? ' — ' + s.info : ''), x.ind, x.cause, x.risque, x.reco, x.resp, plus(x.jours), 'Retour de « ' + x.ind + ' » dans la zone de référence', x.ind + ' — mensuel', 'À traiter']; }); if (!rows.length) rows.push(['', 'Aucun signal d’alerte actif', '', '', '', '', '', '', '', '', '']); X.xlsx('recommandations_financieres.xlsx', 'Recommandations', ['Code', 'Constat', 'Indicateur', 'Cause', 'Risque', 'Recommandation', 'Responsable', 'Échéance', 'Impact attendu', 'Suivi', 'Statut'], rows); }
+      else X.xlsx('ratios_financiers.xlsx', 'Ratios', ['Domaine', 'Indicateur', 'Formule', 'N', 'N-1', 'Repère indicatif', 'Seuil d’alerte', 'Statut'], r.ratios.map(function (x) { return [x.r.d, x.r.t, x.r.f, x.v == null || isNaN(x.v) ? '' : Math.round(x.v * 100) / 100, x.vp == null || isNaN(x.vp) ? '' : Math.round(x.vp * 100) / 100, x.r.rep, x.r.alerte, (COUL[x.st] || COUL.na)[1]]; }));
+    }
+    function majBadge(r) {
+      var a = document.querySelector('a[data-nav="aifin"]'); if (!a) return; var ob = a.querySelector('.aa-badge'); if (ob) ob.remove(); return; var n = r.actives.length, b = a.querySelector('.aa-badge');
+      if (!b) { b = document.createElement('span'); b.className = 'aa-badge'; b.style.cssText = 'margin-left:8px;padding:0 7px;border-radius:999px;background:#B63132;color:#fff;font-size:11px;font-weight:700;line-height:18px'; a.appendChild(b); }
+      b.textContent = n; b.style.display = n ? '' : 'none'; b.title = n + ' signal(aux) d’alerte financière détecté(s)';
+    }
+    ['hashchange', 'caisse-lots-changed', 'fiches-immobilisation-changed', 'ecritures-immobilisation-generees'].forEach(function (ev) { window.addEventListener(ev, function () { clearTimeout(majBadge.t); majBadge.t = setTimeout(function () { var r = calcul(); if (location.hash === '#aifin' && ev !== 'hashchange' && Date.now() - window.__aaT0 > 6000) bulle('<p>Les données d’un module ont changé : nouveau diagnostic.</p>' + entete(r)); }, 400); }); });
+    window.addEventListener('load', function () { setTimeout(calcul, 700); });
+    CONF.accueilFn = function () { var r = calcul(); return CONF.accueil + entete(r) + (r.actives.length ? '<p>Principaux signaux : ' + r.actives.slice(0, 3).map(function (s) { return esc(s.t); }).join(' ; ') + '.</p>' : '') + '<p>Demandez « diagnostic financier » pour le rapport détaillé et les recommandations.</p>'; };
+    CONF.hooks = {
+      xl: function () { exporter('ratios'); }, xr: function () { exporter('reco'); }, relancer: function () { bulle(diagnostic(calcul())); },
+      ck: function (e) { var c = e.target.closest('[data-aa-ckc]'); if (!c) return; var et = etatCk(), i = +c.dataset.aaCkc, k = et.indexOf(i); if (c.checked && k < 0) et.push(i); if (!c.checked && k >= 0) et.splice(k, 1); try { localStorage.setItem(CLK, JSON.stringify(et)); } catch (x) {} var p = c.closest('.aa-b').querySelector('[data-aa-ckp]'); if (p) p.textContent = et.length + '/' + FIN2.checklist.length; },
+      ckraz: function (b) { try { localStorage.removeItem(CLK); } catch (x) {} [].forEach.call(b.closest('.aa-b').querySelectorAll('[data-aa-ckc]'), function (c) { c.checked = false; }); var p = b.closest('.aa-b').querySelector('[data-aa-ckp]'); if (p) p.textContent = '0/' + FIN2.checklist.length; }
+    };
+    CONF.sugg = ['#Diagnostic', 'Diagnostic financier', 'Signaux d’alerte', 'Ratios et seuils d’alerte', 'Recommandations financières', 'Tableau de bord financier', '#Analyses', 'Rentabilité et marges', 'Structure financière', 'Liquidité et solvabilité', 'Flux de trésorerie', 'BFR, DSO, DIO, DPO', 'Investissements : VAN, TRI', 'Risques et qualité du résultat', 'Écarts budgétaires', 'Scénarios prévisionnels', '#Référentiel', 'Méthodologie d’analyse', 'Classification du risque', 'Gouvernance financière', 'Checklist de clôture d’une analyse', 'Références méthodologiques', '#Liens avec le logiciel', 'Où suivre l’exécution du budget ?', 'Comment suivre l’utilisation des fonds ?', 'Où sont les états financiers ?'];
+    var regles = [
+      [/checklist|cl[ôo]ture d.une analyse/, function () { return checklist(); }],
+      [/exporter.*(ratio)/, function () { exporter('ratios'); return '<p>Les ratios ont été exportés (Excel).</p>'; }],
+      [/exporter|plan d.action/, function () { exporter('reco'); return '<p>Les recommandations ont été exportées (Excel).</p>'; }],
+      [/recommandations?|format.*recommandation/, function () { var r = FIN2.dernier || calcul(); return '<p><b>Format standard d’une recommandation</b></p><table><tbody>' + FIN2.formatReco.map(function (x) { return '<tr><th style="width:30%">' + esc(x[0]) + '</th><td>' + esc(x[1]) + '</td></tr>'; }).join('') + '</tbody></table>' + (r.actives.length ? '<p style="margin-top:8px"><b>Recommandations issues du diagnostic actuel</b></p>' + r.actives.map(reco).join('') : '<p>Aucun signal d’alerte actif : pas de recommandation corrective à ce jour.</p>') + '<button type="button" class="aa-lien" data-aa-xr>Exporter les recommandations (Excel)</button>'; }],
+      [/ratios?|seuils?|rep[èe]res?/, function () { var r = FIN2.dernier || calcul(); return statuts(r) + '<p><b>Référentiel des ratios</b> — valeurs de la base actuelle, repères indicatifs et statut vis-à-vis du seuil d’alerte.</p>' + ratioTable(r) + '<p style="font-size:12px;color:#5B606D">' + esc(FIN2.avertissement) + ' WACC retenu : ' + FIN2.params.wacc + ' %.</p><button type="button" class="aa-lien" data-aa-xl>Exporter les ratios (Excel)</button>'; }],
+      [/diagnostic|sant[ée] financi|signaux?|alertes?|anomalies?|lancer|analyse globale|risque global|analyse financi[èe]re$/, function () { return diagnostic(FIN2.dernier ? calcul() : calcul()); }],
+      [/classification|niveau de risque|notation/, function () { var r = FIN2.dernier || calcul(); return '<p>Niveau actuel : ' + niv(r.niveau) + '.</p><table><thead><tr><th>Niveau</th><th>Description</th><th>Réponse recommandée</th></tr></thead><tbody>' + FIN2.classification.map(function (x) { return '<tr><td>' + niv(x[0]) + '</td><td>' + esc(x[1]) + '</td><td>' + esc(x[2]) + '</td></tr>'; }).join('') + '</tbody></table>'; }],
+      [/tableau de bord|kpi|pilotage|dictionnaire/, function () { return dashboard(); }],
+      [/[ée]carts? budg|[ée]carts? (r[ée]alis|en valeur)|r[ée]alis[ée] (vs|\/|et) budget/, function () { return ecarts(); }],
+      [/sc[ée]narios?|forecast|pr[ée]visionnel|13 semaines|plan de tr[ée]sorerie/, function () { return scenarios(); }],
+      [/\bvan\b|\btri\b|payback|\broi\b/, function (t) { return vanCalc(t); }],
+      [/m[ée]thodologie|d[ée]marche|[ée]tapes? d.analyse/, function () { return '<p><b>Méthodologie d’analyse financière</b></p><ol>' + FIN2.methodo.map(function (x) { return '<li><b>' + esc(x[0]) + '</b> — ' + esc(x[1]) + '</li>'; }).join('') + '</ol>'; }],
+      [/gouvernance|contr[ôo]le qualit[ée]/, function () { return '<p><b>Gouvernance financière et contrôle qualité</b></p>' + liste(FIN2.gouvernance); }],
+      [/r[ée]f[ée]rences?|ifrs|ias \d|coso/, function () { return '<p><b>Références méthodologiques</b></p>' + liste(FIN2.references) + '<p>' + esc(FIN2.referencesNote) + '</p>'; }],
+      [/objectifs?|p[ée]rim[èe]tre|architecture|pr[ée]cautions?|limites?/, function () { return '<p><b>Objectifs</b></p>' + liste(FIN2.objectifs) + '<p style="margin-top:8px"><b>Périmètre et précautions</b></p><p>' + esc(FIN2.perimetre) + '</p><p>' + esc(FIN2.avertissement) + '</p><p style="margin-top:8px"><b>Architecture du référentiel</b></p>' + liste(FIN2.architecture); }],
+      [/./, function (t) { var d = FIN2.domaines.filter(function (x) { return x.k.test(t); })[0]; return d ? domaine(d) : null; }]
+    ];
+    CONF.regles = regles.concat(CONF.regles);
+  })();
+  // ===== Assistance fonctionnelle : guides détaillés (rôles, étapes, impacts, interdépendances) branchés sur l'état réel des modules =====
+  if ('AIID' === 'aifonc' && window.AI_GUIDES) (function () {
+    var GU = window.AI_GUIDES, ROLC = ['Admin', 'Resp. comptable', 'Comptable', 'Trésorier', 'Contrôle de gestion', 'Projets / bailleurs', 'Immobilisations', 'Direction', 'Audit'];
+    var GCHK = { demarrer: [], plans: ['exercice', 'pc'], exercices: [], journaux: ['pc'], tiers: ['pc'], cours: [], saisie: ['exercice', 'pc', 'journaux', 'plans', 'tiers'], liste: ['pieces'], lettrage: ['pieces'], rappro: ['banques', 'journaux'], circuit: [], caisse: ['journaux', 'caissetypes', 'signataires'], clotures: ['exercice', 'pieces'], immo: ['pc', 'familles'], etatsc: ['pieces'], etatsf: ['pc', 'pieces'], contrats: [], projets: ['plans'], rsf: ['plans', 'pieces'], acces: [], ai: ['pieces'] };
+    function liste(a) { return '<ul>' + a.map(function (x) { return '<li>' + esc(x) + '</li>'; }).join('') + '</ul>'; }
+    function lien1(l) { return '<a href="#' + l[0] + '">' + esc(l[1]) + '</a>'; }
+    function nomMod(m) { return GU.modules[m] ? GU.modules[m][0] : m; }
+    function premier(m) { var x = GU.modules[m]; return x && x[2][0] ? x[2][0] : null; }
+    function modLien(m) { var p = premier(m); return p ? '<a href="#' + p[0] + '">' + esc(nomMod(m)) + '</a>' : esc(nomMod(m)); }
+    function etatMap() { var o = {}; GU.etat().forEach(function (x) { o[x.id] = x; }); return o; }
+    function puces(ids) { var E = etatMap(); return ids.map(function (i) { var x = E[i]; return x ? '<span style="display:inline-block;margin:2px 6px 2px 0;padding:1px 8px;border-radius:999px;font-size:12px;border:1px solid ' + (x.ok ? '#1E7B4B' : '#B63132') + ';color:' + (x.ok ? '#1E7B4B' : '#B63132') + '">' + (x.ok ? '✔ ' : '✘ ') + esc(x.t) + '</span>' : ''; }).join(''); }
+    function preparation() {
+      var E = GU.etat(), ok = E.filter(function (x) { return x.ok; }).length;
+      return CH.donut('Paramétrages en place', [{ l: 'En place', v: ok, c: '#1E7B4B' }, { l: 'À faire', v: E.length - ok, c: '#B63132' }], ok + '/' + E.length) + '<p><b>Contrôle de préparation</b> — <b>' + ok + '/' + E.length + '</b> paramétrage(s) en place (état réel lu dans les modules).</p><table><thead><tr><th>Paramétrage</th><th>État</th><th>Détail</th><th>Écran</th></tr></thead><tbody>' + E.map(function (x) { return '<tr><td>' + esc(x.t) + '</td><td>' + (x.ok ? '<b style="color:#1E7B4B">✔ En place</b>' : '<b style="color:#B63132">✘ À faire</b>') + '</td><td>' + esc(x.d) + '</td><td>' + lien1(x.l) + '</td></tr>'; }).join('') + '</tbody></table>' +
+        '<p style="margin-top:8px"><b>Parcours de démarrage recommandé</b> (dans cet ordre, car chaque étape alimente la suivante) :</p><ol>' + GU.parcours.map(function (p) { var E2 = etatMap(), st = p[3] ? (E2[p[3]] && E2[p[3]].ok ? ' <b style="color:#1E7B4B">✔</b>' : ' <b style="color:#B63132">✘</b>') : ''; return '<li><b>' + esc(p[0]) + '</b>' + st + ' — ' + esc(p[1]) + ' ' + p[4].map(lien1).join(' · ') + '</li>'; }).join('') + '</ol>';
+    }
+    function interdep() {
+      var ms = Object.keys(GU.modules);
+      return CH.graphe() + '<p><b>Carte des interdépendances entre modules</b> — ce que chaque module reçoit (amont) et ce qu’il alimente (aval) :</p><table><thead><tr><th>Module</th><th>Dépend de (amont)</th><th>Alimente (aval)</th></tr></thead><tbody>' + ms.map(function (m) {
+        var a = GU.amont(m), v = GU.aval(m);
+        return '<tr><td>' + modLien(m) + '</td><td>' + (a.length ? a.map(function (l) { return esc(nomMod(l[0])) + ' <small>(' + esc(l[2]) + ')</small>'; }).join('<br>') : '—') + '</td><td>' + (v.length ? v.map(function (l) { return esc(nomMod(l[1])) + ' <small>(' + esc(l[2]) + ')</small>'; }).join('<br>') : '—') + '</td></tr>';
+      }).join('') + '</tbody></table><p style="margin-top:8px"><b>Chaîne principale</b> : Paramétrages → Saisie d’écritures → (Circuit de validation) → Lettrage / Rapprochement bancaire → Travaux périodiques → États comptables → États financiers → Assistances AI.</p><p>Demandez « impact d’une modification de la saisie d’écritures » pour voir les modules touchés en cascade.</p>';
+    }
+    function impact(mod) {
+      var av = GU.impactes(mod, 'aval'), am = GU.impactes(mod, 'amont');
+      return CH.graphe(mod) + '<p><b>Impact et dépendances de « ' + esc(nomMod(mod)) + ' »</b></p>' + (av.length ? '<p><i>Modules impactés en aval</i> (une modification, une erreur ou un blocage ici se répercute sur) :</p><table><thead><tr><th>Module</th><th>Chemin de propagation</th><th>Ce qui est touché</th></tr></thead><tbody>' + av.map(function (x) { return '<tr><td>' + modLien(x.m) + '</td><td>' + esc(x.chemin.map(nomMod).join(' → ')) + '</td><td>' + esc(x.quoi) + '</td></tr>'; }).join('') + '</tbody></table>' : '<p>Aucun module ne dépend de celui-ci.</p>') +
+        (am.length ? '<p style="margin-top:8px"><i>Prérequis en amont</i> (à renseigner avant d’utiliser ce module) :</p><ul>' + am.filter(function (x) { return x.chemin.length === 2; }).map(function (x) { return '<li>' + modLien(x.m) + ' — ' + esc(x.quoi) + '</li>'; }).join('') + '</ul>' : '') + '<p style="font-size:12px;color:#5B606D">' + av.length + ' module(s) en aval, ' + am.length + ' en amont (relations directes et indirectes).</p>';
+    }
+    function roles(mod) {
+      var keys = Object.keys(GU.matrice);
+      var h = '<p><b>Rôles et responsabilités</b></p><table><thead><tr><th>Rôle</th><th>Responsabilités</th></tr></thead><tbody>' + GU.roles.map(function (r) { return '<tr><td>' + esc(r[0]) + '</td><td>' + esc(r[1]) + '</td></tr>'; }).join('') + '</tbody></table>';
+      var ks = mod ? [mod] : keys;
+      h += '<p style="margin-top:8px"><b>Qui fait quoi</b> (R = réalise, V = valide, C = consulte) :</p><table><thead><tr><th>Module</th>' + ROLC.map(function (c) { return '<th class="r" style="font-size:11px">' + esc(c) + '</th>'; }).join('') + '</tr></thead><tbody>' + ks.map(function (m) { return '<tr><td>' + modLien(m) + '</td>' + GU.matrice[m].map(function (c) { return '<td class="r"' + (c === 'R' ? ' style="font-weight:700;color:#2E427B"' : c === 'V' ? ' style="font-weight:700;color:#8A5A12"' : '') + '>' + (c || '·') + '</td>'; }).join('') + '</tr>'; }).join('') + '</tbody></table>';
+      return h;
+    }
+    function titre(n, t) { return '<p style="margin:14px 0 4px;font-size:15px;font-weight:700;color:#2E427B;border-bottom:1px solid #D5D9E3;padding-bottom:3px">' + (n ? n + '. ' : '') + esc(t) + '</p>'; }
+    function sstitre(n, t) { return '<p style="margin:10px 0 2px;font-weight:700;color:#0B1332">' + n + '. ' + esc(t) + '</p>'; }
+    function cheminDe(id) { return crumbDe(id).replace(/^softcompta\s*›\s*/i, ''); }
+    function puce(txt) { var i = txt.indexOf(' : '); return i > 0 && i < 48 ? '<b>' + esc(txt.slice(0, i)) + '</b> : ' + esc(txt.slice(i + 3)) : esc(txt); }
+    function sections(list, base, vu) {
+      return list.map(function (s2, i) {
+        var h = sstitre(base + '.' + (i + 1), s2.t) + '<p><b>Chemin :</b> ' + esc(cheminDe(s2.ecran)) + '</p>';
+        if (!vu[s2.ecran]) { vu[s2.ecran] = 1; h += capture(s2.ecran, 240); }
+        h += '<p style="margin:6px 0 0"><i>Étapes — ' + esc(s2.t.charAt(0).toLowerCase() + s2.t.slice(1)) + '</i></p><ul>' + s2.etapes.map(function (e) { return '<li><b>' + esc(e[0]) + '</b> : ' + esc(e[1]) + '</li>'; }).join('') + '</ul>';
+        if (s2.nb) h += '<p><b>N.B :</b> ' + esc(s2.nb) + '</p>';
+        return h;
+      }).join('');
+    }
+    function guide(g) {
+      var m = g.m; if (!m) return guideAncien(g);
+      var n = 0, vu = {}, h = '<p style="font-size:16px"><b>GUIDE — ' + esc(g.t.toUpperCase()) + '</b></p><p style="font-size:12px;color:#5B606D">Module : ' + esc(nomMod(g.mod)) + ' — Qui intervient : ' + esc(g.roles) + '</p>';
+      h += titre(++n, 'Définition et objectif') + '<p>' + esc(m.def[0]) + '</p><ul>' + m.def.slice(1).map(function (x) { return '<li>' + puce(x) + '</li>'; }).join('') + '</ul>';
+      h += titre(++n, 'Importance stratégique et opérationnelle') + '<ul>' + m.imp.map(function (x) { return '<li>' + puce(x) + '</li>'; }).join('') + '</ul>';
+      h += '<p style="margin-top:10px"><i>Prérequis</i></p>' + liste(g.pre); var ck = GCHK[g.id] || []; if (ck.length) h += '<p style="margin:2px 0"><i>État actuel de vos paramétrages</i> : ' + puces(ck) + '</p>';
+      if (m.param.length) { var pn = ++n; h += titre(pn, 'Paramétrage') + sections(m.param, pn, vu); }
+      if (m.util.length || m.regles.length) { var un = ++n; h += titre(un, 'Utilisation et règles') + sections(m.util, un, vu) + sstitre(un + '.' + (m.util.length + 1), 'Règles') + '<ul>' + m.regles.map(function (x) { return '<li>' + puce(x) + '</li>'; }).join('') + '</ul>'; }
+      h += titre(++n, 'Rôles et responsabilités') + '<p>' + esc(g.roles) + '</p>';
+      var am = GU.amont(g.mod), av = GU.aval(g.mod);
+      h += titre(++n, 'Impacts et interdépendances') + '<p><i>Impacts</i></p>' + liste(g.impacts) + '<p style="margin-top:6px"><i>Interdépendances</i> — <b>' + esc(nomMod(g.mod)) + '</b></p><ul>' + (am.length ? '<li><b>Dépend de</b> : ' + am.map(function (l) { return modLien(l[0]) + ' (' + esc(l[2]) + ')'; }).join(' ; ') + '</li>' : '') + (av.length ? '<li><b>Alimente</b> : ' + av.map(function (l) { return modLien(l[1]) + ' (' + esc(l[2]) + ')'; }).join(' ; ') + '</li>' : '') + '</ul>';
+      if (g.erreurs && g.erreurs.length) h += titre(++n, 'Erreurs fréquentes') + liste(g.erreurs);
+      return h + L(g.l) + '<button type="button" class="aa-lien" data-aa-imp="' + esc(g.mod) + '">Impact en cascade</button><button type="button" class="aa-lien" data-aa-roles="' + esc(g.mod) + '">Rôles sur ce module</button><button type="button" class="aa-lien" data-aa-print>Imprimer le guide</button>';
+    }
+    function guideAncien(g) {
+      var h = '<p><b>' + esc(g.t) + '</b></p><p>' + esc(g.but) + '</p>' + capture(g.l[0][0]) + '<p><i>Qui intervient</i> : ' + esc(g.roles) + '</p>';
+      h += '<p style="margin-top:6px"><i>Prérequis</i></p>' + liste(g.pre);
+      var ck = GCHK[g.id] || []; if (ck.length) h += '<p style="margin:2px 0"><i>État actuel de vos paramétrages</i> : ' + puces(ck) + '</p>';
+      h += '<p style="margin-top:8px"><i>Étapes</i></p><ol>' + g.etapes.map(function (e) { return '<li>' + esc(e[0]) + (e[1] ? ' <a href="#' + e[1][0] + '">→ ' + esc(e[1][1]) + '</a>' : '') + '</li>'; }).join('') + '</ol>';
+      h += '<p style="margin-top:8px"><i>Impacts</i></p>' + liste(g.impacts);
+      var am = GU.amont(g.mod), av = GU.aval(g.mod);
+      h += '<p style="margin-top:8px"><i>Interdépendances</i> — <b>' + esc(nomMod(g.mod)) + '</b></p><ul>' + (am.length ? '<li><b>Dépend de</b> : ' + am.map(function (l) { return modLien(l[0]) + ' (' + esc(l[2]) + ')'; }).join(' ; ') + '</li>' : '') + (av.length ? '<li><b>Alimente</b> : ' + av.map(function (l) { return modLien(l[1]) + ' (' + esc(l[2]) + ')'; }).join(' ; ') + '</li>' : '') + '</ul>';
+      if (g.erreurs && g.erreurs.length) h += '<p style="margin-top:8px"><i>Erreurs fréquentes</i></p>' + liste(g.erreurs);
+      return h + L(g.l) + '<button type="button" class="aa-lien" data-aa-imp="' + esc(g.mod) + '">Impact en cascade</button><button type="button" class="aa-lien" data-aa-roles="' + esc(g.mod) + '">Rôles sur ce module</button>';
+    }
+    function index() {
+      return '<p><b>Guides disponibles</b> (' + GU.guides.length + ') — chaque guide détaille les rôles, les étapes, les impacts et les interdépendances :</p><table><thead><tr><th>Guide</th><th>Module</th><th></th></tr></thead><tbody>' + GU.guides.map(function (g) { return '<tr><td>' + esc(g.t) + '</td><td>' + esc(nomMod(g.mod)) + '</td><td><button type="button" class="aa-lien" style="margin:0" data-aa-g="' + esc(g.id) + '">Ouvrir</button></td></tr>'; }).join('') + '</tbody></table>';
+    }
+    function meilleur(t) {
+      var best = null, bl = 0; GU.guides.forEach(function (g) { var m = g.k.exec(t); if (m && m[0].length > bl) { bl = m[0].length; best = g; } }); return best;
+    }
+    function manquants() { return GU.etat().filter(function (x) { return !x.ok; }); }
+    function majBadge() {
+      var a = document.querySelector('a[data-nav="aifonc"]'); if (!a) return; var ob = a.querySelector('.aa-badge'); if (ob) ob.remove(); return; var n = manquants().length, b = a.querySelector('.aa-badge');
+      if (!b) { b = document.createElement('span'); b.className = 'aa-badge'; b.style.cssText = 'margin-left:8px;padding:0 7px;border-radius:999px;background:#C77D0A;color:#fff;font-size:11px;font-weight:700;line-height:18px'; a.appendChild(b); }
+      b.textContent = n; b.style.display = n ? '' : 'none'; b.title = n + ' paramétrage(s) à compléter';
+    }
+    ['hashchange', 'caisse-lots-changed', 'circuit-changed', 'signataires-changed', 'fiches-immobilisation-changed'].forEach(function (ev) { window.addEventListener(ev, function () { clearTimeout(majBadge.t); majBadge.t = setTimeout(majBadge, 400); }); });
+    window.addEventListener('load', function () { setTimeout(majBadge, 800); });
+    CONF.accueilFn = function () { var M = manquants(), E = GU.etat(); majBadge(); return CONF.accueil + '<p><b>' + (E.length - M.length) + '/' + E.length + '</b> paramétrages en place.' + (M.length ? ' À compléter : ' + M.slice(0, 4).map(function (x) { return esc(x.t); }).join(', ') + (M.length > 4 ? '…' : '') + '.' : ' Tout est prêt.') + '</p><p>Demandez « parcours de démarrage », « interdépendances entre modules », « rôles » ou le guide d’une fonctionnalité.</p>'; };
+    CONF.guideDirect = function (id, titre) { var g = GU.guide(id); if (!g) return; bulle(esc(titre), true); var pt = bulle('<span class="aa-pt"><i></i><i></i><i></i></span>'); setTimeout(function () { pt.remove(); bulle(guide(g)); }, 350); };
+    CONF.hooks = { g: function (id) { var g = GU.guide(id); if (g) bulle(guide(g)); }, imp: function (m) { bulle(impact(m)); }, roles: function (m) { bulle(roles(m)); } };
+    CONF.sugg = ['#Prise en main', 'Contrôle de préparation', 'Parcours de démarrage', 'Liste des guides', '#Comprendre le logiciel', 'Interdépendances entre modules', 'Rôles et responsabilités', 'Impact d’une modification de la saisie', '#Guides pas à pas'].concat(GU.guides.map(function (g) { return '@' + g.id + '|' + g.t; }));
+    var regles = [
+      [/parcours|d[ée]marrage|pr[êe]t [àa]|pr[ée]paration|checklist de d[ée]marrage|configuration initiale|ce qui manque|qu.est-ce qui manque|par o[ùu] commencer|commencer/, function () { return preparation(); }],
+      [/interd[ée]pendances?|d[ée]pendances?|carte des modules|liens? entre (les )?modules|encha[îi]nement|alimente|flux entre/, function () { return interdep(); }],
+      [/impact|cons[ée]quences?|r[ée]percussions?|cascade|si je (modifie|supprime|d[ée]sactive|change)|affecte|touch[ée]s?/, function (t) { var g = meilleur(t.replace(/impacts?|cons[ée]quences?|modification|modifie|r[ée]percussions?|cascade/g, ' ')); return g ? impact(g.mod) : '<p>Précisez le module ou la fonction concernée, par exemple « impact d’une modification de la saisie d’écritures » ou « impact de la clôture mensuelle ». Voici la carte complète :</p>' + interdep(); }],
+      [/\br[ôo]les?\b|qui (fait|peut|doit|valide|intervient)|responsabilit|raci|profils? m[ée]tier|matrice des r/, function (t) { var g = meilleur(t.replace(/r[ôo]les?|responsabilit[ée]s?/g, ' ')); return roles(g ? g.mod : null); }],
+      [/liste des guides|tous les guides|sommaire|guides disponibles|^guides?$|que savez-vous|aide/, function () { return index(); }],
+      [/./, function (t) { var g = meilleur(t); return g ? guide(g) : null; }]
+    ];
+    CONF.regles = regles.concat(CONF.regles);
+  })();
+  var ms = q('[data-aa-ms]'), inp = q('[data-aa-in]'), env = q('[data-aa-env]');
+  function bulle(html, user) {
+    var m = document.createElement('div'); m.className = 'aa-m' + (user ? ' u' : '');
+    m.innerHTML = (user ? '' : '<span class="aa-av"><i class="ti ti-robot" aria-hidden="true"></i></span>') + '<div class="aa-b">' + html + '<small>' + heure() + '</small></div>';
+    [].forEach.call(m.querySelectorAll('table'), function (t) { t.setAttribute('data-no-tf', ''); t.setAttribute('data-no-pg', ''); m.querySelector('.aa-b').style.maxWidth = '96%'; m.querySelector('.aa-b').style.overflowX = 'auto'; });   // pas de filtres ni de pagination dans les bulles
+    if (m.querySelector('.aa-cap,.aa-fig')) { m.querySelector('.aa-b').style.maxWidth = '96%'; m.querySelector('.aa-b').style.width = '96%'; } ms.appendChild(m); remplirCaps(m); ms.scrollTop = ms.scrollHeight; return m;
+  }
+  function repondre(t) {
+    var s = t.toLowerCase(), h = null;
+    for (var i = 0; i < CONF.regles.length && !h; i++) if (CONF.regles[i][0].test(s)) h = CONF.regles[i][1](s);
+    return h || repli(t);
+  }
+  function envoyer(t) {
+    t = String(t || '').trim(); if (!t) return; bulle(esc(t), true); inp.value = ''; env.disabled = true;
+    var pt = bulle('<span class="aa-pt"><i></i><i></i><i></i></span>');
+    setTimeout(function () { pt.remove(); bulle(repondre(t)); }, 450);
+  }
+  q('[data-aa-sous]').textContent = CONF.sous;
+  q('[data-aa-sg]').innerHTML = CONF.sugg.map(function (t) { return t.charAt(0) === '#' ? '<h4 style="margin:10px 0 6px;font-size:11px;color:#2F6DB5;text-transform:uppercase;letter-spacing:.05em">' + esc(t.slice(1)) + '</h4>' : t.charAt(0) === '@' ? '<button type="button" data-aa-s data-g="' + esc(t.slice(1).split('|')[0]) + '">' + esc(t.slice(1).split('|')[1]) + '</button>' : '<button type="button" data-aa-s>' + esc(t) + '</button>'; }).join('');
+  q('[data-aa-sg]').addEventListener('click', function (e) { var b = e.target.closest('[data-aa-s]'); if (b) { if (b.dataset.g && CONF.guideDirect) CONF.guideDirect(b.dataset.g, b.textContent); else envoyer(b.textContent); } });
+  q('[data-aa-f]').addEventListener('submit', function (e) { e.preventDefault(); envoyer(inp.value); });
+  inp.addEventListener('input', function () { env.disabled = !inp.value.trim(); });
+  function acc() { return CONF.accueilFn ? CONF.accueilFn() : CONF.accueil; }
+  q('[data-aa-eff]').addEventListener('click', function () { ms.innerHTML = ''; bulle(acc()); });
+  ms.addEventListener('click', function (e) {
+    var pr = e.target.closest('[data-aa-print]'); if (pr) { var bb = pr.closest('.aa-b').cloneNode(true); [].forEach.call(bb.querySelectorAll('.aa-cap,button,.aa-ap,small,svg,.aa-fig'), function (x) { x.remove(); }); var w = window.open('', '_blank'); if (w) { w.document.write('<!doctype html><meta charset="utf-8"><title>Guide</title><style>body{font:13px/1.5 system-ui,sans-serif;color:#0B1332;margin:28px}ul{margin:4px 0 8px;padding-left:22px}a{color:#2E427B;text-decoration:none}table{border-collapse:collapse;width:100%}th,td{border-bottom:1px solid #E9EBF0;padding:4px 8px;text-align:left}</style>' + bb.innerHTML); w.document.close(); w.focus(); w.print(); } return; } var cp = e.target.closest('[data-aa-cap]'); if (cp) { e.preventDefault(); var h0 = capture(cp.dataset.aaCap); if (h0) bulle(h0); return; } var fg = e.target.closest('.aa-cap'); if (fg && !e.target.closest('a')) { agrandir(fg.dataset.aaCapid); return; } var H = CONF.hooks; if (!H) return; var b;
+    if ((b = e.target.closest('[data-aa-xl]'))) H.xl(); else if ((b = e.target.closest('[data-aa-relancer]'))) H.relancer(); else if ((b = e.target.closest('[data-aa-run]'))) H.run(b.dataset.aaRun); else if ((b = e.target.closest('[data-aa-rap]'))) H.rap(b.dataset.aaRap); else if ((b = e.target.closest('[data-aa-ckraz]'))) H.ckraz(b); else if ((b = e.target.closest('[data-aa-xr]'))) H.xr(); else if ((b = e.target.closest('[data-aa-g]'))) H.g(b.dataset.aaG); else if ((b = e.target.closest('[data-aa-imp]'))) H.imp(b.dataset.aaImp); else if ((b = e.target.closest('[data-aa-roles]'))) H.roles(b.dataset.aaRoles);
+  });
+  ms.addEventListener('change', function (e) { if (CONF.hooks && e.target.matches('[data-aa-ckc]')) CONF.hooks.ck(e); });
+  window.addEventListener('hashchange', function () { if (location.hash === '#AIID' && CONF.accueilFn) bulle(CONF.accueilFn()); });
+  bulle(acc());
+})();
+</script>

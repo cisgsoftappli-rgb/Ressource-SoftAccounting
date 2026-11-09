@@ -4,7 +4,7 @@
    du tableau. Exclus : écrans listés dans EXCLUS, tableaux de fenêtres modales, de la barre d'actions et de l'assistant, tableau marqué data-no-tf.
    Ne pas nommer de fonction « $$ » (build.cjs). */
 (function () {
-  var EXCLUS = { balance: 1, balaux: 1, glg: 1, journal: 1, balana: 1, listedit: 1, recapexec: 1, fisctrait: 1, biledit: 1, cred: 1, ered: 1, tfted: 1, designer2: 1, listingdes: 1, modfisc2: 1, situation: 1 };
+  var EXCLUS = { balance: 1, balaux: 1, glg: 1, journal: 1, balana: 1, listedit: 1, recapexec: 1, fisctrait: 1, fiscannul: 1, biledit: 1, cred: 1, ered: 1, tfted: 1, designer2: 1, listingdes: 1, modfisc2: 1, situation: 1 };
   var HORS = '[class*="-ov"],[class*="modal"],[role="dialog"],.ba-bar,.ai-pan,.custom-select-dropdown,.cb-pan';
   var css = '.tf-s{cursor:pointer;user-select:none}.tf-s:hover{color:#2E427B}.tf-s::after{content:"↕";margin-left:6px;font-size:11px;opacity:.35}' +
     '.tf-s[aria-sort="ascending"]::after{content:"▲";opacity:1;color:#2E427B}.tf-s[aria-sort="descending"]::after{content:"▼";opacity:1;color:#2E427B}' +

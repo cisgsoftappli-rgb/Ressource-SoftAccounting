@@ -7,8 +7,8 @@
    Les lignes de total (attribut data-pg-keep ou classe contenant « tot ») restent toujours visibles. Le filtre / tri de tableaux.js (classe tf-off) est respecté.
    Ne pas nommer de fonction « $$ » (build.cjs). */
 (function () {
-  var EXCLUS = { balance: 1, balaux: 1, glg: 1, journal: 1, balana: 1, listedit: 1, recapexec: 1, fisctrait: 1, biledit: 1, cred: 1, ered: 1, tfted: 1, designer2: 1, listingdes: 1, designer: 1, modfisc2: 1, situation: 1 };
-  var HORS = '[class*="-ov"],[class*="modal"],[role="dialog"],.ba-bar,.ai-pan,.custom-select-dropdown,.cb-pan,.etm-dialog,.pg-bar';
+  var EXCLUS = { balance: 1, balaux: 1, glg: 1, glaux: 1, journal: 1, balana: 1, listedit: 1, recapexec: 1, fisctrait: 1, fiscannul: 1, biledit: 1, cred: 1, ered: 1, tfted: 1, designer2: 1, listingdes: 1, designer: 1, modfisc2: 1, situation: 1 };
+  var HORS = '[class*="-ov"],[class*="modal"],[role="dialog"],.ba-bar,.ai-pan,.custom-select-dropdown,.cb-pan,.etm-dialog,.pg-bar,[contenteditable]';
   var TAILLES = [10, 25, 50, 100];
   var css = '.pg-off{display:none!important}' +
     '.pg-bar{display:flex;justify-content:flex-end;align-items:center;gap:8px;flex-wrap:wrap;padding:8px 0;font:400 12px var(--font-sans);color:#474C58}' +
@@ -52,7 +52,7 @@
       rows.forEach(function (r) { if (garde(r)) r.classList.remove('pg-off'); });
       vis.forEach(function (r, i) { r.classList.toggle('pg-off', !(i >= (page - 1) * taille && i < page * taille)); });
       rows.forEach(function (r) { if (filtree(r)) r.classList.remove('pg-off'); });
-      var afficher = n > TAILLES[0];
+      var afficher = n > 0 || table.classList.contains('bp-gt');   // la pagination est toujours affichée (même sous 10 lignes)
       bar.hidden = !afficher;
       if (afficher) {
         bar.innerHTML = '<label>Lignes par page <select aria-label="Lignes par page">' + TAILLES.map(function (t) { return '<option' + (t === taille ? ' selected' : '') + '>' + t + '</option>'; }).join('') + '</select></label>' +
@@ -74,7 +74,7 @@
       var sc = defileur(wrap), rs = sc.getBoundingClientRect ? sc.getBoundingClientRect() : { top: 0 }, doc = sc === document.scrollingElement || sc === document.documentElement;
       var haut = wrap.getBoundingClientRect().top - (doc ? 0 : rs.top) + (doc ? window.pageYOffset : sc.scrollTop);
       var dispo = (doc ? window.innerHeight - 56 : sc.clientHeight) - haut - (bar.hidden ? 16 : 64);
-      wrap.style.maxHeight = Math.max(220, Math.floor(dispo)) + 'px';
+      wrap.style.maxHeight = Math.max(+table.getAttribute('data-pg-min') || 220, Math.floor(dispo)) + 'px';
       var th = table.tHead; if (!th) return; var top = 0;
       [].forEach.call(th.rows, function (r) { [].forEach.call(r.cells, function (c) { c.style.position = 'sticky'; c.style.top = top + 'px'; c.style.zIndex = 3; if (!c.__pgbg) { c.__pgbg = 1; c.style.backgroundColor = fond(c); } }); top += r.offsetHeight; });
     }

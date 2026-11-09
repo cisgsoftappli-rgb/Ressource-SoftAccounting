@@ -17,8 +17,13 @@
 .jn-badge{display:inline-flex;align-items:center;padding:2px 10px;border:1px solid #D6D9E0;border-radius:6px;font-size:12px;font-weight:600}
 .jn-badge.a{background:#ECFDF5;border-color:#A7F3D0;color:#047857}.jn-badge.i{background:#F5F7F9;color:#5B606D}
 .bp-in.err,.bp-sel.err{border-color:#B63132}
+[data-jn-form]{display:grid;grid-template-columns:minmax(0,560px) minmax(0,560px);column-gap:32px;align-items:start;justify-content:start}
+[data-jn-form]>.jn-form,[data-jn-form]>.jn-chk{grid-column:1}
+[data-jn-form]>.jn-num{grid-column:2;grid-row:1/span 2;margin-top:0;max-width:none}
+@media(max-width:1250px){[data-jn-form]{grid-template-columns:minmax(0,1fr)}[data-jn-form]>.jn-num{grid-column:1;grid-row:auto;margin-top:12px;max-width:780px}}
 .jn-num{margin-top:12px;max-width:780px;padding:14px 16px;border:1px solid #E1E5EE;border-radius:12px;background:#F8F9FB}
-.jn-num .jn-form{max-width:none}.jn-num .ex{margin:12px 0 0;font-size:12px;color:#5B606D}.jn-num .ex b{font-family:ui-monospace,Consolas,monospace;color:#2E427B}
+.jn-num .jn-form{max-width:none}.jn-ctx{display:flex;flex-wrap:wrap;align-items:center;gap:6px 18px;margin-top:14px;padding-top:12px;border-top:1px dashed #D6D9E0;font-size:13px}.jn-ctx-t{flex-basis:100%;font-weight:600;color:#353944}.jn-ctx label{display:inline-flex;align-items:center;gap:6px}.jn-fa{margin-left:-8px}.jn-fa select{height:28px;min-width:76px}.jn-exemple{margin-top:12px}.jn-exemple .bp-champ{max-width:420px}.jn-ex-in{background:#EEF1F6;font-family:ui-monospace,Consolas,monospace;font-weight:700;color:#2E427B}.jn-ex-aide{display:block;margin-top:4px;font-size:12px;color:#5B606D}
+.jn-num .ex{margin:12px 0 0;font-size:12px;color:#5B606D}.jn-num .ex b{font-family:ui-monospace,Consolas,monospace;color:#2E427B}
 </style>
 
 <div class="bp-root" data-jn>
@@ -86,7 +91,14 @@
             <label class="bp-champ"><span>Suffixe</span><input class="bp-in" data-f="suffixe" maxlength="5" placeholder="Ex : M" autocomplete="off"></label>
             <label class="bp-champ"><span>Dernier numéro</span><input class="bp-in" data-f="dernier" type="number" min="0" step="1" placeholder="0"><span class="jn-er" data-er="dernier"></span></label>
           </div>
-          <p class="ex">Prochain numéro de pièce : <b data-jn-apercu>—</b></p>
+          <div class="jn-ctx">            <label><input type="checkbox" data-f="nsite">Site</label>
+            <label><input type="checkbox" data-f="nannee">Année</label>
+            <label class="jn-fa"><span>Format</span><select class="bp-sel" data-f="fannee"><option value="AAAA">AAAA</option><option value="AA">AA</option></select></label>
+            <label><input type="checkbox" data-f="nmois">Mois</label>
+          </div>
+          <div class="jn-ctx"><label><input type="checkbox" data-f="rannee">Réinitialiser la numérotation à chaque nouvelle année</label></div>
+          <p class="ex jn-ctx-note" data-jn-note hidden style="display:none">Le site, l'année et le mois sont lus dans l'en-tête de la pièce (site, date de l'écriture) ; le compteur repart de 0 pour chaque nouveau site, année ou mois retenu. Ordre du numéro : préfixe, site, année, mois, compteur, suffixe, séparés par le séparateur.</p>
+          <div class="jn-exemple"><label class="bp-champ"><span>Exemple de numérotation</span><input class="bp-in jn-ex-in" data-jn-apercu readonly tabindex="-1" value="—"></label></div>
         </div>
       </form>
     </section>
@@ -109,11 +121,28 @@
   function err(k, m) { var e = q('[data-er="' + k + '"]'); if (e) { e.textContent = m || ''; e.classList.toggle('show', !!m); } var f = q('[data-f=' + k + ']'); if (f) f.classList.toggle('err', !!m); }
   function tresorerie(t) { return t === 'Trésorerie' || t === 'Hybride'; }
   // numéro de pièce d'un journal : préfixe + séparateur + compteur sur « longueur » chiffres + suffixe (utilisé par la saisie d'écritures)
-  function numero(j, n) { return (j.prefixe || '') + (j.sep || '') + String(n).padStart(+j.longueur || 4, '0') + (j.suffixe || ''); }
+  // Avec site, année ou mois : préfixe, site, année, mois et compteur sont assemblés avec le séparateur (contexte lu dans l'en-tête de la saisie : { site, date })
+  function ctxPartie(j, ctx) {
+    ctx = ctx || {}; var d = ctx.date ? String(ctx.date) : '', y = /^[0-9]{4}/.test(d) ? d.slice(0, 4) : String(new Date().getFullYear()), m = /^[0-9]{4}-[0-9]{2}/.test(d) ? d.slice(5, 7) : ('0' + (new Date().getMonth() + 1)).slice(-2), P = [];
+    if (j.nsite) P.push(ctx.site || '01'); if (j.nannee) P.push(j.fannee === 'AA' ? y.slice(2) : y); if (j.nmois) P.push(m);
+    return P;
+  }
+  function numero(j, n, ctx) { return [j.prefixe || ''].concat(ctxPartie(j, ctx), [String(n).padStart(+j.longueur || 4, '0')]).join(j.sep || '') + (j.suffixe || ''); }
+  function anneeDe(ctx) { var d = ctx && ctx.date ? String(ctx.date) : ''; return /^[0-9]{4}/.test(d) ? d.slice(0, 4) : String(new Date().getFullYear()); }
+  // clé du compteur : contexte du numéro (site, année, mois) ; « réinitialiser chaque année » ajoute l'année à la clé même si elle ne figure pas dans le numéro
+  function cleCtx(j, ctx) { var k = ctxPartie(j, ctx).join('|'); if (j.rannee && !j.nannee) k = (k ? k + '|' : '') + 'A' + anneeDe(ctx); return k; }
+  function compteur(j, ctx) {
+    var k = cleCtx(j, ctx); if (!k) return +j.dernier || 0;
+    var v = (j.cptCtx || {})[k]; if (v === undefined && j.rannee && !j.nsite && !j.nmois && !j.nannee && anneeDe(ctx) === String(new Date().getFullYear())) v = +j.dernier || 0;   // le « dernier numéro » saisi vaut pour l'année en cours
+    return v || 0;
+  }
   window.JOURNAUX_NUMERO = numero;
+  window.JOURNAUX_PROCHAIN = function (j, ctx) { return numero(j, compteur(j, ctx) + 1, ctx); };
+  window.JOURNAUX_AVANCER = function (j, ctx) { var k = cleCtx(j, ctx); if (k) { var n = compteur(j, ctx) + 1; j.cptCtx = j.cptCtx || {}; j.cptCtx[k] = n; } else j.dernier = (+j.dernier || 0) + 1; };
   function apercu() {
-    var j = { prefixe: q('[data-f=prefixe]').value.trim(), longueur: +q('[data-f=longueur]').value || 4, sep: q('[data-f=sep]').value, suffixe: q('[data-f=suffixe]').value.trim() };
-    q('[data-jn-apercu]').textContent = j.prefixe ? numero(j, (+q('[data-f=dernier]').value || 0) + 1) : '—';
+    var j = { prefixe: q('[data-f=prefixe]').value.trim(), longueur: +q('[data-f=longueur]').value || 4, sep: q('[data-f=sep]').value, suffixe: q('[data-f=suffixe]').value.trim(), nsite: q('[data-f=nsite]').checked, nannee: q('[data-f=nannee]').checked, nmois: q('[data-f=nmois]').checked, fannee: q('[data-f=fannee]').value };
+    var ctx = j.nsite || j.nannee || j.nmois; q('[data-jn-note]').hidden = !ctx;
+    q('[data-jn-apercu]').value = j.prefixe ? numero(j, ctx ? 1 : (+q('[data-f=dernier]').value || 0) + 1, {}) : '—';
   }
 
   // listes de choix
@@ -128,8 +157,8 @@
   // devises proposées : monnaies actives de « Paramètres généraux › Devise », hors monnaie locale
   function optDevises(courant) {
     var l = (window.DEVISES || []).filter(function (d) { return d.actif !== false && d.code !== 'MGA'; }).map(function (d) { return d.code; });
-    if (courant && l.indexOf(courant) < 0) l.push(courant);
-    return '<option value="">— Sélectionner une devise —</option>' + l.map(function (c) { return '<option>' + esc(c) + '</option>'; }).join('');
+    if (courant && courant !== 'LIBRE' && l.indexOf(courant) < 0) l.push(courant);
+    return '<option value="">— Sélectionner une devise —</option><option value="LIBRE">Libre — devise choisie à la saisie</option>' + l.map(function (c) { return '<option>' + esc(c) + '</option>'; }).join('');
   }
   function remplirNatures(type, courante) { q('[data-f=nature]').innerHTML = NATURES[type].map(function (n) { return '<option>' + n + '</option>'; }).join(''); if (courante && NATURES[type].indexOf(courante) >= 0) q('[data-f=nature]').value = courante; }
 
@@ -159,6 +188,7 @@
     q('[data-f=gdev]').checked = !!r.gdev; q('[data-f=devise]').innerHTML = optDevises(r.devise); q('[data-f=devise]').value = r.devise || '';
     q('[data-f=actif]').value = r.actif ? '1' : '0'; q('[data-f=exclu]').checked = !!r.exclu; q('[data-f=auto]').checked = !!r.auto;
     q('[data-f=prefixe]').value = r.prefixe != null ? r.prefixe : r.code; q('[data-f=longueur]').value = r.longueur || 4; q('[data-f=sep]').value = r.sep || ''; q('[data-f=suffixe]').value = r.suffixe || ''; q('[data-f=dernier]').value = r.dernier || 0;
+    q('[data-f=nsite]').checked = !!r.nsite; q('[data-f=nannee]').checked = !!r.nannee; q('[data-f=rannee]').checked = !!r.rannee; q('[data-f=nmois]').checked = !!r.nmois; q('[data-f=fannee]').value = r.fannee || 'AAAA';
     ['code', 'libelle', 'sign2', 'banque', 'compte', 'devise', 'prefixe', 'longueur', 'dernier'].forEach(function (k) { err(k); }); apercu();
   }
   // banque et compte associé : journaux de trésorerie et hybrides seulement
@@ -169,19 +199,23 @@
     var tr = ed && tresorerie(t); q('[data-f=banque]').disabled = !(tr && q('[data-f=nature]').value === 'Banque'); q('[data-f=compte]').disabled = !tr;
     if (!tr) { q('[data-f=banque]').value = ''; q('[data-f=compte]').value = ''; } else if (q('[data-f=nature]').value !== 'Banque') q('[data-f=banque]').value = '';
     q('[data-f=devise]').disabled = !(ed && q('[data-f=gdev]').checked); if (!q('[data-f=gdev]').checked) q('[data-f=devise]').value = '';
-    q('[data-jn-num]').hidden = !q('[data-f=auto]').checked; apercu();
+    q('[data-jn-num]').hidden = !q('[data-f=auto]').checked;
+    var na = q('[data-f=nannee]').checked; if (na) q('[data-f=rannee]').checked = true; q('[data-f=rannee]').disabled = !ed || na;   // l'année dans le numéro implique déjà un compteur annuel
+    apercu();
     var a = q('[data-jn-actions]');
     a.querySelector('[data-jn-ajouter]').disabled = ed; a.querySelector('[data-jn-modifier]').disabled = ed || sel < 0; a.querySelector('[data-jn-supprimer]').disabled = ed || sel < 0;
     a.querySelector('[data-jn-enregistrer]').disabled = !ed; a.querySelector('[data-jn-annuler]').disabled = !ed; a.querySelector('[data-jn-imprimer]').disabled = !rows.length; a.querySelector('[data-jn-exporter]').disabled = !rows.length;
   }
   q('[data-f=type]').addEventListener('change', function () { remplirNatures(q('[data-f=type]').value); etat(); });
   q('[data-f=nature]').addEventListener('change', etat);
+  q('[data-f=nannee]').addEventListener('change', etat);
   q('[data-f=gdev]').addEventListener('change', function () { if (q('[data-f=gdev]').checked && !q('[data-f=devise]').value) { var o = q('[data-f=devise]').querySelectorAll('option')[1]; if (o && o.parentNode.options.length === 2) q('[data-f=devise]').value = o.value; } etat(); });
   window.addEventListener('devises-changed', function () { var v = q('[data-f=devise]').value; q('[data-f=devise]').innerHTML = optDevises(v); q('[data-f=devise]').value = v; });
   q('[data-f=auto]').addEventListener('change', function () { if (mode === 'creation' && q('[data-f=auto]').checked && !q('[data-f=prefixe]').value) q('[data-f=prefixe]').value = q('[data-f=code]').value.trim().toUpperCase(); etat(); });
   q('[data-f=code]').addEventListener('input', function () { if (mode === 'creation' && (!q('[data-f=prefixe]').value || q('[data-f=prefixe]').dataset.suivi === '1')) { q('[data-f=prefixe]').value = q('[data-f=code]').value.trim().toUpperCase(); q('[data-f=prefixe]').dataset.suivi = '1'; apercu(); } });
   q('[data-f=prefixe]').addEventListener('input', function () { this.dataset.suivi = ''; apercu(); });
   ['longueur', 'sep', 'suffixe', 'dernier'].forEach(function (k) { q('[data-f=' + k + ']').addEventListener('input', apercu); });
+  ['nsite', 'nannee', 'nmois', 'fannee'].forEach(function (k) { q('[data-f=' + k + ']').addEventListener('change', apercu); });
   window.addEventListener('journaux-changed', function () { liste(); if (sel >= 0 && mode === 'consultation') form(rows[sel]), etat(); });
   function onglet(n) { qa('[data-jn-pan]').forEach(function (p) { p.hidden = p.dataset.jnPan !== n; }); qa('[data-jn-tab]').forEach(function (b) { var on = b.dataset.jnTab === n; b.classList.toggle('on', on); b.setAttribute('aria-selected', on); }); }
   function choisir(i) { if (mode !== 'consultation') return; sel = i; liste(); form(rows[i]); etat(); }
@@ -210,7 +244,7 @@
       { col: 'Banque', oblig: false, format: 'Code banque (' + BANQUES.map(function (b) { return b[0]; }).join(', ') + '). Obligatoire pour la nature Banque.', exemple: '' },
       { col: 'Compte associé', oblig: false, format: 'Compte de détail du plan comptable. Obligatoire pour les journaux de trésorerie et hybrides.', exemple: '' },
       { col: 'Journal géré en devise', oblig: false, format: 'Oui ou Non. Par défaut : Non (monnaie locale). Si Oui : devise obligatoire.', exemple: 'Non' },
-      { col: 'Devise', oblig: false, format: 'Code d\'une devise active (hors monnaie locale). Obligatoire si le journal est géré en devise.', exemple: '' },
+      { col: 'Devise', oblig: false, format: 'Code d\'une devise active (hors monnaie locale), ou LIBRE (devise choisie à la saisie). Obligatoire si le journal est géré en devise.', exemple: '' },
       { col: 'Statut', oblig: false, format: 'Actif ou Inactif. Par défaut : Actif.', exemple: 'Actif' },
       { col: 'Exclure de la demande', oblig: false, format: 'Oui ou Non. Par défaut : Non.', exemple: 'Non' },
       { col: 'Numérotation automatique', oblig: false, format: 'Oui ou Non. Si Oui : préfixe et longueur obligatoires.', exemple: 'Oui' },
@@ -233,7 +267,7 @@
         if (type && tresorerie(type) && !cpt) er.push('Le compte associé est obligatoire pour un journal de trésorerie ou hybride');
         if (cpt && pc.length && !pc.some(function (r) { return r.code === cpt; })) er.push('Compte associé « ' + cpt + ' » absent du plan comptable');
         var st = ech(v['Statut']); if (st && st !== 'actif' && st !== 'inactif') er.push('Statut « ' + v['Statut'] + ' » invalide (Actif ou Inactif)');
-        var gd = oui(v['Journal géré en devise']), dv = v['Devise'].toUpperCase(), dl = (window.DEVISES || []).filter(function (d) { return d.actif !== false && d.code !== 'MGA'; }).map(function (d) { return d.code; });
+        var gd = oui(v['Journal géré en devise']), dv = v['Devise'].toUpperCase(), dl = (window.DEVISES || []).filter(function (d) { return d.actif !== false && d.code !== 'MGA'; }).map(function (d) { return d.code; }).concat(['LIBRE']);
         if (gd && !dv) er.push('Devise obligatoire pour un journal géré en devise'); else if (dv && dl.indexOf(dv) < 0) er.push('Devise « ' + dv + ' » inconnue ou inactive (' + (dl.join(', ') || 'aucune devise active') + ')'); else if (dv && !gd) er.push('Devise renseignée mais « Journal géré en devise » n\'est pas à Oui');
         var pre = v['Préfixe'].toUpperCase(), lg = v['Longueur du numéro'] === '' ? 4 : Number(v['Longueur du numéro']), dn = v['Dernier numéro'] === '' ? 0 : Number(v['Dernier numéro']);
         if (pre.length > 10) er.push('Préfixe trop long (10 caractères au plus)'); if (v['Séparateur de numéro'].length > 3) er.push('Séparateur trop long (3 caractères au plus)'); if (v['Suffixe'].length > 5) er.push('Suffixe trop long (5 caractères au plus)');
@@ -247,7 +281,7 @@
         var aj = 0, mj = 0;
         L.forEach(function (x) {
           var d = x.data, i = -1; rows.forEach(function (r, k) { if (i < 0 && r.code === d.code) i = k; });
-          if (i >= 0) { d.site = rows[i].site; if (!d.auto) d.dernier = rows[i].dernier; rows[i] = d; mj++; } else { d.site = d.code.slice(0, 2); rows.push(d); aj++; }
+          if (i >= 0) { d.site = rows[i].site; d.rannee = rows[i].rannee; if (!d.auto) d.dernier = rows[i].dernier; rows[i] = d; mj++; } else { d.site = d.code.slice(0, 2); rows.push(d); aj++; }
         });
         mode = 'consultation'; sel = -1; liste(); form(null); etat(); onglet('liste'); synchroniser(); toast(aj + ' journal(aux) ajouté(s), ' + mj + ' mis à jour.');
       } };
@@ -256,7 +290,7 @@
     var r = { code: q('[data-f=code]').value.trim().toUpperCase(), libelle: q('[data-f=libelle]').value.trim(), type: q('[data-f=type]').value, nature: q('[data-f=nature]').value,
       sign1: q('[data-f=sign1]').value, sign2: q('[data-f=sign2]').value, banque: q('[data-f=banque]').value, compte: q('[data-f=compte]').value,
       actif: q('[data-f=actif]').value === '1', exclu: q('[data-f=exclu]').checked, auto: q('[data-f=auto]').checked, gdev: q('[data-f=gdev]').checked, devise: q('[data-f=devise]').value, site: '',
-      prefixe: q('[data-f=prefixe]').value.trim().toUpperCase(), longueur: +q('[data-f=longueur]').value, sep: q('[data-f=sep]').value, suffixe: q('[data-f=suffixe]').value.trim(), dernier: q('[data-f=dernier]').value === '' ? 0 : +q('[data-f=dernier]').value }, ok = true, courant = mode === 'edition' ? sel : -1;
+      prefixe: q('[data-f=prefixe]').value.trim().toUpperCase(), longueur: +q('[data-f=longueur]').value, sep: q('[data-f=sep]').value, suffixe: q('[data-f=suffixe]').value.trim(), nsite: q('[data-f=nsite]').checked, nannee: q('[data-f=nannee]').checked, nmois: q('[data-f=nmois]').checked, rannee: q('[data-f=rannee]').checked, fannee: q('[data-f=fannee]').value, cptCtx: mode === 'edition' && rows[sel] ? rows[sel].cptCtx : undefined, dernier: q('[data-f=dernier]').value === '' ? 0 : +q('[data-f=dernier]').value }, ok = true, courant = mode === 'edition' ? sel : -1;
     ['code', 'libelle', 'sign2', 'banque', 'compte', 'devise', 'prefixe', 'longueur', 'dernier'].forEach(function (k) { err(k); });
     if (r.gdev && !r.devise) { err('devise', 'La devise est obligatoire pour un journal géré en devise.'); ok = false; }
     if (!r.gdev) r.devise = '';

@@ -53,28 +53,42 @@
   var q = function (s) { return root.querySelector(s); };
   // [module, [ [sous-module | null, [ [fonctionnalité, actions C/M/S], … ] ], … ]]
   var MODULES = [
-    ['Paramétrages', [
-      ['Administration', [['Utilisateurs', 'CMS'], ['Gestion des accès', 'CMS'], ['Paramétrage des traces', 'M'], ['Nettoyages', 'S'], ['Alertes', 'CMS']]],
-      ['Paramètres généraux', [['Pays', 'CMS'], ['Devise', 'CMS'], ['Unités', 'CMS'], ['Administration de l’entité', 'M'], ['Signataires', 'CMS'], ['Liste des banques', 'CMS']]],
-      ['Paramètres comptables', [['Exercices comptables', 'CMS'], ['Configuration des plans', 'M'], ['Saisie des plans', 'CMS'], ['Mode de règlement', 'CMS']]],
-      ['Paramètres financiers', [['Devis programme', 'CMS'], ['Procédures financières', 'CMS']]]
-    ]],
-    ['Comptabilité générale', [[null, [['Compte de tiers', 'CMS'], ['Saisie d’écritures', 'CMS'], ['Journaux', 'CMS'], ['Rapprochement bancaire — Configuration', 'CMS'], ['Rapprochement bancaire — Pointage', 'CM'], ['Rapprochement bancaire — Situation', 'CM'], ['Gestion des cours', 'CM'], ['Petite caisse', 'CMS']]]]],
-    ['Comptabilité analytique', [[null, [['Plans analytiques', 'CMS']]]]],
-    ['Immobilisations', [[null, [['Paramétrages', 'CMS'], ['Saisies', 'CMS']]]]],
-    ['Gestion des contrats', [[null, [['Type de passation', 'CMS'], ['Type de marché', 'CMS'], ['Saisies', 'CMS']]]]],
-    ['États comptables', [[null, [['Type de taxe', 'CMS'], ['Modèle d’état', 'CMS'], ['Modèle Listing', 'CMS'], ['Modèle Récapitulatif', 'CMS'], ['Traitement des déclarations', 'CM']]]]],
-    ['États financiers', [[null, [['Bilan — paramétrage', 'CMS'], ['Compte de résultat — paramétrage', 'CMS'], ['Emplois et ressources — paramétrage', 'CMS'], ['Tableau de flux de trésorerie — paramétrage', 'CMS'], ['Compte spécial', 'CMS'], ['Utilisation de fonds', 'CMS']]]]],
-    ['Comptabilité Projets & Bailleurs', [[null, [['Saisie PAD', 'CMS'], ['Gestion des demandes de remboursement', 'CMS'], ['Modèle récapitulatif', 'CMS'], ['Modèle SOE', 'CMS']]]]]
+    ['Tableau de bord', [[null, [['Tableau de bord', 'R'], ['Tchat', 'R']]]]],
+    ['Paramétrages', [['Administration', [['Gestion des accès', 'RCMS'], ['Paramétrage des traces', 'RM'], ['Journal de traces', 'R'], ['Nettoyages', 'RS']]],
+      ['Paramètres généraux', [['Pays', 'RCMS'], ['Devise', 'RCMS'], ['Administration de l’entité', 'RM'], ['Signataires', 'RCMS'], ['Liste des banques', 'RCMS']]],
+      ['Paramètres comptables', [['Exercices comptables', 'RCMS'], ['Racine des comptes', 'RCMS'], ['Type de taxe', 'RCMS'], ['Mode de règlement', 'RCMS'], ['Clôture comptable', 'RCM']]],
+      ['Gestion des plans', [['Configuration des plans', 'RM'], ['Plan comptable', 'RCMS'], ['Activité', 'RCMS'], ['Budget', 'RCMS'], ['Géo', 'RCMS'], ['Financier', 'RCMS'], ['Plan 5 à Plan 10', 'RCMS'], ['Tiers', 'RCMS'], ['Journaux (saisie)', 'RCMS']]],
+      ['Paramètres financiers', [['Devis programme', 'RCMS'], ['Procédures financières', 'RCMS']]]]],
+    ['Comptabilité générale', [['Écritures', [['Saisie d’écritures', 'RCMS'], ['Liste des écritures', 'R'], ['Modèles d’écriture', 'RCMS']]],
+      ['Lettrage', [['Lettrage — Paramètre', 'RCMS'], ['Lettrage', 'RCM'], ['Prélettrage', 'RCM']]],
+      ['Rapprochement bancaire', [['Rapprochement bancaire — Configuration', 'RCMS'], ['Rapprochement bancaire — Pointage', 'RCM'], ['Rapprochement bancaire — Situation', 'RCM']]],
+      ['Circuit de validation', [['Circuit de validation — Paramètre', 'RCMS'], ['Circuit de validation — Traitement', 'RCM']]],
+      ['Gestion des cours', [['Gestion des cours — Saisie', 'RCM'], ['Gestion des cours — Conversion', 'RCM'], ['Cours appliqué', 'R']]],
+      ['Petite caisse', [['Petite caisse — Types d’opération', 'RCMS'], ['Petite caisse — Modèles de pièce', 'RCMS'], ['Petite caisse — Saisie', 'RCMS'], ['PV de caisse', 'RCM'], ['Petite caisse — Génération des écritures', 'RC']]],
+      ['Travaux périodiques', [['Clôture périodique', 'RCM'], ['Clôture mensuelle', 'RCM'], ['À nouveau', 'RCMS'], ['À nouveau analytique', 'RCMS'], ['Clôture annuelle', 'RCM']]]]],
+    ['Immobilisations', [['Paramétrages', [['Lieu d’affectation', 'RCMS'], ['Collaborateur responsable', 'RCMS'], ['Famille d’immobilisations', 'RCMS']]],
+      ['Saisies', [['Immobilisations (fiche)', 'RCMS'], ['Liste d’immobilisations', 'R'], ['Réassignation', 'RCM']]]]],
+    ['Gestion des contrats', [['Paramétrages', [['Type de passation', 'RCMS'], ['Type de marché', 'RCMS']]],
+      ['Saisies', [['Fiche contrat', 'RCMS'], ['Génération des reliquats', 'RC']]],
+      ['Suivi et historique', [['Suivi des contrats', 'R'], ['Détail d’un contrat', 'R']]]]],
+    ['États comptables', [['Général', [['Balance générale', 'R'], ['Balance auxiliaire', 'R'], ['Grand livre général', 'R'], ['Grand livre auxiliaire', 'R'], ['Journaux (édition)', 'R'], ['Échéancier et balance âgée', 'R']]],
+      ['Analytique', [['Balance analytique', 'R'], ['Grand livre analytique', 'R'], ['Détails des mouvements', 'R']]],
+      ['Déclaration fiscale', [['Déclaration fiscale — Type de taxe', 'RCMS'], ['Déclaration fiscale — Modèle d’état', 'RCMS'], ['Traitement des déclarations', 'RCM'], ['Annulation des déclarations', 'RM']]],
+      ['États personnalisés', [['Modèle Listing', 'RCMS'], ['Modèle Récapitulatif', 'RCMS'], ['Édition — Liste', 'R'], ['Édition — Récapitulatif', 'R']]]]],
+    ['États financiers', [[null, [['Bilan', 'RCMS'], ['Compte de résultat', 'RCMS'], ['Emplois et ressources', 'RCMS'], ['Tableau de flux de trésorerie', 'RCMS']]]]],
+    ['Comptabilité Projets & Bailleurs', [['Saisie PAD', [['Saisie PAD', 'RCMS']]],
+      ['IDA / FIDA / FED / FM / BAD', [['Modèle récapitulatif', 'RCMS'], ['Modèle SOE', 'RCMS'], ['Budget de la convention', 'RCMS'], ['État de dépense', 'RCMS'], ['Régularisation de la demande', 'RCM'], ['Historique des demandes', 'R']]],
+      ['États RFI', [['Modèles d’état RFI', 'RCMS'], ['Paramètres RFI', 'RCMS'], ['Édition des états RFI', 'R']]],
+      ['RSF', [['RSF — Tableau emplois ressources', 'R'], ['RSF — Utilisation de fonds', 'R'], ['RSF — Suivi budgétaire', 'R']]]]],
+    ['SoftAccounting AI', [[null, [['Assistance comptable AI', 'R'], ['Assistance financière AI', 'R'], ['Assistance fonctionnelle AI', 'R']]]]]
   ];
-  var COLS = '<colgroup><col style="width:38%"><col style="width:14%"><col style="width:14%"><col style="width:14%"><col style="width:20%"></colgroup>';
-  var ACTIONS = [['c', 'Création', 'C'], ['m', 'Modification', 'M'], ['s', 'Suppression', 'S']];
+  var COLS = '<colgroup><col style="width:30%"><col style="width:12%"><col style="width:12%"><col style="width:12%"><col style="width:12%"><col style="width:22%"></colgroup>';
+  var ACTIONS = [['r', 'Consultation', 'R'], ['c', 'Création', 'C'], ['m', 'Modification', 'M'], ['s', 'Suppression', 'S']];
   function esc(s) { return String(s == null ? '' : s).replace(/[&<>"]/g, function (c) { return { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c]; }); }
-  function defaut() { var d = {}; MODULES.forEach(function (m) { m[1].forEach(function (g) { g[1].forEach(function (f) { d[f[0]] = { c: f[1].indexOf('C') >= 0, m: f[1].indexOf('M') >= 0, s: f[1].indexOf('S') >= 0, jours: 365 }; }); }); }); return d; }
+  function defaut() { var d = {}; MODULES.forEach(function (m) { m[1].forEach(function (g) { g[1].forEach(function (f) { d[f[0]] = { r: f[1].indexOf('R') >= 0, c: f[1].indexOf('C') >= 0, m: f[1].indexOf('M') >= 0, s: f[1].indexOf('S') >= 0, jours: 365 }; }); }); }); return d; }
   function copie(o) { return JSON.parse(JSON.stringify(o)); }
-  var SEC = [['conn', 'Tracer les connexions et échecs d’authentification', 'Ouvertures de session, déconnexions, mots de passe erronés et comptes verrouillés.'],
-             ['cons', 'Tracer les consultations d’états sensibles', 'Balances, grand livre, états financiers et déclarations fiscales : qui les a consultés ou exportés, et quand.']];
-  var secEnreg = { conn: { on: true, jours: 365 }, cons: { on: true, jours: 365 } }, sec = copie(secEnreg);
+  var SEC = [['conn', 'Tracer les connexions et échecs d’authentification', 'Ouvertures de session, déconnexions, mots de passe erronés et comptes verrouillés.']];
+  var secEnreg = { conn: { on: true, jours: 365 } }, sec = copie(secEnreg);
   var enreg = defaut(), cfg = copie(enreg), filtre = '', ferme = {};
   window.TRACES_CFG = copie(enreg); window.TRACES_SECURITE = copie(secEnreg);
   function secHtml() {
@@ -82,23 +96,23 @@
     if (!l.length) return '';
     var nb = SEC.filter(function (x) { return sec[x[0]].on; }).length;
     return '<section class="tr-card' + (ferme['Sécurité'] ? ' ferme' : '') + '"><button type="button" class="tr-ch" data-tr-m="Sécurité" aria-expanded="' + (ferme['Sécurité'] ? 'false' : 'true') + '"><i class="ti ti-chevron-down"></i><b>Sécurité et accès</b><small>' + nb + ' / ' + SEC.length + ' paramètre(s) actif(s)</small></button>' +
-      '<table class="tr-t">' + COLS + '<thead><tr><th>Paramètre</th><th colspan="3">Traçabilité</th><th>Période de rétention des logs (jours)</th></tr></thead><tbody>' +
+      '<table class="tr-t">' + COLS + '<thead><tr><th>Paramètre</th><th colspan="4">Traçabilité</th><th>Période de rétention des logs (jours)</th></tr></thead><tbody>' +
       l.map(function (x) {
         var c = sec[x[0]];
-        return '<tr><td>' + esc(x[1]) + '<span class="tr-d">' + esc(x[2]) + '</span></td><td colspan="3"><label style="display:inline-flex;align-items:center;gap:10px;cursor:pointer"><input type="checkbox" class="tr-switch" role="switch" data-tr-sec="' + x[0] + '"' + (c.on ? ' checked' : '') + ' aria-label="' + esc(x[1]) + '"><span>' + (c.on ? 'Activée' : 'Désactivée') + '</span></label></td>' +
+        return '<tr><td>' + esc(x[1]) + '<span class="tr-d">' + esc(x[2]) + '</span></td><td colspan="4"><label style="display:inline-flex;align-items:center;gap:10px;cursor:pointer"><input type="checkbox" class="tr-switch" role="switch" data-tr-sec="' + x[0] + '"' + (c.on ? ' checked' : '') + ' aria-label="' + esc(x[1]) + '"><span>' + (c.on ? 'Activée' : 'Désactivée') + '</span></label></td>' +
           '<td><input type="number" min="1" max="3650" step="1" value="' + esc(c.jours) + '" data-tr-sj="' + x[0] + '"' + (c.on ? '' : ' disabled') + ' aria-label="Rétention des logs en jours — ' + esc(x[1]) + '"></td></tr>';
       }).join('') + '</tbody></table></section>';
   }
   function ops(f) { for (var i = 0; i < MODULES.length; i++) for (var j = 0; j < MODULES[i][1].length; j++) for (var k = 0; k < MODULES[i][1][j][1].length; k++) if (MODULES[i][1][j][1][k][0] === f) return MODULES[i][1][j][1][k][1]; return ''; }
-  function trace(f) { var c = cfg[f]; return c.c || c.m || c.s; }
+  function trace(f) { var c = cfg[f]; return c.r || c.c || c.m || c.s; }
   function dessiner() {
     var h = secHtml(), total = 0;
     MODULES.forEach(function (m, mi) {
-      var lignes = '', nb = 0, tr = 0, colTous = { c: [0, 0], m: [0, 0], s: [0, 0] };
+      var lignes = '', nb = 0, tr = 0, colTous = { r: [0, 0], c: [0, 0], m: [0, 0], s: [0, 0] };
       m[1].forEach(function (g) {
         var fs = g[1].filter(function (f) { return !filtre || f[0].toLowerCase().indexOf(filtre) >= 0 || m[0].toLowerCase().indexOf(filtre) >= 0; });
         if (!fs.length) return;
-        if (g[0]) lignes += '<tr class="ss"><td colspan="5">' + esc(g[0]) + '</td></tr>';
+        if (g[0]) lignes += '<tr class="ss"><td colspan="6">' + esc(g[0]) + '</td></tr>';
         fs.forEach(function (f) {
           var c = cfg[f[0]], on = trace(f[0]); nb++; total++; if (on) tr++;
           lignes += '<tr><td>' + esc(f[0]) + '</td>' + ACTIONS.map(function (a) {
@@ -131,7 +145,7 @@
     var t = e.target, b;
     if ((b = t.closest('[data-tr-m]'))) { ferme[b.dataset.trM] = !ferme[b.dataset.trM]; dessiner(); }
     else if (t.closest('[data-tr-appl]')) { var v = +q('[data-tr-def]').value; if (!(v >= 1 && v <= 3650)) { toast('Saisissez une rétention entre 1 et 3650 jours.'); return; } Object.keys(cfg).forEach(function (f) { cfg[f].jours = v; }); Object.keys(sec).forEach(function (k) { sec[k].jours = v; }); dessiner(); toast('Rétention de ' + v + ' jour(s) appliquée à toutes les fonctionnalités.'); }
-    else if ((b = t.closest('[data-tr-tout]'))) { var on = b.dataset.trTout === '1'; Object.keys(sec).forEach(function (k) { sec[k].on = on; }); Object.keys(cfg).forEach(function (f) { var o = ops(f); cfg[f].c = on && o.indexOf('C') >= 0; cfg[f].m = on && o.indexOf('M') >= 0; cfg[f].s = on && o.indexOf('S') >= 0; }); dessiner(); }
+    else if ((b = t.closest('[data-tr-tout]'))) { var on = b.dataset.trTout === '1'; Object.keys(sec).forEach(function (k) { sec[k].on = on; }); Object.keys(cfg).forEach(function (f) { var o = ops(f); cfg[f].r = on && o.indexOf('R') >= 0; cfg[f].c = on && o.indexOf('C') >= 0; cfg[f].m = on && o.indexOf('M') >= 0; cfg[f].s = on && o.indexOf('S') >= 0; }); dessiner(); }
     else if (t.closest('[data-tr-annuler]')) { cfg = copie(enreg); sec = copie(secEnreg); dessiner(); toast('Modifications annulées.'); }
     else if (t.closest('[data-tr-enregistrer]')) {
       var faux = Object.keys(cfg).filter(function (f) { var j = cfg[f].jours; return trace(f) && !(Number.isInteger(+j) && +j >= 1 && +j <= 3650 && j !== ''); });

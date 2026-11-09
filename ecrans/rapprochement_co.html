@@ -1,0 +1,200 @@
+<!--
+  Écran « Rapprochement CO » (Comptabilité Projets & Bailleurs › procédure › Traitement) — même principe que le rapprochement bancaire :
+  à gauche les états de dépense émis (sélections confirmées, statut « Confectionnée », window.__selectionsDRF), à droite les mouvements venant du bailleur
+  (paiements, remboursements, avances reçus). On coche de part et d'autre, « Proposer automatiquement » rapproche les montants identiques,
+  « Valider le rapprochement » exige l'égalité des totaux (même devise) et un n° de rapprochement. Historique des rapprochements validés en bas de page.
+  Préfixe rc- / data-rc. Ne pas nommer de fonction « $ » ni « $$ » (build.cjs).
+-->
+<style>
+.rc{color:#0B1332}
+.rc-hd{display:flex;align-items:flex-start;justify-content:space-between;gap:16px;flex-wrap:wrap;margin:0 0 14px}
+.rc-hd h1{margin:0;font-size:20px;font-weight:700}.rc-hd p{margin:4px 0 0;font-size:13px;color:#5B606D;max-width:760px}
+.rc-act{display:flex;gap:8px;flex-wrap:wrap}
+.rc-b{height:38px;border-radius:8px;border:1px solid #D6D9E0;background:#fff;color:#0B1332;font:inherit;font-size:13px;font-weight:600;padding:0 16px;cursor:pointer}
+.rc-b.p{background:#2E427B;border-color:#2E427B;color:#fff}.rc-b[disabled]{opacity:.45;cursor:not-allowed}
+.rc-card{background:#fff;border:1px solid #E9EBF0;border-radius:12px;box-shadow:0 1px 3px #0b133212;margin:0 0 14px;overflow:hidden}
+.rc-fm{display:grid;grid-template-columns:repeat(auto-fit,minmax(200px,1fr));gap:14px;padding:14px 18px}
+.rc-fm label{display:flex;flex-direction:column;gap:5px;font-size:12px;font-weight:600;color:#5B606D}
+.rc-in{height:36px;border:1px solid #C8CCD6;border-radius:8px;padding:0 10px;font:inherit;font-size:13px;background:#fff;color:#0B1332;box-sizing:border-box;width:100%}
+.rc-in.bad{border-color:#C0182B}.rc-in[readonly]{background:#F1F2F5}
+.rc-cols{display:grid;grid-template-columns:1fr 1fr;gap:14px}@media(max-width:1100px){.rc-cols{grid-template-columns:1fr}}
+.rc-ch{display:flex;align-items:center;justify-content:space-between;gap:10px;padding:12px 16px;border-bottom:1px solid #E9EBF0}.rc-ch h2{margin:0;font-size:15px}.rc-ch small{color:#5B606D;font-size:12px}
+.rc-sc{overflow:auto;max-height:420px}
+.rc-t{width:100%;border-collapse:collapse;font-size:13px}
+.rc-t th{background:#F5F7F9;border-bottom:1px solid #E9EBF0;padding:9px 10px;text-align:left;font-size:11px;font-weight:700;letter-spacing:.05em;text-transform:uppercase;color:#5B606D;white-space:nowrap;position:sticky;top:0}
+.rc-t td{padding:9px 10px;border-bottom:1px solid #EEF0F4}.rc-t .r{text-align:right;white-space:nowrap}.rc-t tr.on td{background:#EEF3FF}
+.rc-t input[type=checkbox]{width:16px;height:16px;accent-color:#2E427B;cursor:pointer;pointer-events:auto!important}
+.rc-pr{display:inline-block;border-radius:999px;padding:1px 8px;font-size:11px;font-weight:600;background:#E3EBFE;color:#243569}
+.rc-vide{padding:22px 16px;text-align:center;color:#8A8F9C;font-size:13px}
+.rc-sm{display:flex;gap:18px;flex-wrap:wrap;padding:11px 16px;border-top:1px solid #E9EBF0;font-size:12.5px;background:#FAFBFD}
+.rc-ok{color:#136C34;font-weight:700}.rc-ko{color:#C0182B;font-weight:700}
+.rc-ov{position:fixed;inset:0;z-index:3300;display:flex;align-items:center;justify-content:center;padding:16px;background:rgba(11,19,50,.5)}.rc-ov[hidden]{display:none}
+.rc-md{width:min(640px,100%);max-height:calc(100vh - 32px);overflow:auto;border-radius:12px;background:#fff;box-shadow:0 28px 70px rgba(11,19,50,.35)}.rc-md h2{margin:0;padding:14px 20px;border-bottom:1px solid #E9EBF0;font-size:18px}
+.rc-er{margin:0;padding:0 20px;color:#C0182B;font-size:13px;min-height:18px}.rc-ft{display:flex;justify-content:flex-end;gap:10px;padding:12px 20px;border-top:1px solid #E9EBF0}
+.rc-msg{margin:0 0 12px;padding:10px 14px;border-radius:8px;font-size:13px;display:none}.rc-msg.ok{background:#E7F6EC;color:#136C34;display:block}.rc-msg.ko{background:#FDECEE;color:#C0182B;display:block}
+</style>
+<div class="rc" data-rco>
+  <div class="rc-hd">
+    <div><h1>Rapprochement CO <small data-rco-proc style="font-weight:500;color:#5B606D"></small></h1>
+      <p>Rapprochement entre les états de dépense émis (sélections confirmées) et les mouvements venant du bailleur : paiements, remboursements et avances reçus.</p></div>
+    <div class="rc-act"><button type="button" class="rc-b" data-rco-saisir><i class="ti ti-plus" aria-hidden="true"></i> Saisir un mouvement</button><button type="button" class="rc-b" data-rco-import><i class="ti ti-upload" aria-hidden="true"></i> Importer</button><button type="button" class="rc-b" data-rco-auto>Proposer automatiquement</button><button type="button" class="rc-b p" data-rco-valider disabled>Valider le rapprochement</button></div>
+  </div>
+  <div class="rc-msg" data-rco-msg role="status"></div>
+  <section class="rc-card"><div class="rc-fm">
+    <label>Convention<select class="rc-in" data-rco-conv><option value="IDA01">IDA01</option><option value="IDA02">IDA02</option></select></label>
+    <label>N° de rapprochement <b style="color:#C0182B">*</b><input class="rc-in" data-rco-num placeholder="RCO-2026-001" maxlength="30"></label>
+    <label>Date du rapprochement<input class="rc-in" type="date" data-rco-date></label>
+    <label>Devise<input class="rc-in" data-rco-dev readonly></label>
+  </div></section>
+  <div class="rc-cols">
+    <section class="rc-card" aria-label="États de dépense émis">
+      <div class="rc-ch"><h2>États de dépense émis</h2><small data-rco-ne></small></div>
+      <div class="rc-sc"><table class="rc-t" data-no-tf data-no-pg><thead><tr><th><input type="checkbox" data-rco-tout="e" aria-label="Tout cocher"></th><th>Demande n°</th><th>Période</th><th>Confirmé le</th><th class="r">Montant</th><th>Devise</th></tr></thead><tbody data-rco-e></tbody></table><div class="rc-vide" data-rco-ve hidden>Aucun état de dépense confirmé à rapprocher pour cette convention.</div></div>
+      <div class="rc-sm"><span>Sélection : <b data-rco-se>0,00</b></span></div>
+    </section>
+    <section class="rc-card" aria-label="Mouvements du bailleur">
+      <div class="rc-ch"><h2>Mouvements du bailleur</h2><small data-rco-nm></small></div>
+      <div class="rc-sc"><table class="rc-t" data-no-tf data-no-pg><thead><tr><th><input type="checkbox" data-rco-tout="m" aria-label="Tout cocher"></th><th>Date</th><th>Référence bailleur</th><th>Libellé</th><th class="r">Montant</th><th>Devise</th></tr></thead><tbody data-rco-m></tbody></table><div class="rc-vide" data-rco-vm hidden>Aucun mouvement du bailleur en attente.</div></div>
+      <div class="rc-sm"><span>Sélection : <b data-rco-sm>0,00</b></span></div>
+    </section>
+  </div>
+  <div class="rc-sm rc-card" style="border-radius:12px;margin-top:0"><span>Total états : <b data-rco-te>0,00</b></span><span>Total mouvements : <b data-rco-tm>0,00</b></span><span>Écart : <b data-rco-ec>0,00</b></span><span data-rco-etat></span></div>
+  <div class="rc-ov" data-rco-ov hidden><div class="rc-md" role="dialog" aria-modal="true" aria-label="Saisie d'un mouvement du bailleur"><h2>Saisie d’un mouvement du bailleur</h2><div class="rc-fm" style="grid-template-columns:1fr 1fr"><label>Convention<input class="rc-in" data-rco-s="conv" readonly></label><label>Date du mouvement <b style="color:#C0182B">*</b><input class="rc-in" type="date" data-rco-s="d"></label><label>Référence bailleur <b style="color:#C0182B">*</b><input class="rc-in" data-rco-s="ref" maxlength="40" placeholder="WA-IDA-2026-0200"></label><label>Nature du mouvement<select class="rc-in" data-rco-s="nat"><option>Paiement direct</option><option>Remboursement</option><option>Avance au compte désigné</option><option>Autre</option></select></label><label style="grid-column:1/-1">Libellé<input class="rc-in" data-rco-s="lib" maxlength="120" placeholder="Remboursement IDA — demande 072"></label><label>Montant <b style="color:#C0182B">*</b><input class="rc-in" data-rco-s="m" inputmode="decimal" placeholder="0,00" style="text-align:right"></label><label>Devise<select class="rc-in" data-rco-s="dev"><option>USD</option><option>EUR</option><option>MGA</option></select></label></div><p class="rc-er" data-rco-er></p><div class="rc-ft"><button type="button" class="rc-b" data-rco-sx>Annuler</button><button type="button" class="rc-b p" data-rco-sok>Enregistrer le mouvement</button></div></div></div>
+<section class="rc-card"><div class="rc-ch"><h2>Historique des rapprochements</h2><small data-rco-nh></small></div>
+    <div class="rc-sc"><table class="rc-t"><thead><tr><th>N° rapprochement</th><th>Date</th><th>Convention</th><th>États de dépense</th><th>Références bailleur</th><th class="r">Montant</th><th>Devise</th></tr></thead><tbody data-rco-h></tbody></table><div class="rc-vide" data-rco-vh>Aucun rapprochement validé pour l’instant.</div></div></section>
+</div>
+<script>
+(function () {
+  var root = document.querySelector('[data-rco]'); if (!root) return;
+  function q(s) { return root.querySelector(s); } function qa(s) { return [].slice.call(root.querySelectorAll(s)); }
+  function esc(v) { return String(v == null ? '' : v).replace(/[&<>"]/g, function (c) { return { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c]; }); }
+  function nbr(n) { return (Math.round((n || 0) * 100) / 100).toLocaleString('fr-FR', { minimumFractionDigits: 2, maximumFractionDigits: 2 }); }
+  function dmy(v) { var p = String(v || '').split('-'); return p.length === 3 ? p[2] + '/' + p[1] + '/' + p[0] : ''; }
+  function r2(n) { return Math.round(n * 100) / 100; }
+  // mouvements reçus du bailleur (démonstration), par convention
+  var MV = {
+    IDA01: [
+      { id: 1, d: '2026-03-30', ref: 'WA-IDA-2026-0117', lib: 'Paiement direct IDA — demande 070', m: 731324.53, dev: 'USD' },
+      { id: 2, d: '2026-05-28', ref: 'WA-IDA-2026-0163', lib: 'Remboursement IDA — demande 071 (1re tranche)', m: 250000, dev: 'USD' },
+      { id: 3, d: '2026-06-04', ref: 'WA-IDA-2026-0170', lib: 'Remboursement IDA — demande 071 (solde)', m: 6119.09, dev: 'USD' },
+      { id: 4, d: '2026-06-12', ref: 'WA-IDA-2026-0181', lib: 'Avance au compte désigné', m: 150000, dev: 'USD' }
+    ],
+    IDA02: [
+      { id: 5, d: '2026-02-18', ref: 'WA-IDA-2026-0092', lib: 'Remboursement IDA — demande 003', m: 84500, dev: 'USD' }
+    ]
+  };
+  var pris = {}, cE = {}, cM = {}, HIST = [], seq = 1, nextId = 100;
+  function conv() { return q('[data-rco-conv]').value; }
+  function etats() {
+    return (window.__selectionsDRF || []).filter(function (s) { return s.conv === conv() && s.st === 'Confectionnée' && !s.rapproCO; })
+      .map(function (s) { return { num: s.num, d1: s.d1, d2: s.d2, dconf: s.dconf || s.d2, m: +s.total || 0, dev: s.devEmis || s.dev || 'USD' }; });
+  }
+  function mouvs() { return (MV[conv()] || []).filter(function (x) { return !pris[x.id]; }); }
+  function somme(list, c, cle) { return r2(list.reduce(function (a, x, i) { return a + (c[cle(x, i)] ? x.m : 0); }, 0)); }
+  function msg(t, ko) { var e = q('[data-rco-msg]'); e.textContent = t || ''; e.className = 'rc-msg' + (t ? (ko ? ' ko' : ' ok') : ''); }
+  function rendre() {
+    var E = etats(), M = mouvs(), te = r2(E.reduce(function (a, x) { return a + x.m; }, 0)), tm = r2(M.reduce(function (a, x) { return a + x.m; }, 0));
+    q('[data-rco-proc]').textContent = '— ' + conv();
+    q('[data-rco-dev]').value = (E[0] && E[0].dev) || (M[0] && M[0].dev) || 'USD';
+    q('[data-rco-e]').innerHTML = E.map(function (x) { return '<tr class="' + (cE[x.num] ? 'on' : '') + '"><td><input type="checkbox" data-rco-ce="' + esc(x.num) + '"' + (cE[x.num] ? ' checked' : '') + ' aria-label="Demande ' + esc(x.num) + '"></td><td><b>' + esc(x.num) + '</b></td><td>' + dmy(x.d1) + ' → ' + dmy(x.d2) + '</td><td>' + dmy(x.dconf) + '</td><td class="r">' + nbr(x.m) + '</td><td>' + esc(x.dev) + '</td></tr>'; }).join('');
+    q('[data-rco-m]').innerHTML = M.map(function (x) { return '<tr class="' + (cM[x.id] ? 'on' : '') + '"><td><input type="checkbox" data-rco-cm="' + x.id + '"' + (cM[x.id] ? ' checked' : '') + ' aria-label="Mouvement ' + esc(x.ref) + '"></td><td>' + dmy(x.d) + '</td><td>' + esc(x.ref) + '</td><td>' + esc(x.lib) + '</td><td class="r">' + nbr(x.m) + '</td><td>' + esc(x.dev) + '</td></tr>'; }).join('');
+    q('[data-rco-ve]').hidden = E.length > 0; q('[data-rco-vm]').hidden = M.length > 0;
+    q('[data-rco-ne]').textContent = E.length + ' à rapprocher'; q('[data-rco-nm]').textContent = M.length + ' en attente';
+    var se = somme(E, cE, function (x) { return x.num; }), sm = somme(M, cM, function (x) { return x.id; }), ec = r2(se - sm), nb = Object.keys(cE).length + Object.keys(cM).length;
+    q('[data-rco-se]').textContent = nbr(se); q('[data-rco-sm]').textContent = nbr(sm);
+    q('[data-rco-te]').textContent = nbr(te); q('[data-rco-tm]').textContent = nbr(tm); q('[data-rco-ec]').textContent = nbr(ec);
+    q('[data-rco-etat]').innerHTML = !Object.keys(cE).length && !Object.keys(cM).length ? '' : (ec ? '<span class="rc-ko">Sélection déséquilibrée : écart ' + nbr(Math.abs(ec)) + '</span>' : '<span class="rc-ok">Sélection équilibrée</span>');
+    q('[data-rco-valider]').disabled = !(Object.keys(cE).length && Object.keys(cM).length && !ec);
+    q('[data-rco-h]').innerHTML = HIST.map(function (h) { return '<tr><td><b>' + esc(h.num) + '</b></td><td>' + dmy(h.date) + '</td><td>' + esc(h.conv) + '</td><td>' + esc(h.etats.join(', ')) + '</td><td>' + esc(h.refs.join(', ')) + '</td><td class="r">' + nbr(h.m) + '</td><td>' + esc(h.dev) + '</td></tr>'; }).join('');
+    q('[data-rco-vh]').hidden = HIST.length > 0; q('[data-rco-nh]').textContent = HIST.length + ' rapprochement(s)';
+  }
+  root.addEventListener('change', function (e) {
+    var t = e.target, a = t.getAttribute('data-rco-ce'), b = t.getAttribute('data-rco-cm'), all = t.getAttribute('data-rco-tout');
+    if (a !== null) { if (t.checked) cE[a] = 1; else delete cE[a]; }
+    else if (b !== null) { if (t.checked) cM[b] = 1; else delete cM[b]; }
+    else if (all === 'e') { etats().forEach(function (x) { if (t.checked) cE[x.num] = 1; else delete cE[x.num]; }); }
+    else if (all === 'm') { mouvs().forEach(function (x) { if (t.checked) cM[x.id] = 1; else delete cM[x.id]; }); }
+    else if (t === q('[data-rco-conv]')) { cE = {}; cM = {}; msg(''); }
+    else return;
+    msg(''); rendre();
+  });
+  // rapprochement automatique : un état de dépense ↔ un mouvement de même montant, puis un état ↔ plusieurs mouvements dont la somme est égale
+  q('[data-rco-auto]').addEventListener('click', function () {
+    var E = etats(), M = mouvs(), n = 0; cE = {}; cM = {}; var libres = M.slice();
+    E.forEach(function (x) {
+      var i = -1; libres.forEach(function (y, k) { if (i < 0 && r2(y.m) === r2(x.m) && y.dev === x.dev) i = k; });
+      if (i >= 0) { cE[x.num] = 1; cM[libres[i].id] = 1; libres.splice(i, 1); n++; return; }
+      for (var a = 0; a < libres.length && !cE[x.num]; a++) for (var b = a + 1; b < libres.length; b++) { if (r2(libres[a].m + libres[b].m) === r2(x.m) && libres[a].dev === x.dev) { cE[x.num] = 1; cM[libres[a].id] = 1; cM[libres[b].id] = 1; libres.splice(b, 1); libres.splice(a, 1); n++; break; } }
+    });
+    msg(n ? n + ' rapprochement(s) proposé(s) : vérifiez la sélection puis validez.' : 'Aucune correspondance de montant trouvée.', !n); rendre();
+  });
+  q('[data-rco-valider]').addEventListener('click', function () {
+    var num = q('[data-rco-num]').value.trim(); q('[data-rco-num]').classList.toggle('bad', !num);
+    if (!num) { msg('Renseignez le n° de rapprochement.', true); q('[data-rco-num]').focus(); return; }
+    if (HIST.some(function (h) { return h.num.toLowerCase() === num.toLowerCase(); })) { msg('Ce n° de rapprochement existe déjà.', true); return; }
+    var E = etats().filter(function (x) { return cE[x.num]; }), M = mouvs().filter(function (x) { return cM[x.id]; });
+    if (!E.length || !M.length) { msg('Cochez au moins un état de dépense et un mouvement du bailleur.', true); return; }
+    var se = r2(E.reduce(function (a, x) { return a + x.m; }, 0)), sm = r2(M.reduce(function (a, x) { return a + x.m; }, 0));
+    if (se !== sm) { msg('Rapprochement impossible : états de dépense ' + nbr(se) + ' ≠ mouvements ' + nbr(sm) + '.', true); return; }
+    var date = q('[data-rco-date]').value || new Date().toISOString().slice(0, 10);
+    HIST.unshift({ num: num, date: date, conv: conv(), etats: E.map(function (x) { return x.num; }), refs: M.map(function (x) { return x.ref; }), m: se, dev: E[0].dev });
+    M.forEach(function (x) { pris[x.id] = 1; });
+    (window.__selectionsDRF || []).forEach(function (s) { if (s.conv === conv() && cE[s.num] && s.st === 'Confectionnée') { s.rapproCO = num; } });
+    window.dispatchEvent(new CustomEvent('selections-change')); window.dispatchEvent(new CustomEvent('rapprochement-co-changed'));
+    cE = {}; cM = {}; q('[data-rco-num]').value = ''; seq++; q('[data-rco-num]').placeholder = 'RCO-2026-' + ('00' + seq).slice(-3);
+    msg('Rapprochement ' + num + ' validé : ' + E.length + ' état(s) de dépense rapproché(s) de ' + M.length + ' mouvement(s) du bailleur (' + nbr(se) + ' ' + E[0].dev + ').'); rendre();
+  });
+  function ajouter(mv) { (MV[mv.conv] = MV[mv.conv] || []).push({ id: nextId++, d: mv.d, ref: mv.ref, lib: mv.lib, m: mv.m, dev: mv.dev }); }
+  function existe(conv, ref) { return (MV[conv] || []).some(function (x) { return x.ref.toLowerCase() === ref.toLowerCase(); }); }
+  function nombre(v) { var n = parseFloat(String(v == null ? '' : v).replace(/[\s\u00A0\u202F]/g, '').replace(',', '.')); return isNaN(n) ? NaN : n; }
+  function dateIso(v) { v = String(v || '').trim(); var m = /^(\d{4})-(\d{2})-(\d{2})/.exec(v); if (m) return m[1] + '-' + m[2] + '-' + m[3]; m = /^(\d{1,2})[\/.-](\d{1,2})[\/.-](\d{4})$/.exec(v); return m ? m[3] + '-' + ('0' + m[2]).slice(-2) + '-' + ('0' + m[1]).slice(-2) : ''; }
+  // saisie manuelle
+  var ov = q('[data-rco-ov]'), S = function (k) { return q('[data-rco-s="' + k + '"]'); };
+  function ouvrirSaisie() { S('conv').value = conv(); S('d').value = new Date().toISOString().slice(0, 10); S('ref').value = ''; S('lib').value = ''; S('m').value = ''; S('nat').value = 'Remboursement'; S('dev').value = q('[data-rco-dev]').value || 'USD'; q('[data-rco-er]').textContent = ''; qa('[data-rco-s]').forEach(function (e) { e.classList.remove('bad'); }); ov.hidden = false; S('d').focus(); }
+  q('[data-rco-saisir]').addEventListener('click', ouvrirSaisie);
+  q('[data-rco-sx]').addEventListener('click', function () { ov.hidden = true; });
+  q('[data-rco-sok]').addEventListener('click', function () {
+    var d = S('d').value, ref = S('ref').value.trim(), m = nombre(S('m').value), er = [];
+    S('d').classList.toggle('bad', !d); S('ref').classList.toggle('bad', !ref); S('m').classList.toggle('bad', !(m > 0));
+    if (!d) er.push('la date'); if (!ref) er.push('la référence bailleur'); if (!(m > 0)) er.push('un montant supérieur à 0');
+    if (er.length) { q('[data-rco-er]').textContent = 'Renseignez ' + er.join(', ') + '.'; return; }
+    if (existe(conv(), ref)) { S('ref').classList.add('bad'); q('[data-rco-er]').textContent = 'La référence bailleur « ' + ref + ' » existe déjà pour cette convention.'; return; }
+    var lib = S('lib').value.trim() || S('nat').value;
+    ajouter({ conv: conv(), d: d, ref: ref, lib: lib, m: r2(m), dev: S('dev').value }); ov.hidden = true;
+    msg('Mouvement ' + ref + ' enregistré (' + nbr(m) + ' ' + S('dev').value + ').'); rendre();
+  });
+  // importation Excel / CSV (assistant d'importation commun)
+  q('[data-rco-import]').addEventListener('click', function () {
+    if (!window.IMPORT_ASSISTANT) { msg('Assistant d’importation indisponible.', true); return; }
+    var vus = {};
+    window.IMPORT_ASSISTANT.ouvrir({
+      titre: 'Importer les mouvements du bailleur', fichier: 'modele_mouvements_bailleur.xlsx',
+      champs: [
+        { col: 'Convention', oblig: false, format: 'Code de la convention (IDA01, IDA02…). Par défaut : convention affichée (' + conv() + ').', exemple: 'IDA01' },
+        { col: 'Date', oblig: true, format: 'jj/mm/aaaa ou aaaa-mm-jj.', exemple: '15/07/2026' },
+        { col: 'Référence bailleur', oblig: true, format: 'Texte, 40 caractères au plus, unique par convention.', exemple: 'WA-IDA-2026-0200' },
+        { col: 'Libellé', oblig: false, format: 'Texte, 120 caractères au plus.', exemple: 'Remboursement IDA — demande 072' },
+        { col: 'Montant', oblig: true, format: 'Nombre supérieur à 0 (virgule ou point décimal).', exemple: '125000,00' },
+        { col: 'Devise', oblig: false, format: 'USD, EUR ou MGA. Par défaut : USD.', exemple: 'USD' }
+      ],
+      exemples: [['IDA01', '15/07/2026', 'WA-IDA-2026-0200', 'Remboursement IDA — demande 072', '125000,00', 'USD'], ['IDA01', '22/07/2026', 'WA-IDA-2026-0204', 'Avance au compte désigné', '60000,00', 'USD']],
+      ligne: function (v) {
+        var cv = (v['Convention'] || conv()).toUpperCase(), d = dateIso(v['Date']), ref = String(v['Référence bailleur'] || '').trim(), m = nombre(v['Montant']), dev = (v['Devise'] || 'USD').toUpperCase(), er = [];
+        if (!/^IDA0[0-9]$|^[A-Z]{2,5}[0-9]{2}$/.test(cv)) er.push('Convention « ' + cv + ' » invalide');
+        if (!d) er.push('Date invalide (jj/mm/aaaa ou aaaa-mm-jj)'); if (!ref) er.push('Référence bailleur obligatoire'); else if (ref.length > 40) er.push('Référence trop longue (40 caractères au plus)');
+        if (!(m > 0)) er.push('Montant invalide (nombre supérieur à 0)'); if (['USD', 'EUR', 'MGA'].indexOf(dev) < 0) er.push('Devise « ' + dev + ' » inconnue (USD, EUR, MGA)');
+        if (String(v['Libellé'] || '').length > 120) er.push('Libellé trop long (120 caractères au plus)');
+        var cle = cv + '|' + ref.toLowerCase(), dbl = !!ref && (existe(cv, ref) || !!vus[cle]); if (ref) vus[cle] = 1;
+        return { cle: cle, doublon: dbl, erreurs: er, data: { conv: cv, d: d, ref: ref, lib: String(v['Libellé'] || '').trim() || 'Mouvement du bailleur', m: r2(m), dev: dev } };
+      },
+      integrer: function (ret) {
+        var n = 0; ret.forEach(function (x) { var dd = x.data; if (x.remplace) MV[dd.conv] = (MV[dd.conv] || []).filter(function (y) { return y.ref.toLowerCase() !== dd.ref.toLowerCase(); }); ajouter(dd); n++; });
+        msg(n + ' mouvement(s) du bailleur importé(s).'); rendre();
+      }
+    });
+  });
+  q('[data-rco-date]').value = new Date().toISOString().slice(0, 10);
+  window.addEventListener('selections-change', rendre); window.addEventListener('hashchange', function () { if (location.hash === '#rapco') setTimeout(rendre, 100); });
+  rendre();
+})();
+</script>

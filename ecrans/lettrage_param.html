@@ -2,7 +2,8 @@
   Écran « Paramètre du lettrage » (Comptabilité générale › Lettrage › Paramètre) — format des lettres (AA, AB, AC… ou numérique 0001…),
   écart toléré du lettrage approché et compte d'écart de règlement, critères du lettrage automatique (montant ; référence + montant ;
   référence + montant + date ± 5 j). Boutons Annuler / Enregistrer relayés par la barre d'actions de page (CFG « lettparam »).
-  Données en mémoire : window.LETTRAGE_CFG = { format, ecart, compteEcart, critere, memePiece, equilibre } (événement « lettrage-changed »), copie dans localStorage.
+  Écart de règlement : compteEcart = compte de PERTE (charge 65/67 : débit > crédit après lettrage), compteGain = compte de GAIN (produit 75/77 : crédit > débit).
+  Données en mémoire : window.LETTRAGE_CFG = { format, ecart, compteEcart, compteGain, critere, memePiece, equilibre } (événement « lettrage-changed »), copie dans localStorage.
   S'appuie sur les styles bp-*. Ne pas nommer de fonction « $$ » (build.cjs).
 -->
 <style>
@@ -45,13 +46,16 @@
           </div></div>
       </div>
       <div class="lp-sec">Lettrage approché</div>
-      <div class="lp-g">
+      <div class="lp-g" style="grid-template-columns:repeat(3,minmax(0,1fr));max-width:1500px">
         <label class="bp-champ"><span>Écart toléré (lettrage approché)</span>
           <div class="lp-sfx"><input type="number" min="0" step="1" data-f="ecart" inputmode="numeric"><span>Ar</span></div>
           <small class="lp-help">Écart maximal accepté entre le débit et le crédit pour lettrer.</small></label>
-        <label class="bp-champ"><span>Compte d'écart de règlement</span>
+        <label class="bp-champ"><span>Compte d'écart de règlement — perte</span>
           <select class="bp-sel" data-f="compteEcart"></select>
-          <small class="lp-help">Reçoit l'écart passé en pertes ou profits au lettrage.</small></label>
+          <small class="lp-help">Compte de charge (65 / 67) : reçoit l'écart lorsque le débit dépasse le crédit.</small></label>
+        <label class="bp-champ"><span>Compte d'écart de règlement — gain</span>
+          <select class="bp-sel" data-f="compteGain"></select>
+          <small class="lp-help">Compte de produit (75 / 77) : reçoit l'écart lorsque le crédit dépasse le débit.</small></label>
       </div>
     </form>
   </section></div>
@@ -63,7 +67,7 @@
   var root = document.querySelector('[data-lp]'); if (!root) return;
   function q(s) { return root.querySelector(s); }
   function esc(s) { return String(s).replace(/[&<>"]/g, function (c) { return { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c]; }); }
-  var DEFAUT = { format: 'alpha', ecart: 500, compteEcart: '658000', critere: 'ref_montant', memePiece: false, equilibre: false }, CLE = 'softcompta.lettrage';
+  var DEFAUT = { format: 'alpha', ecart: 500, compteEcart: '658000', compteGain: '758000', critere: 'ref_montant', memePiece: false, equilibre: false }, CLE = 'softcompta.lettrage';
   var cfg = Object.assign({}, DEFAUT);
   try { var sv = JSON.parse(localStorage.getItem(CLE) || 'null'); if (sv && typeof sv === 'object') cfg = Object.assign(cfg, sv); } catch (e) {}
   var AIDE = {
@@ -72,21 +76,21 @@
     ref_montant_date: 'Exige la même référence et le même montant, avec une date de pièce à ± 5 jours.'
   };
   // Comptes proposés pour l'écart : 658000 d'abord, puis les comptes de charges et produits divers du plan comptable chargé
-  function comptes() {
-    var L = [['658000', 'Charges diverses']];
-    ((window.PLANS_REF && window.PLANS_REF.comptes) || []).forEach(function (c) { if (/^(65|75|67|77)\d{3,}/.test(c[0]) && !L.some(function (x) { return x[0] === c[0]; })) L.push([c[0], c[1]]); });
+  function comptes(gain) {
+    var L = gain ? [['758000', 'Produits divers de gestion courante']] : [['658000', 'Charges diverses']], re = gain ? /^(75|77)\d{3,}/ : /^(65|67)\d{3,}/;
+    ((window.PLANS_REF && window.PLANS_REF.comptes) || []).forEach(function (c) { if (re.test(c[0]) && !L.some(function (x) { return x[0] === c[0]; })) L.push([c[0], c[1]]); });
     return L;
   }
-  function remplir(sel, val) {
-    var L = comptes(); if (!L.some(function (c) { return c[0] === val; })) L.push([val, 'Compte paramétré']);
+  function remplir(sel, val, gain) {
+    var L = comptes(gain); if (!L.some(function (c) { return c[0] === val; })) L.push([val, 'Compte paramétré']);
     sel.innerHTML = L.map(function (c) { return '<option value="' + esc(c[0]) + '">' + esc(c[0] + ' — ' + c[1]) + '</option>'; }).join('');
     sel.value = val;
   }
   function exemple() { q('[data-lp-exemple]').textContent = 'Exemple : ' + (q('[data-f=format]').value === 'num' ? '0001, 0002, 0003…' : 'AA, AB, AC… AZ, BA…'); }
   function aideCritere() { q('[data-lp-critere]').textContent = AIDE[q('[data-f=critere]').value] || ''; }
   function afficher() {
-    q('[data-f=format]').value = cfg.format; q('[data-f=ecart]').value = cfg.ecart; remplir(q('[data-f=compteEcart]'), cfg.compteEcart); q('[data-f=critere]').value = cfg.critere; q('[data-f=memePiece]').checked = !!cfg.memePiece; q('[data-f=equilibre]').checked = !!cfg.equilibre; exemple(); aideCritere();
-    var cb = root.querySelector('[data-f=compteEcart]'); if (cb && cb.__combo && cb.__combo.maj) cb.__combo.maj();
+    q('[data-f=format]').value = cfg.format; q('[data-f=ecart]').value = cfg.ecart; remplir(q('[data-f=compteEcart]'), cfg.compteEcart); remplir(q('[data-f=compteGain]'), cfg.compteGain || '758000', true); q('[data-f=critere]').value = cfg.critere; q('[data-f=memePiece]').checked = !!cfg.memePiece; q('[data-f=equilibre]').checked = !!cfg.equilibre; exemple(); aideCritere();
+    ['compteEcart', 'compteGain'].forEach(function (k) { var cb = root.querySelector('[data-f=' + k + ']'); if (cb && cb.__combo && cb.__combo.maj) cb.__combo.maj(); });
   }
   function publier() { window.LETTRAGE_CFG = JSON.parse(JSON.stringify(cfg)); window.dispatchEvent(new Event('lettrage-changed')); }
   function toast(m) { var t = q('[data-lp-toast]'); t.textContent = m; t.hidden = false; clearTimeout(toast.t); toast.t = setTimeout(function () { t.hidden = true; }, 2500); }
@@ -98,7 +102,7 @@
     if (b.hasAttribute('data-lp-enregistrer')) {
       var ec = q('[data-f=ecart]').value.trim();
       if (ec === '' || isNaN(Number(ec)) || Number(ec) < 0) { toast('L’écart toléré doit être un nombre positif ou nul.'); q('[data-f=ecart]').focus(); return; }
-      cfg = { format: q('[data-f=format]').value, ecart: Number(ec), compteEcart: q('[data-f=compteEcart]').value, critere: q('[data-f=critere]').value, memePiece: q('[data-f=memePiece]').checked, equilibre: q('[data-f=equilibre]').checked };
+      cfg = { format: q('[data-f=format]').value, ecart: Number(ec), compteEcart: q('[data-f=compteEcart]').value, compteGain: q('[data-f=compteGain]').value, critere: q('[data-f=critere]').value, memePiece: q('[data-f=memePiece]').checked, equilibre: q('[data-f=equilibre]').checked };
       publier(); try { localStorage.setItem(CLE, JSON.stringify(cfg)); } catch (x) {} toast('Paramètre du lettrage enregistré.');
     }
   });

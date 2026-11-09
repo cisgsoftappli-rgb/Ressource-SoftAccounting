@@ -8,24 +8,24 @@
 .ig-sec:last-child{border-bottom:0;margin-bottom:0;padding-bottom:6px}
 .ig-t{display:block;font-size:11.5px;font-weight:700;letter-spacing:.1em;text-transform:uppercase;color:#b4b2a9;margin:0 0 8px}
 .ig-g{display:grid;grid-template-columns:repeat(12,minmax(0,1fr));gap:10px 16px;align-items:end}
-.ig-s2{grid-column:span 2}.ig-s3{grid-column:span 3}.ig-s4{grid-column:span 4}.ig-s6{grid-column:span 6}
+.ig-s2,.ig-s3,.ig-s4,.ig-s6{grid-column:span 6}.ig-s12{grid-column:1/-1}
 .ig-l{display:block;font-size:11.5px;font-weight:600;color:#888780;margin-bottom:4px;text-transform:uppercase;letter-spacing:.04em;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
 .ig-in{width:100%;box-sizing:border-box;height:38px;padding:0 12px;border:1px solid #d3d1c7;border-radius:8px;background:#fff;color:#2c2c2a;font-size:13.5px;outline:none}
 .ig-in:focus{border-color:#00875a;box-shadow:0 0 0 3px rgba(0,135,90,.12)}
 .ig-logo{display:flex;align-items:center;gap:10px}
 .ig-lg{width:56px;height:56px;flex:none;border:1px solid #edf1f5;border-radius:10px;background:#fafaf9;display:flex;align-items:center;justify-content:center;overflow:hidden}
 .ig-lb{display:inline-flex;align-items:center;gap:6px;height:30px;padding:0 10px;border:1px solid #d3d1c7;border-radius:8px;background:#fff;color:#2c2c2a;font-size:12px;font-weight:500;cursor:pointer;white-space:nowrap}
-.ig-lb:hover{background:#f4f6fa}.ig-lb input{display:none}
+.ig-lgx{width:180px;height:110px}.ig-lgx img{max-width:100%;max-height:100%;object-fit:contain}[data-ig-rm]{margin-left:6px}.ig-lb:hover{background:#f4f6fa}.ig-lb input{display:none}
 .ig-hint{font-size:11px;color:#888780;margin:3px 0 0}
 .ig-bt{height:38px;padding:0 16px;border:1px solid #d3d1c7;border-radius:8px;background:#fff;color:#2c2c2a;font-size:13px;font-weight:500;cursor:pointer}.ig-ok{background:#00875a;border-color:#00875a;color:#fff}.ig-ok:hover{background:#00764f}
 .ig-ft{display:flex;justify-content:flex-end;gap:8px;padding:12px 24px;border-top:1px solid #edf1f5;background:#fafaf9}
-@media (max-width:1100px){.ig-s2,.ig-s3,.ig-s4,.ig-s6{grid-column:span 6}}
+@media (max-width:1100px){.ig-s2,.ig-s3,.ig-s4,.ig-s6{grid-column:span 6}.ig-s12{grid-column:1/-1}}
 @media (max-width:640px){.ig-s2,.ig-s3,.ig-s4,.ig-s6{grid-column:span 12}}
 </style>
 <div class="ig-wrap">
 <div class="ig-card"><div class="ig-bd">
 <div class="ig-sec"><span class="ig-t">Identification</span><div class="ig-g">
-<div class="ig-f ig-s4"><label class="ig-l">Logo</label><div class="ig-logo"><span class="ig-lg"><i class="ti ti-photo text-[28px] text-[#b4b2a9]"></i></span><div><label class="ig-lb"><i class="ti ti-upload"></i> Changer le logo<input type="file" accept="image/*"></label><p class="ig-hint">Image, 5 Mo maximum.</p></div></div></div>
+<div class="ig-f ig-s12" data-ig-logo><label class="ig-l">Logo</label><div class="ig-logo"><span class="ig-lg ig-lgx" data-ig-prev title="Aperçu du logo"><i class="ti ti-photo text-[28px] text-[#b4b2a9]"></i></span><div><label class="ig-lb"><i class="ti ti-upload"></i> Changer le logo<input type="file" accept="image/*" data-ig-file></label> <button type="button" class="ig-lb" data-ig-rm hidden><i class="ti ti-trash"></i> Retirer</button><p class="ig-hint" data-ig-msg>Image, 5 Mo maximum. L’aperçu s’affiche ici.</p></div></div></div>
 <div class="ig-f ig-s4"><label class="ig-l">Libellé de l'entité</label><input type="text" placeholder="Ex : SOFTWELL SA" class="form-input ig-in"></div>
 <div class="ig-f ig-s4"><label class="ig-l">Gérant</label><input type="text" class="form-input ig-in"></div>
 </div></div>
@@ -45,3 +45,17 @@
 </div></div>
 </app-informations-generales>
 <style>.ig-sw{position:relative;display:inline-block;width:36px;height:20px;line-height:0;vertical-align:middle;flex:none}.ig-sw input{-webkit-appearance:none;appearance:none;display:block;position:relative;margin:0;padding:0;width:36px;height:20px;min-height:0!important;border:0;border-radius:999px;background:#c9ced8;box-shadow:none;outline:0;opacity:1;cursor:pointer;transition:background .15s}.ig-sw input::after{content:"";position:absolute;top:2px;left:2px;width:16px;height:16px;border-radius:50%;background:#fff;box-shadow:none;transition:left .15s}.ig-sw input:checked{background:#10b981}.ig-sw input:checked::after{left:18px}.ig-sw input:focus-visible{box-shadow:0 0 0 2px #fff,0 0 0 4px #2E427B}html.sans-dp [data-nav="dp"]{display:none!important}.ig-switch:focus-visible{outline:2px solid #3b82f6;outline-offset:2px}</style>
+
+<script>
+(function () {
+  var r = document.querySelector('[data-ig-logo]'); if (!r) return;
+  var inp = r.querySelector('[data-ig-file]'), pv = r.querySelector('[data-ig-prev]'), rm = r.querySelector('[data-ig-rm]'), ms = r.querySelector('[data-ig-msg]'), vide = pv.innerHTML, txt = ms.textContent;
+  inp.addEventListener('change', function () {
+    var f = inp.files && inp.files[0]; if (!f) return;
+    if (f.type.indexOf('image') !== 0) { ms.textContent = 'Le fichier choisi n’est pas une image.'; inp.value = ''; return; }
+    if (f.size > 5 * 1024 * 1024) { ms.textContent = 'Image trop volumineuse (5 Mo maximum).'; inp.value = ''; return; }
+    var rd = new FileReader(); rd.onload = function () { pv.innerHTML = '<img alt="Aperçu du logo">'; pv.firstChild.src = rd.result; rm.hidden = false; ms.textContent = f.name + ' — ' + Math.round(f.size / 1024) + ' Ko'; }; rd.readAsDataURL(f);
+  });
+  rm.addEventListener('click', function () { inp.value = ''; pv.innerHTML = vide; rm.hidden = true; ms.textContent = txt; });
+})();
+</script>

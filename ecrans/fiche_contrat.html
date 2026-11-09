@@ -40,6 +40,7 @@
     <button type="button" data-fct-ajouter>Ajouter</button>
     <button type="button" data-fct-modifier>Modifier</button>
     <button type="button" data-fct-supprimer>Supprimer</button>
+    <button type="button" data-fct-importer>Importer</button>
     <button type="button" data-fct-enregistrer>Enregistrer</button>
     <button type="button" data-fct-annuler>Annuler</button>
     <span class="fct-ok" data-fct-msg role="status"></span>
@@ -356,6 +357,51 @@
     publier(); cur = null; edit = -1; liste(); tab('liste'); msg('Contrat enregistré.');
   }
   function annuler() { cur = null; edit = -1; effacer(); tab('liste'); msg(''); }
+  // ---------- importation Excel : une ligne par ligne de ventilation ; les lignes de même numéro forment un contrat (étapes communes : import_assistant.js) ----------
+  function dateImp(v) { v = String(v == null ? '' : v).trim(); if (!v) return ''; var m; if (/^\d{5}(\.\d+)?$/.test(v)) return new Date(Date.UTC(1899, 11, 30) + Math.floor(+v) * 864e5).toISOString().slice(0, 10); m = /^(\d{1,2})[\/.-](\d{1,2})[\/.-](\d{4})$/.exec(v); if (m) return m[3] + '-' + ('0' + m[2]).slice(-2) + '-' + ('0' + m[1]).slice(-2); m = /^(\d{4})-(\d{2})-(\d{2})/.exec(v); return m ? m[0] : ''; }
+  function modeleImp() {
+    var st = sites().map(function (x) { return x[0]; }), pcg = comptesPCG().map(function (x) { return x[0]; });
+    var ch = [
+      { col: 'Numéro', oblig: true, format: 'Numéro du contrat, 40 caractères au plus. Les lignes de même numéro forment un seul contrat.', exemple: 'MP-2026-010' },
+      { col: 'Désignation', oblig: true, format: 'Texte, 200 caractères au plus.', exemple: 'Fourniture de mobilier de bureau' },
+      { col: 'Site', oblig: false, format: 'Code d’un site existant (par défaut : ' + (st[0] || '01') + ').', exemple: st[0] || '01' },
+      { col: 'Compte tiers', oblig: true, format: 'Compte général du tiers : ' + TIERS.map(function (t) { return t[0]; }).join(', ') + '.', exemple: TIERS[0][0] },
+      { col: 'Auxiliaire', oblig: true, format: 'Code du tiers pour ce compte.', exemple: TIERS[0][2][0][0], alias: ['Tiers'] },
+      { col: 'Date non objection', oblig: false, format: 'jj/mm/aaaa.', exemple: '' },
+      { col: 'Date signature', oblig: true, format: 'jj/mm/aaaa.', exemple: '02/03/2026', alias: ['Date lancement / signature'] },
+      { col: 'Type de marché', oblig: true, format: MARCHES.join(', ') + '.', exemple: MARCHES[1] },
+      { col: 'Type de passation', oblig: true, format: PASSATIONS.join(', ') + '.', exemple: PASSATIONS[0] },
+      { col: 'Description ligne', oblig: false, format: 'Libellé de la ligne de ventilation.', exemple: 'Bureaux et chaises', alias: ['Ligne'] },
+      { col: 'Compte PCG', oblig: false, format: 'Compte de charge ou d’immobilisation existant.', exemple: '' },
+      { col: 'Montant', oblig: true, format: 'Montant de la ligne en MGA, strictement positif.', exemple: '12000000', alias: ['Montant MGA'] }];
+    return { titre: 'Importer les contrats', fichier: 'modele_contrats.xlsx', champs: ch, exemples: [ch.map(function (c) { return c.exemple; })],
+      ligne: function (v) {
+        var er = [], num = String(v['Numéro'] || '').trim(), des = String(v['Désignation'] || '').trim(), site = String(v['Site'] || '').trim() || (st[0] || '01'), ct = String(v['Compte tiers'] || '').trim(), ax = String(v['Auxiliaire'] || '').trim(),
+          dno = dateImp(v['Date non objection']), dsi = dateImp(v['Date signature']), tm = MARCHES.filter(function (x) { return x.toLowerCase() === String(v['Type de marché'] || '').trim().toLowerCase(); })[0], tp = PASSATIONS.filter(function (x) { return x.toLowerCase() === String(v['Type de passation'] || '').trim().toLowerCase(); })[0],
+          pc = String(v['Compte PCG'] || '').trim(), mt = parseFloat(String(v['Montant'] == null ? '' : v['Montant']).replace(/[\s\u00a0]/g, '').replace(',', '.'));
+        if (!num) er.push('Numéro obligatoire'); else if (num.length > 40) er.push('Numéro trop long (40 caractères au plus)'); if (!des) er.push('Désignation obligatoire'); else if (des.length > 200) er.push('Désignation trop longue (200 caractères au plus)');
+        if (st.indexOf(site) < 0) er.push('Site « ' + site + ' » inconnu');
+        var t = TIERS.filter(function (x) { return x[0] === ct; })[0]; if (!ct) er.push('Compte tiers obligatoire'); else if (!t) er.push('Compte tiers « ' + ct + ' » inconnu'); else if (!ax) er.push('Auxiliaire obligatoire'); else if (!t[2].some(function (x) { return x[0] === ax; })) er.push('Auxiliaire « ' + ax + ' » inconnu pour le compte ' + ct);
+        if (String(v['Date non objection'] || '').trim() && !dno) er.push('Date de non-objection invalide (jj/mm/aaaa)'); if (!dsi) er.push('Date de signature obligatoire (jj/mm/aaaa)');
+        if (!tm) er.push('Type de marché « ' + (v['Type de marché'] || '') + ' » invalide (' + MARCHES.join(', ') + ')'); if (!tp) er.push('Type de passation « ' + (v['Type de passation'] || '') + ' » invalide (' + PASSATIONS.join(', ') + ')');
+        if (pc && pcg.indexOf(pc) < 0) er.push('Compte PCG « ' + pc + ' » inconnu'); if (!(mt > 0)) er.push('Montant invalide (nombre positif)');
+        return { cle: num + ' · ' + String(v['Description ligne'] || des), doublon: !er.length && data.some(function (c) { return c.num.toLowerCase() === num.toLowerCase(); }), erreurs: er,
+          data: { num: num, designation: des, site: site, compteTiers: ct, tiers: ax, dateNO: dno, dateSign: dsi, typeMarche: tm, typePassation: tp, desc: String(v['Description ligne'] || '').trim() || des, pcg: pc, montant: mt } };
+      },
+      integrer: function (L) {
+        var groupes = {}, ordre = [];
+        L.forEach(function (x) { var k = x.data.num.toLowerCase(); if (!groupes[k]) { groupes[k] = []; ordre.push(k); } groupes[k].push(x); });
+        var aj = 0, mj = 0, ig = 0;
+        ordre.forEach(function (k) {
+          var G = groupes[k], d = G[0].data, i = data.findIndex(function (c) { return c.num.toLowerCase() === k; });
+          var c = { num: d.num, designation: d.designation, site: d.site, compteTiers: d.compteTiers, tiers: d.tiers, dateNO: d.dateNO, dateSign: d.dateSign, statut: 'Actif', typeMarche: d.typeMarche, typePassation: d.typePassation,
+            vent: G.map(function (x) { var mtv = {}; mtv.MGA = Math.round(x.data.montant * 100) / 100; return { desc: x.data.desc, pcg: x.data.pcg, avenant: false, ana: {}, mt: mtv }; }), mode: 'comptant', ech: [{ date: '', pct: 100 }], conditions: '', exec: { mode: 'Virement' }, lg: [] };
+          if (i >= 0) { if (!G.some(function (x) { return x.remplace; })) { ig++; return; } c.lg = data[i].lg || []; data[i] = c; mj++; } else { data.push(c); aj++; }
+        });
+        publier(); liste(); tab('liste'); msg(aj + ' contrat(s) importé(s)' + (mj ? ', ' + mj + ' remplacé(s)' : '') + (ig ? ', ' + ig + ' ignoré(s) (numéro déjà existant)' : '') + '.');
+      } };
+  }
+  q('[data-fct-importer]').addEventListener('click', function () { if (cur) { msg('Terminez la saisie en cours avant d’importer.'); return; } if (window.IMPORT_ASSISTANT) window.IMPORT_ASSISTANT.ouvrir(modeleImp()); else msg('Assistant d’importation indisponible.'); });
   q('[data-fct-ajouter]').addEventListener('click', ajouter); q('[data-fct-modifier]').addEventListener('click', modifier); q('[data-fct-supprimer]').addEventListener('click', supprimer);
   q('[data-fct-enregistrer]').addEventListener('click', enregistrer); q('[data-fct-annuler]').addEventListener('click', annuler);
 

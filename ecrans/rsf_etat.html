@@ -1,0 +1,135 @@
+<!--
+  Écran « RSF » (Comptabilité Projets & Bailleurs) — états financiers du reporting : Tableau emplois ressources, Utilisation de fonds, Suivi budgétaire.
+  Modèle unique instancié trois fois par build.cjs (marqueurs RSFID). Critères : projet / convention, exercice, période ; « Générer » calcule l'état
+  à partir de données de démonstration déterministes ; exports PDF / Excel via window.EXPORT_TABLEAU. Boutons relayés par la barre d'actions de page (CFG rsfer / rsfuf / rsfsb).
+  Préfixe rsf- / data-rsf. Ne pas nommer de fonction « $$ » (build.cjs).
+-->
+<style>
+[data-rsf] .rsf-bar{display:flex;flex-wrap:wrap;align-items:end;gap:16px;margin:0 0 14px}[data-rsf] .rsf-bar label{display:grid;gap:4px;font-size:12px;color:#5B606D;min-width:150px}
+[data-rsf] .rsf-info{font-size:13px;color:#474C58;margin:0 0 12px;max-width:980px;line-height:1.5}[data-rsf] .rsf-info b{color:#0B1332}
+[data-rsf] .rsf-kpi{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:12px;margin:0 0 14px}
+[data-rsf] .rsf-k{border:1px solid #E9EBF0;border-radius:10px;background:#fff;padding:10px 14px}[data-rsf] .rsf-k span{display:block;font-size:12px;color:#5B606D}[data-rsf] .rsf-k b{font-size:20px;color:#0B1332}
+[data-rsf] .rsf-tb td.r,[data-rsf] .rsf-tb th.r{text-align:right;font-variant-numeric:tabular-nums;white-space:nowrap}
+[data-rsf] .rsf-tb tr.sec td{background:#EEF1F8;font-weight:700;color:#0B1332;text-transform:uppercase;font-size:12px;letter-spacing:.03em}
+[data-rsf] .rsf-tb tr.tot td{background:#F6F7FB;font-weight:700;border-top:1px solid #D5D9E3}[data-rsf] .rsf-tb tr.gen td{background:#E7EDFB;font-weight:700;color:#0B1332}
+[data-rsf] .rsf-tb td.i1{padding-left:28px}
+[data-rsf] .rsf-st{display:inline-block;padding:2px 10px;border-radius:999px;font-size:12px;font-weight:600;white-space:nowrap}
+[data-rsf] .rsf-st.ok{background:#E3F3EA;color:#1E7B4B}[data-rsf] .rsf-st.ko{background:#FDE8E8;color:#B63132}[data-rsf] .rsf-st.nc{background:#FDF1D8;color:#8A5A12}
+[data-rsf] .rsf-neg{color:#B63132}
+[data-rsf] .rsf-pg{padding:10px 4px 0;font-size:13px;color:#5B606D}
+@media (max-width:900px){[data-rsf] .rsf-kpi{grid-template-columns:repeat(2,minmax(0,1fr))}}
+</style>
+
+<div class="bp-root" data-rsf="RSFID">
+  <h1 style="position:absolute;width:1px;height:1px;overflow:hidden;clip-path:inset(50%);margin:0">RSFTITRE</h1>
+  <div class="no-print" data-rsf-actions>
+    <button type="button" data-rsf-gen>Générer</button>
+    <button type="button" data-rsf-pdf>PDF</button>
+    <button type="button" data-rsf-xlsx>Excel (XLSX)</button>
+  </div>
+  <div class="bp-grid"><section class="bp-pan" aria-label="RSFTITRE">
+    <p class="rsf-info" data-rsf-desc></p>
+    <div class="rsf-bar">
+      <label>Projet / convention<select class="bp-sel" data-rsf-prj data-no-combo><option value="1">PADR — Appui au développement rural (IDA-6543)</option><option value="2">PRODEL — Eau et assainissement (FIDA-2210)</option><option value="3">PAREC — Résilience climatique (BAD-0987)</option></select></label>
+      <label>Exercice<select class="bp-sel" data-rsf-ex data-no-combo><option>2026</option><option>2025</option></select></label>
+      <label>Période<select class="bp-sel" data-rsf-per data-no-combo><option value="3">1er trimestre</option><option value="6">1er semestre</option><option value="9">3 premiers trimestres</option><option value="12" selected>Exercice complet</option></select></label>
+      <label>Devise<select class="bp-sel" data-rsf-dev data-no-combo><option>USD</option><option>EUR</option><option>MGA</option></select></label>
+    </div>
+    <div class="rsf-kpi" data-rsf-kpi hidden></div>
+    <div data-rsf-res hidden>
+      <div style="overflow:auto"><table class="bp-tb rsf-tb" style="min-width:900px"><thead data-rsf-th></thead><tbody data-rsf-lignes></tbody></table></div>
+      <div class="rsf-pg" data-rsf-pginfo></div>
+    </div>
+    <div class="bp-vide" data-rsf-init>Choisissez le projet et la période puis cliquez sur « Générer ».</div>
+  </section></div>
+  <div class="bp-toast" role="status" hidden data-rsf-toast></div>
+</div>
+
+<script>
+(function () {
+  var root = document.querySelector('[data-rsf="RSFID"]'); if (!root) return;
+  function q(s) { return root.querySelector(s); }
+  function esc(s) { return String(s == null ? '' : s).replace(/[&<>"]/g, function (c) { return { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c]; }); }
+  function nb(n) { return Math.round(n).toLocaleString('fr-FR').replace(/[  ]/g, ' '); }
+  function toast(m) { var t = q('[data-rsf-toast]'); t.textContent = m; t.hidden = false; clearTimeout(toast.t); toast.t = setTimeout(function () { t.hidden = true; }, 2600); }
+  function h(s) { var x = 7; for (var i = 0; i < s.length; i++) x = (x * 31 + s.charCodeAt(i)) % 9973; return x; }
+  // Rubriques de démonstration : [libellé, budget annuel en milliers] par section
+  var CONF = {
+    rsfer: {
+      titre: 'Tableau emplois ressources', desc: 'Le <b>tableau emplois ressources</b> rapproche, pour la période, les <b>emplois</b> (dépenses par catégorie) et les <b>ressources</b> (fonds du bailleur, cofinancements, contributions) ; le solde indique l’excédent ou l’insuffisance de ressources.',
+      cols: ['Budget annuel', 'Réalisé période', 'Réalisé cumulé', 'Écart (budget − cumulé)', 'Taux de réalisation'],
+      vals: function (b, k, f) { var c = b * (0.45 + (k % 40) / 100); return [b, c * f, c, b - c]; },
+      sections: [
+        { t: 'Emplois', rows: [['Travaux et génie civil', 4200], ['Biens et équipements', 1850], ['Services de consultants', 1320], ['Formation et ateliers', 640], ['Coûts de fonctionnement', 910], ['Frais de personnel du projet', 1480]] },
+        { t: 'Ressources', rows: [['Don / crédit du bailleur', 8600], ['Cofinancement bailleur parallèle', 1200], ['Contribution de l’État (contrepartie)', 1450], ['Contribution des bénéficiaires', 380], ['Produits financiers', 60]] }
+      ],
+      solde: ['Solde (ressources − emplois)', 1, 0]
+    },
+    rsfuf: {
+      titre: 'Utilisation de fonds', desc: 'L’état d’<b>utilisation de fonds</b> suit, par source de financement et par catégorie de dépense, les fonds <b>décaissés</b> par le bailleur, les fonds <b>utilisés</b> (dépenses justifiées) et le <b>solde disponible</b>.',
+      cols: ['Allocation', 'Fonds décaissés', 'Fonds utilisés', 'Solde disponible', 'Taux d’utilisation'],
+      vals: function (b, k) { var d = b * (0.55 + (k % 30) / 100), u = d * (0.7 + (k % 25) / 100); return [b, d, u, d - u]; },
+      pct: function (v) { return v[0] ? v[2] / v[0] * 100 : 0; },
+      sections: [
+        { t: 'Par source de financement', rows: [['Bailleur principal', 8600], ['Bailleur parallèle', 1200], ['Contrepartie de l’État', 1450], ['Bénéficiaires', 380]] },
+        { t: 'Par catégorie de dépense', rows: [['Travaux', 4200], ['Biens', 1850], ['Services de consultants', 1320], ['Formation', 640], ['Fonctionnement', 910], ['Personnel', 1480]] }
+      ]
+    },
+    rsfsb: {
+      titre: 'Suivi budgétaire', desc: 'Le <b>suivi budgétaire</b> compare le <b>budget initial</b>, ses révisions, les <b>engagements</b> et le <b>réalisé</b> par composante et par ligne budgétaire ; le <b>disponible</b> est calculé sur le budget révisé.',
+      cols: ['Budget initial', 'Révision', 'Budget révisé', 'Engagé', 'Réalisé', 'Disponible', 'Taux d’exécution'],
+      vals: function (b, k) { var rv = Math.round(b * ((k % 7) - 3) / 100), r = b + rv, e = r * (0.6 + (k % 35) / 100), re = e * (0.65 + (k % 30) / 100); return [b, rv, r, e, re, r - e]; },
+      pct: function (v) { return v[2] ? v[4] / v[2] * 100 : 0; },
+      sections: [
+        { t: 'Composante 1 — Infrastructures rurales', rows: [['1.1 Pistes rurales', 3100], ['1.2 Ouvrages de franchissement', 1250], ['1.3 Marchés communautaires', 640]] },
+        { t: 'Composante 2 — Appui aux filières', rows: [['2.1 Intrants et semences', 1850], ['2.2 Équipements de transformation', 920], ['2.3 Conseil agricole', 760]] },
+        { t: 'Composante 3 — Gestion du projet', rows: [['3.1 Personnel de l’unité de gestion', 1480], ['3.2 Audits et évaluations', 380], ['3.3 Fonctionnement', 910]] }
+      ]
+    }
+  };
+  var C = CONF['RSFID'], res = null;
+  function pct(v) { return C.pct ? C.pct(v) : (v[0] ? v[2] / v[0] * 100 : 0); }
+  function badge(p) { var c = p > 100 ? 'ko' : p < 30 ? 'nc' : 'ok', l = p > 100 ? 'Dépassement' : p < 30 ? 'Faible' : 'Normal'; return '<span class="rsf-st ' + c + '">' + (Math.round(p * 10) / 10).toLocaleString('fr-FR') + ' % — ' + l + '</span>'; }
+  function calculer() {
+    var ech = Number(q('[data-rsf-prj]').value) === 1 ? 1 : Number(q('[data-rsf-prj]').value) === 2 ? 0.62 : 0.41, an = q('[data-rsf-ex]').value === '2025' ? 0.8 : 1, f = Number(q('[data-rsf-per]').value) / 12, dv = q('[data-rsf-dev]').value, tx = dv === 'EUR' ? 0.92 : dv === 'MGA' ? 4500 : 1, key = q('[data-rsf-prj]').value + q('[data-rsf-ex]').value;
+    var n = C.cols.length - 1, S = C.sections.map(function (s) {
+      var rows = s.rows.map(function (r) { var v = C.vals(Math.round(r[1] * ech * an * tx), h(r[0] + key), f).map(function (x) { return Math.round(x); }); return { l: r[0], v: v }; });
+      var tot = []; for (var i = 0; i < n; i++) tot.push(rows.reduce(function (a, r) { return a + r.v[i]; }, 0));
+      return { t: s.t, rows: rows, tot: tot };
+    });
+    res = { S: S, dev: dv, n: n };
+    if (C.solde) { var a = S[1].tot, b = S[0].tot; res.solde = a.map(function (x, i) { return x - b[i]; }); }
+    dessiner();
+  }
+  function ligne(lib, v, cls, ind) { return '<tr class="' + cls + '"><td class="' + (ind ? 'i1' : '') + '">' + esc(lib) + '</td>' + v.map(function (x, i) { return '<td class="r' + (x < 0 ? ' rsf-neg' : '') + '">' + nb(x) + '</td>'; }).join('') + '<td class="r">' + badge(pct(v)) + '</td></tr>'; }
+  function dessiner() {
+    q('[data-rsf-th]').innerHTML = '<tr><th>Rubrique</th>' + C.cols.map(function (c, i) { return '<th class="r">' + esc(c) + (i < C.cols.length - 1 ? ' (' + res.dev + ')' : '') + '</th>'; }).join('') + '</tr>';
+    var out = '';
+    res.S.forEach(function (s) {
+      out += '<tr class="sec"><td colspan="' + (C.cols.length + 1) + '">' + esc(s.t) + '</td></tr>';
+      s.rows.forEach(function (r) { out += ligne(r.l, r.v, '', true); });
+      out += ligne('Total — ' + s.t.toLowerCase(), s.tot, 'tot', false);
+    });
+    if (res.solde) out += '<tr class="gen"><td>' + esc(C.solde[0]) + '</td>' + res.solde.map(function (x) { return '<td class="r' + (x < 0 ? ' rsf-neg' : '') + '">' + nb(x) + '</td>'; }).join('') + '<td></td></tr>';
+    q('[data-rsf-lignes]').innerHTML = out;
+    var t0 = res.S[0].tot, p0 = pct(t0), kp = [[C.cols[0] + ' — ' + res.S[0].t.toLowerCase(), nb(t0[0]) + ' ' + res.dev], [C.cols[1], nb(t0[1]) + ' ' + res.dev], [C.cols[2], nb(t0[2]) + ' ' + res.dev], [C.cols[C.cols.length - 1], (Math.round(p0 * 10) / 10).toLocaleString('fr-FR') + ' %']];
+    q('[data-rsf-kpi]').innerHTML = kp.map(function (k) { return '<div class="rsf-k"><span>' + esc(k[0]) + '</span><b>' + esc(k[1]) + '</b></div>'; }).join('');
+    q('[data-rsf-kpi]').hidden = false; q('[data-rsf-res]').hidden = false; q('[data-rsf-init]').hidden = true;
+    q('[data-rsf-pginfo]').textContent = q('[data-rsf-prj]').selectedOptions[0].textContent + ' — exercice ' + q('[data-rsf-ex]').value + ' — ' + q('[data-rsf-per]').selectedOptions[0].textContent + ' — montants en ' + res.dev + ' (données de démonstration).';
+  }
+  function exporter(fmt) {
+    var X = window.EXPORT_TABLEAU; if (!X) { toast('Module d’export indisponible.'); return; } if (!res) { toast('Générez l’état : rien à exporter.'); return; }
+    var T = ['Rubrique'].concat(C.cols), rows = [];
+    res.S.forEach(function (s) { rows.push([s.t.toUpperCase()].concat(C.cols.map(function () { return ''; })));
+      s.rows.forEach(function (r) { rows.push([r.l].concat(r.v, [Math.round(pct(r.v) * 10) / 10])); }); rows.push(['Total — ' + s.t.toLowerCase()].concat(s.tot, [Math.round(pct(s.tot) * 10) / 10])); });
+    if (res.solde) rows.push([C.solde[0]].concat(res.solde, ['']));
+    var sub = q('[data-rsf-pginfo]').textContent, nom = 'RSFID';
+    if (fmt === 'pdf') X.pdf(nom + '.pdf', C.titre, sub, T, rows); else X.xlsx(nom + '.xlsx', C.titre, T, rows);
+    toast('Export ' + (fmt === 'pdf' ? 'PDF' : 'Excel (XLSX)') + ' généré.');
+  }
+  q('[data-rsf-desc]').innerHTML = C.desc;
+  q('[data-rsf-gen]').addEventListener('click', function () { calculer(); toast(C.titre + ' généré.'); });
+  q('[data-rsf-pdf]').addEventListener('click', function () { exporter('pdf'); });
+  q('[data-rsf-xlsx]').addEventListener('click', function () { exporter('xlsx'); });
+})();
+</script>

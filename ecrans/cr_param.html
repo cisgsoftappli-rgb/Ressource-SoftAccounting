@@ -159,7 +159,7 @@
           <div class="bp-radios" data-r="nature">
             <label><input type="radio" name="crp-nature" value="titre">Titre</label><label><input type="radio" name="crp-nature" value="soustitre">Sous-titre</label>
             <label><input type="radio" name="crp-nature" value="ligne">Ligne comptable</label><label><input type="radio" name="crp-nature" value="soustotal">Sous-total</label>
-            <label><input type="radio" name="crp-nature" value="total">Total</label><label><input type="radio" name="crp-nature" value="resultat">Résultat</label>
+            <label><input type="radio" name="crp-nature" value="total">Total</label>
             <label><input type="radio" name="crp-nature" value="formule">Formule</label><label><input type="radio" name="crp-nature" value="constante">Constante</label>
           </div></div>
 
@@ -199,25 +199,28 @@
   var root = document.querySelector('[data-crp]'); if (!root) return;
   function q(s) { return root.querySelector(s); } function qa(s) { return [].slice.call(root.querySelectorAll(s)); }
   var NAT = { titre: 'Titre', soustitre: 'Sous-titre', ligne: 'Ligne comptable', soustotal: 'Sous-total', total: 'Total', resultat: 'Résultat', formule: 'Formule', constante: 'Constante' };
+  (window.ETATS_FIN_MODELES = window.ETATS_FIN_MODELES || {}).cr = function () { return modeles; };
   function L(code, ordre, libelle, type, nature, f, a) { return { code: code, ordre: ordre, libelle: libelle, type: type, nature: nature, fourchettes: f || [], amort: a || [], reference: '', note: '', gras: nature !== 'ligne', italique: false, vide: false, fond: nature === 'total', imprimer: true, afficher: true }; }
   var modeles = [{ id: '1', libelle: 'Compte de résultat du projet AD2M-II', lignes: [
     L('A', 10, 'Achats consommés', 'actif', 'titre'),
-    L('A1', 20, 'Autres approvisionnements', 'actif', 'ligne', [{ d: '6021', f: '6029', s: 'D' }]),
-    L('A2', 30, 'Carburants et lubrifiants', 'actif', 'ligne', [{ d: '6061', f: '6069', s: 'D' }]),
-    L('A3', 40, 'Autres fournitures', 'actif', 'ligne', [{ d: '6081', f: '6089', s: 'D' }]),
+    L('A1', 20, 'Autres approvisionnements', 'actif', 'ligne', [{ d: '602', f: '602', s: 'D' }]),
+    L('A2', 30, 'Carburants et lubrifiants', 'actif', 'ligne', [{ d: '606', f: '606', s: 'D' }]),
+    L('A3', 40, 'Autres fournitures', 'actif', 'ligne', [{ d: '608', f: '608', s: 'D' }]),
     L('AT', 50, '*** TOTAL Achats consommés ***', 'actif', 'soustotal'),
     L('S', 60, 'Services extérieurs', 'actif', 'titre'),
-    L('S1', 70, 'Locations', 'actif', 'ligne', [{ d: '6131', f: '6139', s: 'D' }]),
-    L('S2', 80, 'Entretiens, réparations et maintenances', 'actif', 'ligne', [{ d: '6151', f: '6159', s: 'D' }]),
-    L('S3', 90, 'Assurances', 'actif', 'ligne', [{ d: '6161', f: '6169', s: 'D' }]),
+    L('S1', 70, 'Locations', 'actif', 'ligne', [{ d: '613', f: '613', s: 'D' }]),
+    L('S2', 80, 'Entretiens, réparations et maintenances', 'actif', 'ligne', [{ d: '615', f: '615', s: 'D' }]),
+    L('S3', 90, 'Assurances', 'actif', 'ligne', [{ d: '616', f: '616', s: 'D' }]),
     L('ST', 100, '*** TOTAL Services extérieurs ***', 'actif', 'soustotal'),
     L('P', 110, 'Charges de personnel', 'actif', 'titre'),
-    L('P1', 120, 'Rémunération du personnel', 'actif', 'ligne', [{ d: '6611', f: '6619', s: 'D' }]),
-    L('P2', 130, 'Cotisations aux organismes sociaux', 'actif', 'ligne', [{ d: '6641', f: '6649', s: 'D' }]),
+    L('P1', 120, 'Rémunération du personnel', 'actif', 'ligne', [{ d: '641', f: '641', s: 'D' }]),
+    L('P2', 130, 'Cotisations aux organismes sociaux', 'actif', 'ligne', [{ d: '645', f: '645', s: 'D' }]),
     L('PT', 140, '*** TOTAL Charges de personnel ***', 'actif', 'soustotal'),
     L('GC', 150, 'TOTAL GÉNÉRAL CHARGES', 'actif', 'total'),
+    L('Q1', 152, 'Produits financiers', 'passif', 'ligne', [{ d: '761', f: '762', s: 'C' }]),
+    L('Q2', 154, 'Autres produits', 'passif', 'ligne', [{ d: '758', f: '758', s: 'C' }]),
     L('GP', 160, 'TOTAL GÉNÉRAL PRODUITS', 'passif', 'total'),
-    L('XD', 170, 'EXCÉDENT / DÉFICIT', 'passif', 'resultat')
+    Object.assign(L('XD', 170, 'EXCÉDENT / DÉFICIT', 'passif', 'formule'), { formule: 'GP - GC' })
   ] }, { id: 'ALLEGE', libelle: 'Système allégé', lignes: [] }];
   var cur = null, sel = -1, mode = 'consultation', copie = null, optOuvert = false;
   var sM = q('[data-crp-modele]'), tb = q('[data-crp-lignes]');
@@ -321,7 +324,14 @@
     if (b.hasAttribute('data-crp-annuler')) { mode = 'consultation'; renderLignes(); remplirForm(sel >= 0 ? cur.lignes[sel] : null); appliquerMode(); return; }
     if (b.hasAttribute('data-crp-enregistrer')) { enregistrer(); return; }
     if (b.hasAttribute('data-crp-imprimer')) { window.print(); return; }
-    if (b.hasAttribute('data-crp-exporter')) { toast('Export du modèle ' + cur.id + ' (maquette)'); return; }
+    if (b.hasAttribute('data-crp-exporter')) { (function () {
+      var X = window.EXPORT_TABLEAU; if (!X || !cur) { toast('Export indisponible.'); return; }
+      function rg(a) { return (a || []).map(function (f) { return f && typeof f === 'object' ? Object.keys(f).map(function (k) { return f[k]; }).filter(function (v) { return v !== '' && v != null; }).join(' à ') : String(f); }).join(' ; '); }
+      var tete = ['Code', 'Ordre', 'Libellé', 'Type', 'Nature', 'Mouvement', 'Fourchettes / axes', 'Référence', 'Note'];
+      var lignes = (cur.lignes || []).map(function (l) { return [l.code, l.ordre != null ? l.ordre : (l.tri != null ? l.tri : ''), l.libelle, l.type || '', l.nature || '', l.mouvement || '', rg(l.fourchettes || l.axes || []), l.reference || '', l.note || '']; });
+      X.xlsx('modele_' + String(cur.id).replace(/[^A-Za-z0-9_-]+/g, '_') + '.xlsx', 'Modèle ' + cur.id, tete, lignes, [['Modèle ' + cur.id + (cur.libelle ? ' — ' + cur.libelle : '')], []]);
+      toast('Export Excel (XLSX) généré : ' + lignes.length + ' ligne(s).');
+    })(); return; }
     if (b.hasAttribute('data-crp-nouveau')) { var o = q('[data-crp-ov]'); o.hidden = false; q('[data-n-err]').hidden = true; qa('[data-n]').forEach(function (i) { i.value = ''; }); q('[data-n=code]').focus(); return; }
     if (b.hasAttribute('data-crp-dupliquer')) { var m0 = modele(), n = 2; while (modeles.some(function (x) { return x.id === m0.id + '-' + n; })) n++; var cp = JSON.parse(JSON.stringify(m0)); cp.id = m0.id + '-' + n; cp.libelle = m0.libelle + ' (copie)'; modeles.push(cp); refModeles(cp.id); sM.dispatchEvent(new Event('change')); toast('Modèle dupliqué'); return; }
     if (b.hasAttribute('data-crp-supprimer-modele')) { var m1 = modele(); if (!window.confirm('Supprimer le modèle « ' + m1.id + ' » ?')) return; modeles = modeles.filter(function (x) { return x !== m1; }); refModeles(''); sM.dispatchEvent(new Event('change')); toast('Modèle supprimé'); return; }

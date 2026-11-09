@@ -89,6 +89,7 @@
         if (t && window.TIERS_MARQUER) window.TIERS_MARQUER(t.collectif, t.code); });
       var remplacees = 0;
       ordre.forEach(function (k) { var p = P[k], i = -1; pieces().forEach(function (q, j) { if (i < 0 && q.journal === p.journal && q.piece === p.piece) i = j; }); if (i >= 0) { pieces()[i] = p; remplacees++; } else pieces().push(p); });
+        window.dispatchEvent(new Event('ecritures-pieces-changed'));
       try { localStorage.setItem('softcompta.pieces', JSON.stringify(pieces().slice(-500))); } catch (e) {}
       window.dispatchEvent(new Event('ecritures-pieces-changed'));
       if (A().notifier) A().notifier(ordre.length + ' pièce(s) intégrée(s) (' + L.length + ' ligne(s))' + (remplacees ? ', dont ' + remplacees + ' remplacée(s)' : '') + '.');

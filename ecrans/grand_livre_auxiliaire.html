@@ -1,0 +1,63 @@
+<app-grand-livre-auxiliaire data-etf class="bx-page">
+  <section class="bx-crit">
+    <div class="etf-head">
+      <div class="etf-titre">
+        <span class="etf-icone"><i class="ti ti-book-2"></i></span>
+        <div>
+          <h1 class="page-title">Grand livre auxiliaire</h1>
+          <p class="page-subtitle">Consulter le détail chronologique des écritures par tiers, rattaché à un compte collectif, avec total et solde par tiers.</p>
+        </div>
+      </div>
+      <div class="etf-actions">
+        <button type="button" class="toolbar-btn bx-reset"><i class="ti ti-rotate"></i>Réinitialiser</button>
+        <button type="button" class="toolbar-btn toolbar-btn-primary bx-consulter"><i class="ti ti-search"></i>Consulter</button>
+      </div>
+    </div>
+    <div class="etf-carte">
+      <div class="etf-bloc">
+        <span class="etf-bloc-titre"><i class="ti ti-calendar-event"></i>Période et périmètre</span>
+        <div class="etf-ligne">
+          <div><label class="filter-label">Site</label><div class="bx-multi" data-multi="sites" data-tous="Tous les sites"></div></div>
+          <div class="bx-dp-ancre"><label class="filter-label" for="gla-exercice">Exercice comptable</label>
+            <select id="gla-exercice" class="filter-input"><option>2028</option><option>2027</option><option selected>2026</option><option>2025</option><option>2024</option><option>2023</option></select></div>
+          <div><label class="filter-label" for="gla-date-debut">Date début</label><input id="gla-date-debut" type="date" class="filter-input"></div>
+          <div><label class="filter-label" for="gla-date-fin">Date fin</label><input id="gla-date-fin" type="date" class="filter-input"></div>
+        </div>
+      </div>
+      <div class="etf-bloc">
+        <span class="etf-bloc-titre"><i class="ti ti-list-numbers"></i>Comptes et journaux</span>
+        <div class="etf-ligne">
+          <div><label class="filter-label">Journal</label><div class="bx-multi" data-multi="journaux" data-tous="Tous les journaux"></div></div>
+          <div class="bx-large"><label class="filter-label" for="gla-collectif">Compte collectif</label><select id="gla-collectif" class="filter-input"></select></div>
+          <div><label class="filter-label" for="gla-aux-debut">Du compte auxiliaire</label><select id="gla-aux-debut" class="filter-input"></select></div>
+          <div><label class="filter-label" for="gla-aux-fin">Au compte auxiliaire</label><select id="gla-aux-fin" class="filter-input"></select></div>
+          <div><label class="filter-label">Plan de regroupement</label><div class="bx-multi" data-multi="plans" data-tous="Tous les plans"></div></div>
+        </div>
+      </div>
+      <div class="etf-bloc">
+        <span class="etf-bloc-titre"><i class="ti ti-adjustments-horizontal"></i>Présentation</span>
+        <div class="etf-ligne"><div><span class="filter-label">Monnaie d'édition</span>
+          <div class="etf-pastilles">
+            <label><input type="radio" name="gla-monnaie" value="MGA" checked>Monnaie Locale — MGA</label>
+            <label><input type="radio" name="gla-monnaie" value="USD">Monnaie Devise 1 — USD</label>
+          </div></div><div><span class="filter-label">Totaux</span><div class="etf-pastilles"><label><input type="checkbox" id="gla-mois">Total par mois</label></div></div><div><span class="filter-label">Analytique</span><div class="etf-pastilles"><label><input type="checkbox" id="gla-ana" checked>Afficher les analytiques</label></div></div></div>
+      </div>
+      <p class="filters-erreur bx-erreur" style="display:none"></p>
+    </div>
+  </section>
+
+  <section class="bx-res" style="display:none">
+    <div class="bx-toolbar">
+      <button type="button" class="toolbar-btn bx-retour"><i class="ti ti-arrow-left"></i>Retour</button>
+      <div class="etf-actions">
+        <button type="button" class="toolbar-btn bx-pdf"><i class="ti ti-printer"></i>Imprimer PDF</button>
+        <button type="button" class="toolbar-btn bx-csv"><i class="ti ti-file-spreadsheet"></i>Exporter (CSV)</button>
+      </div>
+    </div>
+    <div class="bx-bar"><h2 class="bx-titre"></h2><input type="search" class="filter-input bx-search" placeholder="Recherche..."></div>
+    <div class="bx-wrap">
+      <table class="bx-table gla-table"><thead></thead><tbody></tbody></table>
+    </div>
+    <p class="bx-hint">Montants exprimés dans la monnaie d'édition choisie. Tableau défilable horizontalement — les colonnes Plan 1 à Plan 10 sont disponibles.</p>
+  </section>
+</app-grand-livre-auxiliaire>

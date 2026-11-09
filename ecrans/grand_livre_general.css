@@ -1,5 +1,8 @@
 /* Grand livre général : réutilise les classes bx-* (balance auxiliaire) */
-.glg-table{min-width:2300px}
+.glg-table{min-width:0;width:max-content;max-width:none}
+.glg-table tbody tr:not(.g):not(.t):not(.s):not(.m):not(.plus):not(.gl-grp):not(.gl-tot):not(.gl-mois) > td{white-space:nowrap}
+.glg-table tbody tr:not(.g):not(.t):not(.s):not(.m):not(.plus):not(.gl-grp):not(.gl-tot):not(.gl-mois) > td:nth-child(4),.glg-table tbody tr:not(.g):not(.t):not(.s):not(.m):not(.plus):not(.gl-grp):not(.gl-tot):not(.gl-mois) > td:nth-child(6){max-width:150px;overflow:hidden;text-overflow:ellipsis}
+.glg-table tbody tr:not(.g):not(.t):not(.s):not(.m):not(.plus):not(.gl-grp):not(.gl-tot):not(.gl-mois) > td:nth-child(10){max-width:320px;overflow:hidden;text-overflow:ellipsis}
 .glg-table td.mono{font-family:ui-monospace,Consolas,monospace}
 .glg-table tr.g td{background:#f1f5f9;font-weight:700;color:#0f172a;cursor:default}
 .glg-table tr.t td{background:#eff6ff;font-weight:700;color:#1e40af;cursor:default}

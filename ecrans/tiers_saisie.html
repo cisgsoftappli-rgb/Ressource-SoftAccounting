@@ -1,8 +1,8 @@
 <!--
   Écran « Saisie des tiers » (Paramétrages › Gestion des plans › Saisie des plans › Tiers) — onglets Saisie / Liste.
-  Liste : Compte collectif (classe 4), Code (tri), Intitulé, Sous-type (pastille), Adresse, Téléphone, NIF, Statut (Actif / Utilisé) ; filtres par colonne et pagination.
-  Saisie : Identité (code*, intitulé*, sous-type*, compte collectif*), Coordonnées (adresse, région, pays, téléphone, NIF, STAT, RCS),
-  Coordonnées bancaires (banque, code banque, code agence, numéro de compte, clé, SWIFT, adresse et pays de la banque), Paiement et site.
+  Liste : Compte collectif (classe 4), Code (tri), Intitulé, Type (pastille), Adresse, Téléphone, NIF, Statut (Actif / Utilisé) ; filtres par colonne et pagination.
+  Saisie : Identité (code*, intitulé*, type*, compte collectif*), Coordonnées (adresse, région, pays, téléphone, NIF, STAT, RCS),
+  Coordonnées bancaires (banque, code banque, code agence, numéro de compte, clé, SWIFT, adresse et pays de la banque), Correspondance bancaire (mêmes champs), Paiement et site.
   Données : Plans_consolides.xlsx (feuille Tiers, Projet PARN) — %%DONNEES%% = { tiers:[[compte, code, nom]], det:{index:{…}}, collectifs, sites } (import_plans/gen.cjs).
   Un tiers « Utilisé » dans une pièce ne peut plus être supprimé ; son code et son compte collectif sont verrouillés. Ne pas nommer de fonction « $$ » (build.cjs).
 -->
@@ -13,6 +13,34 @@
 .ti-g.id{grid-template-columns:repeat(4,minmax(0,1fr))}.ti-g.co{grid-template-columns:2.4fr repeat(6,minmax(0,1fr))}.ti-g.ba{grid-template-columns:repeat(6,minmax(0,1fr)) 2fr 1fr}.ti-g.pa{grid-template-columns:1fr 1fr}
 @media(max-width:1250px){.ti-g.co,.ti-g.ba{grid-template-columns:repeat(4,minmax(0,1fr))}}
 @media(max-width:800px){.ti-g.id,.ti-g.co,.ti-g.ba,.ti-g.pa{grid-template-columns:1fr 1fr}}
+.ti-sbs{display:flex;gap:4px;margin:18px 0 12px;border-bottom:1px solid #E9EBF0}
+.ti-sbs button{appearance:none;border:0;background:none;padding:8px 14px;font:inherit;font-size:13px;font-weight:600;color:#5B606D;border-bottom:2px solid transparent;margin-bottom:-1px;cursor:pointer}
+.ti-sbs button.on{color:#2E427B;border-bottom-color:#2E427B}
+.ti-sbs button:focus-visible{outline:3px solid #2E427B;outline-offset:2px}
+.ti-sp[hidden]{display:none}
+.ti-grp{margin:0 0 14px;padding:12px 14px;border:1px solid #E9EBF0;border-radius:12px}
+.ti-gt{margin:0 0 10px;font-size:12px;font-weight:600;color:#5B606D;text-transform:uppercase;letter-spacing:.04em}
+.ti-g4{display:grid;gap:10px 14px}
+.ti-tst{display:flex;align-items:flex-end}
+.ti-bt{display:inline-flex;align-items:center;gap:6px;height:36px;padding:0 14px;border:1px solid #2E427B;border-radius:8px;background:#fff;color:#2E427B;font:inherit;font-size:13px;font-weight:600;cursor:pointer;white-space:nowrap}
+.ti-bt:hover{background:#E3EBFE}.ti-bt:focus-visible{outline:3px solid #2E427B;outline-offset:2px}
+.ti-nb{display:inline-block;min-width:20px;padding:0 6px;margin-left:6px;border-radius:10px;background:#E3EBFE;color:#2E427B;font-size:12px;text-align:center}
+.ti-cd .ti-ch{display:flex;align-items:center;gap:8px;margin-bottom:10px;flex-wrap:wrap}
+.ti-cd .ti-ch b{font-size:13px;color:#0B1332}
+.ti-sg{margin:0 0 8px;font-size:12px;font-weight:600;color:#5B606D;text-transform:uppercase;letter-spacing:.04em}
+.ti-ic{appearance:none;border:1px solid #D5D8DF;background:#fff;padding:0 10px;height:36px;border-radius:8px;color:#B63132;cursor:pointer;font-size:16px}
+.ti-ic:hover{background:#FDE8E8}.ti-ic:disabled{color:#A3A8B3;cursor:not-allowed;background:#fff}
+.ti-pr{display:inline-block;padding:0 6px;border-radius:6px;background:#DCFCE7;color:#14532D;font-size:11px;font-weight:600}
+.ti-vd{padding:8px 2px 12px;color:#5B606D;font-size:13px}
+.ti-ba{display:flex;gap:8px;flex-wrap:wrap;margin-top:4px}
+.ti-bt:disabled{opacity:.5;cursor:not-allowed}
+.ti-lk{display:inline-flex;align-items:center;gap:6px;margin-top:6px;font-size:13px;font-weight:600;color:#2E427B;text-decoration:underline;cursor:pointer}
+.ti-lk:focus-visible{outline:3px solid #2E427B;outline-offset:2px}
+.ti-lk[aria-disabled="true"]{color:#A3A8B3;text-decoration:none;cursor:not-allowed}
+.ti-ib{margin-top:10px;padding:8px 12px;border-radius:8px;font-size:13px}
+.ti-ib.ok{background:#DCFCE7;color:#14532D}.ti-ib.ko{background:#FDE8E8;color:#8E2424}
+@media(max-width:800px){.ti-g4[style*="auto"]{grid-template-columns:1fr 1fr!important}}
+@media(max-width:800px){.ti-g4{grid-template-columns:1fr 1fr!important}}
 .ti-er{display:none;font-size:12px;color:#B63132}.ti-er.show{display:block}
 .bp-in.err,.bp-sel.err{border-color:#B63132}
 .ti-st{display:inline-flex;align-items:center;justify-content:center;width:34px;height:34px;border-radius:8px;font-size:11px;font-weight:700;flex:none}
@@ -50,12 +78,12 @@
       <h2>Tiers <small>Double-clic ou « Modifier » pour ouvrir la ligne en saisie</small></h2>
       <div style="overflow:auto">
         <table class="bp-tb" style="min-width:1000px"><thead>
-          <tr><th class="tri" data-ti-tri="compte">Compte collectif <i class="ti" data-ti-fleche="compte" style="font-size:12px"></i></th><th class="tri" data-ti-tri="code">Code <i class="ti ti-arrow-up" data-ti-fleche="code" style="font-size:12px"></i></th><th class="tri" data-ti-tri="nom">Intitulé <i class="ti" data-ti-fleche="nom" style="font-size:12px"></i></th><th>Sous-type</th><th>Adresse</th><th>Téléphone</th><th>NIF</th><th class="c">Statut</th></tr>
+          <tr><th class="tri" data-ti-tri="compte">Compte collectif <i class="ti" data-ti-fleche="compte" style="font-size:12px"></i></th><th class="tri" data-ti-tri="code">Code <i class="ti ti-arrow-up" data-ti-fleche="code" style="font-size:12px"></i></th><th class="tri" data-ti-tri="nom">Intitulé <i class="ti" data-ti-fleche="nom" style="font-size:12px"></i></th><th>Type</th><th>Adresse</th><th>Téléphone</th><th>NIF</th><th class="c">Statut</th></tr>
           <tr class="flt">
             <th><input class="bp-in" data-fc="compte" aria-label="Filtrer Compte collectif"></th>
             <th><input class="bp-in" data-fc="code" aria-label="Filtrer Code"></th>
             <th><input class="bp-in" data-fc="nom" aria-label="Filtrer Intitulé"></th>
-            <th><select class="bp-sel" data-fc="sous" aria-label="Filtrer Sous-type"><option value=""></option><option>Client</option><option>Fournisseur</option><option>Salarié</option><option>Partenaire</option><option>Banque</option><option>Autre type de tiers</option></select></th>
+            <th><select class="bp-sel" data-fc="sous" aria-label="Filtrer Type"><option value=""></option><option>Client</option><option>Fournisseur</option><option>Salarié</option></select></th>
             <th><input class="bp-in" data-fc="adr" aria-label="Filtrer Adresse"></th>
             <th><input class="bp-in" data-fc="tel" aria-label="Filtrer Téléphone"></th>
             <th><input class="bp-in" data-fc="nif" aria-label="Filtrer NIF"></th>
@@ -73,30 +101,45 @@
         <div class="ti-g id">
           <label class="bp-champ"><span>Code <b>*</b></span><input class="bp-in" data-f="code" maxlength="30" autocomplete="off"><span class="ti-er" data-er="code"></span></label>
           <label class="bp-champ"><span>Intitulé <b>*</b></span><input class="bp-in" data-f="nom" maxlength="120" autocomplete="off"><span class="ti-er" data-er="nom"></span></label>
-          <label class="bp-champ"><span>Sous-type <b>*</b></span><select class="bp-sel" data-f="sous"><option>Client</option><option>Fournisseur</option><option>Salarié</option><option>Partenaire</option><option>Banque</option><option>Autre type de tiers</option></select></label>
+          <label class="bp-champ"><span>Type</span><select class="bp-sel" data-f="sous"><option value="">— Non typé —</option><option>Client</option><option>Fournisseur</option><option>Salarié</option></select></label>
           <label class="bp-champ"><span>Compte collectif <b>*</b></span><select class="bp-sel" data-f="compte"></select><span class="ti-er" data-er="compte"></span></label>
         </div>
-        <div class="ti-sec">Coordonnées</div>
-        <div class="ti-g co">
-          <label class="bp-champ"><span>Adresse</span><input class="bp-in" data-f="adr" maxlength="200" autocomplete="off"></label>
+        <div class="ti-sbs" role="tablist" aria-label="Informations du tiers">
+          <button type="button" role="tab" class="on" data-ti-sb="coord">Coordonnées</button>
+          <button type="button" role="tab" data-ti-sb="banc">Coordonnées bancaires <span class="ti-nb" data-ti-bn="">0</span></button>
+          <button type="button" role="tab" data-ti-sb="corr">Correspondance bancaire <span class="ti-nb" data-ti-bn="c_">0</span></button>
+        </div>
+        <div class="ti-sp" data-ti-sp="coord">
+        <div class="ti-grp"><div class="ti-gt">Adresse et contact</div><div class="ti-g4" style="grid-template-columns:repeat(3,minmax(0,1fr))">
+          <label class="bp-champ" style="grid-column:span 3"><span>Adresse</span><input class="bp-in" data-f="adr" maxlength="200" autocomplete="off"></label>
           <label class="bp-champ"><span>Région</span><input class="bp-in" data-f="reg" maxlength="60" autocomplete="off"></label>
           <label class="bp-champ"><span>Pays</span><input class="bp-in" data-f="pays" maxlength="40" autocomplete="off"></label>
           <label class="bp-champ"><span>Téléphone</span><input class="bp-in" data-f="tel" maxlength="30" autocomplete="off"></label>
+        </div></div>
+        <div class="ti-grp"><div class="ti-gt">Web et géolocalisation</div><div class="ti-g4" style="grid-template-columns:repeat(2,minmax(0,1fr))">
+          <div><label class="bp-champ"><span>Adresse web</span><input class="bp-in" data-f="web" maxlength="200" autocomplete="off" placeholder="https://www.exemple.mg"><span class="ti-er" data-er="web"></span></label>
+            <a class="ti-lk" data-ti-lw target="_blank" rel="noopener noreferrer" aria-disabled="true"><i class="ti ti-external-link"></i> Ouvrir le site</a></div>
+          <div><label class="bp-champ"><span>Géolocalisation (latitude, longitude)</span><input class="bp-in" data-f="geo" maxlength="40" autocomplete="off" placeholder="-18.8792, 47.5079"><span class="ti-er" data-er="geo"></span></label>
+            <a class="ti-lk" data-ti-lg target="_blank" rel="noopener noreferrer" aria-disabled="true"><i class="ti ti-map-pin"></i> Voir sur la carte</a></div>
+        </div></div>
+        <div class="ti-grp"><div class="ti-gt">Identification fiscale</div><div class="ti-g4" style="grid-template-columns:repeat(3,minmax(0,1fr))">
           <label class="bp-champ"><span>NIF</span><input class="bp-in" data-f="nif" maxlength="30" autocomplete="off"></label>
           <label class="bp-champ"><span>STAT</span><input class="bp-in" data-f="stat" maxlength="30" autocomplete="off"></label>
           <label class="bp-champ"><span>RCS</span><input class="bp-in" data-f="rcs" maxlength="30" autocomplete="off"></label>
+          <label class="bp-champ"><span>CIN</span><input class="bp-in" data-f="cin" maxlength="12" inputmode="numeric" autocomplete="off" placeholder="12 chiffres, sans espace"><span class="ti-er" data-er="cin"></span></label>
+          <label class="bp-champ"><span>Date CIN</span><input class="bp-in" type="date" data-f="dcin"><span class="ti-er" data-er="dcin"></span></label>
+          <label class="bp-champ"><span>Lieu de délivrance CIN</span><input class="bp-in" data-f="lcin" maxlength="60" autocomplete="off"></label>
+        </div></div>
         </div>
-        <div class="ti-sec">Coordonnées bancaires</div>
-        <div class="ti-g ba">
-          <label class="bp-champ"><span>Banque</span><input class="bp-in" data-f="banque" maxlength="60" autocomplete="off"></label>
-          <label class="bp-champ"><span>Code banque</span><input class="bp-in" data-f="cb" maxlength="10" autocomplete="off"></label>
-          <label class="bp-champ"><span>Code agence</span><input class="bp-in" data-f="ca" maxlength="10" autocomplete="off"></label>
-          <label class="bp-champ"><span>Numéro de compte</span><input class="bp-in" data-f="num" maxlength="30" autocomplete="off"></label>
-          <label class="bp-champ"><span>Clé</span><input class="bp-in" data-f="cle" maxlength="4" autocomplete="off"></label>
-          <label class="bp-champ"><span>SWIFT</span><input class="bp-in" data-f="swift" maxlength="11" autocomplete="off"></label>
-          <label class="bp-champ"><span>Adresse de la banque</span><input class="bp-in" data-f="adrb" maxlength="200" autocomplete="off"></label>
-          <label class="bp-champ"><span>Pays de la banque</span><input class="bp-in" data-f="paysb" maxlength="40" autocomplete="off"></label>
+        <div class="ti-sp" data-ti-sp="banc" hidden>
+          <div data-ti-bl=""></div>
+          <div class="ti-ba"><button type="button" class="ti-bt" data-ti-add=""><i class="ti ti-plus"></i> Ajouter un compte</button></div>
         </div>
+        <div class="ti-sp" data-ti-sp="corr" hidden>
+          <div data-ti-bl="c_"></div>
+          <div class="ti-ba"><button type="button" class="ti-bt" data-ti-add="c_"><i class="ti ti-plus"></i> Ajouter un compte</button></div>
+        </div>
+        <div hidden aria-hidden="true"><input data-f="banque" maxlength="60"><input data-f="cb" maxlength="10"><input data-f="ca" maxlength="10"><input data-f="num" maxlength="30"><input data-f="cle" maxlength="4"><input data-f="swift" maxlength="11"><input data-f="adrb" maxlength="200"><input data-f="paysb" maxlength="40"><input data-f="c_banque" maxlength="60"><input data-f="c_cb" maxlength="10"><input data-f="c_ca" maxlength="10"><input data-f="c_num" maxlength="30"><input data-f="c_cle" maxlength="4"><input data-f="c_swift" maxlength="11"><input data-f="c_adrb" maxlength="200"><input data-f="c_paysb" maxlength="40"></div>
         <div class="ti-sec">Paiement et site</div>
         <div class="ti-g pa">
           <label class="bp-champ"><span>Modalité de paiement</span><select class="bp-sel" data-f="modalite"><option value="">Aucune</option><option>Virement</option><option>Chèque</option><option>Espèces</option><option>Mobile money</option></select></label>
@@ -112,19 +155,95 @@
 <script>
 (function () {
   var root = document.querySelector('[data-ti]'); if (!root) return;
+  root.addEventListener('click', function (e) {
+    var b = e.target.closest('[data-ti-sb]'); if (!b) return;
+    [].forEach.call(root.querySelectorAll('[data-ti-sb]'), function (x) { x.classList.toggle('on', x === b); x.setAttribute('aria-selected', x === b ? 'true' : 'false'); });
+    [].forEach.call(root.querySelectorAll('[data-ti-sp]'), function (p) { p.hidden = p.dataset.tiSp !== b.dataset.tiSb; });
+  });
   function q(s) { return root.querySelector(s); } function qa(s) { return [].slice.call(root.querySelectorAll(s)); }
   var D = %%DONNEES%%;
-  var SOUS = { FR: 'Fournisseur', CL: 'Client', SA: 'Salarié', PA: 'Partenaire', BQ: 'Banque', AU: 'Autre type de tiers' };
-  var ABR = { 'Fournisseur': 'FR', 'Client': 'CL', 'Salarié': 'SA', 'Partenaire': 'PA', 'Banque': 'BQ', 'Autre type de tiers': 'AU' };
-  // sous-type déduit du compte collectif (fournisseurs 401-409, personnel 421 et avances de mission 463, ONG / partenaires 466-467)
-  function sousDe(c) { return /^40[1-9]/.test(c) ? 'Fournisseur' : /^41/.test(c) ? 'Client' : /^(42|463)/.test(c) ? 'Salarié' : /^46[67]/.test(c) ? 'Partenaire' : /^5[12]/.test(c) ? 'Banque' : 'Autre type de tiers'; }
-  var CHAMPS = ['adr', 'reg', 'pays', 'tel', 'nif', 'stat', 'rcs', 'banque', 'cb', 'ca', 'num', 'cle', 'swift', 'adrb', 'paysb', 'modalite', 'site'];
+  var SOUS = { FR: 'Fournisseur', CL: 'Client', SA: 'Salarié' };
+  var ABR = { 'Fournisseur': 'FR', 'Client': 'CL', 'Salarié': 'SA' };
+  // type déduit du compte collectif (fournisseurs 401-409, personnel 421 et avances de mission 463, ONG / partenaires 466-467)
+  function sousDe(c) { return /^40[1-9]/.test(c) ? 'Fournisseur' : /^(41|46[67])/.test(c) ? 'Client' : /^(42|463)/.test(c) ? 'Salarié' : ''; }
+  var CHAMPS = ['adr', 'reg', 'pays', 'tel', 'web', 'geo', 'nif', 'stat', 'rcs', 'cin', 'dcin', 'lcin', 'banque', 'cb', 'ca', 'num', 'cle', 'swift', 'adrb', 'paysb', 'c_banque', 'c_cb', 'c_ca', 'c_num', 'c_cle', 'c_swift', 'c_adrb', 'c_paysb', 'modalite', 'site'];
+  // Saisie de plusieurs comptes par tiers : coordonnées bancaires (bq) et correspondances bancaires (cr), chacune sous forme de cartes ajoutables et détachables.
+  var BF = ['banque', 'cb', 'ca', 'num', 'cle', 'swift', 'adrb', 'paysb'], MAXL = { banque: 60, cb: 10, ca: 10, num: 30, cle: 4, swift: 11, adrb: 200, paysb: 40 }, W = { '': [], 'c_': [] };
+  function cleListe(pre) { return pre ? 'cr' : 'bq'; }
+  function cleCompte(o) { return [o.banque, o.cb, o.ca, o.num, o.cle].join('|'); }
+  function vide(o) { return !BF.some(function (f) { return o[f]; }); }
+  function normaliser(r) {
+    ['', 'c_'].forEach(function (pre) {
+      var k = cleListe(pre); if (!r[k]) r[k] = [];
+      var o = {}; BF.forEach(function (f) { o[f] = (r[pre + f] || '').trim(); });
+      if (!vide(o) && !r[k].some(function (x) { return cleCompte(x) === cleCompte(o); })) r[k].push(o);
+    });
+  }
+  function copier(l) { return l.map(function (o) { var c = {}; BF.forEach(function (f) { c[f] = o[f] || ''; }); return c; }); }
+  var LIB = { banque: 'Banque', swift: 'SWIFT', paysb: 'Pays de la banque', adrb: 'Adresse de la banque', cb: 'Code banque', ca: 'Code agence', num: 'Numéro de compte', cle: 'Clé' };
+  function champ(pre, i, f, span, o, ed) { return '<label class="bp-champ" style="grid-column:span ' + span + '"><span>' + LIB[f] + '</span><input class="bp-in" data-bi="' + pre + ':' + i + ':' + f + '" maxlength="' + MAXL[f] + '" value="' + esc(o[f]) + '" autocomplete="off"' + (ed ? '' : ' disabled') + '></label>'; }
+  function dessinerComptes() {
+    var ed = mode !== 'consultation';
+    ['', 'c_'].forEach(function (pre) {
+      var L = W[pre], nom = pre ? 'Correspondance bancaire' : 'Coordonnée bancaire';
+      q('[data-ti-bl="' + pre + '"]').innerHTML = L.length ? L.map(function (o, i) {
+        return '<div class="ti-grp ti-cd"><div class="ti-ch"><b>' + nom + ' n° ' + (i + 1) + '</b>' + (i === 0 ? '<span class="ti-pr">Principal</span>' : '') + '<span style="flex:1"></span>' +
+          '<button type="button" class="ti-bt" data-ti-iban="' + pre + ':' + i + '"><i class="ti ti-shield-check"></i> Tester le compte</button>' +
+          '<button type="button" class="ti-ic" data-ti-bdel="' + pre + ':' + i + '" title="Détacher ce compte" aria-label="Détacher ce compte"' + (ed ? '' : ' disabled') + '><i class="ti ti-trash"></i></button></div>' +
+          '<div class="ti-sg">Banque</div><div class="ti-g4" style="grid-template-columns:repeat(4,minmax(0,1fr));margin-bottom:12px">' + champ(pre, i, 'banque', 2, o, ed) + champ(pre, i, 'swift', 1, o, ed) + champ(pre, i, 'paysb', 1, o, ed) + champ(pre, i, 'adrb', 4, o, ed) + '</div>' +
+          '<div class="ti-sg">Compte bancaire</div><div class="ti-g4" style="grid-template-columns:repeat(4,minmax(0,1fr))">' + champ(pre, i, 'cb', 1, o, ed) + champ(pre, i, 'ca', 1, o, ed) + champ(pre, i, 'num', 1, o, ed) + champ(pre, i, 'cle', 1, o, ed) + '</div>' +
+          '<div class="ti-ib" role="status" data-ti-ibr="' + pre + ':' + i + '" hidden></div></div>';
+      }).join('') : '<div class="ti-vd">Aucun compte saisi pour ce tiers' + (ed ? '. Cliquez sur « Ajouter un compte ».' : '.') + '</div>';
+      q('[data-ti-add="' + pre + '"]').disabled = !ed;
+      q('[data-ti-bn="' + pre + '"]').textContent = L.length;
+    });
+  }
+  root.addEventListener('input', function (e) { var d = e.target.dataset && e.target.dataset.bi; if (!d) return; var v = d.split(':'), pre = v[0] === 'c_' ? 'c_' : '', o = W[pre][+v[1]]; if (o) o[v[2]] = e.target.value.trim(); });
+  root.addEventListener('click', function (e) {
+    var b = e.target.closest('button'), pre, v; if (!b || b.disabled) return;
+    if (b.hasAttribute('data-ti-add')) { pre = b.dataset.tiAdd; var o = {}; BF.forEach(function (f) { o[f] = ''; }); W[pre].push(o); dessinerComptes(); var c = root.querySelectorAll('[data-ti-bl="' + pre + '"] .ti-cd'); var dern = c[c.length - 1]; if (dern) { var f = dern.querySelector('input'); if (f) f.focus(); } }
+    else if (b.hasAttribute('data-ti-bdel')) { v = b.dataset.tiBdel.split(':'); pre = v[0] === 'c_' ? 'c_' : ''; W[pre].splice(+v[1], 1); dessinerComptes(); toast('Compte détaché.'); }
+    else if (b.hasAttribute('data-ti-iban')) { v = b.dataset.tiIban.split(':'); testerCompte(v[0] === 'c_' ? 'c_' : '', +v[1]); }
+  });
+  // Adresse web et géolocalisation (latitude, longitude en degrés décimaux)
+  var RE_WEB = /^(https?:\/\/)?([a-z0-9-]+\.)+[a-z]{2,}(:\d+)?(\/\S*)?$/i;
+  function coordGeo(t) { var m = String(t || '').match(/^\s*(-?\d+(?:\.\d+)?)\s*[,;]\s*(-?\d+(?:\.\d+)?)\s*$/); if (!m) return null; var la = parseFloat(m[1]), lo = parseFloat(m[2]); return la >= -90 && la <= 90 && lo >= -180 && lo <= 180 ? [la, lo] : null; }
+  function urlWeb(t) { t = String(t || '').trim(); return t && RE_WEB.test(t) ? (/^https?:\/\//i.test(t) ? t : 'https://' + t) : ''; }
+  function lien(a, href) { if (href) { a.href = href; a.setAttribute('aria-disabled', 'false'); } else { a.removeAttribute('href'); a.setAttribute('aria-disabled', 'true'); } }
+  function majLiens() {
+    lien(q('[data-ti-lw]'), urlWeb(q('[data-f=web]').value));
+    var g = coordGeo(q('[data-f=geo]').value); lien(q('[data-ti-lg]'), g ? 'https://www.openstreetmap.org/?mlat=' + g[0] + '&mlon=' + g[1] + '#map=16/' + g[0] + '/' + g[1] : '');
+  }
+  root.addEventListener('input', function (e) { if (e.target.matches && e.target.matches('[data-f=web],[data-f=geo]')) majLiens(); });
+  root.addEventListener('click', function (e) { var a = e.target.closest('a.ti-lk'); if (a && a.getAttribute('aria-disabled') === 'true') e.preventDefault(); });
   var rows = D.tiers.map(function (t, i) { var o = { compte: t[0], code: t[1], nom: t[2], sous: sousDe(t[0]), actif: true, utilise: false }; CHAMPS.forEach(function (k) { o[k] = ''; }); var d = D.det[i]; if (d) Object.keys(d).forEach(function (k) { o[k] = d[k]; }); return o; });
+  rows.forEach(normaliser);
   window.TIERS_PLAN = rows;
   // un tiers mouvementé dans une pièce devient « Utilisé » (appelé par la saisie d'écritures)
   window.TIERS_MARQUER = function (compte, code) { var t = rows.filter(function (x) { return x.compte === compte && x.code === code; })[0]; if (t && !t.utilise) { t.utilise = true; if (vue === 'liste') liste(); } };
   var vue = 'saisie', sel = -1, mode = 'consultation', tri = { k: 'code', sens: 1 }, page = 0, taille = 20, ordre = [], filtres = {};
   function esc(s) { return String(s == null ? '' : s).replace(/[&<>"]/g, function (c) { return { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c]; }); }
+// Test du compte bancaire : clé RIB (97 - (89·banque + 15·agence + 3·compte) mod 97) puis IBAN (contrôle mod 97, ISO 13616)
+  var PAYS_ISO = { 'MADAGASCAR': 'MG', 'FRANCE': 'FR', 'MAURICE': 'MU', 'COMORES': 'KM' };
+  function chiffres(t) { var T = { A: 1, B: 2, C: 3, D: 4, E: 5, F: 6, G: 7, H: 8, I: 9, J: 1, K: 2, L: 3, M: 4, N: 5, O: 6, P: 7, Q: 8, R: 9, S: 2, T: 3, U: 4, V: 5, W: 6, X: 7, Y: 8, Z: 9 }; return String(t).toUpperCase().replace(/[A-Z]/g, function (c) { return T[c]; }); }
+  function mod97(str) { var r = 0; for (var i = 0; i < str.length; i++) r = (r * 10 + (str.charCodeAt(i) - 48)) % 97; return r; }
+  function ibanNum(iban) { return (iban.slice(4) + iban.slice(0, 4)).replace(/[A-Z]/g, function (c) { return c.charCodeAt(0) - 55; }); }
+  function testerCompte(pre, i) {
+    var o = W[pre][i]; if (!o) return;
+    var v = function (k) { return (o[k] || '').replace(/[\s.-]/g, ''); };
+    var cb = v('cb'), ca = v('ca'), num = v('num').toUpperCase(), cle = v('cle'), pays = (o.paysb || '').trim().toUpperCase();
+    var res = q('[data-ti-ibr="' + pre + ':' + i + '"]'); res.hidden = false;
+    function fin(ok, msg) { res.className = 'ti-ib ' + (ok ? 'ok' : 'ko'); res.textContent = msg; }
+    if (!cb || !ca || !num || !cle) { fin(false, 'Renseignez Code banque, Code agence, Numéro de compte et Clé pour tester le compte.'); return; }
+    if (!/^\d{5}$/.test(cb) || !/^\d{5}$/.test(ca) || !/^[0-9A-Z]{11}$/.test(num) || !/^\d{2}$/.test(cle)) { fin(false, 'Format attendu : code banque 5 chiffres, code agence 5 chiffres, numéro de compte 11 caractères, clé 2 chiffres.'); return; }
+    var attendue = 97 - ((89 * parseInt(cb, 10) + 15 * parseInt(ca, 10) + 3 * parseInt(chiffres(num), 10)) % 97);
+    var attStr = (attendue < 10 ? '0' : '') + attendue;
+    if (attStr !== cle) { fin(false, 'Compte invalide : la clé RIB saisie (' + cle + ') ne correspond pas à la clé calculée (' + attStr + ').'); return; }
+    var iso = PAYS_ISO[pays] || 'MG', bban = cb + ca + chiffres(num) + cle;
+    var cd = 98 - mod97(ibanNum(iso + '00' + bban)); cd = (cd < 10 ? '0' : '') + cd;
+    var iban = iso + cd + bban, ok = mod97(ibanNum(iban)) === 1;
+    fin(ok, ok ? 'Compte valide · clé RIB correcte · IBAN ' + iban.replace(/(.{4})/g, function (m) { return m + ' '; }).trim() + ' (contrôle mod 97 : OK).' : 'IBAN invalide (contrôle mod 97 en échec).');
+  }
   function toast(m) { var t = q('[data-ti-toast]'); t.textContent = m; t.hidden = false; clearTimeout(toast.t); toast.t = setTimeout(function () { t.hidden = true; }, 2600); }
   function err(k, m) { var e = q('[data-er="' + k + '"]'); if (e) { e.textContent = m || ''; e.classList.toggle('show', !!m); } var f = q('[data-f=' + k + ']'); if (f) f.classList.toggle('err', !!m); }
 
@@ -158,8 +277,8 @@
     q('[data-ti-vide]').hidden = n > 0;
     qa('[data-ti-fleche]').forEach(function (i) { i.className = 'ti ' + (i.dataset.tiFleche === tri.k ? (tri.sens > 0 ? 'ti-arrow-up' : 'ti-arrow-down') : ''); });
     q('[data-ti-lignes]').innerHTML = vus.map(function (i) {
-      var r = rows[i], ab = ABR[r.sous] || 'AU';
-      return '<tr data-i="' + i + '"' + (i === sel ? ' class="sel"' : '') + '><td>' + esc(r.compte) + '</td><td><b>' + esc(r.code) + '</b></td><td>' + esc(r.nom) + '</td><td><span class="ti-ligne"><span class="ti-st ' + ab + '">' + ab + '</span>' + esc(r.sous) + '</span></td>' +
+      var r = rows[i], ab = ABR[r.sous] || '';
+      return '<tr data-i="' + i + '"' + (i === sel ? ' class="sel"' : '') + '><td>' + esc(r.compte) + '</td><td><b>' + esc(r.code) + '</b></td><td>' + esc(r.nom) + '</td><td><span class="ti-ligne">' + (ab ? '<span class="ti-st ' + ab + '">' + ab + '</span>' + esc(r.sous) : '—') + '</span></td>' +
         '<td>' + (r.adr ? esc(r.adr) : '—') + '</td><td>' + (r.tel ? esc(r.tel) : '—') + '</td><td>' + (r.nif ? esc(r.nif) : '—') + '</td><td class="c"><span class="ti-act' + (r.actif ? '' : ' n') + '"><i></i>' + (r.actif ? 'Actif' : 'Inactif') + '</span>' + (r.utilise ? '<span class="ti-use"><i class="ti ti-lock" style="font-size:11px"></i> Utilisé</span>' : '') + '</td></tr>';
     }).join('');
     q('[data-ti-pos]').textContent = n ? (deb + 1) + '–' + (deb + vus.length) + ' sur ' + n + ' tiers' : '0 tiers';
@@ -174,11 +293,12 @@
 
   // ---- formulaire ----
   function form(r) {
-    r = r || { code: '', nom: '', sous: 'Client', compte: '', actif: true };
+    r = r || { code: '', nom: '', sous: '', compte: '', actif: true };
     q('[data-f=code]').value = r.code; q('[data-f=nom]').value = r.nom; q('[data-f=sous]').value = r.sous; q('[data-f=compte]').value = r.compte;
     CHAMPS.forEach(function (k) { q('[data-f=' + k + ']').value = r[k] || ''; });
     q('[data-f=actif]').checked = r.actif !== false;
-    ['code', 'nom', 'compte'].forEach(function (k) { err(k); });
+    W[''] = copier(r.bq || []); W['c_'] = copier(r.cr || []); dessinerComptes(); majLiens();
+    ['code', 'nom', 'compte', 'web', 'geo', 'cin', 'dcin'].forEach(function (k) { err(k); });
   }
   function etat() {
     var ed = mode !== 'consultation', r = rows[sel], verrou = mode === 'edition' && r && r.utilise;
@@ -186,6 +306,7 @@
     q('[data-f=code]').disabled = !ed || !!verrou; q('[data-f=compte]').disabled = !ed || !!verrou; // un tiers utilisé garde son code et son compte collectif
     var a = q('[data-ti-actions]');
     a.querySelector('[data-ti-ajouter]').disabled = ed; a.querySelector('[data-ti-modifier]').disabled = ed || sel < 0; a.querySelector('[data-ti-supprimer]').disabled = ed || sel < 0 || (r && r.utilise);
+    dessinerComptes();
     a.querySelector('[data-ti-enregistrer]').disabled = !ed; a.querySelector('[data-ti-annuler]').disabled = !ed; a.querySelector('[data-ti-imprimer]').disabled = false; a.querySelector('[data-ti-exporter]').disabled = false;
   }
   function onglet(n) { vue = n; qa('[data-ti-pan]').forEach(function (p) { p.hidden = p.dataset.tiPan !== n; }); qa('[data-ti-tab]').forEach(function (b) { var on = b.dataset.tiTab === n; b.classList.toggle('on', on); b.setAttribute('aria-selected', on); }); if (n === 'liste') liste(); }
@@ -197,25 +318,25 @@
   q('[data-f=compte]').addEventListener('change', function () { if (mode === 'creation' && q('[data-f=compte]').value) q('[data-f=sous]').value = sousDe(q('[data-f=compte]').value); });
 
   // ---- importation Excel (étapes communes : import_assistant.js) ----
-  var SOUS_TYPES = ['Client', 'Fournisseur', 'Salarié', 'Partenaire', 'Banque', 'Autre type de tiers'], MODALITES = ['Aucune', 'Virement', 'Chèque', 'Espèces', 'Mobile money'];
-  var IMP = [['Adresse', 'adr'], ['Région', 'reg'], ['Pays', 'pays'], ['Téléphone', 'tel'], ['NIF', 'nif'], ['STAT', 'stat'], ['RCS', 'rcs'], ['Banque', 'banque'], ['Code banque', 'cb'], ['Code agence', 'ca'], ['Numéro de compte', 'num'], ['Clé', 'cle'], ['SWIFT', 'swift'], ['Adresse de la banque', 'adrb'], ['Pays de la banque', 'paysb']];
+  var SOUS_TYPES = ['Client', 'Fournisseur', 'Salarié'], MODALITES = ['Aucune', 'Virement', 'Chèque', 'Espèces', 'Mobile money'];
+  var IMP = [['Adresse', 'adr'], ['Région', 'reg'], ['Pays', 'pays'], ['Téléphone', 'tel'], ['Adresse web', 'web'], ['Géolocalisation', 'geo'], ['NIF', 'nif'], ['STAT', 'stat'], ['RCS', 'rcs'], ['CIN', 'cin'], ['Date CIN', 'dcin'], ['Lieu de délivrance CIN', 'lcin'], ['Banque', 'banque'], ['Code banque', 'cb'], ['Code agence', 'ca'], ['Numéro de compte', 'num'], ['Clé', 'cle'], ['SWIFT', 'swift'], ['Adresse de la banque', 'adrb'], ['Pays de la banque', 'paysb'], ['Correspondance — Banque', 'c_banque'], ['Correspondance — Code banque', 'c_cb'], ['Correspondance — Code agence', 'c_ca'], ['Correspondance — Numéro de compte', 'c_num'], ['Correspondance — Clé', 'c_cle'], ['Correspondance — SWIFT', 'c_swift'], ['Correspondance — Adresse de la banque', 'c_adrb'], ['Correspondance — Pays de la banque', 'c_paysb']];
   function ech(s) { return String(s == null ? '' : s).normalize('NFD').replace(/[\u0300-\u036f]/g, '').toLowerCase().replace(/[^a-z0-9]/g, ''); }
   function modeleImp() {
     var c0 = D.collectifs[0] ? D.collectifs[0][0] : '401000';
     var ch = [{ col: 'Compte collectif', oblig: true, format: 'Compte collectif de classe 4 existant (' + D.collectifs.length + ' comptes proposés dans la saisie).', exemple: c0, alias: ['Compte'] },
       { col: 'Code', oblig: true, format: 'Unique pour un compte collectif, ' + q('[data-f=code]').maxLength + ' caractères au plus.', exemple: 'T00001' },
       { col: 'Intitulé', oblig: true, format: 'Texte, ' + q('[data-f=nom]').maxLength + ' caractères au plus.', exemple: 'TIERS EXEMPLE', alias: ['Nom', 'Libellé'] },
-      { col: 'Sous-type', oblig: false, format: SOUS_TYPES.join(', ') + '. Par défaut : déduit du compte collectif.', exemple: 'Fournisseur' }];
+      { col: 'Type', oblig: false, format: SOUS_TYPES.join(', ') + '. Par défaut : déduit du compte collectif.', exemple: 'Fournisseur' }];
     IMP.forEach(function (c) { ch.push({ col: c[0], oblig: false, format: 'Texte, ' + q('[data-f=' + c[1] + ']').maxLength + ' caractères au plus.', exemple: '' }); });
     ch.push({ col: 'Modalité de paiement', oblig: false, format: MODALITES.join(', ') + '.', exemple: 'Virement' }, { col: 'Site', oblig: false, format: 'Code d\'un site existant (' + D.sites.map(function (s) { return s[0]; }).join(', ') + ').', exemple: D.sites[0] ? D.sites[0][0] : '' }, { col: 'Statut', oblig: false, format: 'Actif ou Inactif. Par défaut : Actif.', exemple: 'Actif' });
     var lig = ch.map(function (c) { return c.exemple; });
     return { titre: 'Tiers', fichier: 'modele_tiers.xlsx', champs: ch, exemples: [lig],
       ligne: function (v) {
-        var er = [], compte = v['Compte collectif'], code = v['Code'], nom = v['Intitulé'], sous = v['Sous-type'], st = ech(v['Statut']);
+        var er = [], compte = v['Compte collectif'], code = v['Code'], nom = v['Intitulé'], sous = v['Type'], st = ech(v['Statut']);
         if (!compte) er.push('Compte collectif obligatoire'); else if (!D.collectifs.some(function (c) { return c[0] === compte; })) er.push('Compte collectif « ' + compte + ' » inconnu');
         if (!code) er.push('Code obligatoire'); else if (code.length > q('[data-f=code]').maxLength) er.push('Code trop long (' + q('[data-f=code]').maxLength + ' caractères au plus)');
         if (!nom) er.push('Intitulé obligatoire'); else if (nom.length > q('[data-f=nom]').maxLength) er.push('Intitulé trop long (' + q('[data-f=nom]').maxLength + ' caractères au plus)');
-        var sf = sous ? SOUS_TYPES.filter(function (x) { return ech(x) === ech(sous); })[0] : sousDe(compte); if (!sf) er.push('Sous-type « ' + sous + ' » inconnu (' + SOUS_TYPES.join(', ') + ')');
+        var sf = sous ? SOUS_TYPES.filter(function (x) { return ech(x) === ech(sous); })[0] : sousDe(compte); if (sous && !sf) er.push('Type « ' + sous + ' » inconnu (' + SOUS_TYPES.join(', ') + ')');
         var d = { compte: compte, code: code, nom: nom, sous: sf, actif: st !== 'inactif' };
         if (st && st !== 'actif' && st !== 'inactif') er.push('Statut « ' + v['Statut'] + ' » invalide (Actif ou Inactif)');
         IMP.forEach(function (c) { d[c[1]] = v[c[0]]; var mx = q('[data-f=' + c[1] + ']').maxLength; if (v[c[0]].length > mx) er.push(c[0] + ' trop long (' + mx + ' caractères au plus)'); });
@@ -227,8 +348,8 @@
         var aj = 0, mj = 0;
         L.forEach(function (x) {
           var d = x.data, ex = rows.filter(function (r) { return r.compte === d.compte && r.code === d.code; })[0];
-          if (ex) { var av = { code: ex.code, compte: ex.compte }; Object.keys(d).forEach(function (k) { ex[k] = d[k]; }); synchroniser(av, ex); mj++; }
-          else { var r = { utilise: false }; Object.keys(d).forEach(function (k) { r[k] = d[k]; }); rows.push(r); synchroniser(null, r); aj++; }
+          if (ex) { var av = { code: ex.code, compte: ex.compte }; Object.keys(d).forEach(function (k) { ex[k] = d[k]; }); normaliser(ex); synchroniser(av, ex); mj++; }
+          else { var r = { utilise: false }; Object.keys(d).forEach(function (k) { r[k] = d[k]; }); normaliser(r); rows.push(r); synchroniser(null, r); aj++; }
         });
         mode = 'consultation'; sel = -1; form(null); etat(); filtres = {}; qa('[data-fc]').forEach(function (e) { e.value = ''; }); tri = { k: 'code', sens: 1 }; calculer(); page = 0; onglet('liste'); toast(aj + ' tiers ajouté(s), ' + mj + ' mis à jour.');
       } };
@@ -242,7 +363,16 @@
   function enregistrer() {
     var r = { code: q('[data-f=code]').value.trim(), nom: q('[data-f=nom]').value.trim(), sous: q('[data-f=sous]').value, compte: q('[data-f=compte]').value, actif: q('[data-f=actif]').checked, utilise: mode === 'edition' ? rows[sel].utilise : false }, ok = true, courant = mode === 'edition' ? sel : -1;
     CHAMPS.forEach(function (k) { r[k] = q('[data-f=' + k + ']').value.trim(); });
-    ['code', 'nom', 'compte'].forEach(function (k) { err(k); });
+    var mal = ''; ['', 'c_'].forEach(function (pre) { W[pre] = W[pre].filter(function (o) { return !vide(o); }); W[pre].forEach(function (o, i) { if (!mal && !o.banque && !o.num) mal = (pre ? 'Correspondance' : 'Coordonnée') + ' bancaire n° ' + (i + 1) + ' : renseignez au moins la banque ou le numéro de compte.'; }); });
+    if (mal) { toast(mal); ok = false; }
+    r.bq = copier(W['']); r.cr = copier(W['c_']);
+    BF.forEach(function (f) { r[f] = r.bq[0] ? r.bq[0][f] : ''; r['c_' + f] = r.cr[0] ? r.cr[0][f] : ''; });
+    ['code', 'nom', 'compte', 'web', 'geo', 'cin', 'dcin'].forEach(function (k) { err(k); });
+    if (r.web && !RE_WEB.test(r.web)) { err('web', 'Adresse web invalide (ex. https://www.exemple.mg).'); ok = false; }
+    if (r.geo && !coordGeo(r.geo)) { err('geo', 'Géolocalisation invalide : latitude (-90 à 90), longitude (-180 à 180), ex. -18.8792, 47.5079.'); ok = false; }
+    if (r.cin && !/^[0-9]{12}$/.test(r.cin)) { err('cin', 'Le CIN doit contenir 12 chiffres, sans espace ni point.'); ok = false; }
+    if (r.dcin && (isNaN(Date.parse(r.dcin)) || r.dcin > new Date().toISOString().slice(0, 10))) { err('dcin', 'Date de CIN invalide ou postérieure à aujourd’hui.'); ok = false; }
+    if ((r.dcin || r.lcin) && !r.cin) { err('cin', 'Renseignez le CIN avant sa date ou son lieu de délivrance.'); ok = false; }
     if (!r.code) { err('code', 'Le code est obligatoire.'); ok = false; }
     if (!r.nom) { err('nom', "L'intitulé est obligatoire."); ok = false; }
     if (!r.compte) { err('compte', 'Le compte collectif est obligatoire.'); ok = false; }

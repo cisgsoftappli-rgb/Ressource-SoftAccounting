@@ -73,7 +73,7 @@
     q('[data-ml-list]').innerHTML = l.length ? l.map(function (m) {
       var i = models.indexOf(m);
       return '<div class="ml-row"><div><div class="ml-name"><b>' + esc(m.nom) + '</b><span class="ml-badge">listing-canevas</span></div><p class="ml-meta">N° ' + esc(m.code) + ' · Fichier : ' + esc(m.file) + '</p></div>' +
-        '<div class="ml-act"><button type="button" class="ml-b mod" data-ml-mod="' + i + '">Modifier</button><button type="button" class="ml-b des" data-ml-des="' + i + '">' + ICON_EDIT + ' Ouvrir le designer</button><button type="button" class="ml-b mod" data-ml-dup="' + i + '">⧉ Dupliquer</button><button type="button" class="ml-b del" aria-label="Supprimer" data-ml-del="' + i + '">' + ICON_DEL + '</button></div></div>';
+        '<div class="ml-act"><button type="button" class="ml-b mod" data-ml-mod="' + i + '">Modifier</button><button type="button" class="ml-b des" data-ml-des="' + i + '">' + ICON_EDIT + ' Ouvrir le designer</button><button type="button" class="ml-b mod" data-ml-dup="' + i + '">Dupliquer</button><button type="button" class="ml-b del" aria-label="Supprimer" data-ml-del="' + i + '">' + ICON_DEL + '</button></div></div>';
     }).join('') : '<div class="ml-empty">Aucun modèle trouvé.</div>';
   }
   function open(i) {

@@ -34,6 +34,20 @@
 [data-rl] .rl-lt tr.rl-ed td{background:#F5F7FE}[data-rl] .rl-lt td.r{text-align:right;font-variant-numeric:tabular-nums}[data-rl] .rl-np{color:#747A88}
 [data-rl] .rl-bil{display:flex;flex-wrap:wrap;gap:6px 24px;padding:8px 12px;border-top:1px solid #E9EBF0;background:#FAFBFC;font-size:12px}
 [data-rl] .rl-bil b{font-variant-numeric:tabular-nums}[data-rl] .rl-bil .ko{color:#B63132;font-weight:700}[data-rl] .rl-bil .vert{color:#0B6B43;font-weight:700}
+.rl-oc-ov{position:fixed;inset:0;z-index:50;background:rgba(11,19,50,.45);display:flex;align-items:center;justify-content:center;padding:16px}.rl-oc-ov[hidden]{display:none}
+.rl-oc{width:min(920px,100%);max-height:calc(100vh - 32px);display:flex;flex-direction:column;background:#fff;border-radius:16px;box-shadow:0 12px 40px rgba(11,19,50,.25)}
+.rl-oc-h{display:flex;align-items:center;justify-content:space-between;padding:16px 20px;border-bottom:1px solid #E9EBF0}.rl-oc-h h2{margin:0;font-size:16px;color:#0B1332}
+.rl-oc-x{appearance:none;border:0;background:none;font-size:20px;line-height:1;cursor:pointer;color:#5B606D;padding:4px 8px;border-radius:6px}.rl-oc-x:focus-visible,.rl-oc-b:focus-visible{outline:3px solid #2E427B;outline-offset:2px}
+.rl-oc-c{padding:16px 20px;overflow:auto}
+.rl-oc-dz{display:flex;flex-direction:column;align-items:center;gap:8px;padding:28px 16px;border:2px dashed #878D9A;border-radius:12px;background:#F8F9FB;text-align:center;color:#353944;font-size:13px;cursor:pointer}
+.rl-oc-dz.on{border-color:#2E427B;background:#E3EBFE}.rl-oc-dz i{font-size:30px;color:#2E427B}
+.rl-oc-fic{margin-top:10px;font-size:13px;color:#353944}.rl-oc-note{margin:10px 0 0;font-size:12px;color:#5B606D}
+.rl-oc-pg{height:8px;border-radius:4px;background:#E9EBF0;overflow:hidden;margin:14px 0 6px}.rl-oc-pg i{display:block;height:100%;width:0;background:#2E427B;transition:width .25s}
+.rl-oc-t{width:100%;border-collapse:collapse;font-size:13px;margin-top:10px}.rl-oc-t th{padding:6px 8px;text-align:left;font-size:12px;color:#5B606D;border-bottom:1px solid #E9EBF0;white-space:nowrap}.rl-oc-t td{padding:4px 6px;border-bottom:1px solid #F1F2F5}
+.rl-oc-t input.bp-in{height:32px;padding:0 8px}.rl-oc-t .m{text-align:right}
+.rl-oc-cf{display:inline-block;padding:1px 8px;border-radius:6px;font-size:12px;font-weight:600}.rl-oc-cf.ok{background:#DCFCE7;color:#14532D}.rl-oc-cf.vf{background:#FEF3C7;color:#92400E}
+.rl-oc-f{display:flex;align-items:center;gap:8px;flex-wrap:wrap;padding:12px 20px;border-top:1px solid #E9EBF0}.rl-oc-f .sp{flex:1;font-size:13px;color:#353944}
+.rl-oc-b{appearance:none;height:36px;padding:0 16px;border-radius:8px;border:1px solid #2E427B;background:#fff;color:#2E427B;font:inherit;font-size:13px;font-weight:600;cursor:pointer}.rl-oc-b.p{background:#2E427B;color:#fff}.rl-oc-b:disabled{opacity:.5;cursor:not-allowed}
 </style>
 
 <div class="bp-root" data-rl>
@@ -44,6 +58,7 @@
     <button type="button" data-rl-modifier>Modifier</button>
     <button type="button" data-rl-supprimer>Supprimer</button>
     <button type="button" data-rl-importer disabled>Importer les lignes</button>
+    <button type="button" data-rl-ocr disabled>Importer par OCR</button>
     <button type="button" data-rl-enregistrer>Enregistrer</button>
     <button type="button" data-rl-annuler>Annuler</button>
     <button type="button" data-ba-nav data-rl-pointage disabled>Pointage</button>
@@ -55,6 +70,14 @@
   <div class="bp-tabs" role="tablist">
     <button type="button" role="tab" data-rl-tab="saisie">Saisie</button>
     <button type="button" role="tab" class="on" data-rl-tab="liste">Liste <span class="bp-n" data-rl-compte></span></button>
+  </div>
+
+  <div class="rl-oc-ov" data-rl-ocv hidden>
+    <div class="rl-oc" role="dialog" aria-modal="true" aria-labelledby="rl-oc-t">
+      <div class="rl-oc-h"><h2 id="rl-oc-t">Importer les lignes par OCR</h2><button type="button" class="rl-oc-x" data-rl-ocx aria-label="Fermer">×</button></div>
+      <div class="rl-oc-c" data-rl-occ></div>
+      <div class="rl-oc-f" data-rl-ocf></div>
+    </div>
   </div>
 
   <div class="bp-grid">
@@ -181,7 +204,7 @@
     qa('[data-rl-pan]').forEach(function (p) { p.hidden = p.getAttribute('data-rl-pan') !== n; });
     qa('[data-rl-enregistrer],[data-rl-annuler]').forEach(function (b) { b.disabled = n !== 'saisie'; });
     qa('[data-rl-ajouter],[data-rl-modifier],[data-rl-supprimer]').forEach(function (b) { b.disabled = n === 'saisie'; });
-    qa('[data-rl-importer]').forEach(function (b) { b.disabled = n !== 'saisie'; }); q('[data-rl-cpt]').disabled = n === 'saisie';
+    qa('[data-rl-importer],[data-rl-ocr]').forEach(function (b) { b.disabled = n !== 'saisie'; }); q('[data-rl-cpt]').disabled = n === 'saisie';
     majPointage();
   }
   function lister() {
@@ -253,6 +276,76 @@
       var ds = lignesEdit.map(function (x) { return x.d; }).filter(Boolean).sort(); if (ds.length && !f('date').value) f('date').value = ds[ds.length - 1]; bilan();
       msg(n + ' ligne(s) intégrée(s). Complétez le n° de relevé puis enregistrez.');
     } };
+  // Import par OCR : relevé scanné (PDF ou image) → reconnaissance (simulée dans la maquette) → contrôle des lignes → intégration
+  var OC = { fic: null, L: [] };
+  function ocOuvert() { return !q('[data-rl-ocv]').hidden; }
+  function ocFermer() { q('[data-rl-ocv]').hidden = true; OC = { fic: null, L: [] }; }
+  function ocEtape1() {
+    OC.L = [];
+    q('[data-rl-occ]').innerHTML = '<label class="rl-oc-dz" data-rl-ocdz><i class="ti ti-scan" aria-hidden="true"></i><b>Déposez le relevé bancaire ici ou cliquez pour le choisir</b><span>PDF, PNG ou JPG — 10 Mo au plus</span><input type="file" accept=".pdf,.png,.jpg,.jpeg,application/pdf,image/png,image/jpeg" data-rl-ocfile hidden></label><div class="rl-oc-fic" data-rl-ocnom>' + (OC.fic ? 'Fichier : <b>' + esc(OC.fic.name) + '</b> (' + Math.max(1, Math.round(OC.fic.size / 1024)) + ' Ko)' : 'Aucun fichier choisi.') + '</div><p class="rl-oc-note">Maquette : la reconnaissance est simulée et produit des lignes de démonstration à contrôler avant intégration.</p>';
+    q('[data-rl-ocf]').innerHTML = '<span class="sp"></span><button type="button" class="rl-oc-b" data-rl-ocx>Annuler</button><button type="button" class="rl-oc-b p" data-rl-oclance' + (OC.fic ? '' : ' disabled') + '>Lancer la reconnaissance</button>';
+  }
+  function ocFichier(fi) {
+    if (!fi) return; var ok = /\.(pdf|png|jpe?g)$/i.test(fi.name);
+    if (!ok) { q('[data-rl-ocnom]').innerHTML = '<span style="color:#B63132">Format non pris en charge : choisissez un PDF, un PNG ou un JPG.</span>'; OC.fic = null; q('[data-rl-oclance]').disabled = true; return; }
+    if (fi.size > 10 * 1024 * 1024) { q('[data-rl-ocnom]').innerHTML = '<span style="color:#B63132">Fichier trop volumineux (10 Mo au plus).</span>'; OC.fic = null; q('[data-rl-oclance]').disabled = true; return; }
+    OC.fic = fi; q('[data-rl-ocnom]').innerHTML = 'Fichier : <b>' + esc(fi.name) + '</b> (' + Math.max(1, Math.round(fi.size / 1024)) + ' Ko)'; q('[data-rl-oclance]').disabled = false;
+  }
+  function ocLancer() {
+    var etapes = ['Lecture du document…', 'Reconnaissance du texte (OCR)…', 'Extraction des dates, libellés et montants…', 'Contrôle de cohérence…'], i = 0;
+    q('[data-rl-occ]').innerHTML = '<div role="status"><b data-rl-ocet>' + etapes[0] + '</b><div class="rl-oc-pg"><i data-rl-ocbar></i></div><span class="rl-oc-note">' + esc(OC.fic.name) + '</span></div>';
+    q('[data-rl-ocf]').innerHTML = '<span class="sp"></span><button type="button" class="rl-oc-b" data-rl-ocx>Annuler</button>';
+    var t = setInterval(function () {
+      if (!ocOuvert()) { clearInterval(t); return; }
+      i++; var b = q('[data-rl-ocbar]'); if (b) b.style.width = Math.min(100, i * 25) + '%';
+      if (i < etapes.length) { q('[data-rl-ocet]').textContent = etapes[i]; } else { clearInterval(t); ocResultat(); }
+    }, 450);
+  }
+  function ocDemo() {
+    var base = f('date').value ? new Date(f('date').value + 'T00:00:00') : new Date(), L = [
+      ['VIR CLIENT SOCIETE ALPHA REF F2026-0412', 3200000, 98], ['PRLV JIRAMA FACTURE OCT', -865000, 96], ['CHQ 4478 FOURNISSEUR BETA', -1450000, 91], ['FRAIS TENUE DE COMPTE', -45000, 99], ['VIR SALAIRES LOT 10/2026', -6850000, 94], ['VERSEMENT ESPECES AGENCE', 500000, 72], ['AGIOS T3', -312000, 68]];
+    return L.map(function (x, k) { var d = new Date(base.getTime() - (L.length - 1 - k) * 86400000 * 2); return { ok: true, d: d.getFullYear() + '-' + ('0' + (d.getMonth() + 1)).slice(-2) + '-' + ('0' + d.getDate()).slice(-2), l: x[0], m: x[1], c: x[2] }; });
+  }
+  function ocTable() {
+    return '<table class="rl-oc-t"><thead><tr><th>Retenir</th><th>Date</th><th>Libellé</th><th class="m">Montant (+ entrée / − sortie)</th><th>Confiance</th></tr></thead><tbody>' + OC.L.map(function (l, i) {
+      return '<tr data-oci="' + i + '"><td><input type="checkbox" data-ocf="ok"' + (l.ok ? ' checked' : '') + ' aria-label="Retenir la ligne ' + (i + 1) + '"></td><td><input class="bp-in" type="date" data-ocf="d" value="' + esc(l.d) + '" aria-label="Date de la ligne ' + (i + 1) + '"></td><td><input class="bp-in" data-ocf="l" value="' + esc(l.l) + '" maxlength="120" aria-label="Libellé de la ligne ' + (i + 1) + '"></td><td><input class="bp-in m" type="number" step="1" data-ocf="m" value="' + esc(l.m) + '" aria-label="Montant de la ligne ' + (i + 1) + '"></td><td><span class="rl-oc-cf ' + (l.c >= 85 ? 'ok' : 'vf') + '">' + l.c + ' %' + (l.c >= 85 ? '' : ' · à vérifier') + '</span></td></tr>';
+    }).join('') + '</tbody></table>';
+  }
+  function ocPied() {
+    var r = OC.L.filter(function (l) { return l.ok; }), tot = r.reduce(function (a, l) { return a + (Number(l.m) || 0); }, 0);
+    q('[data-rl-ocf]').innerHTML = '<span class="sp" data-rl-ocsp>' + r.length + ' ligne(s) retenue(s) sur ' + OC.L.length + ' · mouvements : <b>' + nb(tot) + '</b></span><button type="button" class="rl-oc-b" data-rl-ocx>Annuler</button><button type="button" class="rl-oc-b" data-rl-ocretour>Changer de fichier</button><button type="button" class="rl-oc-b p" data-rl-ocint' + (r.length ? '' : ' disabled') + '>Intégrer les lignes retenues</button>';
+  }
+  function ocResultat() {
+    OC.L = ocDemo(); var bas = OC.L.filter(function (l) { return l.c < 85; }).length;
+    q('[data-rl-occ]').innerHTML = '<div role="status"><b>' + OC.L.length + ' ligne(s) reconnue(s)</b> dans « ' + esc(OC.fic.name) + '»' + (bas ? ' — <span style="color:#92400E">' + bas + ' à vérifier</span>' : '') + '. Corrigez si besoin, décochez les lignes à écarter puis intégrez.</div>' + ocTable() + '<p class="rl-oc-note">Maquette : lignes de démonstration (reconnaissance simulée).</p>';
+    ocPied();
+  }
+  function ocIntegrer() {
+    var r = OC.L.filter(function (l) { return l.ok; }), mauvais = r.filter(function (l) { return !l.d || !String(l.l).trim() || l.m === '' || isNaN(Number(l.m)); });
+    if (mauvais.length) { q('[data-rl-ocsp]').innerHTML = '<span style="color:#B63132">Chaque ligne retenue doit avoir une date, un libellé et un montant.</span>'; return; }
+    var cles = {}; lignesEdit.forEach(function (x) { cles[x.d + '|' + String(x.l).toLowerCase() + '|' + x.m] = 1; }); var n = 0, dbl = 0;
+    r.forEach(function (l) { var k = l.d + '|' + String(l.l).trim().toLowerCase() + '|' + Number(l.m); if (cles[k]) { dbl++; return; } cles[k] = 1; lignesEdit.push({ d: l.d, l: String(l.l).trim(), m: Number(l.m), r: false, rr: '' }); n++; });
+    dessinerLignes(); var ds = lignesEdit.map(function (x) { return x.d; }).filter(Boolean).sort(); if (ds.length && !f('date').value) f('date').value = ds[ds.length - 1]; bilan();
+    ocFermer(); msg(n + ' ligne(s) intégrée(s) par OCR' + (dbl ? ', ' + dbl + ' doublon(s) ignoré(s)' : '') + '. Complétez le n° de relevé puis enregistrez.');
+  }
+  q('[data-rl-ocr]').addEventListener('click', function () { OC = { fic: null, L: [] }; ocEtape1(); q('[data-rl-ocv]').hidden = false; var b = q('[data-rl-ocdz]'); if (b) b.focus(); });
+  q('[data-rl-ocv]').addEventListener('click', function (e) {
+    var t = e.target;
+    if (t === q('[data-rl-ocv]') || t.closest('[data-rl-ocx]')) ocFermer();
+    else if (t.closest('[data-rl-oclance]')) ocLancer();
+    else if (t.closest('[data-rl-ocretour]')) ocEtape1();
+    else if (t.closest('[data-rl-ocint]')) ocIntegrer();
+  });
+  q('[data-rl-ocv]').addEventListener('change', function (e) {
+    var t = e.target;
+    if (t.matches('[data-rl-ocfile]')) ocFichier(t.files && t.files[0]);
+    else if (t.dataset.ocf) { var tr = t.closest('tr[data-oci]'), l = OC.L[+tr.dataset.oci], k = t.dataset.ocf; l[k] = k === 'ok' ? t.checked : k === 'm' ? (t.value === '' ? '' : Number(t.value)) : t.value; ocPied(); }
+  });
+  q('[data-rl-ocv]').addEventListener('input', function (e) { var t = e.target; if (t.dataset && t.dataset.ocf && t.dataset.ocf !== 'ok') { var l = OC.L[+t.closest('tr[data-oci]').dataset.oci], k = t.dataset.ocf; l[k] = k === 'm' ? (t.value === '' ? '' : Number(t.value)) : t.value; ocPied(); } });
+  q('[data-rl-ocv]').addEventListener('dragover', function (e) { var z = e.target.closest('[data-rl-ocdz]'); if (z) { e.preventDefault(); z.classList.add('on'); } });
+  q('[data-rl-ocv]').addEventListener('dragleave', function (e) { var z = e.target.closest('[data-rl-ocdz]'); if (z) z.classList.remove('on'); });
+  q('[data-rl-ocv]').addEventListener('drop', function (e) { var z = e.target.closest('[data-rl-ocdz]'); if (z) { e.preventDefault(); z.classList.remove('on'); ocFichier(e.dataTransfer.files && e.dataTransfer.files[0]); } });
+  document.addEventListener('keydown', function (e) { if (e.key === 'Escape' && ocOuvert()) ocFermer(); });
   q('[data-rl-importer]').addEventListener('click', function () { if (window.IMPORT_ASSISTANT) window.IMPORT_ASSISTANT.ouvrir(MODELE); });
 
   q('[data-rl-enregistrer]').addEventListener('click', function () {

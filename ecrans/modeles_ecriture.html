@@ -1,0 +1,246 @@
+<!--
+  Écran « Modèles d'écriture » (Comptabilité générale › Modèles d'écriture) — onglets Saisie / Liste. La saisie reprend celle de la saisie d'écritures :
+  en-tête du modèle (code, libellé, journal), panneau de ligne (compte, tiers, axes analytiques, libellé, montant, sens) et tableau des lignes du modèle.
+  Trois options par ligne : Montant variable, Tiers variable, Analytique variable (coché = renseigné lors de la génération de l'écriture ; décoché = valeur fixe imposée).
+  Règles : seuls les comptes du dernier niveau sont proposés ; le tiers n'est ouvert que pour un compte collectif ; les axes analytiques ne sont ouverts que pour les plans
+  ouverts par la racine des comptes (puis axes cochés au dernier niveau), sinon grisés. Modèles partagés avec la saisie via window.MODELES_ECRITURE (D, C, libD, libC… dérivés des lignes).
+  Préfixe me- / data-me. Ne pas nommer de fonction « $$ » (build.cjs).
+-->
+<style>
+.me-hd{display:grid;grid-template-columns:1fr 2fr 1fr;gap:12px 16px;background:#F5F7F9;border:1px solid #E3E7EE;border-radius:10px;padding:12px 14px}
+.me-lp{margin-top:12px;background:#F5F7F9;border:1px solid #E3E7EE;border-radius:10px;padding:12px 14px;display:grid;grid-template-columns:minmax(0,1fr) 330px;gap:12px 16px}
+.me-g{display:grid;grid-template-columns:repeat(12,minmax(0,1fr));gap:10px 14px;align-items:end}.me-g>*{min-width:0}.me-g .c3{grid-column:span 3}.me-g .c4{grid-column:span 4}.me-g .c8{grid-column:span 8}.me-g .c6{grid-column:span 6}.me-g .c12{grid-column:span 12}
+.me-ax.off{opacity:.45}
+.me-ck{display:flex;align-items:center;gap:8px;font-size:13px;color:#0B1332;cursor:pointer;white-space:nowrap}.me-ck input{width:16px;height:16px;accent-color:#2E427B}
+.me-bt{display:grid;grid-template-columns:repeat(6,1fr);grid-auto-rows:40px;gap:8px;align-content:start}.me-bt button{height:40px;padding:0;border:1px solid #D6D9E0;border-radius:8px;background:#fff;font-size:18px;cursor:pointer;color:#2E427B}.me-bt button.p{background:#0B1332;color:#fff;border-color:#0B1332}.me-bt button:disabled{opacity:.45;cursor:default}
+
+.me-sens{display:flex;gap:16px;align-items:center}
+.me-tb .m{font-variant-numeric:tabular-nums}.me-tb tr.sel td{background:#E3EBFE}.me-v{color:#7B8190;font-style:italic}
+.me-er{display:none;font-size:12px;color:#B63132}.me-er.show{display:block}.me-tot{margin:6px 0 0;font-size:12.5px;color:#474C58}
+</style>
+<div class="bp-root" data-me>
+  <h1 style="position:absolute;width:1px;height:1px;overflow:hidden;clip-path:inset(50%);margin:0">Modèles d'écriture</h1>
+  <div class="no-print" data-me-actions>
+    <button type="button" data-me-ajouter>Ajouter</button><button type="button" data-me-modifier>Modifier</button><button type="button" data-me-supprimer>Supprimer</button><button type="button" data-me-enregistrer>Enregistrer</button><button type="button" data-me-annuler>Annuler</button><button type="button" data-me-imprimer>Imprimer</button>
+  </div>
+  <div class="bp-tabs" role="tablist"><button type="button" role="tab" class="on" data-me-tab="saisie">Saisie</button><button type="button" role="tab" data-me-tab="liste">Liste <span class="bp-n" data-me-compte></span></button></div>
+  <div class="bp-grid">
+    <section class="bp-pan" aria-label="Liste des modèles d'écriture" data-me-pan="liste" hidden>
+      <h2>Modèles d'écriture <small>Double-clic ou « Modifier » pour ouvrir la ligne en saisie</small></h2>
+      <div style="overflow:auto"><table class="bp-tb" style="min-width:1000px"><thead><tr><th>Code</th><th>Libellé</th><th>Journal</th><th>Lignes</th><th>Montant</th><th>Tiers</th><th>Analytique</th></tr></thead><tbody data-me-lignes></tbody></table></div>
+      <div class="bp-vide" data-me-vide hidden>Aucun modèle : utilisez « Ajouter ».</div>
+    </section>
+    <section class="bp-pan" aria-label="Saisie d'un modèle d'écriture" data-me-pan="saisie">
+      <form class="bp-form" data-me-form onsubmit="return false" novalidate>
+        <div class="me-hd">
+          <label class="bp-champ"><span>Code <b>*</b></span><input class="bp-in" data-f="code" maxlength="20" autocomplete="off"><span class="me-er" data-er="code"></span></label>
+          <label class="bp-champ"><span>Libellé <b>*</b></span><input class="bp-in" data-f="libelle" maxlength="100" autocomplete="off"><span class="me-er" data-er="libelle"></span></label>
+          <label class="bp-champ"><span>Journal</span><select class="bp-sel" data-f="journal"></select></label>
+        </div>
+        <div class="me-lp" data-me-lp>
+          <div class="me-g">
+            <label class="bp-champ c4"><span>Compte <b>*</b></span><select class="bp-sel" data-l="compte" data-combo data-combo-cols="Compte|Libellé"></select></label>
+            <label class="bp-champ c4"><span>Tiers</span><select class="bp-sel" data-l="tiers" data-combo data-combo-cols="Tiers|Nom"></select></label>
+            <div class="c4 me-sens" role="radiogroup" aria-label="Sens"><label class="me-ck"><input type="radio" name="me-sens" value="D" data-l="sens" checked> Débit</label><label class="me-ck"><input type="radio" name="me-sens" value="C" data-l="sens"> Crédit</label></div>
+            <div class="c12 me-g" data-me-axes style="padding:0"></div>
+            <label class="bp-champ c8"><span>Libellé de la ligne</span><input class="bp-in" data-l="libelle" maxlength="100" autocomplete="off" placeholder="Description de la ligne"></label>
+            <label class="bp-champ c4"><span data-me-mlbl>Pourcentage (%)</span><input class="bp-in" data-l="montant" type="number" min="0" step="0.01" style="text-align:right" placeholder="0"></label>
+            <label class="me-ck c4"><input type="checkbox" data-l="montantVar"> Montant variable</label>
+            <label class="me-ck c4"><input type="checkbox" data-l="tiersVar"> Tiers variable</label>
+            <label class="me-ck c4"><input type="checkbox" data-l="anaVar"> Analytique variable</label>
+            <span class="me-er c12" data-er="ligne"></span>
+          </div>
+          <div class="me-bt">
+            <button type="button" data-me-lx title="Annuler la saisie de la ligne" aria-label="Annuler la ligne">✕</button><button type="button" class="p" data-me-la title="Ajouter la ligne au modèle" aria-label="Ajouter la ligne">＋</button><button type="button" data-me-lm title="Modifier la ligne sélectionnée" aria-label="Modifier la ligne">✎</button>
+            <button type="button" data-me-lc title="Dupliquer la ligne sélectionnée" aria-label="Dupliquer la ligne">⧉</button><button type="button" data-me-ld title="Supprimer la ligne sélectionnée" aria-label="Supprimer la ligne">🗑</button><button type="button" class="p" data-me-ls title="Enregistrer le modèle" aria-label="Enregistrer le modèle">💾</button>
+          </div>
+        </div>
+        <div style="overflow:auto;margin-top:12px"><table class="bp-tb me-tb" data-no-tf data-no-pg style="min-width:1000px"><thead data-me-th></thead><tbody data-me-rows></tbody></table></div>
+        <p class="me-tot" data-me-tot></p>
+      </form>
+    </section>
+  </div>
+  <div class="bp-toast" role="status" hidden data-me-toast></div>
+</div>
+<script>
+(function () {
+  var root = document.querySelector('[data-me]'); if (!root) return;
+  function q(s) { return root.querySelector(s); } function qa(s) { return [].slice.call(root.querySelectorAll(s)); }
+  function esc(s) { return String(s == null ? '' : s).replace(/[&<>"]/g, function (c) { return { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c]; }); }
+  function toast(m) { var e = q('[data-me-toast]'); e.textContent = m; e.hidden = false; clearTimeout(toast.t); toast.t = setTimeout(function () { e.hidden = true; }, 2600); }
+  function nombre(n) { return Number(n).toLocaleString('fr-FR', { minimumFractionDigits: 2, maximumFractionDigits: 2 }); }
+  window.MODELES_ECRITURE = window.MODELES_ECRITURE || [
+    { code: 'FRAIS-BQ', libelle: 'Frais et commissions bancaires', journal: '01IDMGA', D: '627400', C: '512102', libD: 'Commission bancaire du mois', libC: 'Commission bancaire du mois' },
+    { code: 'APPRO-CAISSE', libelle: 'Approvisionnement de la caisse par la banque', journal: '01CAISSE', D: '531100', C: '512102', libD: 'Alimentation de la caisse', libC: 'Retrait bancaire pour alimentation de la caisse' },
+    { code: 'TEL-CAISSE', libelle: 'Redevances téléphoniques payées en caisse', journal: '01CAISSE', D: '620300', C: '531100', libD: 'Redevance téléphone mobile', libC: 'Paiement caisse redevance téléphone' },
+    { code: 'VENTE-DIV', libelle: 'Vente diverse encaissée en banque', journal: '01IDMGA', D: '512102', C: '708800', libD: 'Encaissement vente diverse', libC: 'Vente diverse' },
+    { code: 'REGL-FOURN', libelle: 'Règlement d’un fournisseur par la banque', journal: '01IDMGA', D: '401100', C: '512102', libD: 'Règlement fournisseur', libC: 'Règlement fournisseur', tiers: 'D' }
+  ];
+  var M = window.MODELES_ECRITURE, sel = -1, mode = 'consultation', draft = null, ligSel = -1;
+  // modèles historiques (deux comptes) → lignes
+  M.forEach(function (m) {
+    if (m.lignes) return;
+    m.lignes = [{ sens: 'D', compte: m.D, libelle: m.libD || m.libelle, montantVar: m.montantVar !== false, montant: m.montantFixe || '', pct: m.montantVar !== false ? 100 : '', tiersVar: m.tiers === 'D' && m.tiersVar !== false, tiers: m.tiers === 'D' && m.tiersVar === false ? (m.tiersFixe || '') : '', anaVar: true, ana: {} },
+      { sens: 'C', compte: m.C, libelle: m.libC || m.libelle, montantVar: m.montantVar !== false, montant: m.montantFixe || '', pct: m.montantVar !== false ? 100 : '', tiersVar: m.tiers === 'C' && m.tiersVar !== false, tiers: m.tiers === 'C' && m.tiersVar === false ? (m.tiersFixe || '') : '', anaVar: true, ana: {} }];
+  });
+  function f(k) { return q('[data-f="' + k + '"]'); } function L(k) { return q('[data-l="' + k + '"]'); }
+  function err(k, m) { var e = q('[data-er="' + k + '"]'); if (e) { e.textContent = m || ''; e.classList.toggle('show', !!m); } }
+
+  // ---------- référentiels ----------
+  function comptes() {
+    var l = ((window.ECRITURES_REF && window.ECRITURES_REF.comptes) || []).slice().sort(function (a, b) { return a.code < b.code ? -1 : 1; }), pere = {};
+    (window.PLAN_COMPTABLE || []).forEach(function (x) { if (x.parent) pere[x.parent] = 1; });
+    return l.filter(function (c, i) { var n = l[i + 1]; return !pere[c.code] && !(n && n.code !== c.code && String(n.code).indexOf(String(c.code)) === 0); });   // dernier niveau
+  }
+  function cptObj(c) { return ((window.ECRITURES_REF && window.ECRITURES_REF.comptes) || []).filter(function (x) { return x.code === c; })[0]; }
+  function rowCpt(c) { return (window.PLAN_COMPTABLE || []).filter(function (x) { return x.code === c; })[0]; }
+  function racineDe(c, vu) { vu = vu || {}; var r = rowCpt(c); if (!r || vu[c]) return 'C' + String(c).charAt(0); vu[c] = 1; return r.parent ? racineDe(r.parent, vu) : (r.racine || 'C' + String(c).charAt(0)); }
+  function axesOuverts(c) {
+    if (!c) return []; var r = rowCpt(c), ro = (window.RACINES || []).filter(function (x) { return x.code === racineDe(c); })[0], act = window.PLANS_ACTIFS ? window.PLANS_ACTIFS() : [];
+    if (!ro || (r && (r.comp || []).indexOf('sans') >= 0)) return [];
+    var o = act.filter(function (p) { return ro.plans && ro.plans[p]; }); if (r && r.ana && r.ana.length) o = o.filter(function (p) { return r.ana.indexOf(p) >= 0; }); return o;
+  }
+  function plansAna() {
+    var act = window.PLANS_ACTIFS ? window.PLANS_ACTIFS() : [], cfg = window.PLANS_CFG || [], out = [];
+    for (var k = 1; k <= 10; k++) { var code = 'PLAN' + k; if (act.indexOf(code) < 0) continue; var c = cfg.filter(function (p) { return p.code === code; })[0] || {}, Lg = window.PLANS_LIGNES && window.PLANS_LIGNES[code], rows = Lg && Lg.rows ? Lg.rows.filter(function (x) { return x.actif !== false; }) : [];
+      out.push({ key: 'p' + k, code: code, abrev: c.abrev || ('P' + k), lib: (c.abrev ? c.abrev + ' — ' : '') + (c.libelle || 'Plan ' + k), val: rows.slice(0, 500).map(function (x) { return [String(x.code), x.code + ' — ' + (x.libelle || '')]; }) }); }
+    return out;
+  }
+  function plansEtRegr() {   // plans analytiques activés + élément du plan de regroupement (un seul plan, avec son niveau)
+    var P = plansAna(), g = window.REGROUPEMENT && window.REGROUPEMENT();
+    if (g && g.elements) P.push({ key: 'regr', code: g.plan, abrev: 'Regroupement', val: g.elements.map(function (e) { return [String(e.code), e.code + ' — ' + (e.libelle || '')]; }) });
+    return P;
+  }
+  function libCpt(c) { var x = cptObj(c); return x ? (x.label || '') : ''; }
+
+  // ---------- panneau de ligne ----------
+  function opts(list, cur, vide) { return '<option value="">' + vide + '</option>' + list.map(function (v) { return '<option value="' + esc(v[0]) + '"' + (v[0] === cur ? ' selected' : '') + '>' + esc(v[1]) + '</option>'; }).join(''); }
+  function tiersListe(c) { return (window.TIERS_PLAN || []).filter(function (t) { return t.actif !== false && t.compte === c; }).slice(0, 500).map(function (t) { return [t.code, t.code + ' — ' + t.nom]; }); }
+  function ligneForm(l) {
+    l = l || { sens: 'D', compte: '', libelle: '', montantVar: true, montant: '', tiersVar: false, tiers: '', anaVar: true, ana: {} };
+    L('compte').innerHTML = opts(comptes().map(function (c) { return [c.code, c.code + ' — ' + c.label]; }), l.compte, '— Choisir —'); L('compte').value = l.compte;
+    qa('[data-l=sens]').forEach(function (r) { r.checked = r.value === l.sens; });
+    L('libelle').value = l.libelle || ''; L('montant').value = l.montantVar !== false ? (l.pct === undefined ? '' : l.pct) : (l.montant === undefined ? '' : l.montant); L('montantVar').checked = l.montantVar !== false; L('tiersVar').checked = !!l.tiersVar; L('anaVar').checked = l.anaVar !== false;
+    majLigne(l);
+  }
+  function majLigne(l) {
+    var ed = mode !== 'consultation', c = L('compte').value, co = cptObj(c), col = !!(co && co.collectif), tv = L('tiersVar').checked, av = L('anaVar').checked, ouv = axesOuverts(c), P = plansEtRegr(), cur = l ? (l.tiers || '') : L('tiers').value;
+    var cs = L('tiers'); cs.innerHTML = opts(col ? tiersListe(c) : [], cur, col ? '— Choisir —' : 'Non applicable'); cs.value = col ? cur : '';
+    cs.disabled = !ed || !col || tv; L('tiersVar').disabled = !ed || !col; if (!col) L('tiersVar').checked = false;
+    var A = q('[data-me-axes]'), vals = (l && l.ana) || {}; if (!l) qa('[data-ap]').forEach(function (e) { if (e.value) vals[e.getAttribute('data-ap')] = e.value; });
+    A.innerHTML = P.map(function (p) { var ok = ouv.indexOf(p.code) >= 0; return '<label class="bp-champ c3 me-ax' + (ok ? '' : ' off') + '" title="' + (ok ? '' : (c ? 'Imputation analytique non requise pour ce compte' : 'Choisissez d’abord le compte')) + '"><span>' + esc(p.abrev) + '</span><select class="bp-sel" data-ap="' + p.key + '"' + (ed && ok && !av ? '' : ' disabled') + ' data-combo data-combo-cols="Code|Libellé">' + opts(p.val, ok ? vals[p.key] : '', ok ? 'Sélectionner une affectation' : '—') + '</select></label>'; }).join('');
+    L('anaVar').disabled = !ed || !ouv.length; if (!ouv.length) L('anaVar').checked = true;
+    var mvv = L('montantVar').checked; q('[data-me-mlbl]').textContent = mvv ? 'Pourcentage (%)' : 'Montant'; L('montant').placeholder = mvv ? '0' : '0,00'; L('montant').max = mvv ? 100 : ''; L('montant').disabled = !ed;
+    qa('[data-l=compte],[data-l=sens],[data-l=libelle],[data-l=montantVar]').forEach(function (e) { e.disabled = !ed; });
+    [['[data-me-lx]', ed], ['[data-me-la]', ed], ['[data-me-lm]', ed && ligSel >= 0], ['[data-me-lc]', ed && ligSel >= 0], ['[data-me-ld]', ed && ligSel >= 0], ['[data-me-ls]', ed]].forEach(function (b) { q(b[0]).disabled = !b[1]; });
+  }
+  function lireLigne() {
+    var l = { sens: (qa('[data-l=sens]').filter(function (r) { return r.checked; })[0] || {}).value || 'D', compte: L('compte').value, libelle: L('libelle').value.trim(), montantVar: L('montantVar').checked, montant: L('montantVar').checked ? '' : parseFloat(L('montant').value), pct: L('montantVar').checked ? parseFloat(L('montant').value) : '', tiersVar: L('tiersVar').checked, tiers: L('tiersVar').checked ? '' : L('tiers').value, anaVar: L('anaVar').checked, ana: {} };
+    if (!l.anaVar) qa('[data-ap]').forEach(function (e) { if (e.value) l.ana[e.getAttribute('data-ap')] = e.value; });
+    return l;
+  }
+  function validerLigne(l) {
+    if (!l.compte) return 'Choisissez le compte.';
+    if (l.montantVar && !(l.pct > 0 && l.pct <= 100)) return 'Montant variable : saisissez le pourcentage de la ligne (entre 0 et 100).';
+    if (!l.montantVar && !(l.montant > 0)) return 'Saisissez le montant fixe, ou cochez « Montant variable ».';
+    return '';
+  }
+
+  // ---------- tableau des lignes ----------
+  function tiersTxt(l) { return l.tiersVar ? '<span class="me-v">Variable</span>' : l.tiers ? esc(l.tiers) : '—'; }
+  function anaTxt(l, k) { if (!axesOuverts(l.compte).length) return '—'; if (l.anaVar) return '<span class="me-v">Variable</span>'; return esc((l.ana || {})[k] || '—'); }
+  function lignes() {
+    var P = plansEtRegr(), D = draft.lignes, td = 0, tc = 0, pd = 0, pc = 0, nv = 0, nf = 0;
+    q('[data-me-th]').innerHTML = '<tr><th>Compte</th><th>Tiers</th>' + P.map(function (p) { return '<th>' + esc(p.abrev) + '</th>'; }).join('') + '<th>Libellé</th><th style="text-align:right">Débit</th><th style="text-align:right">Crédit</th></tr>';
+    q('[data-me-rows]').innerHTML = D.length ? D.map(function (l, i) {
+      var m = l.montantVar ? (l.pct || 0) + ' %' : nombre(l.montant); if (l.montantVar) { nv++; if (l.sens === 'D') pd += l.pct || 0; else pc += l.pct || 0; } else { nf++; if (l.sens === 'D') td += l.montant; else tc += l.montant; }
+      return '<tr data-i="' + i + '"' + (i === ligSel ? ' class="sel"' : '') + '><td class="m">' + esc(l.compte) + (libCpt(l.compte) ? ' <span class="me-v" style="font-style:normal">' + esc(libCpt(l.compte)) + '</span>' : '') + '</td><td>' + tiersTxt(l) + '</td>' + P.map(function (p) { return '<td>' + anaTxt(l, p.key) + '</td>'; }).join('') + '<td>' + esc(l.libelle) + '</td><td class="m" style="text-align:right">' + (l.sens === 'D' ? m : '—') + '</td><td class="m" style="text-align:right">' + (l.sens === 'C' ? m : '—') + '</td></tr>';
+    }).join('') : '<tr><td colspan="' + (5 + P.length) + '" style="color:#7B8190">Aucune ligne : renseignez le panneau ci-dessus puis « ＋ ».</td></tr>';
+    var tx = []; if (nv) { var okp = Math.abs(pd - 100) < 0.005 && Math.abs(pc - 100) < 0.005; tx.push('Total débit <b>' + pd + ' %</b> — Total crédit <b>' + pc + ' %</b> (montant variable : chaque côté doit totaliser 100 %)' + (okp ? '' : ' — <span style="color:#B63132">à ajuster</span>')); }
+    if (nf) tx.push('Montants fixes : total débit <b>' + nombre(td) + '</b> — total crédit <b>' + nombre(tc) + '</b>' + (Math.abs(td - tc) > 0.005 ? ' — <span style="color:#B63132">Écart ' + nombre(Math.abs(td - tc)) + '</span>' : ''));
+    q('[data-me-tot]').innerHTML = tx.join('<br>');
+  }
+
+  // ---------- liste des modèles ----------
+  function resume(m) {
+    var mv = m.lignes.map(function (l) { return l.montantVar; }), tx = m.lignes.filter(function (l) { return l.tiersVar || l.tiers; }), an = m.lignes.filter(function (l) { return axesOuverts(l.compte).length && (l.anaVar || Object.keys(l.ana || {}).length); });
+    return [mv.every(Boolean) ? 'Variable' : mv.some(Boolean) ? 'Mixte' : 'Fixe', tx.length ? (tx.some(function (l) { return l.tiersVar; }) ? 'Variable' : 'Fixe') : '—', an.length ? (an.some(function (l) { return l.anaVar; }) ? 'Variable' : 'Fixe') : '—'];
+  }
+  function liste() {
+    q('[data-me-compte]').textContent = M.length || ''; q('[data-me-vide]').hidden = M.length > 0;
+    q('[data-me-lignes]').innerHTML = M.map(function (m, i) { var r = resume(m); return '<tr data-i="' + i + '"' + (i === sel ? ' class="sel"' : '') + '><td>' + esc(m.code) + '</td><td>' + esc(m.libelle) + '</td><td>' + esc(m.journal) + '</td><td>' + m.lignes.length + '</td><td>' + r[0] + '</td><td>' + r[1] + '</td><td>' + r[2] + '</td></tr>'; }).join('');
+  }
+
+  // ---------- formulaire ----------
+  function clone(m) { return JSON.parse(JSON.stringify(m)); }
+  function form(m) {
+    draft = m ? clone(m) : { code: '', libelle: '', journal: '', lignes: [] }; ligSel = -1;
+    var J = (window.ECRITURES_REF && window.ECRITURES_REF.journaux) || [];
+    f('journal').innerHTML = '<option value="">— Aucun —</option>' + J.map(function (j) { return '<option value="' + esc(j.code) + '">' + esc(j.code + (j.label ? ' — ' + j.label : '')) + '</option>'; }).join('') + (draft.journal && !J.some(function (j) { return j.code === draft.journal; }) ? '<option value="' + esc(draft.journal) + '">' + esc(draft.journal) + '</option>' : '');
+    f('code').value = draft.code; f('libelle').value = draft.libelle; f('journal').value = draft.journal || '';
+    ['code', 'libelle', 'ligne'].forEach(function (k) { err(k); }); ligneForm(null); lignes(); etat();
+  }
+  function etat() {
+    var ed = mode !== 'consultation', a = q('[data-me-actions]');
+    a.querySelector('[data-me-ajouter]').disabled = ed; a.querySelector('[data-me-modifier]').disabled = ed || sel < 0; a.querySelector('[data-me-supprimer]').disabled = ed || sel < 0;
+    a.querySelector('[data-me-enregistrer]').disabled = !ed; a.querySelector('[data-me-annuler]').disabled = !ed; a.querySelector('[data-me-imprimer]').disabled = !M.length;
+    f('code').disabled = mode !== 'creation'; f('libelle').disabled = !ed; f('journal').disabled = !ed; majLigne(null);
+  }
+  function onglet(n) { qa('[data-me-pan]').forEach(function (p) { p.hidden = p.getAttribute('data-me-pan') !== n; }); qa('[data-me-tab]').forEach(function (b) { var on = b.getAttribute('data-me-tab') === n; b.classList.toggle('on', on); b.setAttribute('aria-selected', on); }); }
+  function choisir(i) { if (mode !== 'consultation') return; sel = i; liste(); form(M[i]); }
+  qa('[data-me-tab]').forEach(function (b) { b.addEventListener('click', function () { onglet(b.getAttribute('data-me-tab')); }); });
+  q('[data-me-lignes]').addEventListener('click', function (e) { var tr = e.target.closest('tr[data-i]'); if (tr) choisir(+tr.getAttribute('data-i')); });
+  q('[data-me-lignes]').addEventListener('dblclick', function (e) { var tr = e.target.closest('tr[data-i]'); if (tr) { choisir(+tr.getAttribute('data-i')); onglet('saisie'); } });
+  function lireTemp(reset) { var l = lireLigne(); l.ana = {}; qa('[data-ap]').forEach(function (e) { if (e.value) l.ana[e.getAttribute('data-ap')] = e.value; }); l.tiers = L('tiers').value; if (reset) { l.tiers = ''; l.ana = {}; l.anaVar = true; } return l; }
+  q('[data-me-lp]').addEventListener('change', function (e) {
+    var k = e.target.getAttribute('data-l'); if (k === 'compte') { L('tiersVar').checked = false; L('anaVar').checked = true; majLigne(lireTemp(true)); } else if (k === 'montantVar') { L('montant').value = ''; majLigne(lireTemp(false)); } else if (k === 'tiersVar' || k === 'anaVar') majLigne(lireTemp(false));
+  });
+  q('[data-me-rows]').addEventListener('click', function (e) { var tr = e.target.closest('tr[data-i]'); if (!tr || mode === 'consultation') return; ligSel = +tr.getAttribute('data-i'); ligneForm(draft.lignes[ligSel]); lignes(); });
+  q('[data-me-la]').addEventListener('click', function () {
+    var l = lireLigne(), m = validerLigne(l); err('ligne', m); if (m) return;
+    draft.lignes.push(l); ligSel = -1; ligneForm(null); lignes();
+  });
+  q('[data-me-lm]').addEventListener('click', function () {
+    if (ligSel < 0) return; var l = lireLigne(), m = validerLigne(l); err('ligne', m); if (m) return;
+    draft.lignes[ligSel] = l; ligSel = -1; ligneForm(null); lignes(); toast('Ligne modifiée.');
+  });
+  q('[data-me-lc]').addEventListener('click', function () { if (ligSel < 0) return; draft.lignes.splice(ligSel + 1, 0, clone(draft.lignes[ligSel])); ligSel = -1; ligneForm(null); lignes(); });
+  q('[data-me-ls]').addEventListener('click', function () { if (mode !== 'consultation') enregistrer(); });
+  q('[data-me-lx]').addEventListener('click', function () { ligSel = -1; ligneForm(null); err('ligne', ''); lignes(); });
+  q('[data-me-ld]').addEventListener('click', function () { if (ligSel < 0) return; draft.lignes.splice(ligSel, 1); ligSel = -1; ligneForm(null); lignes(); });
+
+  function enregistrer() {
+    var c = f('code').value.trim().toUpperCase(), l = f('libelle').value.trim(), ok = true, cur = mode === 'edition' ? sel : -1;
+    ['code', 'libelle', 'ligne'].forEach(function (k) { err(k); });
+    if (!c) { err('code', 'Le code est obligatoire.'); ok = false; } else if (M.some(function (x, i) { return x.code === c && i !== cur; })) { err('code', 'Ce code existe déjà.'); ok = false; }
+    if (!l) { err('libelle', 'Le libellé est obligatoire.'); ok = false; }
+    var D = draft.lignes; if (D.length < 2 || !D.some(function (x) { return x.sens === 'D'; }) || !D.some(function (x) { return x.sens === 'C'; })) { err('ligne', 'Le modèle doit comporter au moins une ligne au débit et une ligne au crédit.'); ok = false; }
+    else {
+      var pd = 0, pc = 0, td = 0, tc = 0, nv = 0, nf = 0; D.forEach(function (x) { if (x.montantVar) { nv++; if (x.sens === 'D') pd += x.pct || 0; else pc += x.pct || 0; } else { nf++; if (x.sens === 'D') td += x.montant; else tc += x.montant; } });
+      if (nv && (Math.abs(pd - 100) > 0.005 || Math.abs(pc - 100) > 0.005)) { err('ligne', 'Montant variable : le total des pourcentages doit être égal à 100 % au débit et à 100 % au crédit (actuellement ' + pd + ' % / ' + pc + ' %).'); ok = false; }
+      else if (nf && Math.abs(td - tc) > 0.005) { err('ligne', 'Les montants fixes ne sont pas équilibrés (débit ≠ crédit).'); ok = false; }
+    }
+    if (!ok) return;
+    var d1 = D.filter(function (x) { return x.sens === 'D'; })[0], c1 = D.filter(function (x) { return x.sens === 'C'; })[0], tl = D.filter(function (x) { return x.tiersVar || x.tiers; })[0];
+    var rec = { code: c, libelle: l, journal: f('journal').value, lignes: clone(D), D: d1.compte, C: c1.compte, libD: d1.libelle || l, libC: c1.libelle || l, montantVar: d1.montantVar };
+    if (d1.montantVar) rec.pct = d1.pct;
+    if (!d1.montantVar) rec.montantFixe = d1.montant;
+    if (tl) { rec.tiers = tl.sens; rec.tiersVar = !!tl.tiersVar; if (!tl.tiersVar) rec.tiersFixe = tl.tiers; }
+    rec.anaOn = D.some(function (x) { return axesOuverts(x.compte).length; });
+    if (mode === 'creation') { M.push(rec); sel = M.length - 1; } else M[sel] = rec;
+    mode = 'consultation'; liste(); form(M[sel]); onglet('liste'); toast(cur >= 0 ? 'Modèle modifié.' : 'Modèle enregistré.');
+  }
+  root.addEventListener('click', function (e) {
+    var b = e.target.closest('[data-me-actions] button'); if (!b || b.disabled) return;
+    if (b.hasAttribute('data-me-ajouter')) { onglet('saisie'); mode = 'creation'; sel = -1; liste(); form(null); f('code').focus(); return; }
+    if (b.hasAttribute('data-me-modifier')) { onglet('saisie'); mode = 'edition'; etat(); f('libelle').focus(); return; }
+    if (b.hasAttribute('data-me-supprimer')) { if (!window.confirm('Supprimer le modèle « ' + M[sel].code + ' » ?')) return; M.splice(sel, 1); sel = -1; liste(); form(null); toast('Modèle supprimé.'); return; }
+    if (b.hasAttribute('data-me-enregistrer')) { enregistrer(); return; }
+    if (b.hasAttribute('data-me-annuler')) { mode = 'consultation'; form(sel >= 0 ? M[sel] : null); onglet('liste'); return; }
+    if (b.hasAttribute('data-me-imprimer')) window.print();
+  });
+  ['plans-changed', 'plans-actifs'].forEach(function (ev) { window.addEventListener(ev, function () { if (draft) { ligneForm(null); lignes(); } }); });
+  window.addEventListener('load', function () { form(sel >= 0 ? M[sel] : null); });
+  liste(); form(null); onglet('liste');
+})();
+</script>

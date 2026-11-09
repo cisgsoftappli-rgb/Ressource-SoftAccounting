@@ -62,7 +62,7 @@
       <thead><tr><th>Date/heure</th><th>Utilisateur</th><th>Module</th><th>Entité / référence</th><th>Action</th><th>Type</th></tr></thead><tbody data-jt-rows></tbody></table>
     <button type="button" class="jt-plus" data-jt-plus hidden>Afficher plus</button>
   </section>
-  <div class="jt-act"><button type="button" data-jt-reset>Réinitialiser</button><button type="button" data-jt-dico><i class="ti ti-book-2"></i> Dictionnaire</button><button type="button" data-jt-x="pdf"><i class="ti ti-file-type-pdf"></i> PDF</button><button type="button" data-jt-x="pdfd"><i class="ti ti-file-type-pdf"></i> PDF avec détails</button><button type="button" data-jt-x="xlsx"><i class="ti ti-file-spreadsheet"></i> Excel (XLSX)</button><button type="button" data-jt-x="xlsxd"><i class="ti ti-file-spreadsheet"></i> Excel (XLSX) avec détails</button></div>
+  <div class="jt-act"><button type="button" data-jt-reset>Réinitialiser</button><button type="button" data-jt-x="pdf"><i class="ti ti-file-type-pdf"></i> PDF</button><button type="button" data-jt-x="pdfd"><i class="ti ti-file-type-pdf"></i> PDF avec détails</button><button type="button" data-jt-x="xlsx"><i class="ti ti-file-spreadsheet"></i> Excel (XLSX)</button><button type="button" data-jt-x="xlsxd"><i class="ti ti-file-spreadsheet"></i> Excel (XLSX) avec détails</button></div>
   <div class="jt-ov" data-jt-ov hidden><div class="jt-md" role="dialog" aria-modal="true" data-jt-md></div></div>
 </div>
 <script>
@@ -233,7 +233,7 @@
       '<div class="jt-meta"><div><small>Date / heure</small>' + esc(fmtDate(l.dt.slice(0, 16))) + '</div><div><small>Utilisateur</small>' + esc(l.user) + '</div><div><small>Module</small>' + esc(l.module) + '</div>' +
       '<div><small>Entité</small>' + esc(technique ? l.entite : lib('entites', l.entite)) + '</div><div><small>Référence</small>' + esc(l.ref) + '</div><div><small>Type</small>' + esc(technique ? l.type : lib('types', l.type)) + '</div></div>' +
       '<div class="jt-mb"><table class="jt-d"><colgroup><col style="width:34%"><col style="width:33%"><col style="width:33%"></colgroup><thead><tr><th>Champ</th><th>Ancienne valeur</th><th>Nouvelle valeur</th></tr></thead><tbody>' + lignes + '</tbody></table></div>' +
-      '<div class="jt-mf"><label style="display:inline-flex;align-items:center;gap:8px;cursor:pointer"><input type="checkbox" data-jt-tech' + (technique ? ' checked' : '') + '> Afficher les noms techniques</label><span style="flex:1"></span><button type="button" class="jt-b" data-jt-dico>Dictionnaire</button><button type="button" class="jt-b ok" data-jt-fermer>Fermer</button></div>';
+      '<div class="jt-mf"><label style="display:inline-flex;align-items:center;gap:8px;cursor:pointer"><input type="checkbox" data-jt-tech' + (technique ? ' checked' : '') + '> Afficher les noms techniques</label><span style="flex:1"></span><button type="button" class="jt-b ok" data-jt-fermer>Fermer</button></div>';
     q('[data-jt-ov]').hidden = false; var x = q('[data-jt-fermer]'); if (x) x.focus();
   }
   function fermer() { q('[data-jt-ov]').hidden = true; ouvert = null; }

@@ -1,23 +1,35 @@
 <!--
   Écran « Type de taxe » (Paramètres comptables › Type de taxe) — onglets Saisie / Liste.
-  Une taxe : Code, Libellé, Taux (%), Forfait (montant), Compte (du plan comptable), puis trois choix uniques :
-  Sens (achat/déductible +, vente/collectée −, non applicable), Type de déclaration (base facture, base paiement/encaissement)
-  et Type (TVA, TVA retenue à la source, IS, retenues ou précomptes, autres taxes, autres). Données en mémoire.
+  Paramétrage simple de l'éclatement automatique d'une ligne d'écriture (spécification du 07/11/2026) : Code, Libellé, Taux (%) ou Montant fixe, Mode (En plus / Retenue), Compte de taxe, Active.
+   - Effet « Ajoute la taxe » (ex. TVA) : la ligne choisie est conservée ; deux lignes sont créées : une ligne sur le même compte (et le même tiers) de même sens pour le montant de la taxe,
+     et une ligne sur le compte de taxe de sens opposé.       401 (C) 100  +  401 (C) 20  +  42 (D) 20
+   - Effet « Retient la taxe » (ex. impôt retenu) : le montant de la ligne choisie est diminué de la taxe, et une ligne de même sens est créée sur le compte de taxe.   401 (C) 100  →  401 (C) 92  +  44 (C) 8
+  L'éclatement est exécuté par la saisie d'écritures (champ « Type de taxe » du bloc de ligne). Données en mémoire.
+  Expose window.TAXES_REF : code, libellé, taux, forfait, ctaxe (compte de taxe), effet, actif.
   Distinct de l'écran « Type de taxe » des états fiscaux (déclaration fiscale › paramétrages).
-  Les comptes proposés viennent de la saisie du plan comptable (window.PLAN_COMPTABLE).
   S'appuie sur les styles bp-* de l'écran « Paramétrage du bilan » (présents dans la page). Ne pas nommer de fonction « $$ » (build.cjs).
 -->
 <style>
-.tx-grp{margin-top:18px}
-.tx-grp h3{margin:0 0 6px;padding-bottom:4px;border-bottom:1px solid #2E427B;font-size:14px;font-weight:600;color:#2E427B}
-.tx-opts{display:flex;flex-direction:column;background:#F5F7F9;border-radius:6px;padding:4px 8px}
-.tx-opts label{display:flex;align-items:center;gap:10px;padding:5px 2px;font-size:13px;color:#0B1332;cursor:pointer}
-.tx-opts input{width:16px;height:16px;accent-color:#2E427B}
+.tx-opts{display:flex;flex-direction:column;gap:6px;background:#F5F7F9;border-radius:6px;padding:8px 10px}
+.tx-opts label{display:flex;align-items:flex-start;gap:10px;font-size:13px;color:#0B1332;cursor:pointer}
+.tx-opts input{width:16px;height:16px;margin-top:2px;accent-color:#2E427B}
+.tx-opts small{display:block;color:#5B606D;font-size:12px}
 .tx-opts.off label{cursor:default;opacity:.85}
+[data-calc-champ][hidden]{display:none!important}
 .tx-pc{display:flex;align-items:center;gap:8px}.tx-pc b{font-size:14px;color:#2E427B}
 .tx-er{display:none;font-size:12px;color:#B63132}.tx-er.show{display:block}
 .bp-in.err,.bp-sel.err{border-color:#B63132}
-.tx-cols{display:grid;grid-template-columns:repeat(auto-fit,minmax(260px,1fr));gap:0 24px}
+.tx-ex{margin-top:18px;border:1px solid #E3E6EE;border-radius:8px;background:#fff}
+.tx-ex h3{margin:0;padding:10px 14px;border-bottom:1px solid #E3E6EE;font-size:14px;font-weight:600;color:#2E427B}
+.tx-ex .tx-b{padding:12px 14px}
+.tx-ex table{width:100%;border-collapse:collapse;font-size:13px;margin-top:10px}
+.tx-ex th{background:#F5F7F9;text-align:left;padding:6px 8px;font-size:11px;text-transform:uppercase;color:#5B606D;border-bottom:1px solid #E3E6EE}
+.tx-ex td{padding:6px 8px;border-bottom:1px solid #F1F2F5}.tx-ex td.r{text-align:right}
+.tx-ex tr.nv td{background:#EAF4EA;font-weight:600}
+.tx-ex .tx-l{display:flex;flex-wrap:wrap;gap:12px 18px;align-items:end}
+.tx-ex .tx-l label{display:flex;flex-direction:column;gap:4px;font-size:12px;color:#5B606D}
+.tx-ex .tx-l input,.tx-ex .tx-l select{min-height:34px}
+.tx-hint{margin:8px 0 0;font-size:12px;color:#5B606D}
 </style>
 
 <div class="bp-root" data-tx>
@@ -43,16 +55,15 @@
       <h2>Type de taxe <small>Double-clic ou « Modifier » pour ouvrir la ligne en saisie</small></h2>
       <div style="overflow:auto;max-height:560px">
         <table class="bp-tb" style="min-width:900px"><thead>
-          <tr><th>Code</th><th>Libellé</th><th class="c">Taux (%)</th><th class="c">Forfait</th><th>Compte</th><th>Sens</th><th>Type de déclaration</th><th>Type</th></tr>
+          <tr><th>Code</th><th>Libellé</th><th class="c">Taux (%)</th><th class="c">Montant fixe</th><th>Mode</th><th>Compte de taxe</th><th>Active</th></tr>
           <tr class="flt">
             <th><input class="bp-in" data-fc="0" aria-label="Filtrer Code"></th>
             <th><input class="bp-in" data-fc="1" aria-label="Filtrer Libellé"></th>
             <th><input class="bp-in" data-fc="2" aria-label="Filtrer Taux"></th>
-            <th><input class="bp-in" data-fc="3" aria-label="Filtrer Forfait"></th>
-            <th><input class="bp-in" data-fc="4" aria-label="Filtrer Compte"></th>
-            <th><input class="bp-in" data-fc="5" aria-label="Filtrer Sens"></th>
-            <th><input class="bp-in" data-fc="6" aria-label="Filtrer Type de déclaration"></th>
-            <th><input class="bp-in" data-fc="7" aria-label="Filtrer Type"></th>
+            <th><input class="bp-in" data-fc="3" aria-label="Filtrer Montant fixe"></th>
+            <th><input class="bp-in" data-fc="4" aria-label="Filtrer Mode"></th>
+            <th><input class="bp-in" data-fc="5" aria-label="Filtrer Compte de taxe"></th>
+            <th><input class="bp-in" data-fc="6" aria-label="Filtrer Active"></th>
           </tr>
           </thead><tbody data-tx-lignes></tbody></table>
       </div>
@@ -64,14 +75,30 @@
         <div class="bp-l3">
           <label class="bp-champ"><span>Code <b>*</b></span><input class="bp-in" data-f="code" maxlength="10" autocomplete="off"><span class="tx-er" data-er="code"></span></label>
           <label class="bp-champ bp-span2"><span>Libellé <b>*</b></span><input class="bp-in" data-f="libelle" maxlength="80" autocomplete="off"><span class="tx-er" data-er="libelle"></span></label>
-          <label class="bp-champ"><span>Taux (%)</span><span class="tx-pc"><input class="bp-in" data-f="taux" type="number" min="0" max="100" step="0.01"><b>%</b></span><span class="tx-er" data-er="taux"></span></label>
-          <label class="bp-champ"><span>Forfait (montant)</span><input class="bp-in" data-f="forfait" type="number" min="0" step="0.01"><span class="tx-er" data-er="forfait"></span></label>
-          <label class="bp-champ"><span>Compte</span><select class="bp-sel" data-f="compte"></select></label>
+          <div class="bp-champ"><span>Calcul de la taxe <b>*</b></span>
+            <div class="tx-calc" data-tx-calc style="display:flex;gap:18px;align-items:center;min-height:36px"><label style="display:flex;align-items:center;gap:6px;font-size:13px;cursor:pointer"><input type="radio" name="tx-calc" value="taux" style="width:16px;height:16px;accent-color:#2E427B"> Taux (%)</label><label style="display:flex;align-items:center;gap:6px;font-size:13px;cursor:pointer"><input type="radio" name="tx-calc" value="fixe" style="width:16px;height:16px;accent-color:#2E427B"> Montant fixe</label></div></div>
+          <label class="bp-champ" data-calc-champ="taux"><span>Taux (%)</span><span class="tx-pc"><input class="bp-in" data-f="taux" type="number" min="0" max="100" step="0.01"><b>%</b></span><span class="tx-er" data-er="taux"></span></label>
+          <label class="bp-champ" data-calc-champ="fixe" hidden><span>Montant fixe</span><input class="bp-in" data-f="forfait" type="number" min="0" step="0.01"><span class="tx-er" data-er="forfait"></span></label>
+          <label class="bp-champ bp-span2"><span>Compte de taxe <b>*</b></span><select class="bp-sel" data-f="ctaxe"></select><span class="tx-er" data-er="ctaxe"></span></label>
         </div>
-        <div class="tx-cols">
-          <div class="tx-grp"><h3>Sens</h3><div class="tx-opts" data-tx-grp="sens"></div></div>
-          <div class="tx-grp"><h3>Type de déclaration</h3><div class="tx-opts" data-tx-grp="decl"></div></div>
-          <div class="tx-grp"><h3>Type</h3><div class="tx-opts" data-tx-grp="type"></div></div>
+        <div class="bp-champ" style="margin-top:14px"><span>Mode <b>*</b></span>
+          <div class="tx-opts" data-tx-effet>
+            <label><input type="radio" name="tx-effet" value="En plus"><span><b>En plus</b> (ex. TVA)</span></label>
+            <label><input type="radio" name="tx-effet" value="Retenue"><span><b>Retenue</b> (ex. impôt retenu à la source)</span></label>
+          </div>
+          <span class="tx-er" data-er="effet"></span>
+        </div>
+        <label class="tx-chk" style="display:flex;align-items:center;gap:8px;margin-top:12px;font-size:13px"><input type="checkbox" data-f="actif" style="width:16px;height:16px;accent-color:#2E427B"> Active</label>
+
+        <div class="tx-ex">
+          <h3>Exemple d'éclatement</h3>
+          <div class="tx-b">
+            <div class="tx-l">
+              <label>Montant de la ligne choisie<input class="bp-in" data-ex="mt" type="number" step="1" value="100" style="width:140px"></label>
+              <label>Sens de la ligne choisie<select class="bp-sel" data-ex="sens" style="width:140px"><option value="C">Crédit (ex. 401)</option><option value="D">Débit (ex. 411)</option></select></label>
+            </div>
+            <div data-ex-res></div>
+          </div>
         </div>
       </form>
     </section>
@@ -83,26 +110,40 @@
 (function () {
   var root = document.querySelector('[data-tx]'); if (!root) return;
   function q(s) { return root.querySelector(s); } function qa(s) { return [].slice.call(root.querySelectorAll(s)); }
-  var OPT = {
-    sens: ['Sur achat/déductible (+)', 'Sur vente/collectée (-)', 'Non applicable'],
-    decl: ['Base facture', 'Base paiement/encaissement'],
-    type: ['TVA', 'TVA Retenue à la source', 'IS', 'Retenues ou Précomptes', 'Autres taxes', 'Autres']
-  };
-  var DEF = { sens: 'Non applicable', decl: 'Base facture', type: 'TVA' };
-  function t(c, l, tx, fo, se, de, ty) { return { code: c, libelle: l, taux: tx, forfait: fo, compte: '', sens: se, decl: de, type: ty }; }
-  var data = [
-    t('TVAD', 'TVA déductible', 20, '', OPT.sens[0], OPT.decl[0], 'TVA'),
-    t('TVAC', 'TVA collectée', 20, '', OPT.sens[1], OPT.decl[0], 'TVA'),
-    t('TVARS', 'TVA retenue à la source', 20, '', OPT.sens[2], OPT.decl[1], 'TVA Retenue à la source'),
-    t('IS', 'Impôt sur les sociétés', 20, '', OPT.sens[2], OPT.decl[1], 'IS'),
-    t('IRSA', 'IRSA — retenue sur salaires', '', '', OPT.sens[2], OPT.decl[1], 'Retenues ou Précomptes'),
-    t('DTIM', 'Droit de timbre', '', 500, OPT.sens[2], OPT.decl[0], 'Autres taxes')
-  ];
-  var sel = -1, mode = 'consultation', pick = {};
   function esc(s) { return String(s == null ? '' : s).replace(/[&<>"]/g, function (c) { return { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c]; }); }
-  function toast(m) { var e = q('[data-tx-toast]'); e.textContent = m; e.hidden = false; clearTimeout(toast.t); toast.t = setTimeout(function () { e.hidden = true; }, 2800); }
-  function err(k, m) { var e = q('[data-er="' + k + '"]'); e.textContent = m || ''; e.classList.toggle('show', !!m); var f = q('[data-f=' + k + ']'); if (f) f.classList.toggle('err', !!m); }
   function nombre(v) { return v === '' || v == null ? '' : String(v).replace('.', ','); }
+  function fmt(n) { return (Math.round((+n || 0) * 100) / 100).toLocaleString('fr-FR', { minimumFractionDigits: 0, maximumFractionDigits: 2 }); }
+  var LIBEFFET = { 'En plus': 'En plus', 'Retenue': 'Retenue' };
+
+  /* ---------- comptes proposés : plan comptable de la saisie d'écritures, sinon plan comptable paramétré ---------- */
+  function comptesPlan() {
+    var R = window.ECRITURES_REF && window.ECRITURES_REF.comptes;
+    if (R && R.length) return R.map(function (c) { return { code: c.code, libelle: c.label || c.libelle || '' }; });
+    var pc = window.PLAN_COMPTABLE || [], P = {}; pc.forEach(function (r) { if (r.parent) P[r.parent] = 1; });
+    return pc.filter(function (r) { return r.actif !== false && !P[r.code]; }).map(function (r) { return { code: r.code, libelle: r.libelle }; });
+  }
+  function trouver(pre) { for (var p = pre; p && p.length >= 2; p = p.slice(0, -1)) { var l = comptesPlan().filter(function (r) { return String(r.code).indexOf(p) === 0; }); if (l.length) return l[0].code; } return pre || ''; }
+  function libCompte(c) { var r = comptesPlan().filter(function (x) { return x.code === c; })[0] || (window.PLAN_COMPTABLE || []).filter(function (x) { return x.code === c; })[0]; return r ? (r.libelle || r.label || '') : ''; }
+
+  /* ---------- données (cp = compte indicatif cherché dans le plan) ---------- */
+  function t(c, l, tx, fo, cp, ef, ty, util, inactif) { return { code: c, libelle: l, taux: tx, forfait: fo, ctaxe: '', cp: cp, effet: ef, actif: !inactif, utilise: !!util }; }
+  var data = [
+    t('TVAD', 'TVA déductible 20 %', 20, '', '4456', 'En plus', 'TVA', true),
+    t('TVAC', 'TVA collectée 20 %', 20, '', '4457', 'En plus', 'TVA', true),
+    t('TVARS', 'TVA retenue à la source', 20, '', '4458', 'Retenue', 'TVA Retenue à la source'),
+    t('IMP', 'Impôt retenu 8 %', 8, '', '447', 'Retenue', 'Retenues ou Précomptes'),
+    t('DTIM', 'Droit de timbre (montant fixe)', '', 500, '635', 'En plus', 'Autres taxes'),
+    t('IR', 'Impôt sur les revenus (retenue à la source)', 5, '', '447', 'Retenue', 'Retenues ou Précomptes', true),
+    t('IRSA', 'IRSA — retenue sur salaires', '', '', '447', 'Retenue', 'Retenues ou Précomptes', false, true),
+    t('IS', 'Impôt sur les sociétés', 20, '', '441', 'Retenue', 'IS', false, true)
+  ];
+  window.TAXES_REF = data;   // lu par la saisie d'écritures (éclatement) et la lecture de factures
+  function amorcer() { data.forEach(function (r) { if (!r.ctaxe && r.cp) r.ctaxe = trouver(r.cp); }); }
+  amorcer();
+  var sel = -1, mode = 'consultation', pick = '', calc = 'taux';
+
+  function toast(m) { var e = q('[data-tx-toast]'); e.textContent = m; e.hidden = false; clearTimeout(toast.t); toast.t = setTimeout(function () { e.hidden = true; }, 3000); }
+  function err(k, m) { var e = q('[data-er="' + k + '"]'); if (e) { e.textContent = m || ''; e.classList.toggle('show', !!m); } var f = q('[data-f=' + k + ']'); if (f) f.classList.toggle('err', !!m); }
   function filtrer() {
     var F = []; qa('[data-fc]').forEach(function (e) { F[+e.dataset.fc] = e.value.trim().toLowerCase(); });
     qa('[data-tx-lignes] tr').forEach(function (tr) { tr.hidden = F.some(function (v, k) { return v && tr.children[k].textContent.toLowerCase().indexOf(v) < 0; }); });
@@ -112,33 +153,49 @@
     q('[data-tx-compte]').textContent = data.length ? data.length : '';
     q('[data-tx-vide]').hidden = data.length > 0;
     q('[data-tx-lignes]').innerHTML = data.map(function (r, i) {
-      return '<tr data-i="' + i + '"' + (i === sel ? ' class="sel"' : '') + '><td>' + esc(r.code) + '</td><td>' + esc(r.libelle) + '</td><td class="c">' + nombre(r.taux) + '</td><td class="c">' + nombre(r.forfait) + '</td><td>' + esc(r.compte) + '</td><td>' + esc(r.sens) + '</td><td>' + esc(r.decl) + '</td><td>' + esc(r.type) + '</td></tr>';
+      return '<tr data-i="' + i + '"' + (i === sel ? ' class="sel"' : '') + '><td>' + esc(r.code) + '</td><td>' + esc(r.libelle) + '</td><td class="c">' + nombre(r.taux) + '</td><td class="c">' + nombre(r.forfait) + '</td><td>' + esc(LIBEFFET[r.effet] || '') + '</td><td>' + esc(r.ctaxe) + '</td><td>' + (r.actif ? 'Oui' : 'Non') + '</td></tr>';
     }).join(''); filtrer();
   }
   function comptes(courant) {
-    var pc = window.PLAN_COMPTABLE || [];
-    q('[data-f=compte]').innerHTML = '<option value="">— Aucun —</option>' + pc.map(function (r) { return '<option value="' + esc(r.code) + '">' + esc(r.code + ' — ' + r.libelle) + '</option>'; }).join('') +
-      (courant && !pc.some(function (r) { return r.code === courant; }) ? '<option value="' + esc(courant) + '">' + esc(courant) + '</option>' : '');
-    q('[data-f=compte]').value = courant || '';
+    var pc = comptesPlan();
+    q('[data-f=ctaxe]').innerHTML = '<option value="">— Sélectionner —</option>' + pc.map(function (r) { return '<option value="' + esc(r.code) + '">' + esc(r.code + ' — ' + r.libelle) + '</option>'; }).join('') +
+      (courant && !pc.some(function (r) { return r.code === courant; }) ? '<option value="' + esc(courant) + '">' + esc(courant + (libCompte(courant) ? ' — ' + libCompte(courant) : '')) + '</option>' : '');
+    q('[data-f=ctaxe]').value = courant || '';
   }
-  function groupes() {
-    var ed = mode !== 'consultation';
-    Object.keys(OPT).forEach(function (g) {
-      var c = q('[data-tx-grp=' + g + ']'); c.classList.toggle('off', !ed);
-      c.innerHTML = OPT[g].map(function (o) { return '<label><input type="radio" name="tx-' + g + '" value="' + esc(o) + '"' + (pick[g] === o ? ' checked' : '') + (ed ? '' : ' disabled') + '>' + esc(o) + '</label>'; }).join('');
-    });
+  function calculs() { qa('[name="tx-calc"]').forEach(function (r) { r.checked = r.value === calc; r.disabled = mode === 'consultation'; }); qa('[data-calc-champ]').forEach(function (e) { e.hidden = e.dataset.calcChamp !== calc; }); }
+  function effets() { qa('[name="tx-effet"]').forEach(function (r) { r.checked = r.value === pick; r.disabled = mode === 'consultation'; }); q('[data-tx-effet]').classList.toggle('off', mode === 'consultation'); }
+  q('[data-tx-form]').addEventListener('change', function (e) { if (e.target.name === 'tx-calc') { calc = e.target.value; if (calc === 'taux') q('[data-f=forfait]').value = ''; else q('[data-f=taux]').value = ''; calculs(); err('taux'); err('forfait'); exemple(); } else if (e.target.name === 'tx-effet') { pick = e.target.value; exemple(); } else if (e.target.dataset.f || e.target.dataset.ex) exemple(); });
+  q('[data-tx-form]').addEventListener('input', function (e) { if (e.target.dataset.f || e.target.dataset.ex) exemple(); });
+
+  /* ---------- exemple d'éclatement (mêmes règles que la saisie d'écritures) ---------- */
+  function eclatement(rec, montant, sens) {   // sens de la ligne choisie : 'C' ou 'D'
+    var opp = sens === 'C' ? 'D' : 'C', tx = rec.taux !== '' && +rec.taux > 0 ? Math.round(montant * rec.taux) / 100 : (+rec.forfait || 0), ct = rec.ctaxe ? rec.ctaxe + (libCompte(rec.ctaxe) ? ' ' + libCompte(rec.ctaxe) : '') : 'Compte de taxe (à choisir)';
+    var L = [['Compte de charge ou de produit (autre ligne de la pièce)', opp, montant, 0]];
+    if (rec.effet === 'Retenue') { L.push(['Compte de la ligne choisie', sens, montant - tx, 1]); L.push([ct, sens, tx, 1]); }
+    else { L.push(['Compte de la ligne choisie', sens, montant, 0]); L.push(['Compte de la ligne choisie (créée)', sens, tx, 1]); L.push([ct, opp, tx, 1]); }
+    return { L: L, taxe: tx };
   }
-  q('[data-tx-form]').addEventListener('change', function (e) { var n = e.target.name; if (n && n.indexOf('tx-') === 0) pick[n.slice(3)] = e.target.value; });
+  function lireForm() { var r = { code: q('[data-f=code]').value.trim().toUpperCase(), libelle: q('[data-f=libelle]').value.trim(), taux: q('[data-f=taux]').value.trim(), forfait: q('[data-f=forfait]').value.trim(), ctaxe: q('[data-f=ctaxe]').value, effet: pick, actif: q('[data-f=actif]').checked }; if (calc === 'fixe') r.taux = ''; else r.forfait = ''; r.taux = r.taux === '' ? '' : +r.taux; r.forfait = r.forfait === '' ? '' : +r.forfait; return r; }
+  function exemple() {
+    var r = lireForm(), mt = +q('[data-ex=mt]').value || 0, sens = q('[data-ex=sens]').value, s = q('[data-ex-res]');
+    if (!r.effet) { s.innerHTML = '<p class="tx-hint">Choisissez l’effet pour voir l’éclatement.</p>'; return; }
+    if (!(r.taux > 0) && !(r.forfait > 0)) { s.innerHTML = '<p class="tx-hint">Renseignez le ' + (calc === 'fixe' ? 'montant fixe' : 'taux') + ' pour voir l’éclatement.</p>'; return; }
+    var E = eclatement(r, mt, sens), D = 0, C = 0;
+    s.innerHTML = '<table><thead><tr><th>Compte</th><th style="text-align:right;width:130px">Débit</th><th style="text-align:right;width:130px">Crédit</th></tr></thead><tbody>' +
+      E.L.map(function (l) { if (l[1] === 'D') D += l[2]; else C += l[2]; return '<tr' + (l[3] ? ' class="nv"' : '') + '><td>' + esc(l[0]) + (l[3] ? ' <small style="font-weight:400;color:#0B6B43">· généré</small>' : '') + '</td><td class="r">' + (l[1] === 'D' ? fmt(l[2]) : '') + '</td><td class="r">' + (l[1] === 'C' ? fmt(l[2]) : '') + '</td></tr>'; }).join('') +
+      '<tr><td><b>Total</b>' + (Math.round((D - C) * 100) ? ' — écart ' + fmt(Math.abs(D - C)) : ' — équilibré') + '</td><td class="r"><b>' + fmt(D) + '</b></td><td class="r"><b>' + fmt(C) + '</b></td></tr></tbody></table>';
+  }
   function form(r) {
-    r = r || { code: '', libelle: '', taux: '', forfait: '', compte: '', sens: DEF.sens, decl: DEF.decl, type: DEF.type };
-    q('[data-f=code]').value = r.code; q('[data-f=libelle]').value = r.libelle; q('[data-f=taux]').value = r.taux; q('[data-f=forfait]').value = r.forfait;
-    comptes(r.compte); pick = { sens: r.sens, decl: r.decl, type: r.type }; groupes();
-    ['code', 'libelle', 'taux', 'forfait'].forEach(function (k) { err(k); });
+    r = r || { code: '', libelle: '', taux: '', forfait: '', ctaxe: '', effet: '', actif: true };
+    q('[data-f=code]').value = r.code; q('[data-f=libelle]').value = r.libelle; q('[data-f=taux]').value = r.taux; q('[data-f=forfait]').value = r.forfait; q('[data-f=actif]').checked = r.actif !== false;
+    comptes(r.ctaxe); pick = r.effet || ''; calc = +r.forfait > 0 && !(+r.taux > 0) ? 'fixe' : 'taux'; effets(); calculs();
+    ['code', 'libelle', 'taux', 'forfait', 'ctaxe', 'effet'].forEach(function (k) { err(k); });
+    exemple();
   }
   function etat() {
     var ed = mode !== 'consultation';
-    qa('[data-tx-form] input[data-f],[data-tx-form] select').forEach(function (e) { e.disabled = !ed; });
-    q('[data-f=code]').disabled = mode !== 'creation'; groupes();
+    qa('[data-tx-form] input[data-f],[data-tx-form] select[data-f]').forEach(function (e) { e.disabled = !ed; });
+    q('[data-f=code]').disabled = mode !== 'creation'; effets(); calculs();
     var a = q('[data-tx-actions]');
     a.querySelector('[data-tx-ajouter]').disabled = ed; a.querySelector('[data-tx-modifier]').disabled = ed || sel < 0; a.querySelector('[data-tx-supprimer]').disabled = ed || sel < 0;
     a.querySelector('[data-tx-enregistrer]').disabled = !ed; a.querySelector('[data-tx-annuler]').disabled = !ed; a.querySelector('[data-tx-imprimer]').disabled = !data.length; a.querySelector('[data-tx-exporter]').disabled = !data.length;
@@ -151,16 +208,21 @@
   tb.addEventListener('dblclick', function (e) { var tr = e.target.closest('tr[data-i]'); if (tr) { choisir(+tr.dataset.i); onglet('saisie'); } });
 
   function enregistrer() {
-    var c = q('[data-f=code]').value.trim().toUpperCase(), l = q('[data-f=libelle]').value.trim(), tx = q('[data-f=taux]').value.trim(), fo = q('[data-f=forfait]').value.trim(), ok = true, courant = mode === 'edition' ? sel : -1;
-    ['code', 'libelle', 'taux', 'forfait'].forEach(function (k) { err(k); });
-    if (!c) { err('code', 'Le code est obligatoire.'); ok = false; } else if (data.some(function (x, i) { return x.code === c && i !== courant; })) { err('code', 'Ce code existe déjà.'); ok = false; }
-    if (!l) { err('libelle', 'Le libellé est obligatoire.'); ok = false; }
-    if (tx !== '' && !(+tx >= 0 && +tx <= 100)) { err('taux', 'Le taux doit être compris entre 0 et 100.'); ok = false; }
-    if (fo !== '' && !(+fo >= 0)) { err('forfait', 'Le forfait doit être un montant positif.'); ok = false; }
+    var r = lireForm(), courant = mode === 'edition' ? sel : -1, ok = true;
+    ['code', 'libelle', 'taux', 'forfait', 'ctaxe', 'effet'].forEach(function (k) { err(k); });
+    if (!r.code) { err('code', 'Le code est obligatoire.'); ok = false; } else if (data.some(function (x, i) { return x.code === r.code && i !== courant; })) { err('code', 'Ce code existe déjà.'); ok = false; }
+    if (!r.libelle) { err('libelle', 'Le libellé est obligatoire.'); ok = false; }
+    if (r.taux !== '' && !(r.taux >= 0 && r.taux <= 100)) { err('taux', 'Le taux doit être compris entre 0 et 100.'); ok = false; }
+    if (calc === 'fixe') { if (!(r.forfait > 0)) { err('forfait', 'Le montant fixe est obligatoire (supérieur à 0).'); ok = false; } }
+    else if (!(r.taux > 0)) { err('taux', 'Le taux est obligatoire (supérieur à 0).'); ok = false; }
+    if (!r.ctaxe) { err('ctaxe', 'Le compte de taxe est obligatoire.'); ok = false; }
+    if (!r.effet) { err('effet', 'Choisissez le mode : en plus ou retenue.'); ok = false; }
     if (!ok) return;
-    var rec = { code: c, libelle: l, taux: tx === '' ? '' : +tx, forfait: fo === '' ? '' : +fo, compte: q('[data-f=compte]').value, sens: pick.sens, decl: pick.decl, type: pick.type };
+    var avant = courant >= 0 ? data[courant] : {};
+    var rec = { code: r.code, libelle: r.libelle, taux: r.taux, forfait: r.forfait, ctaxe: r.ctaxe, cp: avant.cp || '', effet: r.effet, actif: r.actif, utilise: !!avant.utilise };
     if (mode === 'creation') { data.push(rec); sel = data.length - 1; } else data[sel] = rec;
-    mode = 'consultation'; liste(); form(data[sel]); etat(); onglet('liste'); toast(courant >= 0 ? 'Type de taxe modifié.' : 'Type de taxe enregistré.');
+    window.TAXES_REF = data; mode = 'consultation'; liste(); form(data[sel]); etat(); onglet('liste'); toast(courant >= 0 ? 'Type de taxe modifié.' : 'Type de taxe enregistré.');
+    window.dispatchEvent(new Event('taxes-changed'));
   }
   root.addEventListener('click', function (e) {
     var b = e.target.closest('button'); if (!b || b.disabled) return;
@@ -170,13 +232,15 @@
     if (b.hasAttribute('data-tx-enregistrer')) { enregistrer(); return; }
     if (b.hasAttribute('data-tx-supprimer')) {
       var r = data[sel]; if (!r) return;
+      if (r.utilise) { toast('Ce type de taxe est déjà utilisé dans des pièces : il ne peut pas être supprimé. Décochez « actif » pour ne plus le proposer.'); return; }
       if (!window.confirm('Supprimer le type de taxe « ' + r.libelle + ' » ?')) return;
-      data.splice(sel, 1); sel = -1; liste(); form(null); etat(); toast('Type de taxe supprimé.'); return;
+      data.splice(sel, 1); sel = -1; window.TAXES_REF = data; liste(); form(null); etat(); toast('Type de taxe supprimé.'); window.dispatchEvent(new Event('taxes-changed')); return;
     }
     if (b.hasAttribute('data-tx-imprimer')) { window.print(); return; }
     if (b.hasAttribute('data-tx-exporter')) { toast('Export des types de taxe (maquette)'); return; }
   });
-  window.addEventListener('load', function () { if (mode === 'consultation') form(sel >= 0 ? data[sel] : null); });
+  // le plan comptable complet est chargé après cet écran : comptes de taxe d'origine proposés à partir du plan
+  window.addEventListener('load', function () { amorcer(); liste(); if (mode === 'consultation') { form(sel >= 0 ? data[sel] : null); etat(); } window.dispatchEvent(new Event('taxes-changed')); });
   liste(); form(null); etat(); onglet('liste');
 })();
 </script>

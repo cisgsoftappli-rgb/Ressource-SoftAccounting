@@ -200,18 +200,19 @@
   var root = document.querySelector('[data-bp]'); if (!root) return;
   function q(s) { return root.querySelector(s); } function qa(s) { return [].slice.call(root.querySelectorAll(s)); }
   var NAT = { titre: 'Titre', soustitre: 'Sous-titre', ligne: 'Ligne comptable', soustotal: 'Sous-total', total: 'Total', resultat: 'Résultat', formule: 'Formule', constante: 'Constante' };
+  (window.ETATS_FIN_MODELES = window.ETATS_FIN_MODELES || {}).bil = function () { return modeles; };
   function L(code, ordre, libelle, type, nature, f, a) { return { code: code, ordre: ordre, libelle: libelle, type: type, nature: nature, fourchettes: f || [], amort: a || [], reference: '', note: '', gras: nature !== 'ligne', italique: false, vide: false, fond: nature === 'total', imprimer: true, afficher: true }; }
   var modeles = [{ id: 'SYSCOHADA', libelle: 'Bilan SYSCOHADA révisé', lignes: [
     L('AZ', 10, 'ACTIF IMMOBILISÉ', 'actif', 'titre'),
     L('AD', 20, 'Immobilisations incorporelles', 'actif', 'soustitre'),
-    L('AE', 30, 'Frais de développement et de prototypes', 'actif', 'ligne', [{ d: '211', f: '2119', s: 'D' }], [{ d: '2811', f: '2819', s: 'C' }]),
-    L('AF', 40, 'Brevets, licences, logiciels', 'actif', 'ligne', [{ d: '212', f: '2129', s: 'D' }], [{ d: '2812', f: '2819', s: 'C' }]),
+    L('AE', 30, 'Frais de développement et de prototypes', 'actif', 'ligne', [{ d: '211', f: '211', s: 'D' }]),
+    L('AF', 40, 'Brevets, licences, logiciels', 'actif', 'ligne', [{ d: '212', f: '212', s: 'D' }], [{ d: '281', f: '281', s: 'C' }]),
     L('AJ', 50, 'Immobilisations corporelles', 'actif', 'soustitre'),
-    L('AL', 60, 'Terrains', 'actif', 'ligne', [{ d: '221', f: '229', s: 'D' }]),
-    L('AZT', 70, 'TOTAL ACTIF IMMOBILISÉ', 'actif', 'formule'),
+    L('AL', 60, 'Terrains', 'actif', 'ligne', [{ d: '213', f: '213', s: 'D' }]),
+    Object.assign(L('AZT', 70, 'TOTAL ACTIF IMMOBILISÉ', 'actif', 'formule'), { formule: 'AE + AF + AL' }),
     L('CA', 10, 'CAPITAUX PROPRES ET RESSOURCES ASSIMILÉES', 'passif', 'titre'),
-    L('CB', 20, 'Capital', 'passif', 'ligne', [{ d: '101', f: '109', s: 'C' }]),
-    L('CJ', 30, 'Résultat net de l\'exercice', 'passif', 'resultat', [{ d: '131', f: '139', s: 'C' }]),
+    L('CB', 20, 'Capital', 'passif', 'ligne', [{ d: '101', f: '109', s: 'S' }]),
+    L('CJ', 30, 'Résultat net de l\'exercice', 'passif', 'resultat'),
     L('CZ', 40, 'TOTAL CAPITAUX PROPRES', 'passif', 'total')
   ] }, { id: 'ALLEGE', libelle: 'Bilan système allégé', lignes: [] }];
   var cur = null, sel = -1, mode = 'consultation', copie = null, optOuvert = false;
@@ -317,7 +318,14 @@
     if (b.hasAttribute('data-bp-annuler')) { mode = 'consultation'; renderLignes(); remplirForm(sel >= 0 ? cur.lignes[sel] : null); appliquerMode(); return; }
     if (b.hasAttribute('data-bp-enregistrer')) { enregistrer(); return; }
     if (b.hasAttribute('data-bp-imprimer')) { window.print(); return; }
-    if (b.hasAttribute('data-bp-exporter')) { toast('Export du modèle ' + cur.id + ' (maquette)'); return; }
+    if (b.hasAttribute('data-bp-exporter')) { (function () {
+      var X = window.EXPORT_TABLEAU; if (!X || !cur) { toast('Export indisponible.'); return; }
+      function rg(a) { return (a || []).map(function (f) { return f && typeof f === 'object' ? Object.keys(f).map(function (k) { return f[k]; }).filter(function (v) { return v !== '' && v != null; }).join(' à ') : String(f); }).join(' ; '); }
+      var tete = ['Code', 'Ordre', 'Libellé', 'Type', 'Nature', 'Mouvement', 'Fourchettes / axes', 'Référence', 'Note'];
+      var lignes = (cur.lignes || []).map(function (l) { return [l.code, l.ordre != null ? l.ordre : (l.tri != null ? l.tri : ''), l.libelle, l.type || '', l.nature || '', l.mouvement || '', rg(l.fourchettes || l.axes || []), l.reference || '', l.note || '']; });
+      X.xlsx('modele_' + String(cur.id).replace(/[^A-Za-z0-9_-]+/g, '_') + '.xlsx', 'Modèle ' + cur.id, tete, lignes, [['Modèle ' + cur.id + (cur.libelle ? ' — ' + cur.libelle : '')], []]);
+      toast('Export Excel (XLSX) généré : ' + lignes.length + ' ligne(s).');
+    })(); return; }
     if (b.hasAttribute('data-bp-nouveau')) { var o = q('[data-bp-ov]'); o.hidden = false; q('[data-n-err]').hidden = true; qa('[data-n]').forEach(function (i) { i.value = ''; }); q('[data-n=code]').focus(); return; }
     if (b.hasAttribute('data-bp-dupliquer')) { var m0 = modele(), n = 2; while (modeles.some(function (x) { return x.id === m0.id + '-' + n; })) n++; var cp = JSON.parse(JSON.stringify(m0)); cp.id = m0.id + '-' + n; cp.libelle = m0.libelle + ' (copie)'; modeles.push(cp); refModeles(cp.id); sM.dispatchEvent(new Event('change')); toast('Modèle dupliqué'); return; }
     if (b.hasAttribute('data-bp-supprimer-modele')) { var m1 = modele(); if (!window.confirm('Supprimer le modèle « ' + m1.id + ' » ?')) return; modeles = modeles.filter(function (x) { return x !== m1; }); refModeles(''); sM.dispatchEvent(new Event('change')); toast('Modèle supprimé'); return; }

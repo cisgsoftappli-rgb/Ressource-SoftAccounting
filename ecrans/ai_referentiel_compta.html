@@ -1,0 +1,285 @@
+<!--
+  Base de connaissances et moteur de contrôle de « Assistance comptable AI » : transpose le document
+  « Référentiel — Analyses comptables et bonnes pratiques » (volets comptables, analyses transversales, bonnes pratiques logiciel, KPI, matrice de contrôle,
+  typologie des contrôles, checklist de clôture mensuelle, gouvernance, limites). Exposé par window.AI_REF, lu par ai_assistance.html (écran aicompta).
+  Moteur : window.AI_REF.executer() exécute les contrôles automatisables sur les pièces saisies (window.ECRITURES_PIECES) ou, à défaut, sur un jeu de démonstration.
+  Ne pas nommer de fonction « $$ » (build.cjs).
+-->
+<script>
+(function () {
+  var R = window.AI_REF = {};
+  R.principes = [['Exhaustivité', 'toutes les opérations de la période sont enregistrées.'], ['Exactitude', 'montants, comptes, dates et axes analytiques sont corrects.'], ['Réalité', 'les opérations correspondent à des faits économiques justifiés.'], ['Cut-off', 'les charges et produits sont rattachés au bon exercice.'], ['Traçabilité', 'les saisies, validations, modifications et annulations sont historisées.'], ['Séparation des tâches', 'initiation, validation, paiement et contrôle sont séparés lorsque possible.'], ['Rapprochement', 'les systèmes auxiliaires sont régulièrement rapprochés de la comptabilité générale.']];
+  R.objectifs = ['Fiabiliser les données comptables et les états financiers.', 'Assurer la conformité aux normes comptables, fiscales et aux procédures applicables.', 'Réduire les risques d’erreur, de fraude, de double comptabilisation et d’omission.', 'Renforcer la traçabilité des opérations et la qualité des pièces justificatives.', 'Faciliter les audits internes et externes ainsi que les contrôles périodiques.', 'Améliorer le pilotage financier et la prise de décision.'];
+  // volets : clé, titre, mots-clés (regex), analyses, bonnes pratiques, indicateur, écrans liés
+  R.volets = [
+    { id: 'general', t: 'Comptabilité générale', k: /comptabilit[ée] g[ée]n[ée]rale|grand livre|balance g[ée]n[ée]rale|comptes? d.attente|liaison|r[ée]gularisation|journaux/,
+      a: ['Journaux (banque, caisse, achats, ventes, opérations diverses).', 'Grand livre et balance générale.', 'Écritures manuelles et écritures de régularisation.', 'Comptes d’attente, de liaison et soldes inhabituels.', 'Doublons, pièces manquantes et dates incohérentes.'],
+      b: ['Vérifier l’équilibre Débit = Crédit et la cohérence de l’imputation.', 'Justifier chaque écriture par une pièce probante et une référence identifiable.', 'Analyser les comptes dont le solde est atypique au regard de leur nature.', 'Contrôler la continuité des numéros de pièces et la période comptable.', 'Apurer ou documenter les comptes d’attente dans un délai défini.'],
+      i: 'Taux d’écritures correctement justifiées.', l: [['listeecritures', 'Liste des écritures'], ['balance', 'Balance générale'], ['glg', 'Grand livre général'], ['journal', 'Journaux']], c: ['ANA-CPT-001', 'ANA-CPT-002', 'ANA-CPT-003', 'ANA-CPT-004', 'ANA-CPT-006', 'ANA-CPT-009'] },
+    { id: 'fournisseurs', t: 'Comptabilité fournisseurs', k: /fournisseur|dettes? fournisseur|factures? [ée]chue|factures? non parvenue|\b401\b/,
+      a: ['Soldes fournisseurs et rapprochement avec les relevés de compte.', 'Balance âgée et factures échues.', 'Avances fournisseurs et factures non parvenues.', 'Doublons de factures et fournisseurs débiteurs.', 'Dettes relatives à la période reçues après clôture.'],
+      b: ['Créer une fiche unique par fournisseur et contrôler les données d’identification requises.', 'Rapprocher commande, réception/service fait et facture lorsque le processus le prévoit.', 'Séparer validation de facture, comptabilisation et paiement.', 'Suivre les échéances et prioriser les paiements autorisés.', 'Rapprocher les auxiliaires fournisseurs avec les comptes collectifs.'],
+      i: 'Montant et nombre de factures échues par tranche d’ancienneté.', l: [['echeancier', 'Échéancier et balance âgée'], ['balaux', 'Balance auxiliaire'], ['glaux', 'Grand livre auxiliaire'], ['lettmanuel', 'Lettrage']], c: ['ANA-CPT-002', 'ANA-CPT-009'] },
+    { id: 'clients', t: 'Comptabilité clients', k: /\bclients?\b|cr[ée]ances?|impay[ée]s?|recouvrement|avoirs?|\b411\b/,
+      a: ['Balance âgée des créances.', 'Encaissements non affectés et factures impayées.', 'Avances clients, avoirs et créances douteuses.', 'Soldes clients anormaux et risques de non-recouvrement.'],
+      b: ['Rapprocher encaissements et factures clients.', 'Suivre les impayés par tranches (30, 60, 90 jours et plus).', 'Évaluer et documenter les risques de non-recouvrement.', 'Contrôler l’émission et l’approbation des avoirs.', 'Rapprocher les auxiliaires clients avec les comptes collectifs.'],
+      i: 'Délai moyen de recouvrement et montant des créances échues.', l: [['echeancier', 'Échéancier et balance âgée'], ['balaux', 'Balance auxiliaire'], ['lettmanuel', 'Lettrage']], c: ['ANA-CPT-009'] },
+    { id: 'tresorerie', t: 'Trésorerie, banque et caisse', k: /tr[ée]sorerie|banque|bancaire|caisse|ch[èe]ques?|virements?|rapprochement bancaire|relev[ée]/,
+      a: ['Rapprochements bancaires périodiques.', 'Flux entrants et sortants par nature.', 'Chèques en circulation, virements en attente et frais bancaires.', 'Soldes comptables par rapport aux relevés et aux inventaires physiques.', 'Écarts de caisse et opérations non justifiées.'],
+      b: ['Réaliser un rapprochement bancaire mensuel pour chaque compte.', 'Effectuer et documenter l’inventaire physique de caisse.', 'Éviter les soldes de caisse négatifs et les paiements sans justificatif.', 'Séparer paiement, comptabilisation et rapprochement lorsque possible.', 'Apurer rapidement les éléments anciens de rapprochement.'],
+      i: 'Écart de caisse ; éléments de rapprochement non apurés ; prévision de trésorerie à 30/60/90 jours.', l: [['rapprochement', 'Configuration du rapprochement'], ['releves', 'Pointage'], ['situation', 'Situation'], ['pvcaisse', 'PV de caisse'], ['caissesaisie', 'Saisie de caisse']], c: ['ANA-CPT-009', 'ANA-TRE-001', 'ANA-TRE-002'] },
+    { id: 'immobilisations', t: 'Immobilisations', k: /immobilisations?|amortissements?|cessions?|mise au rebut|capitalisation|dotations?/,
+      a: ['Acquisitions et critères de capitalisation.', 'Plans et dotations d’amortissement.', 'Cessions, mises au rebut et sorties d’actifs.', 'Immobilisations en cours et actifs totalement amortis.', 'Indices de perte de valeur et actifs inutilisés.'],
+      b: ['Tenir un registre détaillé avec identifiant unique et localisation.', 'Rapprocher le registre des immobilisations avec la comptabilité générale.', 'Contrôler date de mise en service, durée d’utilité et méthode d’amortissement.', 'Réaliser un inventaire physique périodique.', 'Documenter les cessions, sorties et dépréciations.'],
+      i: 'Écart entre registre des immobilisations et soldes comptables.', l: [['immolist', 'Liste d’immobilisations'], ['famimmo', 'Familles d’immobilisations'], ['reassign', 'Réassignation']], c: ['ANA-IMM-001'] },
+    { id: 'stocks', t: 'Stocks', k: /\bstocks?\b|inventaire|valorisation|obsol[èe]t|dormants?/,
+      a: ['Mouvements d’entrée et de sortie et quantités disponibles.', 'Écarts entre stock théorique et stock physique.', 'Valorisation, coûts d’entrée et méthode retenue.', 'Stocks dormants, obsolètes, détériorés ou négatifs.'],
+      b: ['Organiser des inventaires périodiques et des comptages ciblés.', 'Rapprocher gestion des stocks et comptabilité.', 'Documenter les écarts et leur approbation.', 'Contrôler la méthode de valorisation appliquée de façon constante.', 'Évaluer les pertes de valeur selon les règles applicables.'],
+      i: 'Taux d’écart d’inventaire et valeur des stocks obsolètes.', l: [['balance', 'Balance générale']], c: ['ANA-STK-001'] },
+    { id: 'fiscalite', t: 'Fiscalité', k: /fiscalit[ée]|\btva\b|retenues? [àa] la source|imp[ôo]ts?|taxes?|non d[ée]ductibles?|d[ée]claration fiscale/,
+      a: ['TVA collectée et déductible.', 'TVA à payer, crédit de TVA et rapprochement des déclarations.', 'Retenues à la source, impôts et taxes.', 'Charges non déductibles et retraitements fiscaux.'],
+      b: ['Paramétrer les taux et règles fiscales applicables à l’entité et à la période.', 'Vérifier les bases imposables et l’éligibilité des déductions.', 'Rapprocher les déclarations fiscales avec la comptabilité.', 'Suivre les échéances et conserver les justificatifs.', 'Documenter les retraitements et crédits reportés.'],
+      i: 'Écart entre déclaration fiscale et balance comptable.', l: [['typetaxe', 'Type de taxe'], ['fisctrait', 'Traitement d’une déclaration'], ['modfisc', 'Modèle de déclaration fiscale']], c: ['ANA-FIS-001'] },
+    { id: 'regularisations', t: 'Charges, produits et régularisations', k: /charges? [àa] payer|produits? [àa] recevoir|constat[ée]s? d.avance|r[ée]gularisations?|s[ée]paration des exercices|cut.?off|charges et produits/,
+      a: ['Charges et produits par nature, période et centre de coûts.', 'Charges à payer et produits à recevoir.', 'Charges constatées d’avance et produits constatés d’avance.', 'Variations inhabituelles comparées aux périodes précédentes.'],
+      b: ['Respecter le principe de séparation des exercices.', 'Justifier les écritures de régularisation et leur calcul.', 'Rattacher les charges et produits à la période concernée.', 'Analyser les variations significatives et les montants exceptionnels.'],
+      i: 'Montant des régularisations non validées à la clôture.', l: [['listeecritures', 'Liste des écritures'], ['clotper', 'Clôture périodique'], ['circtrait', 'Circuit de validation']], c: ['ANA-CPT-004', 'ANA-CPT-005'] },
+    { id: 'analytique', t: 'Comptabilité analytique et contrôle de gestion', k: /analytique|centres? de co[ûu]ts?|cl[ée]s? de r[ée]partition|co[ûu]t de revient|charges (directes|indirectes)|axes?/,
+      a: ['Coûts par centre, activité, projet ou produit.', 'Charges directes et indirectes.', 'Clés de répartition et coût de revient.', 'Écarts entre réalisé, budget et prévisionnel.'],
+      b: ['Définir des axes analytiques cohérents et documentés.', 'Justifier les clés de répartition et les appliquer de manière constante.', 'Rapprocher les données analytiques de la comptabilité générale.', 'Analyser les écarts et désigner un responsable de suivi.'],
+      i: 'Écart budgétaire par centre ou projet, en valeur et en pourcentage.', l: [['balana', 'Balance analytique'], ['anouvanalytique', 'À nouveau analytique'], ['rsfsb', 'Suivi budgétaire']], c: ['ANA-CPT-008'] },
+    { id: 'budget', t: 'Comptabilité budgétaire et engagements', k: /budget|engagements?|liquidations?|ordonnancements?|cr[ée]dits? disponibles?|d[ée]passements?|consommation budg/,
+      a: ['Budget initial et budget révisé.', 'Engagements, liquidations, ordonnancements et paiements selon le processus applicable.', 'Crédits disponibles, dépassements et engagements pluriannuels.', 'Rapprochement budget, comptabilité et trésorerie.'],
+      b: ['Contrôler la disponibilité budgétaire avant engagement.', 'Tracer les modifications et révisions de budget.', 'Suivre les engagements non dénoués et les reports.', 'Respecter les étapes et habilitations du circuit de dépense.', 'Analyser les dépassements et crédits insuffisants.'],
+      i: 'Taux de consommation budgétaire avec dénominateur clairement défini (budget initial, révisé ou disponible).', l: [['rsfsb', 'Suivi budgétaire'], ['budgetconv', 'Budget de la convention'], ['rsfuf', 'Utilisation de fonds']], c: ['ANA-BUD-001'] },
+    { id: 'projets', t: 'Projets et financements', k: /projets?|financements?|bailleurs?|\bdrf\b|demandes? de remboursement|[ée]ligibilit[ée]|[ée]cart de change|conventions?/,
+      a: ['Dépenses par bailleur, projet, composante et catégorie.', 'Financements reçus, avances et soldes disponibles.', 'Demandes de remboursement (DRF) et dépenses éligibles.', 'Dépenses potentiellement inéligibles et écarts de change.'],
+      b: ['Utiliser des axes analytiques dédiés par projet et bailleur.', 'Rapprocher les dépenses des accords et budgets de financement.', 'Conserver un dossier justificatif par période et par projet.', 'Rapprocher rapports financiers, comptabilité et relevés bancaires.', 'Contrôler les taux de change et règles d’éligibilité applicables.'],
+      i: 'Taux de justification des dépenses et montant des dépenses en suspens.', l: [['rsfuf', 'Utilisation de fonds'], ['etatdep', 'État de dépense'], ['histdem', 'Historique des demandes'], ['coursapplique', 'Cours appliqué']], c: ['ANA-CPT-003', 'ANA-PRJ-001'] },
+    { id: 'paie', t: 'Personnel et paie', k: /paie|salaires?|personnel|charges sociales|cong[ée]s? [àa] payer|avances? au personnel/,
+      a: ['Salaires, charges sociales et retenues.', 'Avances au personnel et remboursements.', 'Congés à payer et autres obligations de fin de période.', 'Rapprochement états de paie, paiements et écritures comptables.'],
+      b: ['Rapprocher mensuellement la paie et la comptabilité.', 'Contrôler les comptes de personnel et les paiements.', 'Séparer préparation, validation et paiement de la paie.', 'Protéger la confidentialité des données et limiter les accès.'],
+      i: 'Écart entre états de paie validés, paiements et comptabilisation.', l: [['acces', 'Gestion des accès'], ['circparam', 'Paramètre Circuit']], c: ['ANA-PAI-001'] },
+    { id: 'financier', t: 'Emprunts, capitaux propres et opérations financières', k: /emprunts?|capitaux propres|capital restant|int[ée]r[êe]ts?|frais financiers?|subventions?|comptes? courants?|r[ée]serves?|devises?|cours de change/,
+      a: ['Capital restant dû et tableaux d’amortissement des emprunts.', 'Intérêts et frais financiers à rattacher à la période.', 'Mouvements de capital, réserves et résultat.', 'Subventions, comptes courants et opérations en devises.'],
+      b: ['Rapprocher les emprunts avec les confirmations et échéanciers.', 'Vérifier le calcul des intérêts et les écritures de période.', 'Documenter les mouvements sur capitaux propres.', 'Contrôler les cours de change et écarts de conversion selon les règles applicables.'],
+      i: 'Écart entre échéanciers financiers et soldes comptables.', l: [['cours', 'Saisie des cours'], ['coursapplique', 'Cours appliqué'], ['conversion', 'Conversion'], ['devise', 'Devises']], c: ['ANA-FIN-001'] },
+    { id: 'cloture', t: 'Clôture et états financiers', k: /cl[ôo]ture|[ée]tats? financiers?|bilan|compte de r[ée]sultat|flux de tr[ée]sorerie|annexes?|balance (avant|apr[èe]s) inventaire|verrouill/,
+      a: ['Balance avant et après inventaire.', 'Écritures de clôture et régularisations.', 'Bilan, compte de résultat, flux de trésorerie et annexes selon le référentiel applicable.', 'Comparaison N/N-1 et réalisé/budget.'],
+      b: ['Établir un calendrier de clôture avec responsables et échéances.', 'Contrôler tous les rapprochements auxiliaires et comptes de bilan.', 'Documenter les estimations et écritures d’inventaire.', 'Valider les états financiers et verrouiller la période après approbation.', 'Conserver le dossier de clôture et les preuves de contrôle.'],
+      i: 'Délai de clôture et nombre d’anomalies non résolues à la validation.', l: [['clotmens', 'Clôture mensuelle'], ['clotper', 'Clôture périodique'], ['clotannuelle', 'Clôture annuelle'], ['bilparam', 'Bilan'], ['crparam', 'Compte de résultat'], ['tftparam', 'Flux de trésorerie']], c: ['ANA-CPT-005'] }
+  ];
+  R.transversales = [
+    { t: 'Détection des anomalies', p: ['Détecter les écritures en double ou présentant des montants atypiques.', 'Identifier les pièces justificatives manquantes.', 'Repérer les dates comptables incohérentes ou les écritures en période clôturée.', 'Contrôler les comptes à solde inhabituel et les mouvements sans affectation.', 'Analyser les écritures manuelles, annulations et modifications après validation.'], k: /anomalies?|d[ée]tection/ },
+    { t: 'Rapprochements', p: ['Balance générale et auxiliaires clients/fournisseurs.', 'Comptabilité et relevés bancaires.', 'Comptabilité et caisse physique.', 'Comptabilité et registre des immobilisations.', 'Comptabilité et gestion des stocks.', 'Comptabilité et paie.', 'Budget, engagements, comptabilité et trésorerie.'], k: /rapprochements?/ },
+    { t: 'Analyse financière', p: ['Évolution du chiffre d’affaires, des charges et du résultat.', 'Analyse de la trésorerie et du besoin en fonds de roulement.', 'Analyse de l’endettement, des marges et des ratios pertinents.', 'Comparaison avec N-1, budget et prévisions.', 'Explication des variations significatives.'], k: /analyse financi[èe]re/ },
+    { t: 'Contrôle interne et audit', p: ['Revue périodique des habilitations et profils d’accès.', 'Traçabilité des validations, modifications, annulations et déverrouillages.', 'Séparation des tâches incompatibles.', 'Contrôle des séquences de pièces et des journaux.', 'Plan d’action de correction avec responsable, échéance et preuve.'], k: /contr[ôo]le interne|audit|habilitations?|s[ée]paration des t[âa]ches/ }
+  ];
+  R.logiciel = [['Plan comptable', 'Centraliser les comptes autorisés et leur paramétrage.', [['pl_comptable', 'Plan comptable']]], ['Journaux', 'Paramétrer les journaux par nature d’opération.', [['journal', 'Journaux']]], ['Saisie', 'Contrôler équilibre, date, compte, tiers et axes obligatoires.', [['ecritures', 'Saisie d’écritures']]], ['Justificatifs', 'Associer une pièce ou référence documentaire à chaque écriture.', [['ecritures', 'Saisie d’écritures']]], ['Auxiliaires', 'Rapprocher périodiquement les auxiliaires avec les comptes collectifs.', [['balaux', 'Balance auxiliaire']]], ['Axes analytiques', 'Rendre obligatoires les axes pertinents selon le type d’opération.', [['plans', 'Configuration des plans']]], ['Validation', 'Mettre en place des circuits d’approbation et des seuils.', [['circparam', 'Paramètre Circuit']]], ['Modification', 'Conserver l’historique et l’auteur des modifications.', [['traces', 'Paramétrage des traces'], ['jtraces', 'Journal de traces']]], ['Annulation', 'Privilégier des contrepassations traçables plutôt que l’effacement.', [['ecritures', 'Saisie d’écritures']]], ['Clôture', 'Restreindre la modification des périodes clôturées.', [['clotmens', 'Clôture mensuelle'], ['clotper', 'Clôture périodique']]], ['Reporting', 'Assurer la cohérence des états avec les écritures comptabilisées.', [['bilparam', 'Bilan']]], ['Sauvegarde', 'Tester les sauvegardes et les procédures de restauration.', []]];
+  R.kpis = [
+    { id: 'rapprochement', t: 'Taux de rapprochement', f: 'Nombre de comptes rapprochés / nombre de comptes à rapprocher × 100.' },
+    { id: 'justification', t: 'Taux de justification', f: 'Écritures justifiées / écritures totales contrôlées × 100.' },
+    { id: 'anomalies', t: 'Taux d’anomalies', f: 'Écritures avec anomalie / écritures contrôlées × 100.' },
+    { id: 'apurement', t: 'Taux d’apurement', f: 'Éléments apurés / éléments à apurer × 100.' },
+    { id: 'budget', t: 'Consommation budgétaire', f: 'Dépenses réalisées / base budgétaire choisie × 100 ; préciser budget initial, révisé ou disponible.' },
+    { id: 'cloture', t: 'Délai de clôture', f: 'Nombre de jours entre fin de période et validation finale.' },
+    { id: 'recouvrement', t: 'Délai de recouvrement', f: 'Délai moyen de paiement des clients, selon méthode retenue.' },
+    { id: 'reglement', t: 'Délai de règlement', f: 'Délai moyen de paiement des fournisseurs, selon méthode retenue.' },
+    { id: 'caisse', t: 'Écarts de caisse', f: 'Montant absolu des écarts entre caisse physique et comptabilité.' },
+    { id: 'suspens', t: 'Anomalies en suspens', f: 'Nombre et valeur des anomalies non résolues à la date du reporting.' }
+  ];
+  R.kpiNote = 'Les définitions, périmètres, fréquences et responsables de chaque KPI doivent être documentés pour assurer leur comparabilité dans le temps.';
+  R.typologie = [['Bloquant', 'Empêche la validation lorsqu’une condition essentielle de conformité n’est pas satisfaite.'], ['Avertissement', 'Signale une anomalie à examiner ; la poursuite doit être encadrée.'], ['Informatif', 'Fournit une statistique, un indicateur ou une information de suivi.'], ['Périodique', 'Exécuté lors d’une revue mensuelle, trimestrielle ou annuelle.']];
+  R.flux = ['Référentiel des analyses', 'Règles de contrôle', 'Exécution', 'Détection des anomalies', 'Rapport d’analyse', 'Plan de correction', 'Validation comptable', 'Archivage des preuves'];
+  R.niveaux = ['Volet comptable : général, auxiliaire, trésorerie, fiscalité, budget, etc.', 'Analyse comptable : rapprochement, cohérence, justification, contrôle de solde, etc.', 'Règle de contrôle : critères explicites et reproductibles de détection.', 'Action corrective : régularisation, justification, validation ou blocage.'];
+  R.checklist = ['Factures clients comptabilisées et séquences contrôlées.', 'Factures fournisseurs enregistrées et factures à recevoir évaluées.', 'Rapprochements bancaires terminés pour tous les comptes.', 'Caisses inventoriées et justifiées.', 'Comptes de tiers rapprochés avec les comptes collectifs.', 'Immobilisations, acquisitions, sorties et amortissements contrôlés.', 'Stocks et inventaires rapprochés avec la comptabilité.', 'Paie et charges sociales rapprochées.', 'Charges à payer et produits à recevoir comptabilisés.', 'Charges et produits constatés d’avance vérifiés.', 'Comptes d’attente apurés ou documentés.', 'Déclarations fiscales rapprochées de la comptabilité.', 'Balance générale analysée et anomalies traitées ou documentées.', 'États financiers contrôlés et validés.', 'Période verrouillée après validation, avec accès de réouverture limité.'];
+  R.gouvernance = ['Recenser les processus comptables, les comptes, les journaux et les interfaces.', 'Évaluer les risques par volet et prioriser les contrôles à forte criticité.', 'Définir chaque règle : objectif, périmètre, source, fréquence, seuil, résultat attendu et traitement.', 'Faire valider les règles par le responsable comptable et, si nécessaire, le fiscaliste ou l’auditeur.', 'Paramétrer ou développer les contrôles dans l’outil comptable et le reporting.', 'Tester sur des données historiques et documenter les faux positifs ou exceptions.', 'Déployer progressivement, former les utilisateurs et suivre les anomalies.', 'Réviser le référentiel lors d’une évolution du système, des procédures ou de la réglementation.'];
+  R.roles = [['Comptable', 'Saisie, justification et correction des opérations.'], ['Responsable comptable', 'Supervision, rapprochements, revue des comptes et clôture.'], ['Contrôleur de gestion', 'Analyses budgétaires, analytiques et écarts.'], ['Responsable trésorerie', 'Prévisions, paiements et suivi des rapprochements bancaires.'], ['Fiscaliste / référent fiscal', 'Validation des traitements et obligations fiscales.'], ['Administrateur applicatif', 'Paramétrage, habilitations, journaux techniques et traçabilité.'], ['Audit interne', 'Évaluation indépendante de la conception et de l’efficacité des contrôles.']];
+  R.limites = 'Ce référentiel est un guide de bonnes pratiques à adapter à l’organisation, à son secteur, à ses procédures et au référentiel comptable applicable. Pour une entité à Madagascar, les règles doivent être confirmées au regard du PCG 2005, des textes fiscaux en vigueur pour l’exercice concerné, des obligations sectorielles et, le cas échéant, des conventions de financement. Les recommandations de contrôle interne sont générales et ne remplacent pas l’avis d’un professionnel.';
+  // matrice de contrôle : code, volet, objectif, périmètre, fréquence, responsable, criticité, type, règle, résultat attendu, action corrective, validation, traçabilité, automatisable
+  var TR = 'Rapport, pièces, statut, auteur et historique de correction.';
+  function C(code, volet, obj, regle, crit, type, freq, resp, action, auto) { return { code: code, volet: volet, objectif: obj, perimetre: 'Toutes les écritures de la période définie.', frequence: freq || 'Mensuelle ou selon le risque.', responsable: resp || 'Comptable / contrôleur comptable.', criticite: crit, type: type, regle: regle, attendu: 'Aucune anomalie non justifiée.', action: action || 'Régularisation, justification ou escalade.', validation: 'Responsable comptable ou personne habilitée.', trace: TR, auto: !!auto }; }
+  R.controles = [
+    C('ANA-CPT-001', 'Comptabilité générale', 'Garantir l’équilibre des pièces.', 'Débit = Crédit pour chaque pièce ; aucune pièce déséquilibrée validée.', 'Élevée', 'Bloquant', 'À chaque saisie', null, 'Corriger la pièce avant validation.', 1),
+    C('ANA-CPT-002', 'Comptabilité générale', 'Détecter les doublons.', 'Même journal, même date, même compte, même montant et même libellé sur deux lignes ou plus.', 'Moyenne', 'Avertissement', null, null, 'Annuler par contrepassation traçable ou justifier.', 1),
+    C('ANA-CPT-003', 'Comptabilité générale', 'Identifier les pièces non justifiées.', 'Pièce sans référence ni numéro de facture.', 'Élevée', 'Avertissement', null, null, 'Joindre le justificatif ou documenter la référence.', 1),
+    C('ANA-CPT-004', 'Comptabilité générale', 'Repérer les dates incohérentes.', 'Date de pièce postérieure à la date d’écriture, ou date d’écriture dans le futur.', 'Moyenne', 'Avertissement', null, null, 'Corriger la date après vérification de la pièce.', 1),
+    C('ANA-CPT-005', 'Clôture', 'Empêcher les écritures en période clôturée.', 'Aucune écriture datée d’une période clôturée (mensuelle ou périodique).', 'Élevée', 'Bloquant', null, 'Responsable comptable', 'Rouvrir la période avec habilitation, ou comptabiliser à la période ouverte.', 1),
+    C('ANA-CPT-006', 'Comptabilité générale', 'Apurer les comptes d’attente et de liaison.', 'Solde non nul sur les comptes d’attente (47) et de liaison (58) en fin de période.', 'Moyenne', 'Avertissement', 'Mensuelle', null, 'Apurer ou documenter dans un délai défini.', 1),
+    C('ANA-CPT-007', 'Comptabilité générale', 'Détecter les montants atypiques.', 'Montant supérieur à la moyenne + 3 écarts-types des lignes de la période.', 'Faible', 'Informatif', null, null, 'Vérifier la pièce et le montant ; justifier.', 1),
+    C('ANA-CPT-008', 'Comptabilité analytique', 'Garantir les axes analytiques obligatoires.', 'Ligne de charge (6) ou de produit (7) sans axe analytique.', 'Moyenne', 'Avertissement', null, 'Contrôleur de gestion', 'Compléter l’imputation analytique.', 1),
+    C('ANA-CPT-009', 'Comptabilité générale', 'Analyser les soldes atypiques.', 'Client (411) créditeur, fournisseur (401) débiteur ou caisse (53) négative.', 'Élevée', 'Avertissement', null, null, 'Analyser la cause, régulariser ou justifier.', 1),
+    C('ANA-CPT-010', 'Comptabilité générale', 'Contrôler la continuité des numéros de pièces.', 'Aucune rupture dans la numérotation des pièces d’un même journal.', 'Faible', 'Informatif', null, null, 'Documenter les numéros manquants ou annulés.', 1),
+    C('ANA-TRE-001', 'Trésorerie', 'Rapprocher chaque compte bancaire.', 'Rapprochement bancaire mensuel terminé pour tous les comptes ; éléments anciens apurés.', 'Élevée', 'Périodique', 'Mensuelle', 'Responsable trésorerie', 'Pointer les lignes en suspens et générer les écritures manquantes.', 1),
+    C('ANA-TRE-002', 'Trésorerie', 'Contrôler la caisse.', 'Inventaire physique de caisse documenté (PV de caisse) ; absence de solde négatif.', 'Élevée', 'Périodique', 'Mensuelle', 'Responsable trésorerie', 'Justifier l’écart de caisse et régulariser.', 1),
+    C('ANA-IMM-001', 'Immobilisations', 'Rapprocher registre et comptabilité.', 'Écart nul entre le registre des immobilisations et les soldes comptables.', 'Moyenne', 'Périodique', 'Trimestrielle', 'Responsable comptable', 'Réassigner, corriger les dotations ou documenter.', 1),
+    C('ANA-CLO-001', 'Clôture', 'Clôturer les périodes échues.', 'Chaque mois échu de l’exercice est clôturé (clôture mensuelle) ; aucune période échue laissée ouverte.', 'Moyenne', 'Périodique', 'Mensuelle', 'Responsable comptable', 'Clôturer la période après contrôle des rapprochements.', 1),
+    C('ANA-CIR-001', 'Contrôle interne', 'Garantir un circuit de validation exploitable.', 'Chaque étape du circuit a au moins un utilisateur autorisé ; les étapes portent une checklist ; séparation des tâches respectée.', 'Élevée', 'Avertissement', 'Trimestrielle', 'Administrateur applicatif', 'Affecter les utilisateurs et compléter la checklist.', 1),
+    C('ANA-CTL-001', 'Contrôle interne', 'Assurer la traçabilité des opérations.', 'Traces de création, modification et suppression activées sur les fonctionnalités comptables.', 'Élevée', 'Avertissement', 'Trimestrielle', 'Administrateur applicatif', 'Activer les traces dans le paramétrage.', 1),
+    C('ANA-STK-001', 'Stocks', 'Rapprocher stocks et comptabilité.', 'Écart d’inventaire documenté et approuvé.', 'Moyenne', 'Périodique', 'Trimestrielle', 'Responsable comptable', 'Régulariser les écarts d’inventaire.', 0),
+    C('ANA-FIS-001', 'Fiscalité', 'Rapprocher déclarations fiscales et balance.', 'Écart nul entre déclaration (TVA, retenues) et comptes concernés.', 'Élevée', 'Périodique', 'Mensuelle', 'Fiscaliste / référent fiscal', 'Corriger la déclaration ou la comptabilisation.', 0),
+    C('ANA-BUD-001', 'Budget et engagements', 'Maîtriser la consommation budgétaire.', 'Disponibilité budgétaire contrôlée avant engagement ; dépassements analysés.', 'Moyenne', 'Périodique', 'Mensuelle', 'Contrôleur de gestion', 'Analyser les dépassements, réviser ou justifier.', 0),
+    C('ANA-PRJ-001', 'Projets et financements', 'Justifier les dépenses par projet et bailleur.', 'Dépenses rattachées à un axe projet/bailleur, justifiées et éligibles.', 'Élevée', 'Périodique', 'À chaque demande de remboursement', 'Contrôleur de gestion', 'Compléter le dossier justificatif ; isoler les dépenses inéligibles.', 0),
+    C('ANA-PAI-001', 'Personnel et paie', 'Rapprocher paie et comptabilité.', 'Écart nul entre états de paie validés, paiements et comptabilisation.', 'Moyenne', 'Périodique', 'Mensuelle', 'Responsable comptable', 'Régulariser les écarts de paie.', 0),
+    C('ANA-FIN-001', 'Opérations financières', 'Rapprocher emprunts et comptabilité.', 'Écart nul entre échéanciers financiers et soldes comptables ; cours de change conformes.', 'Moyenne', 'Périodique', 'Trimestrielle', 'Responsable comptable', 'Corriger intérêts, écarts de conversion ou échéancier.', 0)
+  ];
+  R.liens = { 'ANA-CPT-001': ['ecritures', 'Saisie d’écritures'], 'ANA-CPT-002': ['listeecritures', 'Liste des écritures'], 'ANA-CPT-003': ['listeecritures', 'Liste des écritures'], 'ANA-CPT-004': ['listeecritures', 'Liste des écritures'], 'ANA-CPT-005': ['clotmens', 'Clôture mensuelle'], 'ANA-CPT-006': ['listeecritures', 'Liste des écritures'], 'ANA-CPT-007': ['listeecritures', 'Liste des écritures'], 'ANA-CPT-008': ['ecritures', 'Saisie d’écritures'], 'ANA-CPT-009': ['balaux', 'Balance auxiliaire'], 'ANA-CPT-010': ['listeecritures', 'Liste des écritures'], 'ANA-TRE-001': ['releves', 'Pointage'], 'ANA-TRE-002': ['pvcaisse', 'PV de caisse'], 'ANA-IMM-001': ['immolist', 'Liste d’immobilisations'], 'ANA-CLO-001': ['clotmens', 'Clôture mensuelle'], 'ANA-CIR-001': ['circparam', 'Paramètre Circuit'], 'ANA-CTL-001': ['traces', 'Paramétrage des traces'], 'ANA-STK-001': ['balance', 'Balance générale'], 'ANA-FIS-001': ['fisctrait', 'Traitement fiscal'], 'ANA-BUD-001': ['rsfsb', 'Suivi budgétaire'], 'ANA-PRJ-001': ['rsfuf', 'Utilisation de fonds'], 'ANA-PAI-001': ['balance', 'Balance générale'], 'ANA-FIN-001': ['coursapplique', 'Cours appliqué'] };
+  R.controle = function (code) { return R.controles.filter(function (c) { return c.code === code; })[0] || null; };
+  R.matriceChamps = ['Code analyse', 'Volet', 'Objectif', 'Périmètre', 'Fréquence', 'Responsable', 'Criticité', 'Règle de contrôle', 'Résultat attendu', 'Action corrective', 'Validation', 'Traçabilité'];
+
+  // ---------- jeu de démonstration (anomalies semées) ----------
+  function demo() {
+    var an = new Date().getFullYear(), d = function (m, j) { return an + '-' + (m < 10 ? '0' : '') + m + '-' + (j < 10 ? '0' : '') + j; };
+    function P(j, n, date, ref, lignes, dp) { return { journal: j, piece: j + ' ' + n + '/' + String(an).slice(2), date: date, datePiece: dp || date, facture: '', reference: ref, source: 'demo', lignes: lignes.map(function (l) { return { compte: l[0], tiers: l[1] || '', libelle: l[2], sens: l[3], montant: l[4], axes: l[5] === 0 ? null : { ACT: '1' } }; }) }; }
+    var L = [];
+    L.push(P('ACHA', 101, d(1, 8), 'FA-001', [['606300', '', 'Achat fournitures', 'D', 420000], ['401000', 'F0001', 'Achat fournitures', 'C', 420000]]));
+    L.push(P('ACHA', 102, d(1, 15), 'FA-002', [['627000', '', 'Frais de mission', 'D', 880000], ['401000', 'F0002', 'Frais de mission', 'C', 880000]]));
+    L.push(P('ACHA', 103, d(2, 3), 'FA-003', [['615200', '', 'Entretien véhicules', 'D', 310000, 0], ['401000', 'F0003', 'Entretien véhicules', 'C', 310000]]));
+    L.push(P('ACHA', 105, d(1, 8), 'FA-005', [['606300', '', 'Achat fournitures', 'D', 420000], ['401000', 'F0001', 'Achat fournitures', 'C', 420000]]));   // saut 104 → 105
+    L.push(P('ACHA', 106, d(2, 20), '', [['606100', '', 'Carburant', 'D', 150000], ['401000', 'F0004', 'Carburant', 'C', 150000]]));
+    L.push(P('ACHA', 107, d(3, 5), 'FA-007', [['621100', '', 'Achat fournitures de bureau', 'D', 95000000], ['401000', 'F0005', 'Achat fournitures de bureau', 'C', 95000000]]));
+    L.push(P('ACHA', 108, d(3, 9), 'FA-008', [['401000', 'F0006', 'Avoir fournisseur', 'D', 260000], ['606300', '', 'Avoir fournisseur', 'C', 260000]]));
+    L.push(P('VENT', 201, d(1, 10), 'FC-001', [['411000', 'C0001', 'Vente de services', 'D', 1500000], ['706000', '', 'Vente de services', 'C', 1500000]]));
+    L.push(P('VENT', 202, d(1, 22), 'FC-002', [['411000', 'C0002', 'Vente de services', 'D', 900000], ['706000', '', 'Vente de services', 'C', 900000]]));
+    L.push(P('VENT', 203, d(2, 11), 'FC-003', [['411000', 'C0001', 'Vente de services', 'D', 1200000], ['706000', '', 'Vente de services', 'C', 1200000]]));
+    L.push(P('VENT', 204, d(2, 25), 'FC-004', [['411000', 'C0003', 'Encaissement trop perçu', 'C', 700000], ['706000', '', 'Régularisation', 'D', 700000]]));
+    L.push(P('BANQ', 301, d(1, 31), 'REL-01', [['512100', '', 'Virement client', 'D', 1500000], ['411000', 'C0001', 'Virement client', 'C', 1500000]]));
+    L.push(P('BANQ', 302, d(2, 28), 'REL-02', [['401000', 'F0001', 'Paiement fournisseur', 'D', 420000], ['512100', '', 'Paiement fournisseur', 'C', 420000]]));
+    L.push(P('BANQ', 303, d(3, 15), '', [['627000', '', 'Frais bancaires', 'D', 45000], ['512100', '', 'Frais bancaires', 'C', 45000]]));
+    L.push(P('CA', 401, d(1, 12), 'PCD-01', [['621100', '', 'Achat fournitures', 'D', 180000], ['531000', '', 'Achat fournitures', 'C', 180000]]));
+    L.push(P('CA', 402, d(2, 14), 'PCD-02', [['531000', '', 'Alimentation caisse', 'D', 100000], ['512100', '', 'Alimentation caisse', 'C', 100000]]));
+    L.push(P('CA', 403, d(2, 18), 'PCD-03', [['625100', '', 'Frais de transport', 'D', 650000], ['531000', '', 'Frais de transport', 'C', 650000]]));
+    L.push(P('OD', 501, d(3, 1), 'OD-01', [['471000', '', 'Opération à régulariser', 'D', 320000], ['512100', '', 'Opération à régulariser', 'C', 320000]]));
+    L.push(P('OD', 502, d(3, 2), 'OD-02', [['661100', '', 'Intérêts emprunt', 'D', 500000], ['512100', '', 'Intérêts emprunt', 'C', 450000]]));   // déséquilibrée
+    L.push(P('OD', 503, d(1, 5), 'OD-03', [['615200', '', 'Régularisation', 'D', 90000], ['471000', '', 'Régularisation', 'C', 90000]]));         // période clôturée (janvier)
+    L.push(P('OD', 504, d(12, 28), 'OD-04', [['606300', '', 'Provision de fournitures', 'D', 70000], ['401000', 'F0001', 'Provision de fournitures', 'C', 70000]], d(12, 30)));
+    L.push(P('OD', 505, d(3, 12), 'OD-05', [['531000', '', 'Dépense non provisionnée', 'C', 50000], ['621100', '', 'Dépense non provisionnée', 'D', 50000]], d(3, 20)));
+    return { pieces: L, cloture: [[an + '-01', 'Janvier']] };
+  }
+  function nombre(v) { return Number(v) || 0; }
+  function estD(s) { return /^d/i.test(String(s || '')); }
+  function periodesCloturees() {
+    var out = [], pc = window.PERIODES_CLOTUREES || {};
+    Object.keys(pc).forEach(function (a) { Object.keys(pc[a] || {}).forEach(function (m) { out.push(m); }); });
+    (window.CLOTURES_PERIODIQUES || []).forEach(function (c) { if (c.du && c.au) out.push([c.du, c.au]); });
+    return out;
+  }
+  function enPeriodeCloturee(date, closes) { return closes.some(function (c) { return Array.isArray(c) ? (date >= c[0] && date <= c[1]) : String(date).slice(0, 7) === c; }); }
+  // exécute les contrôles automatisables ; renvoie { source, pieces, lignes, resultats:[{code, n, details[]}], kpi }
+  R.executer = function () {
+    var reel = (Array.isArray(window.ECRITURES_PIECES) ? window.ECRITURES_PIECES : []).filter(function (p) { return p && p.lignes && p.lignes.length; });
+    var D = reel.length ? null : demo(), pieces = reel.length ? reel : D.pieces, closes = reel.length ? periodesCloturees() : D.cloture.map(function (x) { return x[0]; });
+    var today = new Date().toISOString().slice(0, 10), res = {}, add = function (code, msg, piece) { (res[code] = res[code] || []).push({ msg: msg, piece: piece || '' }); };
+    var lignes = []; pieces.forEach(function (p) { p.lignes.forEach(function (l) { lignes.push({ p: p, l: l }); }); });
+    // 001 équilibre ; 003 justification ; 004 dates ; 005 période clôturée
+    pieces.forEach(function (p) {
+      var dd = 0, cc = 0; p.lignes.forEach(function (l) { if (estD(l.sens)) dd += nombre(l.montant); else cc += nombre(l.montant); });
+      if (Math.abs(dd - cc) > 0.5) add('ANA-CPT-001', 'Pièce déséquilibrée : débit ' + Math.round(dd).toLocaleString('fr-FR') + ' ≠ crédit ' + Math.round(cc).toLocaleString('fr-FR'), p.piece);
+      if (!String(p.reference || '').trim() && !String(p.facture || '').trim()) add('ANA-CPT-003', 'Aucune référence ni facture associée', p.piece);
+      if (p.datePiece && p.date && p.datePiece > p.date) add('ANA-CPT-004', 'Date de pièce (' + p.datePiece + ') postérieure à la date d’écriture (' + p.date + ')', p.piece);
+      if (p.date && p.date > today) add('ANA-CPT-004', 'Date d’écriture dans le futur (' + p.date + ')', p.piece);
+      if (p.date && enPeriodeCloturee(p.date, closes)) add('ANA-CPT-005', 'Écriture datée du ' + p.date + ' dans une période clôturée', p.piece);
+    });
+    // 002 doublons
+    var vus = {}; lignes.forEach(function (x) { var k = [x.p.journal, x.p.date, x.l.compte, nombre(x.l.montant), x.l.libelle, x.l.sens].join('|'); if (vus[k]) add('ANA-CPT-002', 'Doublon probable de la pièce ' + vus[k] + ' (' + x.l.compte + ', ' + Math.round(nombre(x.l.montant)).toLocaleString('fr-FR') + ')', x.p.piece); else vus[k] = x.p.piece; });
+    // soldes par compte : 006 / 009
+    var sd = {}; lignes.forEach(function (x) { var c = String(x.l.compte || ''); sd[c] = (sd[c] || 0) + (estD(x.l.sens) ? 1 : -1) * nombre(x.l.montant); });
+    Object.keys(sd).forEach(function (c) {
+      var s = Math.round(sd[c]), f = function (v) { return Math.abs(v).toLocaleString('fr-FR'); };
+      if (/^(47|58)/.test(c) && s !== 0) add('ANA-CPT-006', 'Compte ' + c + ' non apuré : solde ' + (s > 0 ? 'débiteur ' : 'créditeur ') + f(s), c);
+      if (/^411/.test(c) && s < 0) add('ANA-CPT-009', 'Compte client ' + c + ' créditeur de ' + f(s), c);
+      if (/^401/.test(c) && s > 0) add('ANA-CPT-009', 'Compte fournisseur ' + c + ' débiteur de ' + f(s), c);
+      if (/^53/.test(c) && s < 0) add('ANA-CPT-009', 'Caisse ' + c + ' négative : ' + f(s), c);
+    });
+    // 007 montants atypiques
+    var mt = lignes.map(function (x) { return nombre(x.l.montant); }), n = mt.length || 1, moy = mt.reduce(function (a, b) { return a + b; }, 0) / n, et = Math.sqrt(mt.reduce(function (a, b) { return a + (b - moy) * (b - moy); }, 0) / n);
+    lignes.forEach(function (x) { if (et > 0 && nombre(x.l.montant) > moy + 3 * et) add('ANA-CPT-007', 'Montant atypique ' + Math.round(nombre(x.l.montant)).toLocaleString('fr-FR') + ' (moyenne ' + Math.round(moy).toLocaleString('fr-FR') + ')', x.p.piece); });
+    // 008 axes analytiques
+    lignes.forEach(function (x) { var c = String(x.l.compte || ''); if (/^[67]/.test(c) && (!x.l.axes || !Object.keys(x.l.axes).some(function (k) { return x.l.axes[k]; }))) add('ANA-CPT-008', 'Compte ' + c + ' sans axe analytique', x.p.piece); });
+    // 010 continuité de la numérotation
+    var nums = {}; pieces.forEach(function (p) { var m = /(\d+)\s*\/\s*\d+\s*$/.exec(String(p.piece || '')); if (m) (nums[p.journal] = nums[p.journal] || []).push(+m[1]); });
+    Object.keys(nums).forEach(function (j) { var a = nums[j].sort(function (x, y) { return x - y; }); for (var i = 1; i < a.length; i++) if (a[i] - a[i - 1] > 1) add('ANA-CPT-010', 'Rupture de numérotation au journal ' + j + ' : de ' + a[i - 1] + ' à ' + a[i], j + ' ' + a[i]); });
+    // ---- contrôles branchés sur les modules du logiciel ----
+    var dispo = {}, jj = function (d) { return new Date(d + 'T00:00:00'); }, fm = function (v) { return Math.round(Math.abs(v)).toLocaleString('fr-FR'); };
+    // Rapprochement bancaire (Pointage / relevés) : window.RELEVES
+    var rels = Array.isArray(window.RELEVES) ? window.RELEVES : [];
+    if (rels.length) {
+      dispo['ANA-TRE-001'] = rels.length + ' relevé(s) bancaire(s)';
+      var cfgR = window.RAPPROCH_CONFIG || [];
+      rels.forEach(function (r) {
+        var ref = 'Relevé ' + r.numero + ' (' + r.compte + ')', sm = (r.lignes || []).reduce(function (a, x) { return a + (Number(x.m) || 0); }, 0), ec = (Number(r.soldeIni) || 0) + sm - (Number(r.soldeFin) || 0);
+        if (Math.abs(ec) > 0.5) add('ANA-TRE-001', 'Solde final incohérent avec les lignes du relevé (écart ' + fm(ec) + ')', ref);
+        if (cfgR.length && !cfgR.some(function (c) { return c.compte === r.compte; })) add('ANA-TRE-001', 'Compte ' + r.compte + ' sans configuration de rapprochement', ref);
+        (r.lignes || []).forEach(function (x) {
+          if (x.r) return; var age = Math.round((jj(r.au || r.date) - jj(x.d)) / 864e5);
+          add('ANA-TRE-001', 'Ligne non rapprochée du ' + x.d + ' : « ' + x.l + ' » (' + (x.m < 0 ? '−' : '+') + fm(x.m) + ')' + (age > 30 ? ' — ancienne de ' + age + ' jours' : ''), ref);
+        });
+      });
+    }
+    // Petite caisse : window.CAISSE_LOTS
+    var lots = Array.isArray(window.CAISSE_LOTS) ? window.CAISSE_LOTS : [];
+    if (lots.length) {
+      dispo['ANA-TRE-002'] = lots.length + ' lot(s) de caisse';
+      lots.forEach(function (l) {
+        var rec = 0, dep = 0; (l.ops || []).forEach(function (o) { rec += Number(o.rec) || 0; dep += Number(o.dep) || 0; }); var sf = (Number(l.solde) || 0) + rec - dep;
+        if (sf < 0) add('ANA-TRE-002', 'Solde de caisse négatif : ' + fm(sf) + ' ' + (l.devise || ''), 'Lot ' + l.num);
+        (l.ops || []).forEach(function (o) { if (!String(o.ref || '').trim() && (Number(o.dep) || 0) > 0) add('ANA-TRE-002', 'Dépense de ' + fm(o.dep) + ' sans justificatif (« ' + o.libelle + ' »)', 'Lot ' + l.num); });
+        if (l.ferme && !(l.pv && l.pv.valide)) add('ANA-TRE-002', 'Lot fermé sans PV de caisse validé (inventaire physique non documenté)', 'Lot ' + l.num);
+        if (l.pv && l.pv.valide && l.pv.ecart && Math.abs(l.pv.ecart) > 0.005 && !String(l.pv.justification || '').trim()) add('ANA-TRE-002', 'Écart de caisse ' + fm(l.pv.ecart) + ' non justifié', 'Lot ' + l.num);
+      });
+    }
+    // Immobilisations : window.FICHES_IMMOBILISATION
+    var immos = Array.isArray(window.FICHES_IMMOBILISATION) ? window.FICHES_IMMOBILISATION : [];
+    if (immos.length) {
+      dispo['ANA-IMM-001'] = immos.length + ' fiche(s) d’immobilisation';
+      immos.forEach(function (i) {
+        var ref = 'Immobilisation ' + (i.num || i.designation);
+        if (i.statut !== 'Écriture générée') add('ANA-IMM-001', 'Fiche sans écriture comptable générée (statut « ' + (i.statut || 'Brouillon') + ' ») : registre et comptabilité non rapprochés', ref);
+        if (!(Number(i.valeur) > 0)) add('ANA-IMM-001', 'Valeur d’acquisition nulle', ref);
+        if (!String(i.emplacement || '').trim()) add('ANA-IMM-001', 'Emplacement (localisation) non renseigné', ref);
+        if (!String(i.responsable || '').trim()) add('ANA-IMM-001', 'Responsable non renseigné', ref);
+        if (i.sortie && !i.sortie.date) add('ANA-IMM-001', 'Sortie d’actif sans date', ref);
+      });
+    }
+    // Clôtures : mois échus de l’exercice courant non clôturés (clôture mensuelle activée)
+    var cfgC = window.CLOTURE_CFG || {};
+    if (cfgC.mensuelle !== false) {
+      var an = new Date().getFullYear(), mo = new Date().getMonth(), pcl = window.PERIODES_CLOTUREES || {}, cm = pcl[an] || pcl[String(an)] || {}, noms = ['janvier', 'février', 'mars', 'avril', 'mai', 'juin', 'juillet', 'août', 'septembre', 'octobre', 'novembre', 'décembre'];
+      var perio = (window.CLOTURES_PERIODIQUES || []).map(function (c) { return [c.du, c.au]; });
+      dispo['ANA-CLO-001'] = 'exercice ' + an;
+      for (var m = 0; m < mo; m++) { var k = an + '-' + (m < 9 ? '0' : '') + (m + 1); if (!cm[k] && !enPeriodeCloturee(k + '-15', perio)) add('ANA-CLO-001', 'Période de ' + noms[m] + ' ' + an + ' échue et non clôturée', 'Période ' + k); }
+    }
+    // Circuit de validation : window.CIRCUIT_ETAPES
+    var cir = Array.isArray(window.CIRCUIT_ETAPES) ? window.CIRCUIT_ETAPES : [];
+    if (cir.length) {
+      dispo['ANA-CIR-001'] = cir.length + ' étape(s) de circuit';
+      cir.forEach(function (e) {
+        var ref = 'Étape ' + e.num + ' ' + e.nom;
+        if (!(e.users || []).length) add('ANA-CIR-001', 'Aucun utilisateur autorisé à exécuter l’étape', ref);
+        if (!(e.checklist || []).length) add('ANA-CIR-001', 'Aucune checklist de contrôle paramétrée', ref);
+        else if (!(e.checklist || []).some(function (c) { return c.ob; })) add('ANA-CIR-001', 'Aucun point de contrôle obligatoire', ref);
+      });
+      if (cir.length > 1) (cir[0].users || []).filter(function (u) { return cir.every(function (e) { return (e.users || []).indexOf(u) >= 0; }); }).forEach(function (u) { add('ANA-CIR-001', 'Séparation des tâches : l’utilisateur « ' + u + ' » peut exécuter toutes les étapes du circuit', 'Circuit'); });
+    }
+    // Traces : window.TRACES_CFG
+    var tr = window.TRACES_CFG;
+    if (tr && typeof tr === 'object' && Object.keys(tr).length) {
+      dispo['ANA-CTL-001'] = Object.keys(tr).length + ' fonctionnalité(s) paramétrée(s), contrôle des fonctionnalités comptables';
+      Object.keys(tr).filter(function (k) { return /(écriture|ecriture|journal|plan|lettrage|rapprochement|cl[ôo]ture|caisse|immobilis|tiers|exercice|circuit|facture|banque|devise|cours)/i.test(k); }).forEach(function (k) { var t = tr[k]; if (t && !(t.r || t.c || t.m || t.s)) add('ANA-CTL-001', 'Aucune trace activée sur « ' + k + ' » (création ' + (t.c ? 'oui' : 'non') + ', modification ' + (t.m ? 'oui' : 'non') + ', suppression ' + (t.s ? 'oui' : 'non') + ')', k); });
+    }
+    var srcMod = { 'ANA-TRE-001': 'Rapprochement bancaire', 'ANA-TRE-002': 'Petite caisse', 'ANA-IMM-001': 'Immobilisations', 'ANA-CLO-001': 'Clôtures', 'ANA-CIR-001': 'Circuit de validation', 'ANA-CTL-001': 'Traces' };
+    var srcPieces = reel.length ? 'Saisie d’écritures (' + reel.length + ' pièce(s))' : 'Jeu de démonstration (aucune pièce saisie)';
+    var resultats = R.controles.filter(function (c) { return c.auto; }).map(function (c) {
+      var d = res[c.code] || [], mod = srcMod[c.code], na = mod ? !dispo[c.code] : false;
+      return { c: c, n: d.length, details: d, na: na, src: mod ? (na ? mod + ' — aucune donnée' : mod + ' : ' + dispo[c.code]) : srcPieces };
+    });
+    var pAno = {}; resultats.forEach(function (r) { r.details.forEach(function (x) { if (/^ANA-CPT-(001|002|003|004|005|008)$/.test(r.c.code) || true) pAno[x.piece] = 1; }); });
+    var justif = pieces.filter(function (p) { return String(p.reference || '').trim() || String(p.facture || '').trim(); }).length;
+    var kpi = { pieces: pieces.length, lignes: lignes.length, justification: pieces.length ? justif / pieces.length * 100 : 0, anomalies: pieces.length ? Object.keys(pAno).filter(function (k) { return k && pieces.some(function (p) { return p.piece === k; }); }).length / pieces.length * 100 : 0, enSuspens: resultats.reduce(function (a, r) { return a + r.n; }, 0) };
+    var tl = 0, tr2 = 0; rels.forEach(function (r) { (r.lignes || []).forEach(function (x) { tl++; if (x.r) tr2++; }); }); kpi.rapprochement = tl ? tr2 / tl * 100 : null;
+    kpi.suspensCritiques = resultats.filter(function (r) { return r.c.type === 'Bloquant'; }).reduce(function (a, r) { return a + r.n; }, 0);
+    var rep = { source: reel.length ? 'saisies' : 'demo', pieces: pieces.length, resultats: resultats, kpi: kpi, date: new Date() };
+    R.dernier = rep; return rep;
+  };
+})();
+</script>

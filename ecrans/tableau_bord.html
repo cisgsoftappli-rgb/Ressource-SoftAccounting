@@ -21,7 +21,8 @@
 .tb-c>span{font-size:12px;font-weight:600;color:#474C58;text-transform:uppercase;letter-spacing:.04em}
 .tb-sel{width:100%;box-sizing:border-box;height:36px;border:1px solid #878D9A;border-radius:8px;background:#fff;color:#353944;font:inherit;font-size:12px;padding:0 12px}
 .tb-sel:focus-visible{outline:3px solid #2E427B;outline-offset:2px}
-.tb-kpis{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:12px;margin-bottom:12px}
+.tb-kpis{display:grid;grid-template-columns:repeat(5,minmax(0,1fr));gap:12px;margin-bottom:12px}
+@media (max-width:1400px){.tb-kpis{grid-template-columns:repeat(3,minmax(0,1fr))}}
 @media (max-width:1100px){.tb-kpis{grid-template-columns:repeat(2,minmax(0,1fr))}}
 @media (max-width:560px){.tb-kpis{grid-template-columns:1fr}}
 .tb-kpi{display:flex;align-items:center;gap:10px;padding:10px 12px}
@@ -44,6 +45,24 @@
 .tb-lg li{display:grid;grid-template-columns:12px 1fr auto;gap:8px;align-items:center;font-size:12px}
 .tb-lg i{width:10px;height:10px;border-radius:50%}
 .tb-lg b{font-variant-numeric:tabular-nums}
+.tb-trio{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:12px;margin-top:12px}
+@media (max-width:1100px){.tb-trio{grid-template-columns:1fr}}
+.tb-w{padding:0;overflow:hidden}
+.tb-wh{display:flex;align-items:center;justify-content:space-between;gap:10px;padding:16px 22px;border-bottom:1px solid #E9EBF0}
+.tb-wh h3{margin:0;font-family:var(--font-heading);font-size:16px;font-weight:600;color:#0B1332}
+.tb-wh a{font-size:13px;color:#2E427B;text-decoration:none;cursor:pointer}.tb-wh a:hover{text-decoration:underline}
+.tb-wb{padding:14px 22px 18px}
+.tb-lst{list-style:none;margin:0;padding:0}.tb-lst li{display:flex;justify-content:space-between;align-items:center;gap:12px;padding:11px 0;border-bottom:1px dashed #E2E5EC;font-size:14px;color:#0B1332}.tb-lst li:last-child{border-bottom:0}
+.tb-lst li b{font-variant-numeric:tabular-nums;white-space:nowrap}
+.tb-lst li span i{margin-right:6px;color:#474C58}
+.tb-ag{margin:0 0 12px}.tb-ag-l{display:flex;justify-content:space-between;align-items:baseline;font-size:14px;color:#0B1332}.tb-ag-l b{font-variant-numeric:tabular-nums}
+.tb-ag-p{height:8px;margin-top:5px;border-radius:6px;background:#ECEFF3;overflow:hidden}.tb-ag-p i{display:block;height:100%;min-width:9px;border-radius:6px}
+.tb-dso{display:flex;justify-content:space-between;align-items:baseline;margin-top:6px;padding-top:12px;border-top:1px solid #E9EBF0;color:#6B7080;font-size:14px}.tb-dso b{color:#0B1332;font-size:16px}
+.tb-td{list-style:none;margin:0;padding:0}.tb-td li{border-bottom:1px solid #E9EBF0}.tb-td li:last-child{border-bottom:0}
+.tb-td a{display:flex;align-items:center;gap:10px;padding:15px 22px;font-size:14.5px;color:#0B1332;text-decoration:none;cursor:pointer}.tb-td a:hover{background:#F6F8FC}
+.tb-td a span{flex:1}.tb-td em{font-style:normal;min-width:30px;height:30px;padding:0 9px;border-radius:15px;display:inline-flex;align-items:center;justify-content:center;font-weight:700;font-size:13px}
+.tb-td .or{background:#FDF1D8;color:#B45309}.tb-td .bl{background:#E6EBF8;color:#2E427B}.tb-td .rg{background:#FBE4E4;color:#B63132}
+.tb-nb{display:inline-flex;align-items:center;gap:6px;padding:4px 12px;border-radius:14px;background:#FDF1D8;color:#B45309;font-weight:700;font-size:13px}.tb-nb:before{content:"";width:6px;height:6px;border-radius:50%;background:#B8860B}
 </style>
 
 <div class="tb-root" data-tb>
@@ -66,20 +85,37 @@
     <article class="tb-card tb-kpi"><span class="tb-ico"><i class="ti ti-receipt"></i></span><div><p class="tb-kl">Total charges</p><p class="tb-kv" data-k="charges"></p><p class="tb-var ko" data-v="charges"></p></div></article>
     <article class="tb-card tb-kpi"><span class="tb-ico"><i class="ti ti-users"></i></span><div><p class="tb-kl">Créances clients</p><p class="tb-kv" data-k="creances">0 Ar</p><p class="tb-var ok" data-v="creances"></p></div></article>
     <article class="tb-card tb-kpi"><span class="tb-ico"><i class="ti ti-truck-delivery"></i></span><div><p class="tb-kl">Dettes fournisseurs</p><p class="tb-kv" data-k="dettes"></p><p class="tb-var ok" data-v="dettes"></p></div></article>
+    <article class="tb-card tb-kpi"><span class="tb-ico"><i class="ti ti-building-bank"></i></span><div><p class="tb-kl">Solde global de trésorerie</p><p class="tb-kv" data-k="tresorerie"></p><p class="tb-var ok" data-v="tresorerie">Tous comptes et caisses</p></div></article>
   </section>
 
   <div class="tb-graph">
     <section class="tb-card tb-gp" aria-label="Évolution">
       <h3>Évolution du chiffre d'affaires et des charges</h3>
       <p class="tb-leg"><span style="color:#2E427B"><i style="background:#2E427B"></i>Chiffre d'affaires</span><span style="color:#B45309"><i style="background:#B45309"></i>Charges</span></p>
-      <svg class="tb-svg" viewBox="0 0 640 190" role="img" aria-label="Courbes mensuelles du chiffre d'affaires et des charges" data-tb-line></svg>
+      <svg class="tb-svg" role="img" aria-label="Courbes mensuelles du chiffre d'affaires et des charges" data-tb-line></svg>
     </section>
-    <section class="tb-card tb-gp" aria-label="Répartition">
-      <h3>Répartition des charges</h3>
-      <div class="tb-don">
-        <svg class="tb-svg" viewBox="0 0 200 200" role="img" aria-label="Répartition des charges par compte" data-tb-don></svg>
-        <ul class="tb-lg" data-tb-lg></ul>
-      </div>
+    <section class="tb-card tb-gp" aria-label="Trésorerie par compte">
+      <div style="display:flex;justify-content:space-between;align-items:baseline;gap:10px"><h3>Trésorerie par compte</h3><a href="#releves" style="font-size:13px;color:#2E427B;text-decoration:none">Détail</a></div>
+      <p class="tb-leg"><span style="color:#2E427B"><i style="background:#2E427B"></i>Solde global</span></p>
+      <svg class="tb-svg" role="img" aria-label="Évolution mensuelle de la trésorerie" data-tb-tcurve></svg>
+      <ul class="tb-lst" data-tb-tres style="margin-top:8px"></ul>
+    </section>
+  </div>
+
+  <div class="tb-trio">
+    <section class="tb-card tb-w" aria-label="Balance âgée clients">
+      <div class="tb-wh"><h3>Balance âgée clients</h3><a href="#echeancier">Voir l'état</a></div>
+      <div class="tb-wb"><div data-tb-age></div>
+        <div class="tb-dso"><span>DSO moyen</span><b data-tb-dso>38 jours</b></div></div>
+    </section>
+    <section class="tb-card tb-w" aria-label="Balance âgée fournisseurs">
+      <div class="tb-wh"><h3>Balance âgée fournisseurs</h3><a href="#echeancier">Voir l'état</a></div>
+      <div class="tb-wb"><div data-tb-agef></div>
+        <div class="tb-dso"><span>DPO moyen</span><b>45 jours</b></div></div>
+    </section>
+    <section class="tb-card tb-w" aria-label="À traiter">
+      <div class="tb-wh"><h3>À traiter</h3><span class="tb-nb" data-tb-nb>7</span></div>
+      <ul class="tb-td" data-tb-todo></ul>
     </section>
   </div>
 </div>
@@ -112,9 +148,11 @@
     courbes(ca, charges); anneau(totC);
   }
 
+  var HG = 280;   // hauteur commune des deux graphiques
+  function taille(svg) { var w = Math.round(svg.getBoundingClientRect().width) || 640; svg.setAttribute('viewBox', '0 0 ' + w + ' ' + HG); svg.style.height = HG + 'px'; return w; }
   function courbes(ca, ch) {
     var svg = q('[data-tb-line]'); svg.innerHTML = '';
-    var W = 640, H = 190, L = 96, R = 16, T = 8, B = 26, max = Math.max.apply(null, ca.concat(ch).concat([1]));
+    var W = taille(svg), H = HG, L = 96, R = 16, T = 8, B = 26, max = Math.max.apply(null, ca.concat(ch).concat([1]));
     var X = function (i) { return L + i * (W - L - R) / 11; }, Y = function (v) { return H - B - v / max * (H - T - B); };
     for (var g = 0; g <= 4; g++) { var v = max * g / 4, y = Y(v); el('line', { x1: L, x2: W - R, y1: y, y2: y, stroke: '#E9EBF0' }, svg); var t = el('text', { x: L - 8, y: y + 4, 'text-anchor': 'end' }, svg); t.textContent = fmt(v).replace(' Ar', ''); }
     MOIS.forEach(function (m, i) { var t = el('text', { x: X(i), y: H - 8, 'text-anchor': 'middle' }, svg); t.textContent = m; });
@@ -125,7 +163,7 @@
   }
 
   function anneau(total) {
-    var svg = q('[data-tb-don]'); svg.innerHTML = ''; var cx = 100, cy = 100, r = 74, sw = 32, circ = 2 * Math.PI * r, off = 0;
+    var svg = q('[data-tb-don]'); if (!svg) return; svg.innerHTML = ''; var cx = 100, cy = 100, r = 74, sw = 32, circ = 2 * Math.PI * r, off = 0;
     COMPTES.forEach(function (c) {
       var len = circ * c[2] / 100;
       var a = el('circle', { cx: cx, cy: cy, r: r, fill: 'none', stroke: c[3], 'stroke-width': sw, 'stroke-dasharray': len + ' ' + (circ - len), 'stroke-dashoffset': -off, transform: 'rotate(-90 100 100)' }, svg);
@@ -136,7 +174,48 @@
     q('[data-tb-lg]').innerHTML = COMPTES.map(function (c) { return '<li><i style="background:' + c[3] + '"></i><span>' + (c[0] ? c[0] + ' · ' : '') + c[1] + '</span><b>' + c[2].toFixed(1).replace('.', ',') + ' %</b></li>'; }).join('');
   }
 
-  ['[data-tb-ex]', '[data-tb-per]', '[data-tb-site]'].forEach(function (s) { q(s).addEventListener('change', maj); });
-  maj();
+  // Trésorerie par compte, balance âgée clients et éléments à traiter (données de démonstration)
+  var TRES = [['BNI – compte courant', 31240000, 1], ['BOA – compte courant', 12480500], ['Caisse principale', 1245000], ['Petite caisse', 486000]];
+  var COURBE = [28e6, 30.5e6, 29.2e6, 34e6, 35.2e6, 38.8e6, 37.5e6, 41e6, 42.5e6, 44.2e6];
+  var AGE0 = [['Non échu', 36500000, '#1F8A5B'], ['1 – 30 jours', 4100000, '#3E4C85'], ['31 – 60 jours', 2900000, '#C9A92B'], ['61 – 90 jours', 1800000, '#C9A92B'], ['> 90 jours', 1000000, '#C03A3A']];
+  var AGEF0 = [['Non échu', 21400000, '#1F8A5B'], ['1 – 30 jours', 6200000, '#3E4C85'], ['31 – 60 jours', 3100000, '#C9A92B'], ['61 – 90 jours', 1500000, '#C9A92B'], ['> 90 jours', 800000, '#C03A3A']];
+  var AGE = AGE0, AGEF = AGEF0;
+  var TODO = [['Pièces en brouillon à valider', 3, 'or', '#ecritures'], ['Mouvements de petite caisse à comptabiliser', 1, 'or', '#caissegen'], ['Lignes de relevé non rapprochées', 3, 'bl', '#pointage'], ['Dépassements budgétaires', 2, 'rg', '#budgetconv'], ["Dotations d'octobre à générer", 1, 'bl', '#immolist']];
+  // balance âgée d'après le type des tiers (Client / Fournisseur) et leurs échéances ouvertes (même source que « Échéancier et balance âgée »)
+  var TRANCHES = [['Non échu', null, '#1F8A5B'], ['1 – 30 jours', [1, 30], '#3E4C85'], ['31 – 60 jours', [31, 60], '#C9A92B'], ['61 – 90 jours', [61, 90], '#C9A92B'], ['> 90 jours', [91, 1e9], '#C03A3A']];
+  function ageParType(type, defaut) {
+    var E = window.ECHEANCES_TIERS, T = window.TIERS_PLAN; if (!E || !T || !T.length) return defaut;
+    var b = TRANCHES.map(function (t) { return 0; }), n = 0;
+    T.forEach(function (t) {
+      if (t.actif === false || t.sous !== type) return;
+      E.de(t).forEach(function (x) { var m = x.m, retard = Math.floor((E.ref - x.e) / 86400000); n++; if (retard < 0) { b[0] += m; return; } for (var i = 1; i < TRANCHES.length; i++) if (retard >= TRANCHES[i][1][0] && retard <= TRANCHES[i][1][1]) { b[i] += m; break; } });
+    });
+    return TRANCHES.map(function (t, i) { return [t[0], Math.max(0, Math.round(b[i])), t[2]]; });
+  }
+  function trio() {
+    AGE = ageParType('Client', AGE0); AGEF = ageParType('Fournisseur', AGEF0);
+    var site = q('[data-tb-site]').value, k = site === 'siege' ? 0.85 : 1;
+    q('[data-k=tresorerie]').textContent = fmt(TRES.reduce(function (a, t) { return a + t[1]; }, 0) * k);
+    q('[data-tb-tres]').innerHTML = TRES.map(function (t) { return '<li><span>' + (t[2] ? '<i class="ti ti-building-bank"></i>' : '') + t[0] + '</span><b>' + fmt(t[1] * k) + '</b></li>'; }).join('');
+    var svg = q('[data-tb-tcurve]'); svg.innerHTML = '';
+    var W = taille(svg), H = HG, L = 56, R = 16, T = 8, B = 26, MX = 48e6, X = function (i) { return L + i * (W - L - R) / 9; }, Y = function (v) { return H - B - v / MX * (H - T - B); };
+    for (var g = 0; g <= 4; g++) { var v = MX * g / 4, y = Y(v), t = el('text', { x: L - 6, y: y + 3, 'text-anchor': 'end' }, svg); t.textContent = (v / 1e6) + ' M'; el('line', { x1: L, x2: W - R, y1: y, y2: y, stroke: '#E9EBF0' }, svg); }
+    var pts = COURBE.map(function (v, i) { return X(i) + ',' + Y(v * k); });
+    el('polygon', { points: X(0) + ',' + Y(0) + ' ' + pts.join(' ') + ' ' + X(9) + ',' + Y(0), fill: '#EDEEF4' }, svg);
+    el('polyline', { points: pts.join(' '), fill: 'none', stroke: '#2E427B', 'stroke-width': 2.4, 'stroke-linejoin': 'round' }, svg);
+    COURBE.forEach(function (v, i) { var c = el('circle', { cx: X(i), cy: Y(v * k), r: 3.6, fill: '#fff', stroke: '#2E427B', 'stroke-width': 2 }, svg); var tt = el('title', {}, c); tt.textContent = MOIS[i] + ' : ' + fmt(v * k); });
+    MOIS.slice(0, 10).forEach(function (m, i) { var t = el('text', { x: X(i), y: H - 8, 'text-anchor': 'middle' }, svg); t.textContent = m.replace('.', ''); });
+    var tot = AGE.reduce(function (s, a) { return s + a[1]; }, 0) || 1;
+    q('[data-tb-age]').innerHTML = AGE.map(function (a) { return '<div class="tb-ag"><div class="tb-ag-l"><span>' + a[0] + '</span><b>' + fmt(a[1] * k) + '</b></div><div class="tb-ag-p"><i style="width:' + (a[1] / tot * 100).toFixed(1) + '%;background:' + a[2] + '"></i></div></div>'; }).join('');
+    var totf = AGEF.reduce(function (s, a) { return s + a[1]; }, 0) || 1;
+    q('[data-tb-agef]').innerHTML = AGEF.map(function (a) { return '<div class="tb-ag"><div class="tb-ag-l"><span>' + a[0] + '</span><b>' + fmt(a[1] * k) + '</b></div><div class="tb-ag-p"><i style="width:' + (a[1] / totf * 100).toFixed(1) + '%;background:' + a[2] + '"></i></div></div>'; }).join('');
+    q('[data-tb-todo]').innerHTML = TODO.map(function (t) { return '<li><a href="' + t[3] + '"><span>' + t[0] + '</span><em class="' + t[2] + '">' + t[1] + '</em><i class="ti ti-chevron-right" aria-hidden="true"></i></a></li>'; }).join('');
+  }
+  var largeur = 0;
+  function redessiner() { var w = Math.round(q('[data-tb-line]').getBoundingClientRect().width) + '/' + Math.round(q('[data-tb-tcurve]').getBoundingClientRect().width); if (w.indexOf('0/') === 0 || /\/0$/.test(w) || w === largeur) return; largeur = w; maj(); trio(); }
+  if (window.ResizeObserver) new ResizeObserver(function () { clearTimeout(redessiner.t); redessiner.t = setTimeout(redessiner, 80); }).observe(q('.tb-graph'));
+  window.addEventListener('hashchange', function () { if (location.hash === '#dashboard') setTimeout(function () { largeur = ''; redessiner(); }, 80); }); window.addEventListener('resize', function () { clearTimeout(redessiner.t); redessiner.t = setTimeout(redessiner, 150); });
+  ['[data-tb-ex]', '[data-tb-per]', '[data-tb-site]'].forEach(function (s) { q(s).addEventListener('change', function () { maj(); trio(); }); });
+  maj(); trio();
 })();
 </script>

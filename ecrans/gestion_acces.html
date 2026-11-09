@@ -11,7 +11,10 @@
 .ga-tabs{display:flex;border-bottom:1px solid #e2e8f0;padding:0 12px}
 .ga-tab{display:inline-flex;align-items:center;gap:8px;padding:10px 16px;border:0;border-bottom:2px solid transparent;background:none;font:inherit;font-size:14px;font-weight:500;color:#64748b;cursor:pointer}
 .ga-tab:hover{color:#334155}.ga-tab.on{border-bottom-color:#059669;color:#047857}
-.ga-body{display:flex;gap:12px;padding:12px;align-items:stretch;min-height:480px}
+.ga-body{display:flex;gap:12px;padding:12px;align-items:stretch;min-height:480px;box-sizing:border-box}
+.ga-body{height:var(--ga-h,auto)}
+/* la ligne de filtres ne doit pas élargir le tableau : les champs n'ont pas de largeur propre, ils remplissent leur colonne */
+.ga-t .tf-row input,.ga-t .tf-row select{width:0!important;min-width:100%!important;box-sizing:border-box}.ga-body .ga-side{max-height:none}.ga-body .ga-gl{flex:1;min-height:0}.ga-body .ga-main{min-height:0}.ga-body .ga-sc{flex:1;min-height:0;max-height:none!important}
 .ga-side{width:224px;flex:none;border:1px solid #e2e8f0;border-radius:12px;display:flex;flex-direction:column;overflow:hidden;background:#fff;max-height:640px}
 .ga-sh{padding:14px 16px 10px;border-bottom:1px solid #f1f5f9}.ga-sh b{display:block;font-size:10px;letter-spacing:.08em;text-transform:uppercase;color:#94a3b8}.ga-sh span{display:block;margin-top:4px;font-size:11px;color:#94a3b8;line-height:1.35}
 .ga-gl{overflow:auto;padding:8px;display:flex;flex-direction:column;gap:4px}
@@ -58,6 +61,7 @@
       <button type="button" class="ga-tab" data-ga-tab="users"><i class="ti ti-user-cog"></i> Utilisateurs</button>
       <button type="button" class="ga-tab" data-ga-tab="jnl"><i class="ti ti-notebook"></i> Journaux</button>
       <button type="button" class="ga-tab" data-ga-tab="sites"><i class="ti ti-building"></i> Sites</button>
+      <button type="button" class="ga-tab" data-ga-tab="jsite"><i class="ti ti-link"></i> Journaux par site</button>
       <button type="button" class="ga-tab" data-ga-tab="axes" data-regr><i class="ti ti-sitemap"></i> Plan de regroupement</button>
       <button type="button" class="ga-tab on" data-ga-tab="perm"><i class="ti ti-shield-check"></i> Permissions</button>
     </div>
@@ -89,15 +93,26 @@
       </div>
     </div>
     <div data-ga-pane="sites" style="display:none"></div>
+    <div data-ga-pane="jsite" style="display:none">
+      <div class="ga-body">
+        <aside class="ga-side"><div class="ga-sh"><b>Sites</b><span>Liste des sites ; sélectionnez-en un pour voir les journaux qui lui sont rattachés.</span></div>
+          <div style="padding:8px 8px 0"><div class="ga-q"><i class="ti ti-search"></i><input type="text" placeholder="Rechercher un site…" data-js-qs></div></div>
+          <div class="ga-gl" data-js-sites></div></aside>
+        <div class="ga-main">
+          <div class="ga-mh"><div><h2 data-js-title></h2><p data-js-sub></p></div><div style="display:flex;gap:8px;flex-wrap:wrap;align-items:center"><button type="button" class="ga-btn" data-js-reset><i class="ti ti-refresh"></i> Réinitialiser</button><button type="button" class="ga-btn ok" data-js-save><i class="ti ti-device-floppy"></i> Enregistrer</button></div></div>
+          <div class="ga-tb"><div class="ga-q"><i class="ti ti-search"></i><input type="text" placeholder="Rechercher un journal…" data-js-qj></div><div class="ga-rd"><label><input type="radio" name="jsVue" data-js-vue="tous" checked> Tous les journaux</label><label><input type="radio" name="jsVue" data-js-vue="ratt"> Rattachés au site</label></div></div>
+          <div class="ga-sc"><table class="ga-t ga-tj"><thead><tr><th>Rattaché</th><th style="text-align:left">Code</th><th class="lib" style="text-align:left">Libellé</th><th style="text-align:left">Type</th><th style="text-align:left">Nature</th><th style="text-align:left">Site actuel</th></tr></thead><tbody data-js-rows></tbody></table></div>
+        </div>
+      </div>
+    </div>
     <div data-ga-pane="axes" data-regr style="display:none"></div>
     <div data-ga-pane="perm">
       <div class="ga-body">
-        <aside class="ga-side"><div class="ga-sh"><b>Groupes</b><span>Sélectionnez un groupe pour paramétrer ses droits.</span></div><div class="ga-gl" data-ga-groups></div></aside>
+        <aside class="ga-side"><div class="ga-sh"><b>Groupes</b></div><div class="ga-gl" data-ga-groups></div></aside>
         <div class="ga-main">
-          <div class="ga-mh"><div><h2 data-ga-title></h2><p>Visible, consultation, CRUD, validation, import et export (Excel / PDF).</p></div>
+          <div class="ga-mh"><div><h2 data-ga-title></h2></div>
             <div style="display:flex;gap:8px;flex-wrap:wrap;align-items:center"><button type="button" class="ga-btn" data-ga-reset><i class="ti ti-refresh"></i> Réinitialiser</button><button type="button" class="ga-btn ok" data-ga-save><i class="ti ti-device-floppy"></i> Enregistrer</button></div></div>
-          <div class="ga-tb"><div class="ga-q"><i class="ti ti-search"></i><input type="text" placeholder="Rechercher un menu…" data-ga-q></div>
-            <div class="ga-rd"><label><input type="radio" name="gaAll" data-ga-all="1"> Accès tout</label><label><input type="radio" name="gaAll" data-ga-all="0"> Aucun accès</label></div></div>
+          <div class="ga-tb"><div class="ga-q"><i class="ti ti-search"></i><input type="text" placeholder="Rechercher un menu…" data-ga-q></div></div>
           <div class="ga-sc"><table class="ga-t"><thead data-ga-head></thead><tbody data-ga-rows></tbody></table></div>
         </div>
       </div>
@@ -111,7 +126,7 @@
   var COLS = [['voir', 'Voir'], ['creer', 'Créer'], ['modif', 'Modifier'], ['suppr', 'Supprimer'], ['valid', 'Valider'], ['annul', 'Annuler'], ['impr', 'Imprimer'], ['imp', 'Import'], ['xls', 'Export XLS'], ['pdf', 'Export PDF']];
   var CRUD = ['voir', 'creer', 'modif', 'suppr'], EDIT = ['voir', 'impr', 'xls', 'pdf'], NAV = ['voir'], ALL = COLS.map(function (c) { return c[0]; });
   function N(name, icon, kids, o) { return Object.assign({ name: name, icon: icon, kids: kids || [], ops: NAV }, o || {}); }
-  var TREE = [
+  var TREE0 = [
     N('Tableau de bord', 'ti-dashboard', [N('Tableau de bord', 'ti-dashboard'), N('Tableau de bord contrats', 'ti-dashboard')], { ops: [], open: 1 }),
     N('Paramétrages', 'ti-settings', [
       N('Administration', 'ti-shield', [N('Utilisateurs', 'ti-users', 0, { ops: CRUD }), N('Gestion des accès', 'ti-shield-check'), N('Paramétrage des traces', 'ti-list-details'), N('Journal de traces', 'ti-history', 0, { ops: EDIT }), N('Nettoyages', 'ti-eraser', 0, { ops: ['voir', 'suppr'] }), N('Alertes', 'ti-bell', 0, { ops: CRUD })], { ops: ALL }),
@@ -144,6 +159,48 @@
       N('Suivi', 'ti-clock', [N('Historique des demandes', 'ti-history', 0, { ops: EDIT })], { ops: ALL })
     ], { ops: [], off: 1, open: 1 })
   ];
+  // Arbre des menus reconstruit à partir du menu latéral réel (modules, groupes, fenêtres) : la liste suit toujours toutes les fenêtres de la maquette.
+  // Les droits proposés par fenêtre sont repris de la description initiale quand la fenêtre y figure, sinon déduits de son type.
+  function treeFromSidebar() {
+    var mods = [].slice.call(document.querySelectorAll('[data-module]')); if (!mods.length) return null;
+    var OLD = {}; (function w(l) { l.forEach(function (n) { if (!OLD[n.name]) OLD[n.name] = n; w(n.kids); }); })(TREE0);
+    var PROC = /^(IDA|FIDA|FED|FM|BAD|GAVI)$/;
+    var RAPPORT = /^(Balance|Grand livre|Journaux$|Échéancier|Détails|Historique|Suivi|Journal de traces|Liste$|Récapitulatif$|Situation|PV de caisse|Cours appliqué|Liste des écritures|Utilisation de fonds|Tableau emplois|Édition)/;
+    var TRAIT = /^(Traitement|Régularisation|Génération|Clôture|Lettrage|Prélettrage|Conversion|Pointage|Rapprochement|Circuit|État de dépense)/;
+    var clean = function (t) { return String(t).replace(/\s+/g, ' ').trim().replace(/'/g, '’'); };
+    function opsLeaf(name, mod) {
+      var o = OLD[name]; if (o && !o.kids.length) return o.ops;
+      if (mod === 'softaccounting-ai') return NAV;
+      if (mod === 'etats-financiers' || mod === 'etats-comptables' || RAPPORT.test(name)) return EDIT;
+      if (TRAIT.test(name)) return ['voir', 'modif', 'valid', 'annul', 'impr', 'xls', 'pdf'];
+      return CRUD;
+    }
+    function kid(parent, name, isGroup, mod) {
+      var ex = parent.kids.filter(function (k) { return k.name === name; })[0]; if (ex) return ex;
+      var o = OLD[name], n = N(name, (o && o.icon) || (isGroup ? 'ti-folder' : 'ti-file-text'), [], { ops: isGroup ? ALL : opsLeaf(name, mod) });
+      if (o && o.off) n.off = 1;
+      parent.kids.push(n); return n;
+    }
+    var out = [];
+    mods.forEach(function (m) {
+      var id = m.dataset.module, label = clean(m.textContent);
+      if (id === 'tableau-de-bord') { out.push(TREE0[0]); return; }
+      var lvl = document.querySelector('[data-sidebar-level="' + id + '"]'); if (!lvl) return;
+      var o0 = OLD[label], top = N(label, (o0 && o0.icon) || 'ti-folder', [], { ops: [], open: 1 }); if (o0 && o0.off) top.off = 1;
+      var groups = {}, demandes = null;
+      [].slice.call(lvl.querySelectorAll('a[data-nav], soft-button[data-group-toggle]')).forEach(function (el) {
+        var name = clean(el.textContent), parent = groups[el.dataset.group] || top;
+        if (el.dataset.groupToggle) {
+          var gid = el.dataset.groupToggle;
+          if (/^drf-/.test(gid) && PROC.test(name)) { demandes = demandes || kid(top, 'Gestion des demandes de remboursement', true, id); groups[gid] = demandes; return; }
+          groups[gid] = kid(parent, name, true, id);
+        } else kid(parent, name, false, id);
+      });
+      if (top.kids.length) out.push(top);
+    });
+    return out.length > 1 ? out : null;
+  }
+  var TREE = treeFromSidebar() || TREE0;
   var FLAT = [];
   (function walk(list, depth, parent, path) { list.forEach(function (n, i) { n.id = path + i; n.depth = depth; n.parent = parent; FLAT.push(n); walk(n.kids, depth + 1, n, n.id + '.'); }); })(TREE, 0, null, 'm');
   var GROUPS = [['Administrateur', 'Groupe des administrateurs SoftCompta', 'ADMIN', 'all'], ['ADMINOK', 'Admin', 'ADMINOK', 'all'], ['ADMINREHETRA', 'Admin', 'ADMINREHETRA', 'all'], ['COMPTA2', 'COMPTA2', 'COMPTA2', 'std'], ['COMPTA ENTREPRISE', 'Standard', 'COMPTA-ENTREPRISE', 'std'], ['CONSULTATION', 'Reader', 'CONSULTATION', 'read'], ['kkk', 'Standard', 'KKK', 'std'], ['STANDARD', 'Standard', 'STANDARD', 'std'], ['Superadministrateur', 'Groupe des super-administrateurs SoftCompta', 'SUPERADMIN', 'all'], ['TESTADM', 'TESTADM', 'TESTADM', 'std'], ['TESTGP1', 'TESTGP1', 'TESTGP1', 'read'], ['test groupe', 'Standard', 'TEST-GROUPE', 'std'], ['Utilisateur', 'Groupe des utilisateurs standard SoftCompta', 'USER', 'read']];
@@ -170,7 +227,7 @@
     q('[data-ga-title]').textContent = 'Droits — ' + GROUPS[cur][0];
   }
   function draw() {
-    q('[data-ga-head]').innerHTML = '<tr><th>Menus</th><th>Visible</th>' + COLS.map(function (c) { return '<th>' + c[1] + '</th>'; }).join('') + '</tr>';
+    q('[data-ga-head]').innerHTML = '<tr><th><div style="display:flex;align-items:center;justify-content:space-between;gap:24px"><span>Menus</span><span class="ga-rd" style="text-transform:none;letter-spacing:0;font-weight:600" onclick="event.stopPropagation()"><label><input type="radio" name="gaAll" data-ga-all="1"> Accès tout</label><label><input type="radio" name="gaAll" data-ga-all="0"> Aucun accès</label></span></div></th><th>Visible</th>' + COLS.map(function (c) { return '<th>' + c[1] + '</th>'; }).join('') + '</tr>';
     var st = STATE[cur], h = '', n0 = 0;
     FLAT.forEach(function (n) {
       if (hidden(n) && !filter) return; if (!matches(n)) return; n0++;
@@ -253,12 +310,12 @@
   function esc(s) { return String(s == null ? '' : s).replace(/[&<>"]/g, function (c) { return { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c]; }); }
   var GROUPES = [['Administrateur', 'Administrateur'], ['ADMINOK', 'Administrateur'], ['ADMINREHETRA', 'Administrateur'], ['COMPTA2', 'Administrateur'], ['COMPTA ENTREPRISE', 'Standard'], ['CONSULTATION', 'Lecture seule'], ['TESTADM', 'Administrateur']];
   var USERS = [
-    { id: 'superadmin', nom: 'Administrateur Super', groupe: 'TESTADM', email: 'superadmin@softappli.mg', actif: true },
-    { id: 'ANDRY', nom: 'ANDRY', groupe: '', email: 'andry@gmail.com', actif: true },
-    { id: 'ANDY', nom: 'ANDY', groupe: '', email: 'Andy@gmail.com', actif: true },
-    { id: 'ANGELA', nom: 'ANGELA', groupe: '', email: 'angela@gmail.com', actif: true },
-    { id: 'ANTHONY', nom: 'ANTHONY ANTHONY', groupe: 'ADMINOK', email: 'anthony@gmail.com', actif: true },
-    { id: 'HERY', nom: 'RAKOTO Hery', groupe: 'CONSULTATION', email: 'hery@gmail.com', actif: true }
+    { id: 'superadmin', nom: 'Administrateur Super', groupe: 'TESTADM', fonction: 'Super administrateur', email: 'superadmin@softappli.mg', actif: true },
+    { id: 'ANDRY', nom: 'ANDRY', groupe: '', fonction: 'Comptable', email: 'andry@gmail.com', actif: true },
+    { id: 'ANDY', nom: 'ANDY', groupe: '', fonction: 'Responsable comptable', email: 'Andy@gmail.com', actif: true },
+    { id: 'ANGELA', nom: 'ANGELA', groupe: '', fonction: 'Trésorière', email: 'angela@gmail.com', actif: true },
+    { id: 'ANTHONY', nom: 'ANTHONY ANTHONY', groupe: 'ADMINOK', fonction: 'Contrôleur de gestion', email: 'anthony@gmail.com', actif: true },
+    { id: 'HERY', nom: 'RAKOTO Hery', groupe: 'CONSULTATION', fonction: 'Auditeur interne', email: 'hery@gmail.com', actif: true }
   ];
   window.GA_USERS = USERS;
   var MODULES = [['SoftAccounting', 'Comptabilité & pilotage financier', 'ti-cash', '#f59e0b', 1], ['SoftDocs', 'Gestion documentaire', 'ti-folder', '#7c9cf0'], ['Soft e-Paiement', 'Paiements', 'ti-credit-card', '#b388f5'], ['SoftSign', 'Signature électronique', 'ti-signature', '#64748b'], ['SoftFunds', 'Avances et justificatifs', 'ti-cash-banknote', '#7c8fe6'], ['SoftPayroll', 'Paie', 'ti-users', '#ec7fb0'], ['SoftBudget', 'Budget', 'ti-stack-2', '#6fb1a8'], ['SoftÉtatFi', 'États financiers', 'ti-chart-bar', '#5fb8d0'], ['SoftLibrary', 'Bibliothèque', 'ti-archive', '#7ccb8a'], ['SoftShop', 'Caisse / boutique', 'ti-shopping-cart', '#f4a26b']];
@@ -529,6 +586,7 @@
     var n = {}; (window.JOURNAUX_PLAN || []).forEach(function (j) { if (j.site) n[j.site] = (n[j.site] || 0) + 1; });
     return Object.keys(n).sort().map(function (c) { return { code: c, cols: [LIB_SITE[c] || 'Site ' + c, n[c] + ' journal(aux)'] }; });
   }
+  function journauxDuSite(c) { return (window.JOURNAUX_PLAN || []).filter(function (j) { return j.site === c; }).map(function (j) { return { code: j.code, libelle: j.libelle || '' }; }); }
   function axes() {
     var g = window.REGROUPEMENT && window.REGROUPEMENT(); if (!g) return [];
     return g.elements.map(function (e) { return { code: e.code, cols: [e.libelle] }; });
@@ -543,7 +601,7 @@
       '<div class="ga-tb"><div class="ga-q"><i class="ti ti-search"></i><input type="text" placeholder="' + c.ph + '" data-r-qi></div><div class="ga-rd"><label><input type="radio" name="r' + c.tab + '" data-r-all="1"> Tous les ' + c.pluriel + '</label><label><input type="radio" name="r' + c.tab + '" data-r-all="0"> Aucun</label></div></div>' +
       '<div class="ga-sc"><table class="ga-t ga-tj"><thead><tr><th>Rattaché</th><th style="text-align:left">Code</th>' + c.heads.map(function (h, i) { return '<th' + (i === 0 ? ' class="lib"' : '') + ' style="text-align:left">' + h + '</th>'; }).join('') + '</tr></thead><tbody data-r-rows></tbody></table></div></div></div>';
     var q = function (s) { return pane.querySelector(s); };
-    var USERS = [], SEL = {}, cur = 0, fu = '', fi = '';
+    var USERS = [], SEL = {}, OPEN = {}, cur = 0, fu = '', fi = '';
     function users() { USERS = (window.GA_USERS || []).map(function (u) { return [u.id, u.nom, /^(superadmin|admin)$/i.test(u.id) ? 1 : 0]; }); if (cur >= USERS.length) cur = 0; }
     function sel(u) { if (!SEL[u]) { SEL[u] = {}; if (USERS.filter(function (x) { return x[0] === u; })[0][2]) c.items().forEach(function (i) { SEL[u][i.code] = 1; }); } return SEL[u]; }
     function drawUsers() {
@@ -560,14 +618,16 @@
       var rows = L.filter(function (i) { return !fi || (i.code + ' ' + i.cols.join(' ')).toLowerCase().indexOf(fi) >= 0; });
       q('[data-r-rows]').innerHTML = rows.length ? rows.map(function (i) {
         return '<tr><td style="padding-left:6px"><input type="checkbox" data-r-c="' + esc(i.code) + '"' + (s[i.code] ? ' checked' : '') + '></td><td style="text-align:left;font-weight:600;padding-left:6px">' + esc(i.code) + '</td>' +
-          i.cols.map(function (v, k) { return '<td' + (k === 0 ? ' class="lib"' : '') + ' style="text-align:left;padding-left:6px">' + esc(v) + '</td>'; }).join('') + '</tr>';
+          i.cols.map(function (v, k) { var dt = c.detail && k === i.cols.length - 1; return '<td' + (k === 0 ? ' class="lib"' : '') + ' style="text-align:left;padding-left:6px">' + (dt ? '<button type="button" class="ga-btn" data-r-open="' + esc(i.code) + '" aria-expanded="' + (OPEN[i.code] ? 'true' : 'false') + '" style="min-height:0;height:26px;padding:0 8px"><i class="ti ti-chevron-' + (OPEN[i.code] ? 'up' : 'down') + '"></i> ' + esc(v) + '</button>' : esc(v)) + '</td>'; }).join('') + '</tr>' +
+          (c.detail && OPEN[i.code] ? '<tr data-r-det><td></td><td colspan="' + (1 + c.heads.length) + '" style="text-align:left;padding:4px 6px 10px">' + (c.detail(i.code).map(function (j) { return '<span style="display:inline-block;margin:2px 6px 2px 0;padding:2px 8px;border:1px solid #D5D8DF;border-radius:6px;font-size:12px"><b>' + esc(j.code) + '</b> · ' + esc(j.libelle) + '</span>'; }).join('') || 'Aucun journal.') + '</td></tr>' : '');
       }).join('') : '<tr><td colspan="' + (2 + c.heads.length) + '" class="ga-empty">' + c.vide + '</td></tr>';
       [].forEach.call(pane.querySelectorAll('[data-r-all]'), function (r) { r.checked = r.dataset.rAll === '1' ? (L.length > 0 && n === L.length) : n === 0; });
       drawUsers();
     }
     pane.addEventListener('click', function (e) {
       var t = e.target, b;
-      if ((b = t.closest('[data-r-u]'))) { cur = +b.dataset.rU; draw(); }
+      if ((b = t.closest('[data-r-open]'))) { OPEN[b.dataset.rOpen] = !OPEN[b.dataset.rOpen]; draw(); }
+      else if ((b = t.closest('[data-r-u]'))) { cur = +b.dataset.rU; draw(); }
       else if (t.closest('[data-r-reset]')) { delete SEL[USERS[cur][0]]; draw(); say('Rattachements de « ' + USERS[cur][0] + ' » réinitialisés.'); }
       else if (t.closest('[data-r-save]')) { window.RATTACHEMENTS[c.tab] = SEL; say('Rattachements ' + c.de + ' de « ' + USERS[cur][0] + ' » enregistrés.'); }
     });
@@ -583,6 +643,52 @@
   }
   monter({ tab: 'sites', titre: 'Sites', pluriel: 'sites', singulier: 'site', de: 'aux sites', heads: ['Libellé', 'Journaux'], ph: 'Rechercher un site…', aide: 'cochez les sites auxquels cet utilisateur a accès.', vide: 'Aucun site. Ils proviennent des journaux de « Saisie des journaux ».', items: sites });
   monter({ tab: 'axes', titre: 'Plan de regroupement', pluriel: 'éléments', singulier: 'élément', de: 'au plan de regroupement', heads: ['Libellé'], ph: 'Rechercher un élément…', aide: 'cochez les éléments du plan de regroupement que cet utilisateur peut utiliser.', vide: 'Aucun plan de regroupement choisi. Activez-en un dans Administration de l’entité > Analytique.', items: axes, info: infoAxes });
+})();
+</script>
+<script>
+// Journaux par site : liste des sites (à gauche) ; cases à cocher pour rattacher les journaux au site choisi (un journal n’a qu’un site : cocher le déplace). Données simulées en mémoire.
+(function () {
+  var root = document.currentScript.parentElement.querySelector('[data-ga]');
+  var pane = root.querySelector('[data-ga-pane="jsite"]'); if (!pane) return;
+  function q(s) { return pane.querySelector(s); }
+  function say(t) { var d = document.createElement('div'); d.className = 'ga-toast'; d.textContent = t; document.body.appendChild(d); setTimeout(function () { d.remove(); }, 2200); }
+  function esc(s) { return String(s == null ? '' : s).replace(/[&<>"]/g, function (c) { return { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c]; }); }
+  var LIB_SITE = { '01': 'Siège' }, cur = '', fs = '', fj = '', vue = 'tous', PEND = {};
+  function jn() { return (window.JOURNAUX_PLAN || []).filter(function (j) { return j.actif !== false; }); }
+  function siteDe(j) { return Object.prototype.hasOwnProperty.call(PEND, j.code) ? PEND[j.code] : j.site; }
+  function sites() { var n = {}; (window.JOURNAUX_PLAN || []).forEach(function (j) { if (j.site) n[j.site] = n[j.site] || 0; }); jn().forEach(function (j) { var c = siteDe(j); if (c) n[c] = (n[c] || 0) + 1; }); return Object.keys(n).sort().map(function (c) { return { code: c, lib: LIB_SITE[c] || 'Site ' + c, n: n[c] }; }); }
+  function draw() {
+    var S = sites(); if (!S.some(function (x) { return x.code === cur; })) cur = S.length ? S[0].code : '';
+    q('[data-js-sites]').innerHTML = S.filter(function (x) { return !fs || (x.code + ' ' + x.lib).toLowerCase().indexOf(fs) >= 0; }).map(function (x) {
+      return '<button type="button" class="ga-g' + (x.code === cur ? ' on' : '') + '" data-js-s="' + esc(x.code) + '"><span style="flex:1;min-width:0"><span class="n">' + esc(x.code) + '</span><span class="d">' + esc(x.lib) + '</span></span><span class="b">' + x.n + '</span></button>';
+    }).join('') || '<div class="ga-empty">Aucun site.</div>';
+    var site = S.filter(function (x) { return x.code === cur; })[0], np = Object.keys(PEND).length;
+    q('[data-js-title]').textContent = site ? 'Journaux du site ' + site.code + ' — ' + site.lib : 'Journaux par site';
+    q('[data-js-sub]').textContent = (site ? site.n : 0) + ' journal(aux) rattaché(s) sur ' + jn().length + ' · cochez les journaux à rattacher à ce site' + (np ? ' · ' + np + ' modification(s) non enregistrée(s)' : '') + '.';
+    var rows = jn().filter(function (j) { return (vue === 'tous' || siteDe(j) === cur) && (!fj || (j.code + ' ' + j.libelle + ' ' + j.type + ' ' + j.nature).toLowerCase().indexOf(fj) >= 0); });
+    q('[data-js-rows]').innerHTML = rows.length ? rows.map(function (j) {
+      var sc = siteDe(j);
+      return '<tr><td style="padding-left:6px"><input type="checkbox" data-js-c="' + esc(j.code) + '"' + (sc === cur ? ' checked' : '') + '></td><td style="text-align:left;font-weight:600;padding-left:6px">' + esc(j.code) + '</td><td class="lib" style="text-align:left;padding-left:6px">' + esc(j.libelle) + '</td><td style="text-align:left;padding-left:6px">' + esc(j.type) + '</td><td style="text-align:left;padding-left:6px">' + esc(j.nature) + '</td><td style="text-align:left;padding-left:6px">' + esc(sc || '—') + '</td></tr>';
+    }).join('') : '<tr><td colspan="6" class="ga-empty">Aucun journal.</td></tr>';
+  }
+  pane.addEventListener('click', function (e) {
+    var b;
+    if ((b = e.target.closest('[data-js-s]'))) { cur = b.dataset.jsS; draw(); }
+    else if (e.target.closest('[data-js-reset]')) { PEND = {}; draw(); say('Rattachements réinitialisés.'); }
+    else if (e.target.closest('[data-js-save]')) {
+      var n = 0; (window.JOURNAUX_PLAN || []).forEach(function (j) { if (Object.prototype.hasOwnProperty.call(PEND, j.code)) { j.site = PEND[j.code]; n++; } });
+      PEND = {}; draw(); say(n + ' rattachement(s) de journaux enregistré(s).'); window.dispatchEvent(new Event('journaux-changed'));
+    }
+  });
+  pane.addEventListener('change', function (e) {
+    var t = e.target, j;
+    if (t.dataset.jsC) { j = (window.JOURNAUX_PLAN || []).filter(function (x) { return x.code === t.dataset.jsC; })[0]; if (!j) return; var v = t.checked ? cur : ''; if (v === j.site) delete PEND[j.code]; else PEND[j.code] = v; draw(); }
+    else if (t.dataset.jsVue) { vue = t.dataset.jsVue; draw(); }
+  });
+  q('[data-js-qs]').addEventListener('input', function () { fs = this.value.trim().toLowerCase(); draw(); });
+  q('[data-js-qj]').addEventListener('input', function () { fj = this.value.trim().toLowerCase(); draw(); });
+  root.addEventListener('click', function (e) { if (e.target.closest('[data-ga-tab="jsite"]')) setTimeout(draw, 0); });
+  window.addEventListener('journaux-changed', function () { PEND = {}; draw(); });
 })();
 </script>
 <script>
@@ -616,13 +722,13 @@
     a.href = url; a.download = nom; document.body.appendChild(a); a.click(); a.remove(); setTimeout(function () { URL.revokeObjectURL(url); }, 4000);
   }
   function largeurs(tete, lignes) { return tete.map(function (h, i) { var m = String(h).length; lignes.forEach(function (r) { m = Math.max(m, String(r[i] == null ? '' : r[i]).length); }); return Math.max(6, Math.min(60, m)); }); }
-  function xlsx(fichier, feuille, tete, lignes) { xlsxFeuilles(fichier, [{ nom: feuille, tete: tete, lignes: lignes }]); }
-  // classeur à plusieurs feuilles : feuilles = [ { nom, tete, lignes } ]
+  function xlsx(fichier, feuille, tete, lignes, avant) { xlsxFeuilles(fichier, [{ nom: feuille, tete: tete, lignes: lignes, avant: avant }]); }
+  // classeur à plusieurs feuilles : feuilles = [ { nom, tete, lignes, avant } ] ; avant = lignes d'en-tête facultatives placées au-dessus de la ligne de titres
   function xlsxFeuilles(fichier, feuilles) {
     var X = '<?xml version="1.0" encoding="UTF-8" standalone="yes"?>\n', n = feuilles.length, parts = [], ov = '', wb = '', rel = '';
     feuilles.forEach(function (fe, k) {
-      var L = [fe.tete].concat(fe.lignes);
-      var rows = L.map(function (r, i) { return '<row r="' + (i + 1) + '">' + r.map(function (v, j) { return '<c r="' + col(j) + (i + 1) + '" t="inlineStr"' + (i === 0 ? ' s="1"' : '') + '><is><t>' + xml(v == null ? '' : v) + '</t></is></c>'; }).join('') + '</row>'; }).join('');
+      var av = fe.avant || [], L = av.concat([fe.tete]).concat(fe.lignes);
+      var rows = L.map(function (r, i) { return '<row r="' + (i + 1) + '">' + r.map(function (v, j) { return '<c r="' + col(j) + (i + 1) + '" t="inlineStr"' + (i === av.length ? ' s="1"' : '') + '><is><t>' + xml(v == null ? '' : v) + '</t></is></c>'; }).join('') + '</row>'; }).join('');
       var cols = largeurs(fe.tete, fe.lignes).map(function (w, i) { return '<col min="' + (i + 1) + '" max="' + (i + 1) + '" width="' + (w + 3) + '" customWidth="1"/>'; }).join('');
       parts.push(['xl/worksheets/sheet' + (k + 1) + '.xml', X + '<worksheet xmlns="http://schemas.openxmlformats.org/spreadsheetml/2006/main"><cols>' + cols + '</cols><sheetData>' + rows + '</sheetData></worksheet>']);
       ov += '<Override PartName="/xl/worksheets/sheet' + (k + 1) + '.xml" ContentType="application/vnd.openxmlformats-officedocument.spreadsheetml.worksheet+xml"/>';
@@ -646,13 +752,14 @@
   }
   function latin(s) { return String(s == null ? '' : s).replace(/[—–]/g, '-').replace(/[’‘]/g, "'").replace(/[“”«»]/g, '"').replace(/[^\x00-\xFF]/g, '?'); }
   function pdfTxt(s) { return latin(s).replace(/([()\\])/g, '\\$1'); }
-  function pdf(fichier, titre, sous, tete, lignes) {
+  function pdf(fichier, titre, sous, tete, lignes, avant) {
     var W = 842, H = 595, M = 36, utile = W - 2 * M, pw = largeurs(tete, lignes), tot = pw.reduce(function (a, b) { return a + b; }, 0), X = [], x = M, cap = [], FS = 8, ligne = 18, pages = [], cur, y;
     pw.forEach(function (p) { var w = utile * p / tot; X.push(x); cap.push(Math.max(3, Math.floor((w - 8) / (FS * 0.52)))); x += w; });
     function coupe(t, n) { t = latin(t); return t.length > n ? t.slice(0, Math.max(1, n - 2)) + '..' : t; }
     function neuve(premiere) {
       cur = []; pages.push(cur); y = H - M;
-      if (premiere) { cur.push('BT /F2 13 Tf 0.04 0.07 0.2 rg 1 0 0 1 ' + M + ' ' + y + ' Tm (' + pdfTxt(titre) + ') Tj ET'); y -= 15; if (sous) { cur.push('BT /F1 9 Tf 0.36 0.38 0.43 rg 1 0 0 1 ' + M + ' ' + y + ' Tm (' + pdfTxt(sous) + ') Tj ET'); y -= 10; } y -= 10; }
+      if (premiere) { cur.push('BT /F2 13 Tf 0.04 0.07 0.2 rg 1 0 0 1 ' + M + ' ' + y + ' Tm (' + pdfTxt(titre) + ') Tj ET'); y -= 15; if (sous) { cur.push('BT /F1 9 Tf 0.36 0.38 0.43 rg 1 0 0 1 ' + M + ' ' + y + ' Tm (' + pdfTxt(sous) + ') Tj ET'); y -= 10; }
+        (avant || []).forEach(function (t) { cur.push('BT /F1 9 Tf 0.04 0.07 0.2 rg 1 0 0 1 ' + M + ' ' + y + ' Tm (' + pdfTxt(t) + ') Tj ET'); y -= 11; }); y -= 10; }
       cur.push('0.18 0.26 0.48 rg ' + M + ' ' + (y - 5) + ' ' + utile + ' 17 re f'); cur.push('BT /F2 ' + FS + ' Tf 1 1 1 rg');
       tete.forEach(function (h, i) { cur.push('1 0 0 1 ' + (X[i] + 4) + ' ' + (y) + ' Tm (' + pdfTxt(coupe(String(h).toUpperCase(), cap[i])) + ') Tj'); }); cur.push('ET'); y -= ligne + 2;
     }
@@ -694,7 +801,7 @@
     }).filter(function (r) { return r.some(function (v) { return v; }) && r.length === tete.length; });
     return { tete: tete, lignes: lignes };
   }
-  var NOMS = { jnl: 'Journaux', sites: 'Sites', axes: 'Plan de regroupement', perm: 'Permissions' };
+  var NOMS = { jnl: 'Journaux', sites: 'Sites', jsite: 'Journaux par site', axes: 'Plan de regroupement', perm: 'Permissions' };
   root.addEventListener('click', function (e) {
     var b = e.target.closest('[data-ga-xport]'); if (!b) return;
     var pane = b.closest('[data-ga-pane]'), tab = pane.dataset.gaPane, d = lire(pane); if (!d || !d.lignes.length) { say('Rien à exporter.'); return; }
@@ -708,5 +815,25 @@
     var pane = root.querySelector('[data-ga-pane="' + tab + '"]'), zone = pane && pane.querySelector('.ga-mh > div:last-child'); if (!zone) return;
     zone.insertAdjacentHTML('afterbegin', '<button type="button" class="ga-btn" data-ga-xport="pdf"><i class="ti ti-file-type-pdf"></i> PDF</button><button type="button" class="ga-btn" data-ga-xport="xlsx"><i class="ti ti-file-spreadsheet"></i> Excel (XLSX)</button>');
   });
+})();
+</script>
+<script>
+(function () {
+  var host = document.currentScript.closest('[data-screen]') || document.currentScript.parentElement; if (!host) return;
+  // les listes (menus, journaux, permissions…) occupent toute la hauteur disponible de l'écran, jusqu'au pied de page
+  function fit() {
+    var sc = host.closest('.softcompta-content-scroll');
+    [].forEach.call(host.querySelectorAll('.ga-body'), function (b) {
+      if (!b.offsetParent) return;
+      var haut = b.getBoundingClientRect().top - (sc ? sc.getBoundingClientRect().top : 0) + (sc ? sc.scrollTop : 0);
+      var h = (sc ? sc.clientHeight : window.innerHeight) - haut - 16;
+      b.style.setProperty('--ga-h', Math.max(480, Math.floor(h)) + 'px');
+    });
+    [].forEach.call(host.querySelectorAll('.ga-sc.pg-wrap'), function (w) { var t = w.querySelector('table'); if (t && t.__pg) t.__pg.ajuster(); });
+  }
+  window.addEventListener('resize', fit); window.addEventListener('hashchange', function () { setTimeout(fit, 0); setTimeout(fit, 300); });
+  host.addEventListener('click', function () { setTimeout(fit, 0); setTimeout(fit, 250); });
+  var sc0 = host.closest('.softcompta-content-scroll'); if (sc0 && window.ResizeObserver) new ResizeObserver(fit).observe(sc0);
+  setTimeout(fit, 0); setTimeout(fit, 500);
 })();
 </script>

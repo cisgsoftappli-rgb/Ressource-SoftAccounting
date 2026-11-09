@@ -47,6 +47,7 @@
     <button type="button" data-fim-ajouter>Ajouter</button>
     <button type="button" data-fim-modifier>Modifier</button>
     <button type="button" data-fim-supprimer>Supprimer</button>
+    <button type="button" data-fim-importer>Importer</button>
     <button type="button" data-fim-enregistrer>Enregistrer</button>
     <button type="button" data-fim-annuler>Annuler</button>
     <button type="button" data-fim-generer>Générer écriture</button>
@@ -413,12 +414,12 @@
     if (manque.length) { onglet('saisie'); songlet('ecritures'); toast('Onglet Écritures non renseigné : il manque ' + manque.join(' et ') + '. Cliquez sur « Modifier », complétez les imputations puis enregistrez la fiche.'); return; }
     var v = Math.round(r.qte * r.pu * 100) / 100; if (!(v > 0)) { toast('La valeur d’acquisition est nulle : aucune écriture à générer.'); return; }
     var pj = journalAchats(); if (!pj) { toast('Aucun journal d’achats actif : créez-en un dans Gestion des plans › Saisie des plans › Journaux.'); return; }
-    var piece = pj.auto && window.JOURNAUX_NUMERO ? window.JOURNAUX_NUMERO(pj, (+pj.dernier || 0) + 1) : r.num;
+    var piece = pj.auto && window.JOURNAUX_PROCHAIN ? window.JOURNAUX_PROCHAIN(pj, {}) : r.num;
     if (genere.some(function (g) { return g.journal === pj.code && g.piece === piece; })) { toast('Le n° de pièce ' + piece + ' existe déjà dans le journal ' + pj.code + '.'); return; }
     var ana = Object.keys(r.ana || {}).map(function (k) { return k + ' ' + r.ana[k]; }).join(', ');
     var lib = 'Acquisition ' + r.desig + ' — ' + r.ref;
     if (!window.confirm('Générer l’écriture de la fiche « ' + r.num + ' » dans le journal ' + pj.code + ' (pièce ' + piece + ') ?\nDébit ' + r.compte + ' : ' + nb(v) + (ana ? ' (' + ana + ')' : '') + '\nCrédit ' + r.coll + ' / ' + r.aux + ' : ' + nb(v) + '\nLa fiche ne sera plus modifiable.')) return;
-    if (pj.auto) { pj.dernier = (+pj.dernier || 0) + 1; window.dispatchEvent(new Event('journaux-changed')); }
+    if (pj.auto) { if (window.JOURNAUX_AVANCER) window.JOURNAUX_AVANCER(pj, {}); else pj.dernier = (+pj.dernier || 0) + 1; window.dispatchEvent(new Event('journaux-changed')); }
     r.e_piece = piece; r.e_journal = pj.code; r.genere = true;
     genere.push({ fiche: r.num, journal: pj.code, date: r.dacq, piece: piece, libelle: lib, total: v, lignes: [
       { compte: r.compte, libelle: lib, debit: v, credit: 0, imputations: r.ana || {} },
@@ -443,8 +444,65 @@
       t.tete.map(function (h) { return '<th>' + esc(h) + '</th>'; }).join('') + '</tr></thead><tbody>' + t.lignes.map(function (r) { return '<tr>' + r.map(function (c) { return '<td>' + esc(c) + '</td>'; }).join('') + '</tr>'; }).join('') + '</tbody></table>');
     w.document.close(); w.focus(); setTimeout(function () { w.print(); }, 300);
   }
+  // ---------- importation Excel : une ligne par fiche d'immobilisation (étapes communes : import_assistant.js) ----------
+  function dateImp(v) { v = String(v == null ? '' : v).trim(); if (!v) return ''; var m; if (/^\d{5}(\.\d+)?$/.test(v)) return new Date(Date.UTC(1899, 11, 30) + Math.floor(+v) * 864e5).toISOString().slice(0, 10); m = /^(\d{1,2})[\/.-](\d{1,2})[\/.-](\d{4})$/.exec(v); if (m) return m[3] + '-' + ('0' + m[2]).slice(-2) + '-' + ('0' + m[1]).slice(-2); m = /^(\d{4})-(\d{2})-(\d{2})/.exec(v); return m ? m[0] : ''; }
+  function codeDe(v) { return String(v == null ? '' : v).split(' — ')[0].trim(); }
+  function nombreImp(v) { var n = parseFloat(String(v == null ? '' : v).replace(/[\s\u00a0]/g, '').replace(',', '.')); return isNaN(n) ? null : n; }
+  function modeleImp() {
+    var sites = ((window.PLANS_REF || {}).sites || []).map(function (x) { return x[0]; }), det = comptesDetail(), cl2 = det.filter(function (c) { return /^2/.test(c.code); }), comptes = (cl2.length ? cl2 : det).map(function (c) { return c.code; });
+    var fam = (window.FAMILLES_IMMOBILISATION || []).map(function (x) { return x.code; }), emp = (window.LIEUX_AFFECTATION || []).map(function (x) { return x.code; }), res = (window.COLLABORATEURS_RESPONSABLES || []).map(function (x) { return x.code; });
+    var etats = [].slice.call(f('etat').options).map(function (o) { return o.value; }).filter(Boolean), annees = (window.EXERCICES_API ? window.EXERCICES_API.liste() : []).map(function (x) { return String(x.annee); });
+    var ch = [
+      { col: 'Année', oblig: true, format: 'Exercice existant (' + (annees.join(', ') || 'aucun') + ').', exemple: String(((window.EXERCICES_API ? window.EXERCICES_API.liste() : []).filter(function (x) { return x.cours; })[0] || {}).annee || annees[annees.length - 1] || '2026') },
+      { col: 'Site', oblig: true, format: 'Code d’un site existant.', exemple: sites[0] || '01' },
+      { col: 'Référence facture', oblig: true, format: 'Texte, 40 caractères au plus.', exemple: 'FAC-2026-0231', alias: ['Référence', 'Pièce'] },
+      { col: 'Désignation', oblig: true, format: 'Texte, 100 caractères au plus.', exemple: 'Ordinateur portable', alias: ['Désignation du bien'] },
+      { col: 'Compte général', oblig: true, format: 'Compte d’immobilisation existant.', exemple: comptes[0] || '218300' },
+      { col: 'Quantité', oblig: true, format: 'Entier supérieur ou égal à 1.', exemple: '1' },
+      { col: 'Prix unitaire', oblig: true, format: 'Nombre (0 ou plus).', exemple: '3500000' },
+      { col: 'Date acquisition', oblig: true, format: 'jj/mm/aaaa, dans l’exercice.', exemple: '15/03/2026', alias: ['Date d’acquisition'] },
+      { col: 'Date mise en service', oblig: true, format: 'jj/mm/aaaa, non antérieure à l’acquisition.', exemple: '20/03/2026', alias: ['Date de mise en service'] },
+      { col: 'N° identification', oblig: true, format: 'Unique, 24 caractères au plus.', exemple: 'IMM-2026-001', alias: ['N° d’identification', 'Numéro d’identification'] },
+      { col: 'État', oblig: true, format: etats.join(', ') + '.', exemple: etats[0] || 'Neuf', alias: ['État du bien'] },
+      { col: 'Famille', oblig: false, format: 'Code d’une famille d’immobilisation.', exemple: fam[0] || '', alias: ['Famille d’immobilisation'] },
+      { col: 'Emplacement', oblig: true, format: 'Code d’un lieu d’affectation.', exemple: emp[0] || '' },
+      { col: 'Responsable', oblig: true, format: 'Code d’un collaborateur responsable.', exemple: res[0] || '' },
+      { col: 'Fournisseur collectif', oblig: false, format: 'Compte collectif 40… (nécessaire pour générer l’écriture).', exemple: '' },
+      { col: 'Compte auxiliaire', oblig: false, format: 'Auxiliaire du fournisseur collectif.', exemple: '' }];
+    return { titre: 'Importer les fiches d’immobilisation', fichier: 'modele_fiches_immobilisation.xlsx', champs: ch, exemples: [ch.map(function (c) { return c.exemple; })],
+      ligne: function (v) {
+        var er = [], r = { annee: String(v['Année'] || '').trim(), site: codeDe(v['Site']), ref: String(v['Référence facture'] || '').trim(), desig: String(v['Désignation'] || '').trim(), compte: codeDe(v['Compte général']), qte: nombreImp(v['Quantité']), pu: nombreImp(v['Prix unitaire']),
+          dacq: dateImp(v['Date acquisition']), dms: dateImp(v['Date mise en service']), num: String(v['N° identification'] || '').trim(), famille: codeDe(v['Famille']), empl: codeDe(v['Emplacement']), resp: codeDe(v['Responsable']), coll: codeDe(v['Fournisseur collectif']), aux: codeDe(v['Compte auxiliaire']) };
+        var et = String(v['État'] || '').trim(); r.etat = etats.filter(function (x) { return x.toLowerCase() === et.toLowerCase(); })[0] || '';
+        if (!r.annee) er.push('Année obligatoire'); else if (annees.length && annees.indexOf(r.annee) < 0) er.push('Exercice « ' + r.annee + ' » inconnu');
+        if (!r.site) er.push('Site obligatoire'); else if (sites.indexOf(r.site) < 0) er.push('Site « ' + r.site + ' » inconnu');
+        if (!r.ref) er.push('Référence facture obligatoire'); if (!r.desig) er.push('Désignation obligatoire'); if (r.desig.length > 100) er.push('Désignation trop longue (100 caractères au plus)');
+        if (!r.compte) er.push('Compte général obligatoire'); else if (comptes.indexOf(r.compte) < 0) er.push('Compte « ' + r.compte + ' » inconnu ou non immobilisable');
+        if (!(r.qte >= 1 && r.qte === Math.floor(r.qte))) er.push('Quantité : entier supérieur ou égal à 1'); if (!(r.pu >= 0) || r.pu === null) er.push('Prix unitaire : nombre (0 ou plus)');
+        if (!r.dacq) er.push('Date d’acquisition invalide (jj/mm/aaaa)'); if (!r.dms) er.push('Date de mise en service invalide (jj/mm/aaaa)'); else if (r.dacq && r.dms < r.dacq) er.push('Mise en service antérieure à l’acquisition');
+        var ex = (window.EXERCICES_API ? window.EXERCICES_API.liste() : []).filter(function (x) { return String(x.annee) === r.annee; })[0]; if (ex && r.dacq && iso(ex.debut) && (r.dacq < iso(ex.debut) || r.dacq > iso(ex.fin))) er.push('Date d’acquisition hors de l’exercice ' + r.annee);
+        if (!r.num) er.push('N° d’identification obligatoire'); else if (r.num.length > 24) er.push('N° d’identification trop long (24 caractères au plus)');
+        if (!r.etat) er.push('État « ' + et + ' » invalide (' + etats.join(', ') + ')');
+        if (r.famille && fam.indexOf(r.famille) < 0) er.push('Famille « ' + r.famille + ' » inconnue');
+        if (!r.empl) er.push('Emplacement obligatoire'); else if (emp.indexOf(r.empl) < 0) er.push('Emplacement « ' + r.empl + ' » inconnu'); if (!r.resp) er.push('Responsable obligatoire'); else if (res.indexOf(r.resp) < 0) er.push('Responsable « ' + r.resp + ' » inconnu');
+        if (r.coll && !collectifs().some(function (c) { return c[0] === r.coll; })) er.push('Fournisseur collectif « ' + r.coll + ' » inconnu'); if (r.aux && !auxiliaires(r.coll).some(function (a) { return a[0] === r.aux; })) er.push('Compte auxiliaire « ' + r.aux + ' » inconnu pour ce collectif');
+        var ex2 = data.filter(function (x) { return x.num === r.num; })[0];
+        return { cle: r.num + ' · ' + r.desig, doublon: !er.length && !!ex2, erreurs: er, data: r };
+      },
+      integrer: function (L) {
+        var aj = 0, mj = 0, ig = 0;
+        L.forEach(function (x) {
+          var r = x.data, i = data.findIndex(function (y) { return y.num === r.num; });
+          var rec = { annee: r.annee, site: r.site, ref: r.ref, desig: r.desig, compte: r.compte, qte: r.qte, pu: r.pu, dacq: r.dacq, dms: r.dms, num: r.num, etat: r.etat, famille: r.famille, empl: r.empl, resp: r.resp, coll: r.coll, aux: r.aux,
+            c_type: '', c_date: '', c_val: '', c_ref: '', c_tiers: '', c_motif: '', cede: false, ana: {}, genere: false };
+          if (i >= 0) { if (!x.remplace || data[i].genere || data[i].cede) { ig++; return; } rec.id = data[i].id; rec.ana = data[i].ana || {}; data[i] = rec; mj++; } else { rec.id = nextId++; data.push(rec); aj++; }
+        });
+        sel = -1; liste(); form(null); etat(); onglet('liste'); publier(); toast(aj + ' fiche(s) importée(s)' + (mj ? ', ' + mj + ' remplacée(s)' : '') + (ig ? ', ' + ig + ' ignorée(s) (fiche déjà générée, cédée ou doublon conservé)' : '') + '.');
+      } };
+  }
   root.addEventListener('click', function (e) {
     var b = e.target.closest('button'); if (!b || b.disabled) return;
+    if (b.hasAttribute('data-fim-importer')) { if (mode !== 'consultation') { toast('Terminez la saisie en cours avant d’importer.'); return; } if (window.IMPORT_ASSISTANT) window.IMPORT_ASSISTANT.ouvrir(modeleImp()); else toast('Assistant d’importation indisponible.'); return; }
     if (b.hasAttribute('data-fim-gen2') || b.hasAttribute('data-fim-generer')) { generer(); return; }
     if (b.hasAttribute('data-fim-ajouter')) { onglet('saisie'); songlet('general'); mode = 'creation'; sel = -1; liste(); form(null); f('num').value = proposerNum(); etat(); f('ref').focus(); return; }
     if (b.hasAttribute('data-fim-modifier')) { onglet('saisie'); mode = 'edition'; etat(); f('desig').focus(); return; }

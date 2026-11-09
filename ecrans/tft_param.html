@@ -95,6 +95,8 @@
 .bp-b.pri{background:#2E427B;border-color:#2E427B;color:#fff}.bp-b.pri:hover:not(:disabled){background:#243569}
 .bp-toast{position:fixed;top:16px;right:16px;z-index:50;background:#0B1332;color:#fff;border-radius:8px;padding:10px 16px;font-size:12px;font-weight:600}
 .bp-toast[hidden]{display:none}
+.tp-gt th:last-child,.tp-gt td:last-child{width:44px;text-align:center}.tp-gt th:nth-child(3),.tp-gt td:nth-child(3){width:44px}.tp-gt td .bp-sel{appearance:auto;-webkit-appearance:auto;text-align:left;background:#fff;border-color:#D6D9E0}.tp-gt td .bp-sel:disabled{background:transparent;border-color:transparent;appearance:none;-webkit-appearance:none}
+.bp-ge{min-height:100px;display:flex;align-items:center;justify-content:center;color:#747A88;font-size:14px}.bp-ge[hidden]{display:none}.bp-aide{margin:0;padding:10px 12px;border-left:3px solid #2E427B;background:#F5F7F9;color:#474C58;font-size:12px}.bp-gr[hidden],.bp-champ[hidden]{display:none!important}
 </style>
 <style>
 .bp-box{border:1px solid #D6D9E0;border-radius:8px;margin:0;padding:8px 12px 12px;min-width:0}
@@ -166,11 +168,17 @@
               <label><input type="radio" name="tp-nature" value="formule">Formule</label><label><input type="radio" name="tp-nature" value="titre">Titre</label>
             </div></fieldset>
           <fieldset class="bp-box"><legend>Style</legend>
-            <div class="bp-chk"><label><input type="checkbox" data-c="gras">Gras</label><label><input type="checkbox" data-c="italique">Italique</label><label><input type="checkbox" data-c="vide">Ligne vide</label></div></fieldset>
+            <div class="bp-chk"><label><input type="checkbox" data-c="gras">Gras</label><label><input type="checkbox" data-c="italique">Italique</label><label><input type="checkbox" data-c="vide">Ligne vide</label><label><input type="checkbox" data-c="afficher">À afficher</label></div></fieldset>
         </div>
         <div class="tp-r2">
-          <label class="bp-champ"><span>Type</span><select class="bp-sel" data-f="type"><option value=""></option><option>Flux d'exploitation</option><option>Flux d'investissement</option><option>Flux de financement</option></select></label>
-          <label class="bp-champ"><span>Type de mouvement</span><select class="bp-sel" data-f="mouvement"><option value=""></option><option>Débit</option><option>Crédit</option><option>Solde</option><option>Variation</option></select></label>
+          <label class="bp-champ"><span>Type</span><select class="bp-sel" data-f="type"><option value=""></option><option>D - C</option><option>C - D</option><option>D</option><option>C</option><option>Solde D</option><option>Solde C</option></select></label>
+          <label class="bp-champ"><span>Type de mouvement</span><select class="bp-sel" data-f="mouvement"><option value=""></option><option>Variation (N et N-1)</option><option>Solde Début (N)</option><option>Solde Fin (N)</option></select></label>
+        </div>
+        <label class="bp-champ" data-tp-formule hidden><span>Formule</span><input class="bp-in" data-f="formule" placeholder="Ex : FA + F21 (codes de lignes, + − * /)"></label>
+        <div class="bp-gr" data-tp-grille hidden>
+          <div class="bp-gb"><h3>Fourchettes de comptes</h3><span class="bp-gtools"><button type="button" class="bp-b ico" title="Ajouter une fourchette" aria-label="Ajouter une fourchette" data-add-f="1"><i class="ti ti-plus"></i></button></span></div>
+          <div class="bp-gw"><table class="bp-gt tp-gt"><thead><tr><th>Min</th><th>Max</th><th></th></tr></thead><tbody data-rows="1"></tbody></table><div class="bp-ge" data-vide="1">Aucun enregistrement</div></div>
+          <p class="bp-aide">Comptes comptables retenus pour la ligne (Min / Max). Le type (D − C, C − D, D, C, Solde D, Solde C) et le type de mouvement donnent la règle de calcul.</p>
         </div>
         <div class="bp-chk"><label><input type="checkbox" data-c="rupture">Ajout d'une ligne de rupture contenant le montant total du regroupement</label></div>
       </form>
@@ -194,15 +202,16 @@
   var root = document.querySelector('[data-tp]'); if (!root) return;
   function q(s) { return root.querySelector(s); } function qa(s) { return [].slice.call(root.querySelectorAll(s)); }
   var NAT = { grille: 'Grille', regroupement: 'Regroupement', formule: 'Formule', titre: 'Titre' };
-  function L(code, tri, libelle, nature, type, mouvement, rupture) { return { code: code, tri: tri, libelle: libelle, nature: nature, type: type || '', mouvement: mouvement || '', rupture: !!rupture, gras: nature === 'titre' || nature === 'regroupement', italique: false, vide: false }; }
+  (window.ETATS_FIN_MODELES = window.ETATS_FIN_MODELES || {}).tft = function () { return modeles; };
+  function L(code, tri, libelle, nature, type, mouvement, rupture) { return { code: code, tri: tri, libelle: libelle, nature: nature, type: type || '', mouvement: mouvement || '', rupture: !!rupture, gras: nature === 'titre' || nature === 'regroupement', italique: false, vide: false, afficher: true, fourchettes: [], formule: '' }; }
   var modeles = [{ id: '1', libelle: 'Modèle N° 1', lignes: [
     L('F1', 10, "Flux de trésorerie liés à l'activité", 'titre'),
-    L('F11', 20, 'Encaissements reçus des clients', 'grille', "Flux d'exploitation", 'Débit'),
-    L('F12', 30, 'Décaissements aux fournisseurs', 'grille', "Flux d'exploitation", 'Crédit'),
-    L('FA', 40, "Total des flux liés à l'activité", 'regroupement', "Flux d'exploitation", 'Solde', true),
+    Object.assign(L('F11', 20, 'Encaissements reçus des clients', 'grille', 'D', 'Variation (N et N-1)'), { fourchettes: [{ d: '512', f: '512' }] }),
+    Object.assign(L('F12', 30, 'Décaissements aux fournisseurs', 'grille', 'D - C', 'Variation (N et N-1)'), { fourchettes: [{ d: '401', f: '409' }] }),
+    L('FA', 40, "Total des flux liés à l'activité", 'regroupement', 'Solde D', 'Variation (N et N-1)', true),
     L('F2', 50, "Flux de trésorerie liés à l'investissement", 'titre'),
-    L('F21', 60, "Acquisitions d'immobilisations", 'grille', "Flux d'investissement", 'Crédit'),
-    L('FT', 70, 'Variation de la trésorerie nette', 'formule', '', 'Variation')
+    Object.assign(L('F21', 60, "Acquisitions d'immobilisations", 'grille', 'D - C', 'Variation (N et N-1)'), { fourchettes: [{ d: '211', f: '218' }] }),
+    Object.assign(L('FT', 70, 'Variation de la trésorerie nette', 'formule', '', 'Variation (N et N-1)'), { formule: 'FA + F21' })
   ] }, { id: '2', libelle: 'Modèle N° 2', lignes: [] }];
   var cur = null, sel = -1, mode = 'consultation';
   var sM = q('[data-tp-modele]'), tb = q('[data-tp-lignes]');
@@ -228,15 +237,38 @@
     }).join('') : '';
     filtrer();
   }
+  var optC = '';
+  function optsComptes() {
+    if (optC) return optC;
+    var R = (window.ECRITURES_REF && window.ECRITURES_REF.comptes) || [], P = window.PLAN_COMPTABLE || [], par = {}, vus = {}, L = [];
+    P.forEach(function (x) { if (x.parent) par[x.parent] = 1; });
+    function add(c, t) { c = String(c == null ? '' : c); if (c && !vus[c]) { vus[c] = 1; L.push([c, t || '']); } }
+    R.forEach(function (x) { add(x.code, x.label); }); P.forEach(function (x) { if (x.actif !== false && !par[x.code]) add(x.code, x.libelle); });
+    L.sort(function (a, b) { return a[0] < b[0] ? -1 : a[0] > b[0] ? 1 : 0; });
+    return (optC = '<option value="">Choisir...</option>' + L.map(function (o) { return '<option value="' + esc(o[0]) + '">' + esc(o[0] + (o[1] ? ' — ' + o[1] : '')) + '</option>'; }).join(''));
+  }
+  function choisir1(el, v) { el.value = v || ''; if (v && el.value !== v) { var o = document.createElement('option'); o.value = v; o.textContent = v; el.appendChild(o); el.value = v; } }
+  function ligneFl(v) {
+    v = v || { d: '', f: '' }; var o = optsComptes(), d = document.createElement('tr'); d.className = 'bp-fl';
+    d.innerHTML = '<td><select class="bp-sel" data-k="d" aria-label="Min">' + o + '</select></td><td><select class="bp-sel" data-k="f" aria-label="Max">' + o + '</select></td>' +
+      '<td><button type="button" class="bp-b ico" title="Retirer la ligne" aria-label="Retirer la ligne" data-rm><i class="ti ti-trash"></i></button></td>';
+    choisir1(d.querySelector('[data-k=d]'), v.d); choisir1(d.querySelector('[data-k=f]'), v.f); return d;
+  }
+  function majVide() { q('[data-vide="1"]').hidden = q('[data-rows="1"]').children.length > 0; }
+  function remplirRows(arr) { var c = q('[data-rows="1"]'); c.innerHTML = ''; (arr || []).forEach(function (v) { c.appendChild(ligneFl(v)); }); majVide(); }
+  function lireRows() { return qa('[data-rows="1"] .bp-fl').map(function (r) { return { d: r.querySelector('[data-k=d]').value.trim(), f: r.querySelector('[data-k=f]').value.trim() }; }); }
+  function majSections() { var n = qa('[name=tp-nature]:checked')[0], g = n && n.value; q('[data-tp-grille]').hidden = g !== 'grille'; q('[data-tp-formule]').hidden = g !== 'formule'; }
+  qa('[name=tp-nature]').forEach(function (r) { r.addEventListener('change', majSections); });
   function remplirForm(l) {
     var vide = !l; l = l || L('', '', '', '', '', '');
     qa('[data-f]').forEach(function (e) { e.value = l[e.dataset.f] == null ? '' : l[e.dataset.f]; });
     qa('[name=tp-nature]').forEach(function (r) { r.checked = !vide && r.value === l.nature; });
     qa('[data-c]').forEach(function (c) { c.checked = !!l[c.dataset.c]; });
+    remplirRows(l.fourchettes); majSections();
   }
   function appliquerMode() {
     var ed = mode !== 'consultation';
-    qa('[data-tp-form] input,[data-tp-form] select').forEach(function (e) { e.disabled = !ed; });
+    qa('[data-tp-form] input,[data-tp-form] select,[data-tp-form] [data-add-f],[data-tp-form] [data-rm]').forEach(function (e) { e.disabled = !ed; });
     q('[data-tp-mode]').textContent = mode === 'creation' ? 'Création' : mode === 'edition' ? 'Modification' : 'Consultation';
     var m = modele(), a = q('[data-tp-actions]');
     a.querySelector('[data-tp-ajouter]').disabled = !m || ed; a.querySelector('[data-tp-modifier]').disabled = !m || ed || sel < 0;
@@ -252,8 +284,8 @@
 
   function enregistrer() {
     var l = {}; qa('[data-f]').forEach(function (e) { l[e.dataset.f] = e.value.trim(); }); qa('[data-c]').forEach(function (c) { l[c.dataset.c] = c.checked; });
-    var n = qa('[name=tp-nature]:checked')[0]; l.nature = n && n.value; l.tri = parseInt(l.tri, 10) || '';
-    var err = !l.code ? 'La ligne du TFT est obligatoire.' : !l.libelle ? 'Le libellé est obligatoire.' : !l.nature ? 'Choisissez la nature de la ligne.' : '';
+    var n = qa('[name=tp-nature]:checked')[0]; l.nature = n && n.value; l.tri = parseInt(l.tri, 10) || ''; l.fourchettes = l.nature === 'grille' ? lireRows().filter(function (x) { return x.d || x.f; }) : []; if (l.nature !== 'formule') l.formule = '';
+    var err = !l.code ? 'La ligne du TFT est obligatoire.' : !l.libelle ? 'Le libellé est obligatoire.' : !l.nature ? 'Choisissez la nature de la ligne.' : (l.nature === 'grille' && !l.fourchettes.length) ? 'Au moins une fourchette de comptes est obligatoire.' : l.fourchettes.some(function (x) { return !x.d || !x.f; }) ? 'Chaque fourchette doit indiquer le minimum et le maximum.' : '';
     if (!err && cur.lignes.some(function (x, i) { return x.code === l.code && i !== sel; })) err = 'Cette ligne existe déjà dans le modèle.';
     if (err) { toast(err); return; }
     if (mode === 'creation') { cur.lignes.push(l); sel = cur.lignes.length - 1; } else cur.lignes[sel] = l;
@@ -261,12 +293,21 @@
   }
   root.addEventListener('click', function (e) {
     var b = e.target.closest('button'); if (!b || b.disabled) return;
+    if (b.hasAttribute('data-add-f')) { q('[data-rows="1"]').appendChild(ligneFl()); majVide(); return; }
+    if (b.hasAttribute('data-rm')) { b.closest('.bp-fl').remove(); majVide(); return; }
     if (b.hasAttribute('data-tp-ajouter')) { onglet('saisie'); mode = 'creation'; sel = -1; renderLignes(); remplirForm(null); q('[data-f=tri]').value = (cur.lignes.length + 1) * 10; appliquerMode(); q('[data-f=code]').focus(); return; }
     if (b.hasAttribute('data-tp-modifier')) { onglet('saisie'); mode = 'edition'; appliquerMode(); q('[data-f=code]').focus(); return; }
     if (b.hasAttribute('data-tp-annuler')) { mode = 'consultation'; renderLignes(); remplirForm(sel >= 0 ? cur.lignes[sel] : null); appliquerMode(); return; }
     if (b.hasAttribute('data-tp-enregistrer')) { enregistrer(); return; }
     if (b.hasAttribute('data-tp-imprimer')) { window.print(); return; }
-    if (b.hasAttribute('data-tp-exporter')) { toast('Export du modèle ' + cur.id + ' (maquette)'); return; }
+    if (b.hasAttribute('data-tp-exporter')) { (function () {
+      var X = window.EXPORT_TABLEAU; if (!X || !cur) { toast('Export indisponible.'); return; }
+      function rg(a) { return (a || []).map(function (f) { return f && typeof f === 'object' ? Object.keys(f).map(function (k) { return f[k]; }).filter(function (v) { return v !== '' && v != null; }).join(' à ') : String(f); }).join(' ; '); }
+      var tete = ['Code', 'Ordre', 'Libellé', 'Type', 'Nature', 'Mouvement', 'Fourchettes / axes', 'Référence', 'Note'];
+      var lignes = (cur.lignes || []).map(function (l) { return [l.code, l.ordre != null ? l.ordre : (l.tri != null ? l.tri : ''), l.libelle, l.type || '', l.nature || '', l.mouvement || '', rg(l.fourchettes || l.axes || []), l.reference || '', l.note || '']; });
+      X.xlsx('modele_' + String(cur.id).replace(/[^A-Za-z0-9_-]+/g, '_') + '.xlsx', 'Modèle ' + cur.id, tete, lignes, [['Modèle ' + cur.id + (cur.libelle ? ' — ' + cur.libelle : '')], []]);
+      toast('Export Excel (XLSX) généré : ' + lignes.length + ' ligne(s).');
+    })(); return; }
     if (b.hasAttribute('data-tp-nouveau')) { q('[data-tp-ov]').hidden = false; q('[data-n-err]').hidden = true; qa('[data-n]').forEach(function (i) { i.value = ''; }); q('[data-n=code]').focus(); return; }
     if (b.hasAttribute('data-tp-dupliquer')) { var m0 = modele(), n = 2; while (modeles.some(function (x) { return x.id === m0.id + '-' + n; })) n++; var cp = JSON.parse(JSON.stringify(m0)); cp.id = m0.id + '-' + n; cp.libelle = m0.libelle + ' (copie)'; modeles.push(cp); refModeles(cp.id); sM.dispatchEvent(new Event('change')); toast('Modèle dupliqué'); return; }
     if (b.hasAttribute('data-tp-supprimer-modele')) { var m1 = modele(); if (!window.confirm('Supprimer le modèle « ' + m1.id + ' » ?')) return; modeles = modeles.filter(function (x) { return x !== m1; }); refModeles(''); sM.dispatchEvent(new Event('change')); toast('Modèle supprimé'); return; }

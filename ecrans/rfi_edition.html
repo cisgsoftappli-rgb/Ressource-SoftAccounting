@@ -118,7 +118,9 @@
     var er = q('[data-re-er]'); er.classList.remove('show');
     if (!c('conv').value) { er.textContent = 'Aucune convention FIDA dans le plan financier.'; er.classList.add('show'); return; }
     if (p('du0').value && p('au0').value && p('du0').value > p('au0').value) { er.textContent = 'La période est incohérente : la date de début dépasse la date de fin.'; er.classList.add('show'); return; }
-    if (c('monnaie').value !== 'MGA') { er.textContent = 'Aucun cours en vigueur pour ' + c('monnaie').value + ' : l’édition se fait en monnaie locale.'; er.classList.add('show'); return; }
+    var mm = [c('monnaie').value, c('monnaie2').value].filter(function (x) { return x && x !== 'MGA'; }), fin = p('au0').value || '9999-12-31';
+    var sansCours = mm.filter(function (x) { return !(window.COURS_API && (window.COURS_API.taux(x, fin) || window.COURS_API.taux(x, '9999-12-31'))); });
+    if (sansCours.length) { er.textContent = 'Aucun cours n’est enregistré pour ' + sansCours[0] + ' (écran Cours).'; er.classList.add('show'); return; }
     if (!window.__ddGrid || !window.__ddGrid.rfiHtml) { er.textContent = 'Le moteur des modèles n’est pas chargé.'; er.classList.add('show'); return; }
     var conv = conventions().filter(function (x) { return x.code === c('conv').value; })[0] || {}, code = c('rapport').value;
     window.__rfiConv = conv.code;

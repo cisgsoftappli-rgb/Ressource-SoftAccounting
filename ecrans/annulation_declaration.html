@@ -1,0 +1,112 @@
+<!--
+  Écran « États comptables › Déclaration fiscale › Annulation » : annulation exceptionnelle d'une déclaration déjà validée (lot figé).
+  Liste = déclarations « Validée » du traitement (window.__SELT). Annuler : retrait du n° de lot, mouvements remis à « Non déclaré », justification tracée.
+  Historique des annulations en bas de page. Données en mémoire.
+-->
+<style>
+.an{color:#0B1332}
+.an-hd{display:flex;align-items:flex-start;justify-content:space-between;gap:16px;margin:0 0 16px;background:#F4F5F9;padding:20px 22px;border-radius:4px}
+.an-hd h1{margin:0 0 6px;font-size:20px;font-weight:700}.an-hd p{margin:0;max-width:640px;font-size:13px;color:#6B7194;line-height:1.6}
+.an-act{display:flex;gap:10px}
+.an-b{height:40px;border-radius:8px;border:1px solid #DDE0EA;background:#fff;color:#0B1332;font:inherit;font-size:13px;font-weight:600;padding:0 16px;cursor:pointer}
+.an-b.d{background:#C0182B;border-color:#C0182B;color:#fff}.an-b[disabled]{opacity:.45;cursor:not-allowed}
+.an-c{background:#fff;border:1px solid #E9EBF0;border-radius:12px;padding:18px 20px;margin:0 0 16px;box-shadow:0 1px 3px #0b133212}
+.an-c h2{margin:0 0 14px;padding-bottom:12px;border-bottom:2px solid #C9407A;font-size:13px;letter-spacing:.06em;text-transform:uppercase;color:#C9407A}
+.an-f{display:flex;flex-direction:column;gap:6px;max-width:520px}.an-f>span{font-size:13px;font-weight:500}.an-f>span i{color:#C0182B;font-style:normal}
+.an-in{border:1px solid #C8CCD6;border-radius:8px;padding:8px 10px;font:inherit;font-size:13px;background:#fff;min-height:38px;box-sizing:border-box;width:100%}
+.an-in.bad{border-color:#C0182B}
+.an-h{font-size:13px;color:#6B7194;margin:10px 0 0}
+.an-er{color:#C0182B;font-size:12px;display:none;margin-top:4px}
+.an-kp{display:grid;grid-template-columns:repeat(auto-fit,minmax(170px,1fr));gap:12px;margin:0 0 16px}
+.an-kp div{border:1px solid #E9EBF0;border-radius:10px;padding:10px 14px;background:#FAFBFD}.an-kp small{display:block;font-size:11px;text-transform:uppercase;letter-spacing:.05em;color:#6B7194}.an-kp b{font-size:14px}
+.an-w{border:1px solid #F6C6CC;background:#FDECEE;color:#8A1020;border-radius:8px;padding:10px 14px;font-size:13px;margin:0 0 14px;line-height:1.5}
+.an-t{width:100%;border-collapse:collapse;font-size:13px}
+.an-t th{background:#F5F7F9;border-bottom:1px solid #E9EBF0;padding:10px 12px;text-align:left;font-size:11px;font-weight:700;letter-spacing:.06em;text-transform:uppercase;color:#5B606D;white-space:nowrap}
+.an-t td{padding:10px 12px;border-bottom:1px solid #EEF0F4;background:#fff}.an-t .n{text-align:right}
+.an-ok{margin:0 0 14px;padding:10px 14px;border-radius:8px;background:#E7F6EC;color:#136C34;font-size:13px;display:none}
+.an-ov{position:fixed;inset:0;background:rgba(11,19,50,.45);display:none;align-items:center;justify-content:center;z-index:2000;padding:16px}.an-ov.on{display:flex}
+.an-m{background:#fff;border-radius:12px;width:480px;max-width:92vw;box-shadow:0 12px 40px rgba(0,0,0,.25)}
+.an-m h3{margin:0;padding:16px 20px;border-bottom:1px solid #E9EBF0;font-size:16px}.an-m p{margin:0;padding:16px 20px;font-size:13px;line-height:1.5}
+.an-m footer{display:flex;justify-content:flex-end;gap:8px;padding:12px 20px;border-top:1px solid #E9EBF0}
+</style>
+<div class="an" data-ann>
+  <div class="an-hd">
+    <div><h1>Annulation de la déclaration</h1><p>Annulation exceptionnelle d'une déclaration validée : retrait du numéro de lot, déblocage des mouvements comptables à l'état « Non déclaré » et traçabilité de la justification.</p></div>
+    <div class="an-act"><button type="button" class="an-b" data-ann-load>Charger</button><button type="button" class="an-b d" data-ann-go disabled>Annuler la déclaration</button></div>
+  </div>
+  <div class="an-ok" data-ann-ok></div>
+  <div class="an-c">
+    <h2>Identification</h2>
+    <label class="an-f"><span>N° de déclaration <i>*</i></span><select class="an-in" data-ann-sel></select></label>
+    <p class="an-h">Chargez la déclaration figée issue de la mise à jour (S22-05) pour l'annuler exceptionnellement.</p>
+    <div class="an-er" data-ann-er1></div>
+  </div>
+  <div data-ann-det hidden>
+    <div class="an-kp" data-ann-kp></div>
+    <div class="an-c">
+      <h2>Justification de l'annulation</h2>
+      <div class="an-w"><strong>Attention :</strong> les mouvements de ce lot redeviendront éligibles aux sélections suivantes sur ce type d'impôt / taxe. L'opération est tracée (utilisateur, date, motif) et ne peut pas être défaite.</div>
+      <label class="an-f" style="max-width:none"><span>Motif de l'annulation <i>*</i></span><textarea class="an-in" rows="3" data-ann-mo placeholder="Ex. : erreur sur la base imposable, déclaration rejetée par l'administration…"></textarea></label>
+      <div class="an-er" data-ann-er2>Le motif est obligatoire (5 caractères minimum).</div>
+    </div>
+  </div>
+  <div class="an-c">
+    <h2>Historique des annulations</h2>
+    <table class="an-t" data-pg-min="360">
+      <thead><tr><th>Date</th><th>Utilisateur</th><th>Type</th><th>Exercice</th><th>N° sélection</th><th>N° de lot retiré</th><th class="n">Mouvements libérés</th><th class="n">Montant</th><th>Motif</th></tr></thead>
+      <tbody data-ann-hist></tbody>
+    </table>
+  </div>
+  <div class="an-ov" data-ann-ov><div class="an-m" role="alertdialog" aria-modal="true"><h3>Annuler la déclaration ?</h3><p data-ann-msg></p><footer><button type="button" class="an-b" data-ann-no>Retour</button><button type="button" class="an-b d" data-ann-yes>Confirmer l'annulation</button></footer></div></div>
+</div>
+<script>
+(function () {
+  var root = document.querySelector('[data-ann]'); if (!root) return;
+  function q(s) { return root.querySelector(s); }
+  function esc(v) { return String(v == null ? '' : v).replace(/[&<>"]/g, function (c) { return { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c]; }); }
+  function nf(n) { return String(Math.round(n)).replace(/\B(?=(\d{3})+(?!\d))/g, ' '); }
+  function fd(d) { return d ? d.split('-').reverse().join('/') : ''; }
+  var HIST = [
+    { date: '12/03/2026 09:41', user: 'Super Administrateur', type: 'TAXE', ex: '2025', sel: '001', lot: 'LOT-DF-TAXE-20260310-001', nb: 14, mt: 3180000, motif: 'Base imposable erronée : facture fournisseur saisie en double.' },
+    { date: '28/01/2026 15:12', user: 'Super Administrateur', type: 'IR', ex: '2025', sel: '01', lot: 'LOT-DF-IR-20260125-001', nb: 9, mt: 1245000, motif: 'Déclaration rejetée par l\'administration fiscale.' }
+  ];
+  var sel = null;
+  function L() { return (window.__SELT || []).filter(function (x) { return x.st === 'Validée' && x.lot; }); }
+  function fill() {
+    var s = q('[data-ann-sel]'), l = L();
+    s.innerHTML = '<option value="">— Sélectionner une déclaration —</option>' + l.map(function (x, i) { return '<option value="' + i + '">' + esc(x.type + ' — Sél. n° ' + x.sel + ' — ' + x.lot) + '</option>'; }).join('');
+  }
+  function hist() {
+    q('[data-ann-hist]').innerHTML = HIST.map(function (h) { return '<tr><td>' + esc(h.date) + '</td><td>' + esc(h.user) + '</td><td>' + esc(h.type) + '</td><td>' + esc(h.ex) + '</td><td>' + esc(h.sel) + '</td><td>' + esc(h.lot) + '</td><td class="n">' + h.nb + '</td><td class="n">' + nf(h.mt) + '</td><td>' + esc(h.motif) + '</td></tr>'; }).join('');
+  }
+  function reset() { sel = null; q('[data-ann-det]').hidden = true; q('[data-ann-go]').disabled = true; q('[data-ann-mo]').value = ''; q('[data-ann-er1]').style.display = 'none'; q('[data-ann-er2]').style.display = 'none'; }
+  q('[data-ann-sel]').addEventListener('focus', fill);
+  q('[data-ann-sel]').addEventListener('change', function () { reset(); });
+  q('[data-ann-load]').addEventListener('click', function () {
+    var v = q('[data-ann-sel]').value, e1 = q('[data-ann-er1]');
+    if (v === '') { e1.textContent = 'Sélectionnez le n° de déclaration à charger.'; e1.style.display = 'block'; q('[data-ann-sel]').classList.add('bad'); return; }
+    q('[data-ann-sel]').classList.remove('bad'); e1.style.display = 'none';
+    sel = L()[+v]; if (!sel) return;
+    q('[data-ann-kp]').innerHTML = [['Type d\'impôt / taxe', sel.type], ['Exercice', sel.ex], ['N° de sélection', sel.sel], ['Période', fd(sel.du) + ' → ' + fd(sel.au)], ['N° de lot', sel.lot], ['Mouvements déclarés', sel.nb], ['Montant total', nf(sel.mt)], ['Statut', 'Validée']].map(function (k) { return '<div><small>' + esc(k[0]) + '</small><b>' + esc(k[1]) + '</b></div>'; }).join('');
+    q('[data-ann-det]').hidden = false; q('[data-ann-go]').disabled = false;
+  });
+  q('[data-ann-go]').addEventListener('click', function () {
+    if (!sel) return;
+    var mo = q('[data-ann-mo]').value.trim(), e2 = q('[data-ann-er2]');
+    if (mo.length < 5) { e2.style.display = 'block'; q('[data-ann-mo]').classList.add('bad'); return; }
+    e2.style.display = 'none'; q('[data-ann-mo]').classList.remove('bad');
+    q('[data-ann-msg]').innerHTML = 'Le lot <b>' + esc(sel.lot) + '</b> (' + sel.nb + ' mouvement(s), ' + nf(sel.mt) + ') sera retiré et ses mouvements repasseront à « Non déclaré ». Cette action est irréversible.';
+    q('[data-ann-ov]').classList.add('on');
+  });
+  q('[data-ann-no]').addEventListener('click', function () { q('[data-ann-ov]').classList.remove('on'); });
+  q('[data-ann-yes]').addEventListener('click', function () {
+    q('[data-ann-ov]').classList.remove('on'); if (!sel) return;
+    var d = new Date(), p = function (n) { return ('0' + n).slice(-2); }, mo = q('[data-ann-mo]').value.trim();
+    HIST.unshift({ date: p(d.getDate()) + '/' + p(d.getMonth() + 1) + '/' + d.getFullYear() + ' ' + p(d.getHours()) + ':' + p(d.getMinutes()), user: 'Super Administrateur', type: sel.type, ex: sel.ex, sel: sel.sel, lot: sel.lot, nb: sel.nb, mt: sel.mt, motif: mo });
+    sel.st = 'Annulée'; sel.motif = mo;
+    var ok = q('[data-ann-ok]'); ok.textContent = 'Déclaration ' + sel.type + ' n° ' + sel.sel + ' annulée : lot ' + sel.lot + ' retiré, ' + sel.nb + ' mouvement(s) remis à « Non déclaré ».'; ok.style.display = 'block';
+    reset(); fill(); hist();
+  });
+  fill(); hist();
+})();
+</script>

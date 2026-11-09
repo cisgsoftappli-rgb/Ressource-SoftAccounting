@@ -1,0 +1,243 @@
+<!--
+  Écran « Traitement » (Comptabilité générale › Circuit de validation › Traitement) — tableau de suivi des pièces par état du circuit : une colonne par état
+  (SAISIS, puis l'état de chaque étape paramétrée dans « Paramètre Circuit », ex. VALIDE). Barre de recherche : bouton Rechercher, site, période, recherche libre.
+  Une pièce passe à l'état suivant par le bouton d'action de l'étape (ex. VALIDER) ou par glisser-déposer vers la colonne suivante, si l'utilisateur est rattaché
+  à l'étape. Les pièces enregistrées dans la saisie d'écritures arrivent à l'état SAISIS ; pièces de démonstration en plus (aucune écriture réelle n'alimente la maquette).
+  Si l'étape cible porte une CHECKLIST et/ou un COMMENTAIRE OBLIGATOIRE (Paramètre Circuit), une fenêtre s'ouvre avant l'exécution : les points obligatoires doivent être cochés et le commentaire saisi ; le résultat est conservé dans l'historique de la pièce.
+  Ne pas nommer de fonction « $$ » (build.cjs).
+-->
+<style>
+.cvt{width:100%;color:#353944;font-size:13px}
+.cvt-bar{display:flex;flex-wrap:wrap;align-items:center;gap:14px;padding:12px 16px;margin-bottom:14px;background:#fafafa;border:1px solid #E9EBF0;border-radius:8px;box-shadow:0 2px 6px rgba(11,19,50,.06)}
+.cvt-bar .cvt-go{display:inline-flex;align-items:center;gap:8px;min-height:42px;padding:0 18px;border:1px solid #D6D9E0;border-radius:6px;background:#fff;color:#0B1332;font-weight:700;font-size:14px;cursor:pointer}
+.cvt-bar .cvt-go:hover{background:#F4F7FE}
+.cvt-bar select,.cvt-bar input{height:36px;box-sizing:border-box;border:1px solid #B9BDC7;border-radius:3px;background:#fff;padding:0 10px;font:inherit;font-size:13px;font-weight:600;color:#353944}
+.cvt-bar select{min-width:230px}
+.cvt-dt{position:relative;display:inline-flex;align-items:center}.cvt-dt input{width:170px;padding-right:34px}
+.cvt-dt button{position:absolute;right:6px;border:0;background:none;color:#8A8F9C;font-size:18px;cursor:pointer;line-height:1}
+.cvt-rech{position:relative;flex:0 1 360px}.cvt-rech input{width:100%;padding-left:38px;font-weight:400}.cvt-rech i{position:absolute;left:11px;top:9px;color:#474C58;font-size:18px}
+.cvt-cols{display:flex;gap:22px;align-items:flex-start;overflow-x:auto;padding-bottom:10px}
+.cvt-col{flex:0 0 min(486px,86vw);display:flex;flex-direction:column;min-height:calc(100vh - 300px);background:#fff;border-radius:6px;overflow:hidden;box-shadow:0 1px 3px rgba(11,19,50,.12)}
+.cvt-col.over{outline:3px dashed #2E427B;outline-offset:-3px}
+.cvt-ch{display:flex;align-items:center;justify-content:center;gap:10px;padding:20px 12px;background:#2B4F7A;color:#fff;font:700 16px Georgia,'Times New Roman',serif;letter-spacing:.02em;text-transform:uppercase}
+.cvt-ch small{padding:2px 9px;border-radius:10px;background:rgba(255,255,255,.2);font:600 12px var(--font-sans,sans-serif)}
+.cvt-cb{flex:1;padding:12px;display:flex;flex-direction:column;gap:10px}
+.cvt-card{border:1px solid #E1E5EE;border-left:4px solid #2B4F7A;border-radius:6px;background:#fff;padding:10px 12px;cursor:grab;box-shadow:0 1px 2px rgba(11,19,50,.05)}
+.cvt-card:hover{background:#F8FAFD}.cvt-card.drag{opacity:.45}
+.cvt-ct{display:flex;justify-content:space-between;gap:10px;font-weight:700;color:#0B1332}.cvt-ct span:last-child{font-variant-numeric:tabular-nums;white-space:nowrap}
+.cvt-cm{margin-top:3px;color:#5B606D;font-size:12px}.cvt-cl{margin-top:6px;color:#353944}
+.cvt-cf{display:flex;justify-content:space-between;align-items:center;gap:8px;margin-top:8px}
+.cvt-cf em{font-style:normal;font-size:11px;color:#6B7080}
+.cvt-ba{min-height:28px;padding:0 12px;border:1px solid #2E427B;border-radius:6px;background:#fff;color:#2E427B;font:700 11.5px var(--font-sans,sans-serif);cursor:pointer;text-transform:uppercase}.cvt-ba:hover{background:#2E427B;color:#fff}
+.cvt-br{min-height:28px;padding:0 10px;border:1px solid #B63132;border-radius:6px;background:#fff;color:#B63132;font:700 11.5px var(--font-sans,sans-serif);cursor:pointer;text-transform:uppercase}.cvt-br:hover{background:#B63132;color:#fff}.cvt-br:disabled{opacity:.4;cursor:not-allowed}
+.cvt-btns{display:inline-flex;gap:6px}
+.cvt-bd .cvt-bdh{pointer-events:none}.cvt-bd .cvt-bdl{overflow:auto;border:1px solid #E1E5EE;border-radius:8px;margin-top:12px}.cvt-bd table.cvt-bdt{border-collapse:collapse;width:100%;font-size:12.5px;min-width:1100px}.cvt-bd .cvt-bdt th{background:#EEF1F8;color:#0B1332;text-align:left;padding:8px 10px;font-size:11px;text-transform:uppercase;white-space:nowrap}.cvt-bd .cvt-bdt td{padding:7px 10px;border-top:1px solid #E9EBF0;white-space:nowrap}.cvt-bd .cvt-bdt td.r{text-align:right;font-variant-numeric:tabular-nums}
+.cvt-bd .cvt-bdt tr.cvt-bdtot td{background:#E7EDFB;font-weight:700;border-top:2px solid #C9D6F2;color:#0B1332}.cvt-bd h3{margin:14px 0 6px;font-size:13px;color:#2E427B}.cvt-bd .cvt-bdm{display:flex;flex-wrap:wrap;gap:6px 18px;font-size:12.5px;color:#474C58;margin-bottom:8px}.cvt-bd .cvt-bdm b{color:#0B1332}
+.cvt-lock{color:#6B7080;font-size:12px;display:inline-flex;align-items:center;gap:4px}
+.cvt-vide{padding:26px 8px;text-align:center;color:#8A8F9C;font-size:13px}
+.cvt-toast{position:fixed;left:50%;bottom:28px;transform:translateX(-50%);z-index:60;padding:10px 18px;border-radius:8px;background:#0B1332;color:#fff;font-size:13px}
+</style>
+
+<div class="cvt" data-cvt>
+  <div class="cvt-bar">
+    <button type="button" class="cvt-go" data-cvt-go><i class="ti ti-search" aria-hidden="true"></i>Rechercher</button>
+    <select data-cvt-site aria-label="Site"></select>
+    <span class="cvt-dt"><input type="date" data-cvt-d1 aria-label="Du"><button type="button" data-cvt-x1 title="Effacer" aria-label="Effacer la date de début"><i class="ti ti-circle-x-filled"></i></button></span>
+    <span>au</span>
+    <span class="cvt-dt"><input type="date" data-cvt-d2 aria-label="Au"><button type="button" data-cvt-x2 title="Effacer" aria-label="Effacer la date de fin"><i class="ti ti-circle-x-filled"></i></button></span>
+    <span class="cvt-rech"><i class="ti ti-search" aria-hidden="true"></i><input type="search" data-cvt-q placeholder="Rechercher" aria-label="Rechercher"></span>
+  </div>
+  <div class="cvt-cols" data-cvt-cols></div>
+  <div class="cvt-toast" data-cvt-toast hidden></div>
+</div>
+
+<script>
+(function () {
+  var root = document.querySelector('[data-cvt]'); if (!root) return;
+  function q(s) { return root.querySelector(s); }
+  function esc(s) { return String(s == null ? '' : s).replace(/[&<>"]/g, function (c) { return { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c]; }); }
+  function fmt(n) { return (n || 0).toLocaleString('fr-FR', { minimumFractionDigits: 2, maximumFractionDigits: 2 }); }
+  function frd(iso) { return iso ? iso.split('-').reverse().join('/') : ''; }
+  var UTIL = 'admin';
+  function iso(d) { return d.getFullYear() + '-' + ('0' + (d.getMonth() + 1)).slice(-2) + '-' + ('0' + d.getDate()).slice(-2); }
+  function toast(m) { var t = q('[data-cvt-toast]'); t.textContent = m; t.hidden = false; clearTimeout(toast.t); toast.t = setTimeout(function () { t.hidden = true; }, 2400); }
+
+  // --- étapes du circuit (Paramètre Circuit) ---
+  function etapes() { var E = window.CIRCUIT_ETAPES || [{ num: 1, nom: 'VALIDATION', etat: 'VALIDE', action: 'VALIDER', mi: false, si: true, cmt: false, users: ['admin'], checklist: [] }]; return E.slice().sort(function (a, b) { return a.num - b.num; }); }
+  function zeroActif() { return !!(window.CIRCUIT_ZERO && window.CIRCUIT_ZERO.actif); }
+  function colonnes() { return (zeroActif() ? [{ etat: 'BROUILLON', etape: null, brouillon: true }] : []).concat([{ etat: 'SAISIS', etape: null }]).concat(etapes().map(function (e) { return { etat: e.etat, etape: e }; })); }
+  function vbIndex() { var C = colonnes(), k = -1; C.forEach(function (c, i) { if (c.etape && c.etape.vb) k = i; }); return k; }   // colonne de l'étape « Validation du brouillon »
+  function autorise(e) { return !e || e.users.indexOf(UTIL) >= 0 || e.users.indexOf('superadmin') >= 0; }
+
+  // --- pièces : démonstration + pièces enregistrées dans la saisie d'écritures ---
+  var etats = {}, histo = {};   // clé journal|pièce → état ; clé → historique des passages (utilisateur, date, points cochés, commentaire)
+  function demo() {
+    var J = ((window.ECRITURES_REF && window.ECRITURES_REF.journaux) || []).map(function (j) { return j.code; }), L = ['Achat de fournitures de bureau', 'Facture honoraires consultant', 'Règlement fournisseur', 'Frais de mission', 'Approvisionnement de la caisse', 'Commission bancaire', 'Location de bureau', 'Vente diverse encaissée'];
+    var base = new Date(2026, 10, 2), out = [];
+    for (var i = 0; i < 8; i++) {
+      var d = new Date(base.getTime() - (i * 3 + 1) * 86400000), j = J.length ? J[(i * 7) % J.length] : '01ACHAT';
+      out.push({ journal: j, piece: j + ('000' + (i + 1)).slice(-4), date: iso(d), site: '01', libelle: L[i], montant: (((i * 37) % 19) + 2) * 185000, lignes: 2, demo: true, etat: i < 5 ? 'SAISIS' : 'VALIDE' });
+    }
+    [0, 1].forEach(function (k) { var d2 = new Date(base.getTime() - (k + 1) * 86400000), j2 = J.length ? J[(k * 5 + 2) % J.length] : '01ACHAT'; out.push({ journal: j2, piece: j2 + 'BR' + ('00' + (k + 1)).slice(-3), date: iso(d2), site: '01', libelle: ['Brouillon — facture fournisseur à valider', 'Brouillon — frais de déplacement'][k], montant: (k + 3) * 240000, lignes: 2, demo: true, brouillon: true, etat: 'BROUILLON', createur: ['ANDRY', 'HERY'][k] }); });
+    return out;
+  }
+  var DEMO = demo();
+  function pieces() {
+    var P = DEMO.filter(function (x) { return !x.brouillon || zeroActif(); }), reg = window.ECRITURES_PIECES || [];
+    reg.forEach(function (p) {
+      var cle = p.journal + '|' + p.piece; if (P.some(function (x) { return x.journal + '|' + x.piece === cle; })) return;
+      var m = 0; (p.lignes || []).forEach(function (l) { if (l.sens === 'DEBIT') m += l.montant || 0; });
+      P.push({ journal: p.journal, piece: p.piece, date: p.date || '', site: '01', libelle: ((p.lignes || [])[0] || {}).libelle || 'Pièce saisie', montant: m, lignes: (p.lignes || []).length, etat: p.statut === 'Brouillon' && zeroActif() ? 'BROUILLON' : 'SAISIS', createur: p.createur || '' });
+    });
+    P.forEach(function (p) { var cle = p.journal + '|' + p.piece; if (etats[cle]) p.etat = etats[cle]; });
+    return P;
+  }
+
+  // --- barre de recherche ---
+  var site = q('[data-cvt-site]'), d1 = q('[data-cvt-d1]'), d2 = q('[data-cvt-d2]'), rech = q('[data-cvt-q]');
+  function sites() { var S = (window.ECRITURES_REF && window.ECRITURES_REF.sites) || [{ code: '01', label: 'Siege' }]; site.innerHTML = '<option value="">Tous les sites</option>' + S.map(function (s) { return '<option value="' + esc(s.code) + '">' + esc(s.code + ' - ' + s.label) + '</option>'; }).join(''); if (S.length) site.value = S[0].code; }
+  sites();
+  d1.value = '2026-10-02'; d2.value = '2026-11-02';
+  q('[data-cvt-x1]').addEventListener('click', function () { d1.value = ''; dessiner(); });
+  q('[data-cvt-x2]').addEventListener('click', function () { d2.value = ''; dessiner(); });
+
+  var colsEl = q('[data-cvt-cols]'), glisse = null;
+  function visibles() {
+    var t = rech.value.trim().toLowerCase();
+    return pieces().filter(function (p) {
+      if (site.value && p.site !== site.value) return false;
+      if (d1.value && p.date && p.date < d1.value) return false;
+      if (d2.value && p.date && p.date > d2.value) return false;
+      return !t || (p.journal + ' ' + p.piece + ' ' + p.libelle).toLowerCase().indexOf(t) >= 0;
+    });
+  }
+  function dessiner() {
+    var C = colonnes(), P = visibles();
+    colsEl.innerHTML = C.map(function (c, i) {
+      var L = P.filter(function (p) { return p.etat === c.etat; }), vbi = vbIndex(), suiv = c.brouillon ? C[vbi] : C[i + 1], ia = c.brouillon ? vbi - 1 : i;
+      return '<section class="cvt-col" data-i="' + i + '" aria-label="' + esc(c.etat) + '"><div class="cvt-ch">' + esc(c.etat) + '<small>' + L.length + '</small></div><div class="cvt-cb">' +
+        (L.length ? L.map(function (p) {
+          return '<article class="cvt-card" draggable="true" data-cle="' + esc(p.journal + '|' + p.piece) + '"><div class="cvt-ct"><span>' + esc(p.journal) + ' — ' + esc(p.piece) + '</span><span>' + fmt(p.montant) + '</span></div>' +
+            (histo[p.journal + '|' + p.piece] ? '<div class="cvt-cm" title="' + esc(histo[p.journal + '|' + p.piece].map(function (h) { return h.etape + ' : ' + h.commentaire; }).join(' | ')) + '"><i class="ti ti-message" aria-hidden="true"></i> ' + esc((histo[p.journal + '|' + p.piece].slice(-1)[0].retour ? 'Retour — ' : '') + (histo[p.journal + '|' + p.piece].slice(-1)[0].commentaire || ('Étape « ' + histo[p.journal + '|' + p.piece].slice(-1)[0].etape + ' » validée'))) + '</div>' : '') +
+            (p.createur ? '<div class="cvt-cm"><i class="ti ti-user" aria-hidden="true"></i> Créé par ' + esc(p.createur) + '</div>' : '') + '<div class="cvt-cm">' + frd(p.date) + ' · ' + p.lignes + ' ligne' + (p.lignes > 1 ? 's' : '') + (p.demo ? ' · démonstration' : '') + '</div><div class="cvt-cl">' + esc(p.libelle) + '</div>' +
+            '<div class="cvt-cf">' + (c.etape && c.etape.mi ? '<span class="cvt-lock"><i class="ti ti-lock" aria-hidden="true"></i>Modification impossible</span>' : '<em></em>') +
+            '<span class="cvt-btns">' + (i > 0 && c.etape ? '<button type="button" class="cvt-br" data-ret="' + i + '"' + (autorise(c.etape) ? '' : ' disabled title="Retour réservé aux utilisateurs rattachés à l’étape"') + ' title="Renvoyer à l’étape précédente (commentaire obligatoire)">Retour</button>' : '') +
+            (suiv && suiv.etape ? '<button type="button" class="cvt-ba" data-act="' + ia + '"' + (autorise(suiv.etape) ? '' : ' disabled title="Action réservée aux utilisateurs rattachés à l’étape"') + '>' + esc(suiv.etape.action) + '</button>' : '') + '</span></div></article>';
+        }).join('') : '<div class="cvt-vide">Aucune pièce</div>') + '</div></section>';
+    }).join('');
+  }
+  function passer(cle, vers) {
+    var C = colonnes(), p = pieces().filter(function (x) { return x.journal + '|' + x.piece === cle; })[0]; if (!p) return;
+    var i = C.map(function (c) { return c.etat; }).indexOf(p.etat), j = vers;
+    if (j < i) { retourner(cle, j, p, C, i); return; }
+    if (p.etat === 'BROUILLON') {
+      var vbi = vbIndex(); if (vbi < 0) { toast('Aucune étape n’est marquée « Validation du brouillon » dans Paramètre Circuit.'); return; }
+      if (j !== vbi) { toast('Un brouillon ne peut être validé que par l’étape « Validation du brouillon » (' + C[vbi].etape.nom + ').'); return; }
+    } else if (j !== i + 1 || !C[j] || !C[j].etape) { toast(j < i ? 'Retour en arrière non prévu par le circuit.' : 'Passage non prévu : respectez l’ordre des étapes.'); return; }
+    if (!autorise(C[j].etape)) { toast('Action « ' + C[j].etape.action + ' » réservée aux utilisateurs rattachés à l’étape.'); return; }
+    var et = C[j].etape, ck = et.checklist || [];
+    if (ck.length || et.cmt) { ouvrirControle(p, C[j], function (res) { appliquer(cle, j, p, res); }); return; }
+    appliquer(cle, j, p, null);
+  }
+  // retour à l'étape précédente : commentaire obligatoire (motif du rejet), historisé
+  function retourner(cle, j, p, C, i) {
+    if (j !== i - 1) { toast('Le retour se fait vers l’étape précédente uniquement.'); return; }
+    if (!C[i].etape) { toast('Cette pièce est à la première étape : aucun retour possible.'); return; }
+    if (!autorise(C[i].etape)) { toast('Retour réservé aux utilisateurs rattachés à l’étape « ' + C[i].etape.nom + ' ».'); return; }
+    var O = window.FACTURE_OCR; if (!O || !O.fenetre) return;
+    var w = O.fenetre('Retour — pièce ' + p.piece, false, 'arrow-back-up', 'Retour à l’étape précédente');
+    w.b.innerHTML = '<p style="margin:0 0 10px;font-size:13px;color:#474C58">Pièce <b>' + esc(p.journal + ' — ' + p.piece) + '</b> (' + fmt(p.montant) + ') : renvoi de l’étape <b>' + esc(C[i].etat) + '</b> vers <b>' + esc(C[j].etat) + '</b>.</p><div class="fo-sec" style="margin-top:0">Motif du retour <b style="color:#B63132">*</b></div><textarea class="fo-in" data-rt-c rows="4" maxlength="500" style="width:100%;height:auto;padding:8px" placeholder="Commentaire obligatoire motivant le retour (anomalie constatée, pièce manquante…)"></textarea><div data-rt-e></div>';
+    w.f.innerHTML = '<button type="button" data-rt-x>Annuler</button><button type="button" class="p" data-rt-ok>Retourner la pièce</button>';
+    w.f.querySelector('[data-rt-x]').addEventListener('click', O.fermer);
+    w.f.querySelector('[data-rt-ok]').addEventListener('click', function () {
+      var com = w.b.querySelector('[data-rt-c]').value.trim(); if (!com) { w.b.querySelector('[data-rt-e]').innerHTML = '<div class="fo-ko">Le commentaire est obligatoire pour un retour.</div>'; w.b.querySelector('[data-rt-c]').focus(); return; }
+      O.fermer(); etats[cle] = C[j].etat; DEMO.forEach(function (x) { if (x.journal + '|' + x.piece === cle) x.etat = C[j].etat; });
+      (histo[cle] = histo[cle] || []).push({ etape: C[i].etape.nom, action: 'RETOUR', retour: true, utilisateur: UTIL, date: new Date().toISOString(), points: [], commentaire: com });
+      dessiner(); toast('Pièce ' + p.piece + ' renvoyée à l’étape « ' + C[j].etat + ' ».');
+    });
+    setTimeout(function () { var t = w.b.querySelector('[data-rt-c]'); if (t) t.focus(); }, 50);
+  }
+  function appliquer(cle, j, p, res) {
+    var C = colonnes(); etats[cle] = C[j].etat; DEMO.forEach(function (x) { if (x.journal + '|' + x.piece === cle) x.etat = C[j].etat; });
+    if (res) (histo[cle] = histo[cle] || []).push({ etape: C[j].etape.nom, action: C[j].etape.action, utilisateur: UTIL, date: new Date().toISOString(), points: res.points, commentaire: res.commentaire });
+    dessiner(); toast('Pièce ' + p.piece + ' : ' + C[j].etape.action.toLowerCase() + ' effectuée → ' + C[j].etat + '.');
+  }
+  // contrôle avant exécution de l'étape : checklist (points obligatoires à cocher) et commentaire (obligatoire selon le paramétrage)
+  function ouvrirControle(p, col, ok) {
+    var O = window.FACTURE_OCR, et = col.etape, ck = et.checklist || []; if (!O || !O.fenetre) { ok({ points: [], commentaire: '' }); return; }
+    var w = O.fenetre(et.action + ' — pièce ' + p.piece, false, 'checklist', 'Contrôle avant ' + et.action);
+    w.b.innerHTML = '<p style="margin:0 0 10px;font-size:13px;color:#474C58">Pièce <b>' + esc(p.journal + ' — ' + p.piece) + '</b> (' + fmt(p.montant) + ') : confirmez les points de contrôle de l’étape « ' + esc(et.nom) + ' » avant de l’exécuter.</p>' +
+      (ck.length ? '<div class="fo-sec" style="margin-top:0">Checklist</div><div data-ct-l style="display:grid;gap:6px">' + ck.map(function (c, i) { return '<label style="display:flex;gap:8px;align-items:flex-start;padding:6px 8px;border:1px solid #E1E5EE;border-radius:8px;cursor:pointer"><input type="checkbox" data-ct="' + i + '" style="margin-top:2px"><span>' + esc(c.lib) + (c.ob ? ' <b style="color:#B63132">*</b>' : ' <em style="color:#7B8190;font-size:12px">(facultatif)</em>') + '</span></label>'; }).join('') + '</div>' : '') +
+      '<div class="fo-sec">Commentaire' + (et.cmt ? ' <b style="color:#B63132">*</b>' : '') + '</div><textarea class="fo-in" data-ct-c rows="3" maxlength="500" style="width:100%;height:auto;padding:8px" placeholder="' + (et.cmt ? 'Commentaire obligatoire pour valider cette étape' : 'Commentaire (facultatif)') + '"></textarea><div data-ct-e></div>';
+    w.f.innerHTML = '<button type="button" data-ct-x>Annuler</button><button type="button" class="p" data-ct-ok>' + esc(et.action) + '</button>';
+    w.f.querySelector('[data-ct-x]').addEventListener('click', O.fermer);
+    w.f.querySelector('[data-ct-ok]').addEventListener('click', function () {
+      var manque = [], pts = ck.map(function (c, i) { var on = w.b.querySelector('[data-ct="' + i + '"]').checked; if (c.ob && !on) manque.push(c.lib); return { lib: c.lib, ob: !!c.ob, ok: on }; }), com = w.b.querySelector('[data-ct-c]').value.trim(), er = w.b.querySelector('[data-ct-e]');
+      if (manque.length) { er.innerHTML = '<div class="fo-ko">Points obligatoires non cochés : ' + manque.map(esc).join(' ; ') + '.</div>'; return; }
+      if (et.cmt && !com) { er.innerHTML = '<div class="fo-ko">Le commentaire est obligatoire pour valider cette étape.</div>'; w.b.querySelector('[data-ct-c]').focus(); return; }
+      O.fermer(); ok({ points: pts, commentaire: com });
+    });
+  }
+  // lignes du bordereau : pièce enregistrée à la saisie, sinon écriture de démonstration à deux lignes
+  function lignesDe(p) {
+    var cle = p.journal + '|' + p.piece, reg = (window.ECRITURES_PIECES || []).filter(function (x) { return x.journal + '|' + x.piece === cle; })[0];
+    if (reg && reg.lignes && reg.lignes.length) return { facture: reg.facture || '', reference: reg.reference || '', datePiece: reg.datePiece || reg.date || '', lignes: reg.lignes.map(function (l) { var a = l.axes || {}, d = /^d/i.test(l.sens); return { compte: l.compte || '', aux: l.tiers || '', act: a.PLAN1 || a.ACT || '', bud: a.PLAN2 || a.BUD || '', fin: a.PLAN3 || a.FIN || '', geo: a.PLAN4 || a.GEO || '', lib: l.libelle || '', deb: d ? l.montant || 0 : 0, cre: d ? 0 : l.montant || 0, ech: l.echeance || '' }; }) };
+    var L = String(p.libelle || ''), cd = /vente/i.test(L) ? ['411000', 'C0001', '706000', ''] : /règlement/i.test(L) ? ['401000', 'F0001', '512100', ''] : /commission|bancaire/i.test(L) ? ['627000', '', '512100', ''] : /caisse/i.test(L) ? ['531000', '', '512100', ''] : /location|mission|honoraires/i.test(L) ? [/honoraires/i.test(L) ? '622600' : /location/i.test(L) ? '613200' : '625100', '', '401000', 'F0002'] : ['606300', '', '401000', 'F0001'];
+    return { facture: 'FA-' + p.piece.slice(-4), reference: 'REF-' + p.piece.slice(-4), datePiece: p.date, lignes: [{ compte: cd[0], aux: cd[1], act: '', bud: '', fin: '', geo: '', lib: L, deb: p.montant, cre: 0, ech: '' }, { compte: cd[2], aux: cd[3], act: '', bud: '', fin: '', geo: '', lib: L, deb: 0, cre: p.montant, ech: '' }] };
+  }
+  function bordereau(cle) {
+    var p = pieces().filter(function (x) { return x.journal + '|' + x.piece === cle; })[0]; if (!p) return;
+    var O = window.FACTURE_OCR, src = document.querySelector('[data-screen="ecritures"]'); if (!O || !O.fenetre || !src) { toast('Écran de saisie indisponible.'); return; }
+    var lab = function (t) { return [].filter.call(src.querySelectorAll('label'), function (l) { return l.textContent.replace(/\s+/g, ' ').trim().indexOf(t) === 0; })[0]; };
+    var a = lab('SITE'), b = lab('Numéro de pièce'), ent = a; while (ent && b && !ent.contains(b)) ent = ent.parentElement;
+    var tabL = [].filter.call(src.querySelectorAll('table'), function (t) { return t.tHead && /Compte/.test(t.tHead.textContent) && /Auxiliaire/.test(t.tHead.textContent); })[0], tabT = src.querySelector('table.ec-tot');
+    var D = lignesDe(p), w = O.fenetre('Bordereau ' + p.journal + ' — ' + p.piece + ' (consultation)', true, 'file-text', 'Bordereau en consultation');
+    var host = document.createElement('div'); host.className = 'cvt-bd'; host.setAttribute('data-screen', 'ecritures');   // les styles de la saisie d'écritures sont portés par [data-screen="ecritures"]
+    var hd = histo[cle] || [], etat = p.etat, meta = document.createElement('div'); meta.className = 'cvt-bdm';
+    meta.innerHTML = '<span>État : <b>' + esc(etat) + '</b></span>' + (p.createur ? '<span>Créé par : <b>' + esc(p.createur) + '</b></span>' : '') + '<span>Montant : <b>' + fmt(p.montant) + '</b></span><span><i class="ti ti-eye" aria-hidden="true"></i> Mode consultation : aucune modification possible</span>'; host.appendChild(meta);
+    // en-tête (même interface que la saisie d'écritures)
+    if (ent) {
+      var h = ent.cloneNode(true); h.classList.add('cvt-bdh'); [].forEach.call(h.querySelectorAll('[id]'), function (x) { x.removeAttribute('id'); }); [].forEach.call(h.querySelectorAll('script,style'), function (x) { x.remove(); }); [].forEach.call(h.querySelectorAll('button'), function (x) { if (x.closest('.custom-select-wrapper')) x.disabled = true; else x.remove(); });
+      var val = { 'SITE': p.site || '01', 'Code du journal': p.journal, 'Exercice': String(p.date || '').slice(0, 4), 'Date de l’écriture': p.date, 'Date de la pièce': D.datePiece, 'N° de facture': D.facture, 'Référence': D.reference, 'Numéro de pièce': p.piece };
+      [].forEach.call(h.querySelectorAll('label'), function (l) { var t = l.textContent.replace(/\s+/g, ' ').trim(), c = l.querySelector('input,select,textarea') || (l.parentElement && l.parentElement.querySelector('input,select,textarea')); if (!c) return; Object.keys(val).forEach(function (k) { if (t.indexOf(k) === 0) { c.value = val[k] == null ? '' : val[k]; c.setAttribute('value', c.value); var sp = l.parentElement && l.parentElement.querySelector('.custom-select-wrapper button span'); if (sp) sp.textContent = c.value; } }); });
+      [].forEach.call(h.querySelectorAll('input,select,textarea'), function (c) { c.disabled = true; }); host.appendChild(h);
+    }
+    // lignes d'écriture
+    if (tabL) {
+      var lt = tabL.cloneNode(true), rh = [].filter.call(lt.tHead.rows, function (r) { return r.textContent.trim(); })[0] || lt.tHead.rows[0], th = [].map.call(rh.cells, function (c) { return c.textContent.replace(/\s+/g, ' ').trim(); }); [].slice.call(lt.tHead.rows).forEach(function (r) { if (r !== rh) r.remove(); });
+      var wrap = document.createElement('div'); wrap.className = 'cvt-bdl'; lt.className = 'cvt-bdt'; lt.setAttribute('data-no-tf', ''); lt.setAttribute('data-no-pg', ''); [].forEach.call(lt.querySelectorAll('[id]'), function (x) { x.removeAttribute('id'); });
+      var tb = lt.tBodies[0] || lt.appendChild(document.createElement('tbody')); tb.innerHTML = '';
+      D.lignes.forEach(function (l) { var tr = document.createElement('tr'); th.forEach(function (t) { var td = document.createElement('td'), m = { 'Compte': l.compte, 'Auxiliaire': l.aux, 'ACT': l.act, 'BUD': l.bud, 'FIN': l.fin, 'GEO': l.geo, 'Libellé': l.lib, 'Débit': l.deb ? fmt(l.deb) : '', 'Crédit': l.cre ? fmt(l.cre) : '', 'Débit(Rep)': '', 'Crédit(Rep)': '', 'Échéance': l.ech ? frd(l.ech) : '' }; td.textContent = m[t] == null ? '' : m[t]; if (/Débit|Crédit/.test(t)) td.className = 'r'; tr.appendChild(td); }); tb.appendChild(tr); });
+      // ligne des totaux (à la place du tableau de vérification des équilibres)
+      var td0 = D.lignes.reduce(function (z, l) { return z + (l.deb || 0); }, 0), tc0 = D.lignes.reduce(function (z, l) { return z + (l.cre || 0); }, 0), sd0 = Math.round((td0 - tc0) * 100) / 100, trt = document.createElement('tr'); trt.className = 'cvt-bdtot';
+      th.forEach(function (t) { var td = document.createElement('td'); if (t === 'Libellé') { td.innerHTML = 'Totaux — solde ' + (sd0 === 0 ? '<span style="color:#1E7B4B">' + fmt(0) + ' (équilibré)</span>' : '<span style="color:#B63132">' + fmt(sd0) + ' (déséquilibré)</span>'); } else if (t === 'Débit') { td.textContent = fmt(td0); td.className = 'r'; } else if (t === 'Crédit') { td.textContent = fmt(tc0); td.className = 'r'; } trt.appendChild(td); });
+      tb.appendChild(trt);
+      wrap.appendChild(lt); host.appendChild(wrap);
+    }
+    // historique de validation
+    var hh = '<h3>Historique de validation</h3>' + (hd.length ? '<div class="cvt-bdl"><table class="cvt-bdt" style="min-width:0"><thead><tr><th>Étape</th><th>Action</th><th>Utilisateur</th><th>Date</th><th>Commentaire</th></tr></thead><tbody>' + hd.map(function (e) { return '<tr><td>' + esc(e.etape) + '</td><td>' + esc(e.action) + (e.retour ? ' <b style="color:#B63132">(retour)</b>' : '') + '</td><td>' + esc(e.utilisateur) + '</td><td>' + esc(new Date(e.date).toLocaleString('fr-FR')) + '</td><td style="white-space:normal">' + esc(e.commentaire || '—') + '</td></tr>'; }).join('') + '</tbody></table></div>' : '<p style="font-size:12.5px;color:#6B7080;margin:0">Aucun passage d’étape enregistré pour ce bordereau.</p>');
+    var hz = document.createElement('div'); hz.innerHTML = hh; host.appendChild(hz);
+    w.b.appendChild(host);
+    // actions : Retour (grisé à la première étape) et Valider (action de l'étape suivante)
+    var C = colonnes(), ci = C.map(function (c) { return c.etat; }).indexOf(p.etat), ni = p.etat === 'BROUILLON' ? vbIndex() : ci + 1, nx = C[ni], aRet = ci > 0 && C[ci] && C[ci].etape && autorise(C[ci].etape), aVal = !!(nx && nx.etape && autorise(nx.etape));
+    w.f.innerHTML = '<button type="button" class="cvt-br" data-bd-ret' + (aRet ? '' : ' disabled') + ' style="min-height:36px;padding:0 16px;margin-right:auto" title="' + (aRet ? 'Renvoyer à l’étape précédente (commentaire obligatoire)' : 'Aucun retour possible à cette étape') + '">Retour</button>' +
+      '<button type="button" data-bd-x>Fermer</button><button type="button" class="p" data-bd-val' + (aVal ? '' : ' disabled') + ' title="' + (aVal ? '' : 'Aucune action disponible pour vous à cette étape') + '">' + esc(nx && nx.etape ? nx.etape.action : 'Valider') + '</button>';
+    w.f.querySelector('[data-bd-x]').addEventListener('click', O.fermer);
+    w.f.querySelector('[data-bd-val]').addEventListener('click', function () { if (this.disabled) return; O.fermer(); passer(cle, ni); });
+    w.f.querySelector('[data-bd-ret]').addEventListener('click', function () { if (this.disabled) return; O.fermer(); retourner(cle, ci - 1, p, C, ci); });
+    var md = w.b.parentElement; if (md) { md.style.width = 'min(1680px, 98vw)'; md.style.maxHeight = 'calc(100vh - 20px)'; }   // fenêtre agrandie
+  }
+  colsEl.addEventListener('dblclick', function (e) { var c = e.target.closest('.cvt-card'); if (c) bordereau(c.dataset.cle); });
+  colsEl.addEventListener('click', function (e) { var r = e.target.closest('[data-ret]'); if (r && !r.disabled) { var cd = r.closest('.cvt-card'), C = colonnes(), i = +r.dataset.ret, p = pieces().filter(function (x) { return x.journal + '|' + x.piece === cd.dataset.cle; })[0]; if (p) retourner(cd.dataset.cle, i - 1, p, C, i); return; } });
+  colsEl.addEventListener('click', function (e) { var b = e.target.closest('[data-act]'); if (!b || b.disabled) return; var card = b.closest('.cvt-card'); passer(card.dataset.cle, +b.dataset.act + 1); });
+  colsEl.addEventListener('dragstart', function (e) { var c = e.target.closest('.cvt-card'); if (!c) return; glisse = c.dataset.cle; c.classList.add('drag'); e.dataTransfer.effectAllowed = 'move'; try { e.dataTransfer.setData('text/plain', glisse); } catch (x) { /* navigateur sans dataTransfer */ } });
+  colsEl.addEventListener('dragend', function () { glisse = null; [].forEach.call(colsEl.querySelectorAll('.over,.drag'), function (n) { n.classList.remove('over', 'drag'); }); });
+  colsEl.addEventListener('dragover', function (e) { var c = e.target.closest('.cvt-col'); if (!c || !glisse) return; e.preventDefault(); [].forEach.call(colsEl.querySelectorAll('.over'), function (n) { n.classList.remove('over'); }); c.classList.add('over'); });
+  colsEl.addEventListener('drop', function (e) { var c = e.target.closest('.cvt-col'); if (!c || !glisse) return; e.preventDefault(); var cle = glisse; glisse = null; passer(cle, +c.dataset.i); });
+  q('[data-cvt-go]').addEventListener('click', dessiner);
+  [d1, d2, site].forEach(function (e) { e.addEventListener('change', dessiner); }); rech.addEventListener('input', dessiner);
+  window.addEventListener('circuit-changed', dessiner); window.addEventListener('hashchange', function () { if (location.hash === '#circtrait') { sites(); dessiner(); } });
+  window.addEventListener('ecritures-pieces-changed', dessiner);
+  dessiner();
+})();
+</script>

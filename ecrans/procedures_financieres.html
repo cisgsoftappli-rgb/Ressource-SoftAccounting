@@ -117,7 +117,7 @@
       <label class="pf-label">Sélection de la procédure financière <span class="pf-req">*</span></label>
       <select class="pf-ctl" data-pf-proc>
         <option value="">— Sélectionner une procédure —</option>
-        <option value="IDA">IDA</option><option value="FIDA">FIDA</option><option value="FED">FED</option><option value="FM">FM</option>
+        <option value="IDA">IDA</option><option value="FIDA">FIDA</option><option value="FED">FED</option><option value="FM">FM</option><option value="BAD">BAD</option><option value="GAVI">GAVI</option>
       </select>
     </div>
     <div class="pf-field">
@@ -141,7 +141,7 @@
   <div data-pf-pane="liste" style="display:none">
   <div class="pf-tablewrap"><table class="pf-table">
     <thead><tr><th>Convention</th><th>Procédure</th><th>Monnaie d’émission</th><th>Modèles d'états</th><th style="text-align:right">Actions</th></tr></thead>
-    <tbody data-pf-rows><tr data-conv="CONV-001 — Projet Résilience Rurale" data-mon="USD"><td class="pf-b">CONV-001 — Projet Résilience Rurale</td><td><span class="pf-pill">IDA</span></td><td data-pf-monc>USD</td><td><div class="pf-chips"><span class="pf-chip">Formulaire 2F</span><span class="pf-chip">Formulaire 3F</span><span class="pf-chip">Formulaire 4F</span><span class="pf-chip">EJCD</span><span class="pf-chip">État récapitulatif par catégorie</span></div></td><td><div style="display:flex;justify-content:flex-end"><button type="button" class="pf-ico" data-pf-del aria-label="Supprimer"><i class="ti ti-trash"></i></button></div></td></tr></tbody>
+    <tbody data-pf-rows><tr data-conv="CONV-001 — Projet Résilience Rurale" data-mon="USD"><td class="pf-b">CONV-001 — Projet Résilience Rurale</td><td><span class="pf-pill">IDA</span></td><td data-pf-monc>USD</td><td><div class="pf-chips"><span class="pf-chip">Formulaire 2F</span><span class="pf-chip">Formulaire 3F</span><span class="pf-chip">Formulaire 4F</span><span class="pf-chip">EJCD</span><span class="pf-chip">État récapitulatif par catégorie</span></div></td><td><div style="display:flex;justify-content:flex-end"><button type="button" class="pf-ico" data-pf-del aria-label="Supprimer"><i class="ti ti-trash"></i></button></div></td></tr><tr data-conv="CONV-002 — Appui à la Filière Riz" data-mon="UC"><td class="pf-b">CONV-002 — Appui à la Filière Riz</td><td><span class="pf-pill">BAD</span></td><td data-pf-monc>UC</td><td><div class="pf-chips"><span class="pf-chip">A2 — État récapitulatif des dépenses</span><span class="pf-chip">A3 — Récapitulatif du formulaire A3</span></div></td><td><div style="display:flex;justify-content:flex-end"><button type="button" class="pf-ico" data-pf-del aria-label="Supprimer"><i class="ti ti-trash"></i></button></div></td></tr><tr data-conv="CONV-004 — Programme de Vaccination GAVI" data-mon="USD"><td class="pf-b">CONV-004 — Programme de Vaccination GAVI</td><td><span class="pf-pill">GAVI</span></td><td data-pf-monc>USD</td><td><div class="pf-chips"><span class="pf-chip">Suivi détaillé</span><span class="pf-chip">Synthèse</span><span class="pf-chip">Rapport financier</span><span class="pf-chip">Récapitulatif GAVI</span></div></td><td><div style="display:flex;justify-content:flex-end"><button type="button" class="pf-ico" data-pf-del aria-label="Supprimer"><i class="ti ti-trash"></i></button></div></td></tr><tr data-conv="CONV-003 — Programme Santé Communautaire" data-mon="USD"><td class="pf-b">CONV-003 — Programme Santé Communautaire</td><td><span class="pf-pill">FIDA</span></td><td data-pf-monc>USD</td><td><div class="pf-chips"><span class="pf-chip">102/A — Relevé des dépenses</span><span class="pf-chip">104 — État de rapprochement du compte désigné</span></div></td><td><div style="display:flex;justify-content:flex-end"><button type="button" class="pf-ico" data-pf-del aria-label="Supprimer"><i class="ti ti-trash"></i></button></div></td></tr></tbody>
   </table></div>
   <footer class="border-t border-slate-200 bg-slate-50/50 px-5 py-3 text-xs text-slate-500" style="margin-top:12px">Double-cliquez sur une ligne pour la modifier dans l'onglet Saisie.</footer>
   </div>
@@ -199,10 +199,11 @@
   var q = function (s) { return root.querySelector(s); };
   var MODELES = {
     IDA: ['Formulaire 2F', 'Formulaire 3F', 'Formulaire 4F', 'EJCD', 'État récapitulatif par catégorie'],
-    FIDA: ["RFI I — PTBA et plan de trésorerie", "RFI II — Sources et utilisations des fonds", "RFI III — Activité du compte désigné", "RFI IV — Écart de l’utilisation des fonds par trimestre", "RFI V — Écart de l’utilisation des fonds, exercice", "RFI VI — Écart de l’utilisation des fonds, cumulé"],
+    FIDA: ["102/A — Relevé des dépenses", "104 — État de rapprochement du compte désigné", "RFI I — PTBA et plan de trésorerie", "RFI II — Sources et utilisations des fonds", "RFI III — Activité du compte désigné", "RFI IV — Écart de l’utilisation des fonds par trimestre", "RFI V — Écart de l’utilisation des fonds, exercice", "RFI VI — Écart de l’utilisation des fonds, cumulé"],
     FED: ['Rapport financier', 'Demande de paiement', 'État des dépenses', 'Prévisions de trésorerie'],
     FM: ['PU/DR (rapport d\'avancement et demande de décaissement)', 'Budget détaillé', 'État des dépenses par module'],
-    BAD: ['Demande de décaissement', 'Rapport d\'avancement du projet', 'État des dépenses', 'Plan de passation des marchés']
+    BAD: ['A2 — État récapitulatif des dépenses', 'A3 — Récapitulatif du formulaire A3', 'Demande de décaissement', 'Rapport d\'avancement du projet', 'État des dépenses', 'Plan de passation des marchés'],
+    GAVI: ['Suivi détaillé', 'Synthèse', 'Rapport financier', 'Récapitulatif GAVI']
   };
   var mon = q('[data-pf-mon]');
   // Monnaies proposées = celles de « Administration de l’entité › Monnaies » (monnaie locale, devises 1 à 3).
@@ -240,7 +241,7 @@
   }
   // Procédures proposées = celles activées dans Administration de l'entité › Personnalisation
   function majProcs() {
-    var act = window.PROCEDURES_ACTIVES ? window.PROCEDURES_ACTIVES() : ['IDA', 'FIDA', 'FED', 'FM'], cur = proc.value;
+    var act = window.PROCEDURES_ACTIVES ? window.PROCEDURES_ACTIVES() : ['IDA', 'FIDA', 'FED', 'FM', 'BAD', 'GAVI'], cur = proc.value;
     proc.innerHTML = '<option value="">— Sélectionner une procédure —</option>' + act.map(function (p) { return '<option value="' + p + '">' + p + '</option>'; }).join('');
     proc.value = act.indexOf(cur) >= 0 ? cur : ''; if (cur && !proc.value) renderModels();
   }
@@ -255,6 +256,8 @@
     c.forEach(function (x) { x.checked = !all; });
     e.target.closest('[data-pf-all]').textContent = all ? 'Tout sélectionner' : 'Tout désélectionner';
   });
+  // Procédure financière en cours (celle du menu latéral sur lequel on a cliqué) ; sert à isoler les modèles d'état par procédure.
+  window.__procNow = function () { var a = window.PROCEDURES_ACTIVES ? window.PROCEDURES_ACTIVES() : ['IDA']; return a.indexOf(window.__proc) >= 0 ? window.__proc : (a[0] || 'IDA'); };
   function publish() {
     window.__pfProcs = Array.prototype.slice.call(q('[data-pf-rows]').querySelectorAll('tr[data-conv]')).map(function (r) {
       return { conv: r.dataset.conv, proc: r.querySelector('.pf-pill').textContent, mon: r.dataset.mon || '', models: Array.prototype.slice.call(r.querySelectorAll('.pf-chip')).map(function (c) { return c.textContent; }) };
