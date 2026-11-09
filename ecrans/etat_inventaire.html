@@ -1,0 +1,284 @@
+<!--
+  Écran « État d'inventaire » (Immobilisations › États › État d'inventaire) — remplace les onglets Tableau des amortissements / Entrées / Sorties / Affectations
+  par UNE fenêtre de critères (pop-up « Filtre », ouverte à chaque entrée tant qu'aucun état n'est affiché ; même présentation que les états comptables) où l'on choisit :
+  - l'état à éditer : « Tableau des amortissements » ou « Inventaire des immobilisations » ;
+  - l'exercice, la période Du / Au (« Au » = date de situation) ;
+  - pour l'inventaire, le périmètre : Acquises (entrées de la période), Cédées / sorties (sorties de la période), Autres (en stock sur toute la période) ;
+  - des filtres facultatifs : lieu d'affectation, responsable, famille.
+  Inventaire par lieu et responsable : les affectations sont prises en compte et la situation est celle de la date « Au » : lieu et responsable sont ceux en vigueur à
+  cette date d'après l'historique de « Réassignation » (colonne « Affectée depuis » = date d'affectation) ; VNC calculée à cette date d'après la famille.
+  Barre d'actions : Filtre (rouvre la fenêtre), Imprimer, PDF, Excel. Données lues dans « Liste d'immobilisations » (window.FICHES_API), « Réassignation »
+  (window.REASSIGNATIONS_IMMOBILISATION), les familles, lieux et responsables. Rien n'est stocké. Pas de fonction « $$ » (build.cjs).
+-->
+<style>
+.eiv-fond{max-width:960px;margin:0 auto;padding:8px 4px}
+.eiv-fond h2{margin:0;font-size:24px;font-weight:600;color:#0B1332}
+.eiv-fond p{margin:4px 0 16px;font-size:14px;color:#5B606D;max-width:70ch}
+.eiv-res{border:1px solid #D6D9E0;border-radius:12px;background:#fff;overflow:hidden}
+.eiv-res-h{display:flex;justify-content:space-between;gap:12px;align-items:flex-start;flex-wrap:wrap;padding:16px 20px;border-bottom:1px solid #D6D9E0}
+.eiv-res-h h2{margin:0;font-size:18px;font-weight:600;color:#18244F}
+.eiv-res-h p{margin:2px 0 0;font-size:13px;color:#5B606D}
+.eiv-res-h .eiv-ed{font-size:12px;color:#5B606D;text-align:right}
+.eiv-tb{width:100%;border-collapse:collapse;font-size:13px}
+.eiv-tb th{background:#F5F7F9;text-align:left;padding:10px 12px;font-size:12px;text-transform:uppercase;letter-spacing:.04em;color:#2E427B;white-space:nowrap}
+.eiv-tb td{padding:10px 12px;border-top:1px solid #E9EBF0;vertical-align:middle}
+.eiv-tb .r{text-align:right;white-space:nowrap}.eiv-tb .c{text-align:center}
+.eiv-tb tr.eiv-sub td{background:#F9FAFB;font-weight:600;color:#18244F}
+.eiv-tb tr.eiv-tot td{background:#EEF2FB;font-weight:700;color:#18244F;border-top:2px solid #2E427B}
+.eiv-code{font-family:ui-monospace,Consolas,monospace;font-weight:600}
+.eiv-lieu{display:inline-block;padding:2px 8px;border:1px solid #D6D9E0;border-radius:6px;background:#F5F7F9;font-size:12px;white-space:nowrap}
+.eiv-st{display:inline-flex;align-items:center;gap:6px;padding:2px 10px;border-radius:999px;font-size:12px;font-weight:600;white-space:nowrap}
+.eiv-st::before{content:"";width:6px;height:6px;border-radius:50%;background:currentColor}
+.eiv-st.service{background:#ECFDF5;color:#047857}.eiv-st.amorti{background:#F1F2F4;color:#5B606D}.eiv-st.sorti{background:#FEE2E2;color:#B63132}
+.eiv-vide{padding:32px;text-align:center;color:#5B606D}
+.eiv-crit{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:12px 16px}
+.eiv-crit .eiv-full{grid-column:1/-1}
+.eiv-etats{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:12px}
+.eiv-etat{display:flex;gap:10px;align-items:flex-start;border:1px solid #D6D9E0;border-radius:12px;padding:12px 14px;cursor:pointer;background:#fff}
+.eiv-etat:has(input:checked){border-color:#2E427B;background:#F4F7FE;box-shadow:0 0 0 1px #2E427B inset}
+.eiv-etat b{display:block;color:#18244F;font-size:14px}.eiv-etat small{display:block;color:#5B606D;font-size:12px;margin-top:2px}
+.eiv-per{display:flex;gap:16px;flex-wrap:wrap}.eiv-per label{display:flex;gap:6px;align-items:center;font-size:14px}
+.eiv-sec{margin:0 0 6px;font-size:12px;font-weight:600;color:#2E427B;text-transform:uppercase;letter-spacing:.04em}
+.eiv-er{display:none;font-size:12px;color:#B63132;margin-top:4px}.eiv-er.show{display:block}
+.eiv-b{display:inline-flex;align-items:center;gap:6px;min-height:44px;padding:0 16px;border:1px solid #D6D9E0;border-radius:8px;background:#fff;color:#18244F;font-weight:600;font-size:14px;cursor:pointer}
+.eiv-b:hover{background:#F4F7FE;border-color:#2E427B}
+.eiv-b.p{background:#2E427B;border-color:#2E427B;color:#fff}.eiv-b.p:hover{background:#243569}
+[data-eiv] [hidden]{display:none!important}
+[data-eiv] .bp-champ>span:first-child{text-transform:uppercase;letter-spacing:.04em;font-size:12px;font-weight:600}
+@media (max-width:700px){.eiv-crit,.eiv-etats{grid-template-columns:1fr}}
+@media print{.etm-voile{display:none!important}}
+</style>
+
+<div class="bp-root" data-eiv>
+  <h1 style="position:absolute;width:1px;height:1px;overflow:hidden;clip-path:inset(50%);margin:0">État d'inventaire des immobilisations</h1>
+
+  <div class="no-print" data-eiv-actions>
+    <button type="button" data-eiv-filtre>Filtre</button>
+    <button type="button" data-eiv-imprimer>Imprimer</button>
+    <button type="button" data-eiv-pdf>PDF</button>
+    <button type="button" data-eiv-xlsx>Excel (XLSX)</button>
+  </div>
+
+  <section class="eiv-fond" data-eiv-fond>
+    <h2>État d'inventaire des immobilisations</h2>
+    <p>Tableau des amortissements et inventaire des immobilisations (acquises, cédées ou autres), avec les affectations prises en compte à la date de situation.</p>
+    <button type="button" class="eiv-b p" data-eiv-ouvrir><i class="ti ti-adjustments-horizontal" aria-hidden="true"></i> Critères d'édition</button>
+    <p style="margin-top:12px;font-size:13px">Choisissez l'état à éditer et ses critères pour l'afficher.</p>
+  </section>
+
+  <section class="eiv-res" data-eiv-res hidden></section>
+
+  <div class="etm-voile" data-eiv-voile hidden>
+    <div class="etm-dialog" role="dialog" aria-modal="true" aria-labelledby="eiv-titre">
+      <div class="etm-head">
+        <div class="etm-titre">
+          <span class="etm-icone"><i class="ti ti-filter" aria-hidden="true"></i></span>
+          <div><p class="etm-eyebrow">Critères d'édition</p><h2 class="etm-h" id="eiv-titre">État d'inventaire des immobilisations</h2><p class="etm-sub">Choisissez l'état à éditer, la période et, si besoin, le lieu, le responsable ou la famille.</p></div>
+        </div>
+        <button type="button" class="etm-x" data-eiv-x aria-label="Fermer"><i class="ti ti-x" aria-hidden="true"></i></button>
+      </div>
+      <div class="etm-body">
+        <form data-eiv-form onsubmit="return false" novalidate>
+          <p class="eiv-sec">État à éditer</p>
+          <div class="eiv-etats">
+            <label class="eiv-etat"><input type="radio" name="eiv-etat" value="amort" checked><span><b>Tableau des amortissements</b><small>Amortissements antérieurs, dotation de la période, cumul et VNC de chaque immobilisation.</small></span></label>
+            <label class="eiv-etat"><input type="radio" name="eiv-etat" value="inv"><span><b>Inventaire des immobilisations</b><small>Par lieu et responsable à la date de situation : acquises, cédées ou autres.</small></span></label>
+          </div>
+          <div class="eiv-crit" style="margin-top:16px">
+            <label class="bp-champ"><span>Exercice</span><select class="bp-sel" data-f="exo"></select></label>
+            <div class="bp-champ"><span>Période</span><div style="display:grid;grid-template-columns:1fr 1fr;gap:8px"><input class="bp-in" type="date" data-f="du" aria-label="Du"><input class="bp-in" type="date" data-f="au" aria-label="Au (date de situation)"></div><span class="eiv-er" data-er="periode"></span></div>
+            <div class="eiv-full" data-eiv-perimetre hidden>
+              <p class="eiv-sec" style="margin-top:4px">Périmètre de l'inventaire</p>
+              <div class="eiv-per">
+                <label><input type="checkbox" data-f="p_acq" checked> Acquises sur la période (entrées)</label>
+                <label><input type="checkbox" data-f="p_ced" checked> Cédées / sorties sur la période</label>
+                <label><input type="checkbox" data-f="p_aut" checked> Autres (en stock sur toute la période)</label>
+              </div>
+              <span class="eiv-er" data-er="perimetre"></span>
+              <p class="bp-note" style="margin:6px 0 0;font-size:12px;color:#5B606D">Lieu et responsable sont ceux en vigueur à la date « Au », d'après les réassignations ; la VNC est calculée à cette date.</p>
+            </div>
+            <label class="bp-champ"><span>Lieu d'affectation</span><select class="bp-sel" data-f="lieu"></select></label>
+            <label class="bp-champ"><span>Responsable</span><select class="bp-sel" data-f="resp"></select></label>
+            <label class="bp-champ eiv-full"><span>Famille d'immobilisation</span><select class="bp-sel" data-f="fam"></select></label>
+          </div>
+        </form>
+      </div>
+      <div class="etm-foot">
+        <div class="etm-droite">
+          <button type="button" class="eiv-b" data-eiv-reset>Réinitialiser</button>
+          <button type="button" class="eiv-b" data-eiv-annuler>Annuler</button>
+          <button type="button" class="eiv-b p" data-eiv-editer><i class="ti ti-eye" aria-hidden="true"></i> Éditer l'état</button>
+        </div>
+      </div>
+    </div>
+  </div>
+  <div class="bp-toast" role="status" hidden data-eiv-toast></div>
+</div>
+
+<script>
+(function () {
+  var root = document.querySelector('[data-eiv]'); if (!root) return;
+  function q(s) { return root.querySelector(s); } function qa(s) { return [].slice.call(root.querySelectorAll(s)); }
+  var res = null;   // état édité : { etat, du, au, titre, sous, tete, lignes (HTML), brut (pour les exports) }
+  function esc(s) { return String(s == null ? '' : s).replace(/[&<>"]/g, function (c) { return { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c]; }); }
+  function f(k) { return q('[data-f=' + k + ']'); }
+  function toast(m) { var t = q('[data-eiv-toast]'); t.textContent = m; t.hidden = false; clearTimeout(toast.t); toast.t = setTimeout(function () { t.hidden = true; }, 3200); }
+  function nb(n) { return (Math.round((+n || 0) * 100) / 100).toLocaleString('fr-FR', { minimumFractionDigits: 0, maximumFractionDigits: 2 }); }
+  function dFR(iso) { return iso ? iso.split('-').reverse().join('/') : ''; }
+  function iso(fr) { var m = /^(\d\d)\/(\d\d)\/(\d{4})$/.exec(fr || ''); return m ? m[3] + '-' + m[2] + '-' + m[1] : ''; }
+  function aujourdhui() { return new Date().toISOString().slice(0, 10); }
+  function fiches() { return window.FICHES_API ? window.FICHES_API.liste() : []; }
+  function famille(code) { return (window.FAMILLES_IMMOBILISATION || []).filter(function (x) { return x.code === code; })[0] || null; }
+  function libLieu(c) { var x = (window.LIEUX_AFFECTATION || []).filter(function (y) { return y.code === c; })[0]; return x ? x.libelle : ''; }
+  function libResp(c) { var x = (window.COLLABORATEURS_RESPONSABLES || []).filter(function (y) { return y.code === c; })[0]; return x ? x.libelle : c || ''; }
+
+  // ---------- critères ----------
+  function optsListe(k, L, vide) { var s = f(k), cur = s.value; s.innerHTML = '<option value="">' + vide + '</option>' + L.map(function (r) { return '<option value="' + esc(r[0]) + '">' + esc(r[0] + ' — ' + r[1]) + '</option>'; }).join(''); s.value = cur; }
+  function exercices() { return window.EXERCICES_API ? window.EXERCICES_API.liste() : []; }
+  function listes() {
+    var ex = exercices(), cur = f('exo').value;
+    f('exo').innerHTML = '<option value="">— Aucun (dates libres) —</option>' + ex.map(function (r) { return '<option value="' + esc(r.annee) + '">' + esc(r.annee + (r.cours ? ' (en cours)' : '')) + '</option>'; }).join(''); f('exo').value = cur;
+    optsListe('lieu', (window.LIEUX_AFFECTATION || []).map(function (x) { return [x.code, x.libelle]; }), 'Tous');
+    optsListe('resp', (window.COLLABORATEURS_RESPONSABLES || []).map(function (x) { return [x.code, x.libelle]; }), 'Tous');
+    optsListe('fam', (window.FAMILLES_IMMOBILISATION || []).map(function (x) { return [x.code, x.libelle]; }), 'Toutes');
+  }
+  function periodeExercice() {
+    var r = exercices().filter(function (x) { return x.annee === f('exo').value; })[0]; if (!r) return;
+    var d = iso(r.debut), fin = iso(r.fin), t = aujourdhui();
+    f('du').value = d; f('au').value = t >= d && t <= fin ? t : fin;
+  }
+  function reinitialiser() {
+    qa('[name=eiv-etat]')[0].checked = true; ['p_acq', 'p_ced', 'p_aut'].forEach(function (k) { f(k).checked = true; });
+    listes(); var en = exercices().filter(function (x) { return x.cours; })[0] || exercices().slice(-1)[0]; f('exo').value = en ? en.annee : ''; f('lieu').value = ''; f('resp').value = ''; f('fam').value = '';
+    if (en) periodeExercice(); else { f('du').value = aujourdhui().slice(0, 4) + '-01-01'; f('au').value = aujourdhui(); }
+    erreurs(); majEtat();
+  }
+  function erreurs(p, per) { var a = q('[data-er=periode]'), b = q('[data-er=perimetre]'); a.textContent = p || ''; a.classList.toggle('show', !!p); b.textContent = per || ''; b.classList.toggle('show', !!per); }
+  function etatChoisi() { return q('[name=eiv-etat]:checked').value; }
+  function majEtat() { q('[data-eiv-perimetre]').hidden = etatChoisi() !== 'inv'; }
+  qa('[name=eiv-etat]').forEach(function (r) { r.addEventListener('change', majEtat); });
+  f('exo').addEventListener('change', periodeExercice);
+
+  // ---------- fenêtre ----------
+  function ouvrir() { listes(); erreurs(); q('[data-eiv-voile]').hidden = false; var s = q('[name=eiv-etat]:checked'); if (s) setTimeout(function () { s.focus(); }, 0); }
+  function fermer() { q('[data-eiv-voile]').hidden = true; }
+  q('[data-eiv-x]').addEventListener('click', fermer); q('[data-eiv-annuler]').addEventListener('click', fermer);
+  q('[data-eiv-voile]').addEventListener('mousedown', function (e) { if (e.target === q('[data-eiv-voile]')) fermer(); });
+  document.addEventListener('keydown', function (e) { if (e.key === 'Escape' && !q('[data-eiv-voile]').hidden) fermer(); });
+  q('[data-eiv-ouvrir]').addEventListener('click', ouvrir);
+  q('[data-eiv-reset]').addEventListener('click', reinitialiser);
+  // la fenêtre s'ouvre directement à chaque entrée dans l'écran tant qu'aucun état n'est affiché
+  function entree() { if (location.hash === '#etatinv' && !res) { if (!f('du').value) reinitialiser(); ouvrir(); } }
+  window.addEventListener('hashchange', entree);
+
+  // ---------- calculs ----------
+  function cumul(valeur, fam, debut, fin) {
+    if (!fam || !fam.amortissable || !debut || !fin || fin <= debut) return 0;
+    var d1 = debut.split('-').map(Number), d2 = fin.split('-').map(Number), ans = ((d2[0] - d1[0]) * 12 + (d2[1] - d1[1]) + (Math.min(d2[2], 30) - Math.min(d1[2], 30)) / 30) / 12;
+    var duree = fam.unite === 'Mois' ? (+fam.duree || 0) / 12 : (+fam.duree || 0), t = (+fam.taux || 0) / 100, c;
+    if (fam.methode === 'Dégressif') c = valeur * (1 - Math.pow(1 - Math.min(t, 1), ans)); else c = duree > 0 ? valeur * Math.min(1, ans / duree) : 0;
+    return Math.min(valeur, Math.max(0, Math.round(c * 100) / 100));
+  }
+  // affectation en vigueur à une date d'après l'historique de « Réassignation » : ancienne affectation du 1er mouvement avant, sinon nouvelle affectation du dernier mouvement <= date
+  function affectation(x, date) {
+    var M = (window.REASSIGNATIONS_IMMOBILISATION || []).filter(function (m) { return m.num === x.num; }).sort(function (a, b) { return a.date < b.date ? -1 : a.date > b.date ? 1 : 0; });
+    var cur = M.length ? M[0].ancien : { site: x.site, empl: x.empl, resp: x.resp }, depuis = x.dacq;
+    M.forEach(function (m) { if (m.date <= date) { cur = m.nouveau; depuis = m.date; } });
+    return { site: cur.site, empl: cur.empl, resp: cur.resp, depuis: depuis };
+  }
+  function filtres(x, aff, P) { return (!P.lieu || aff.empl === P.lieu) && (!P.resp || aff.resp === P.resp) && (!P.fam || x.famille === P.fam); }
+
+  function lire() { return { etat: etatChoisi(), du: f('du').value, au: f('au').value, acq: f('p_acq').checked, ced: f('p_ced').checked, aut: f('p_aut').checked, lieu: f('lieu').value, resp: f('resp').value, fam: f('fam').value, exo: f('exo').value }; }
+
+  function etatAmort(P) {
+    var rows = [], T = { val: 0, ant: 0, dot: 0, cum: 0, vnc: 0 };
+    fiches().forEach(function (x) {
+      if (x.dacq > P.au) return; if (x.cede && x.c_date && x.c_date < P.du) return;
+      var aff = affectation(x, P.au); if (!filtres(x, aff, P)) return;
+      var fam = famille(x.famille), val = x.qte * x.pu, deb = x.dms || x.dacq, sorti = x.cede && x.c_date && x.c_date <= P.au, fin = sorti ? x.c_date : P.au;
+      var ant = cumul(val, fam, deb, P.du), cum = cumul(val, fam, deb, fin), dot = Math.max(0, cum - ant), vnc = val - cum;
+      rows.push({ num: x.num, desig: x.desig, fam: x.famille || '—', deb: deb, val: val, taux: fam && fam.amortissable ? (+fam.taux || 0) : null, ant: ant, dot: dot, cum: cum, vnc: sorti ? null : vnc, sorti: sorti });
+      T.val += val; T.ant += ant; T.dot += dot; T.cum += cum; if (!sorti) T.vnc += vnc;
+    });
+    rows.sort(function (a, b) { return a.num < b.num ? -1 : 1; });
+    var tete = ['Code', 'Désignation', 'Famille', 'Mise en service', 'Valeur d’acquisition', 'Taux', 'Amort. antérieurs', 'Dotation de la période', 'Amort. cumulés', 'VNC'];
+    var brut = rows.map(function (r) { return [r.num, r.desig, r.fam, dFR(r.deb), nb(r.val), r.taux == null ? '—' : nb(r.taux) + ' %', nb(r.ant), nb(r.dot), nb(r.cum), r.vnc == null ? '— (sorti)' : nb(r.vnc)]; });
+    var total = ['TOTAL', '', '', '', nb(T.val), '', nb(T.ant), nb(T.dot), nb(T.cum), nb(T.vnc)];
+    var html = rows.map(function (r, i) {
+      return '<tr><td><span class="eiv-code">' + esc(r.num) + '</span></td><td>' + esc(r.desig) + '</td><td>' + esc(r.fam) + '</td><td>' + dFR(r.deb) + '</td><td class="r">' + nb(r.val) + '</td><td class="r">' + (r.taux == null ? '—' : nb(r.taux) + ' %') + '</td><td class="r">' + nb(r.ant) + '</td><td class="r">' + nb(r.dot) + '</td><td class="r">' + nb(r.cum) + '</td><td class="r">' + (r.vnc == null ? '—' : nb(r.vnc)) + '</td></tr>';
+    }).join('') + (rows.length ? '<tr class="eiv-tot"><td colspan="4">TOTAL</td><td class="r">' + nb(T.val) + '</td><td></td><td class="r">' + nb(T.ant) + '</td><td class="r">' + nb(T.dot) + '</td><td class="r">' + nb(T.cum) + '</td><td class="r">' + nb(T.vnc) + '</td></tr>' : '');
+    var num = [4, 6, 7, 8, 9];
+    return { titre: 'Tableau des amortissements', sous: 'Période du ' + dFR(P.du) + ' au ' + dFR(P.au), tete: tete, num: num, html: html, brut: brut, total: rows.length ? total : null, n: rows.length };
+  }
+  function etatInv(P) {
+    var rows = [], T = { val: 0, vnc: 0 };
+    fiches().forEach(function (x) {
+      if (x.dacq > P.au) return; if (x.cede && x.c_date && x.c_date < P.du) return;
+      var acq = x.dacq >= P.du, ced = x.cede && x.c_date && x.c_date >= P.du && x.c_date <= P.au, aut = !acq && !ced && (!x.cede || !x.c_date || x.c_date > P.au);
+      if (!((acq && P.acq) || (ced && P.ced) || (aut && P.aut))) return;
+      var aff = affectation(x, P.au); if (!filtres(x, aff, P)) return;
+      var fam = famille(x.famille), val = x.qte * x.pu, sorti = x.cede && x.c_date && x.c_date <= P.au, vnc = sorti ? null : val - cumul(val, fam, x.dms || x.dacq, P.au);
+      var st = sorti ? 'sorti' : (vnc <= 0 ? 'amorti' : 'service');
+      rows.push({ lieu: aff.empl || '—', resp: aff.resp || '', num: x.num, desig: x.desig, dacq: x.dacq, depuis: aff.depuis, val: val, vnc: vnc, st: st, cat: acq ? 'Acquise' : (ced ? 'Cédée' : 'Autre') });
+      T.val += val; if (vnc != null) T.vnc += vnc;
+    });
+    rows.sort(function (a, b) { return a.lieu < b.lieu ? -1 : a.lieu > b.lieu ? 1 : (a.resp < b.resp ? -1 : a.resp > b.resp ? 1 : (a.num < b.num ? -1 : 1)); });
+    var STL = { service: 'En service', amorti: 'Totalement amorti', sorti: 'Sorti' };
+    var tete = ['Lieu', 'Responsable', 'Code', 'Désignation', 'Affectée depuis', 'Valeur d’acquisition', 'VNC', 'Statut'];
+    var brut = rows.map(function (r) { return [r.lieu + (libLieu(r.lieu) ? ' — ' + libLieu(r.lieu) : ''), libResp(r.resp), r.num, r.desig, dFR(r.depuis), nb(r.val), r.vnc == null ? '—' : nb(r.vnc), STL[r.st]]; });
+    var html = '', cur = null, sv = 0, sn = 0, svn = 0;
+    function sous() { if (cur !== null) html += '<tr class="eiv-sub"><td colspan="5">Sous-total ' + esc(cur) + ' (' + sn + ')</td><td class="r">' + nb(sv) + '</td><td class="r">' + nb(svn) + '</td><td></td></tr>'; }
+    rows.forEach(function (r) {
+      if (r.lieu !== cur) { sous(); cur = r.lieu; sv = 0; sn = 0; svn = 0; }
+      sv += r.val; sn++; svn += r.vnc || 0;
+      html += '<tr><td><span class="eiv-lieu" title="' + esc(libLieu(r.lieu)) + '">' + esc(r.lieu) + '</span></td><td>' + esc(libResp(r.resp) || '—') + '</td><td><span class="eiv-code">' + esc(r.num) + '</span></td><td>' + esc(r.desig) + '</td><td>' + dFR(r.depuis) + '</td><td class="r">' + nb(r.val) + '</td><td class="r">' + (r.vnc == null ? '—' : nb(r.vnc)) + '</td><td><span class="eiv-st ' + r.st + '">' + STL[r.st] + '</span></td></tr>';
+    });
+    sous(); if (rows.length) html += '<tr class="eiv-tot"><td colspan="5">TOTAL (' + rows.length + ')</td><td class="r">' + nb(T.val) + '</td><td class="r">' + nb(T.vnc) + '</td><td></td></tr>';
+    var per = [P.acq ? 'acquises' : '', P.ced ? 'cédées' : '', P.aut ? 'autres' : ''].filter(Boolean).join(', ');
+    return { titre: 'Inventaire par lieu et responsable', sous: 'Situation au ' + dFR(P.au) + ' — période du ' + dFR(P.du) + ' au ' + dFR(P.au) + ' — immobilisations ' + per, tete: tete, num: [5, 6], html: html, brut: brut, total: rows.length ? ['TOTAL', '', '', '', '', nb(T.val), nb(T.vnc), ''] : null, n: rows.length };
+  }
+
+  // ---------- édition de l'état ----------
+  function editer() {
+    var P = lire(); erreurs();
+    if (!P.du || !P.au) { erreurs('Renseignez la période (Du et Au).'); return; }
+    if (P.du > P.au) { erreurs('La date de début doit précéder la date de fin.'); return; }
+    if (P.etat === 'inv' && !(P.acq || P.ced || P.aut)) { erreurs(null, 'Choisissez au moins un périmètre : acquises, cédées ou autres.'); return; }
+    var e = P.etat === 'inv' ? etatInv(P) : etatAmort(P), now = new Date();
+    res = e; res.P = P; res.edite = now.toLocaleDateString('fr-FR') + ' ' + now.toLocaleTimeString('fr-FR', { hour: '2-digit', minute: '2-digit' });
+    var filtresTxt = [P.lieu ? 'Lieu ' + P.lieu : '', P.resp ? 'Responsable ' + P.resp : '', P.fam ? 'Famille ' + P.fam : ''].filter(Boolean).join(' · ');
+    q('[data-eiv-res]').innerHTML = '<div class="eiv-res-h"><div><h2>' + esc(e.titre) + '</h2><p>' + esc(e.sous) + (filtresTxt ? '<br>' + esc(filtresTxt) : '') + '</p></div><div class="eiv-ed">Édité le ' + esc(res.edite) + '</div></div>' +
+      (e.n ? '<div style="overflow:auto"><table class="eiv-tb"><thead><tr>' + e.tete.map(function (h, i) { return '<th class="' + (e.num.indexOf(i) >= 0 ? 'r' : '') + '">' + esc(h) + '</th>'; }).join('') + '</tr></thead><tbody>' + e.html + '</tbody></table></div>'
+        : '<div class="eiv-vide">' + (fiches().length ? 'Aucune immobilisation ne correspond aux critères.' : 'Aucune immobilisation : créez des fiches dans Immobilisations › Saisies › Liste d’immobilisations.') + '</div>');
+    q('[data-eiv-res]').hidden = false; q('[data-eiv-fond]').hidden = true; fermer(); etat();
+    toast(e.n ? e.titre + ' : ' + e.n + ' ligne(s).' : 'Aucune ligne pour ces critères.');
+  }
+  q('[data-eiv-editer]').addEventListener('click', editer);
+
+  // ---------- barre d'actions, exports ----------
+  function etat() { var a = q('[data-eiv-actions]'); ['imprimer', 'pdf', 'xlsx'].forEach(function (k) { a.querySelector('[data-eiv-' + k + ']').disabled = !(res && res.n); }); }
+  function tableauExport() { var l = res.brut.slice(); if (res.total) l.push(res.total); return l; }
+  function exporter(k) {
+    var X = window.EXPORT_TABLEAU; if (!res || !res.n) { toast('Aucun état à exporter : éditez d’abord un état.'); return; } if (!X) { toast('Module d’export indisponible.'); return; }
+    var nom = res.P.etat === 'inv' ? 'inventaire_immobilisations' : 'tableau_amortissements', l = tableauExport();
+    if (k === 'pdf') X.pdf(nom + '.pdf', res.titre, res.sous, res.tete, l); else X.xlsx(nom + '.xlsx', res.titre, res.tete, l);
+    toast('Export ' + (k === 'pdf' ? 'PDF' : 'Excel (XLSX)') + ' généré : ' + res.n + ' ligne(s).');
+  }
+  function imprimer() {
+    if (!res || !res.n) { toast('Aucun état à imprimer.'); return; }
+    var w = window.open('', '_blank'); if (!w) { toast('Autorisez les fenêtres pop-up pour imprimer.'); return; }
+    var l = tableauExport();
+    w.document.write('<!doctype html><meta charset="utf-8"><title>' + esc(res.titre) + '</title><style>body{font:12px system-ui,sans-serif;color:#0B1332;margin:24px}h1{font-size:18px;margin:0}p{margin:2px 0 12px;color:#5B606D}table{border-collapse:collapse;width:100%}th{background:#2E427B;color:#fff;text-align:left;padding:6px 8px;font-size:10px;text-transform:uppercase;-webkit-print-color-adjust:exact;print-color-adjust:exact}td{padding:6px 8px;border-bottom:1px solid #D6D9E0}tr:last-child td{font-weight:700}</style><h1>' + esc(res.titre) + '</h1><p>' + esc(res.sous) + ' — édité le ' + esc(res.edite) + '</p><table><thead><tr>' +
+      res.tete.map(function (h) { return '<th>' + esc(h) + '</th>'; }).join('') + '</tr></thead><tbody>' + l.map(function (r) { return '<tr>' + r.map(function (c) { return '<td>' + esc(c) + '</td>'; }).join('') + '</tr>'; }).join('') + '</tbody></table>');
+    w.document.close(); w.focus(); setTimeout(function () { w.print(); }, 300);
+  }
+  root.addEventListener('click', function (e) {
+    var b = e.target.closest('button'); if (!b || b.disabled) return;
+    if (b.hasAttribute('data-eiv-filtre')) { if (!f('du').value) reinitialiser(); ouvrir(); return; }
+    if (b.hasAttribute('data-eiv-imprimer')) { imprimer(); return; }
+    if (b.hasAttribute('data-eiv-pdf')) { exporter('pdf'); return; }
+    if (b.hasAttribute('data-eiv-xlsx')) { exporter('xlsx'); return; }
+  });
+  reinitialiser(); etat(); entree();
+})();
+</script>

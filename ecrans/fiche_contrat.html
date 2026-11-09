@@ -43,6 +43,7 @@
     <button type="button" data-fct-importer>Importer</button>
     <button type="button" data-fct-enregistrer>Enregistrer</button>
     <button type="button" data-fct-annuler>Annuler</button>
+    <button type="button" data-fct-sync><i class="ti ti-refresh"></i>Synchroniser avec Soft e-Procurement</button>
     <span class="fct-ok" data-fct-msg role="status"></span>
   </div>
 
@@ -404,6 +405,39 @@
   q('[data-fct-importer]').addEventListener('click', function () { if (cur) { msg('Terminez la saisie en cours avant d’importer.'); return; } if (window.IMPORT_ASSISTANT) window.IMPORT_ASSISTANT.ouvrir(modeleImp()); else msg('Assistant d’importation indisponible.'); });
   q('[data-fct-ajouter]').addEventListener('click', ajouter); q('[data-fct-modifier]').addEventListener('click', modifier); q('[data-fct-supprimer]').addEventListener('click', supprimer);
   q('[data-fct-enregistrer]').addEventListener('click', enregistrer); q('[data-fct-annuler]').addEventListener('click', annuler);
+
+  // ---------- synchronisation avec Soft e-Procurement : récupération d'un marché attribué (window.EPROCUREMENT, fenêtre partagée ecrans/eprocurement.js)
+  // Depuis la liste : ouvre une nouvelle fiche préremplie ; depuis la saisie : remplit la fiche en cours. Numéro, désignation, dates, types de marché et de passation,
+  // attributaire (rapproché des tiers par son nom) et, si la ventilation est vide, une ligne au montant du marché. Les valeurs absentes des listes y sont ajoutées.
+  function appliquerEproc(m, saisie) {
+    if (!saisie) { cur = vide(); edit = -1; sous('vent'); }
+    else if (cur && (String(cur.num).trim() || String(cur.designation).trim()) && String(cur.num).trim().toLowerCase() !== m.ref.toLowerCase() && !window.confirm('Remplacer les informations déjà saisies par celles du marché « ' + m.ref + ' » ?')) return;
+    cur.num = m.ref; cur.designation = m.objet; cur.dateNO = m.dateNO || ''; cur.dateSign = m.dateSign || '';
+    if (m.typeMarche && MARCHES.indexOf(m.typeMarche) < 0) MARCHES.push(m.typeMarche); cur.typeMarche = m.typeMarche || cur.typeMarche;
+    if (m.typePassation && PASSATIONS.indexOf(m.typePassation) < 0) PASSATIONS.push(m.typePassation); cur.typePassation = m.typePassation || cur.typePassation;
+    var trouve = null; TIERS.forEach(function (t) { t[2].forEach(function (x) { if (String(x[1]).toUpperCase() === String(m.attributaire).toUpperCase()) trouve = [t[0], x[0]]; }); });
+    if (trouve) { cur.compteTiers = trouve[0]; cur.tiers = trouve[1]; }
+    var vent = !(cur.vent || []).length; if (vent) cur.vent = [{ desc: m.objet, pcg: '', avenant: false, ana: {}, mt: { MGA: m.montant } }];
+    cur.eproc = { ref: m.ref, date: new Date().toISOString().slice(0, 10) };
+    charger(); tab('saisie');
+    msg('Marché ' + m.ref + ' récupéré depuis Soft e-Procurement' + (trouve ? '' : ' — attributaire « ' + m.attributaire + ' » introuvable dans les tiers : sélectionnez-le') + (vent ? ' ; montant ' + nb(m.montant) + ' repris en ventilation (renseignez le PCG)' : '') + '. Vérifiez puis enregistrez.');
+  }
+  function synchroniserEproc() {
+    var EP = window.EPROCUREMENT; if (!EP) { msg('Soft e-Procurement indisponible.'); return; }
+    var saisie = !q('[data-fct-pan="saisie"]').hidden, courant = saisie && cur ? String(cur.num || '').trim().toLowerCase() : '';
+    EP.ouvrir({
+      titre: 'Récupérer un marché depuis Soft e-Procurement', intro: saisie ? 'Le marché choisi remplit la fiche contrat en cours de saisie.' : 'Le marché choisi ouvre une nouvelle fiche contrat préremplie.',
+      lignes: EP.contrats(), unique: true, cle: function (l) { return l.ref; },
+      colonnes: [{ k: 'ref', l: 'N° de marché', mono: true }, { k: 'objet', l: 'Objet' }, { k: 'attributaire', l: 'Attributaire' }, { k: 'typePassation', l: 'Type de passation' }, { k: 'dateSign', l: 'Signature', fmt: 'date' }, { k: 'montant', l: 'Montant', fmt: 'montant', r: true }],
+      etat: function (l) {
+        var ref = l.ref.toLowerCase(); if (!data.some(function (c) { return String(c.num).toLowerCase() === ref; })) return { txt: 'Nouveau' };
+        return courant === ref ? { txt: 'Mise à jour' } : { txt: 'Déjà présent', actif: false };
+      },
+      ok: 'Récupérer le marché', note: 'Un marché déjà enregistré dans la maquette n’est pas proposé de nouveau.',
+      onValider: function (S) { appliquerEproc(S[0], saisie); }
+    });
+  }
+  q('[data-fct-sync]').addEventListener('click', synchroniserEproc);
 
   publier(); liste(); tab('liste');
 })();

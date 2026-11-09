@@ -1,5 +1,5 @@
 <!--
-  Écran « Réassignation » (Immobilisations › Saisies › Réassignation) — changer le site, l'emplacement, le responsable ou la ventilation analytique d'une
+  Écran « Réassignation » (Immobilisations › Saisies › Réassignation) — changer le site, le lieu d'affectation, le responsable ou la ventilation analytique d'une
   immobilisation existante. Chaque mouvement est historisé de manière immuable (on ne supprime que le dernier mouvement d'une immobilisation, ce qui rétablit
   l'affectation précédente). Onglets de page Saisie / Liste :
   - Liste : date, n° d'identification, libellé, ancien / nouveau site, emplacement, responsable et analytique de chaque mouvement ; bouton « Historique » (détail des
@@ -53,7 +53,7 @@
     <button type="button" data-ras-xlsx>Excel (XLSX)</button>
   </div>
 
-  <p class="ras-help" style="margin:0 0 12px">Changer le site, l'emplacement, le responsable ou la ventilation analytique d'une immobilisation existante. Chaque mouvement est historisé de manière immuable.</p>
+  <p class="ras-help" style="margin:0 0 12px">Changer le site, le lieu d'affectation, le responsable ou la ventilation analytique d'une immobilisation existante. Chaque mouvement est historisé de manière immuable.</p>
 
   <div class="bp-tabs" role="tablist">
     <button type="button" role="tab" class="on" data-ras-tab="saisie">Saisie</button>
@@ -65,15 +65,15 @@
       <h2>Réassignations <small>Clic sur une ligne pour la sélectionner, puis « Historique » pour le détail de l'immobilisation</small></h2>
       <div style="overflow:auto;max-height:520px">
         <table class="bp-tb" style="min-width:1100px"><thead>
-          <tr><th>Date</th><th>N° identification</th><th>Libellé</th><th>Anc. site</th><th>Nouv. site</th><th>Anc. emplacement</th><th>Nouv. emplacement</th><th>Anc. resp.</th><th>Nouv. resp.</th><th>Analytique</th></tr>
+          <tr><th>Date</th><th>N° identification</th><th>Libellé</th><th>Anc. site</th><th>Nouv. site</th><th>Anc. lieu d'affectation</th><th>Nouv. lieu d'affectation</th><th>Anc. resp.</th><th>Nouv. resp.</th><th>Analytique</th></tr>
           <tr class="flt">
             <th><input class="bp-in" data-fc="0" aria-label="Filtrer Date"></th>
             <th><input class="bp-in" data-fc="1" aria-label="Filtrer N°"></th>
             <th><input class="bp-in" data-fc="2" aria-label="Filtrer Libellé"></th>
             <th><input class="bp-in" data-fc="3" aria-label="Filtrer Ancien site"></th>
             <th><input class="bp-in" data-fc="4" aria-label="Filtrer Nouveau site"></th>
-            <th><input class="bp-in" data-fc="5" aria-label="Filtrer Ancien emplacement"></th>
-            <th><input class="bp-in" data-fc="6" aria-label="Filtrer Nouvel emplacement"></th>
+            <th><input class="bp-in" data-fc="5" aria-label="Filtrer Ancien lieu d'affectation"></th>
+            <th><input class="bp-in" data-fc="6" aria-label="Filtrer Nouveau lieu d'affectation"></th>
             <th><input class="bp-in" data-fc="7" aria-label="Filtrer Ancien responsable"></th>
             <th><input class="bp-in" data-fc="8" aria-label="Filtrer Nouveau responsable"></th>
             <th></th>
@@ -103,7 +103,7 @@
             <div class="ras-ro"><span>Compte général</span><b data-ras-a="compte">—</b></div>
             <div class="ras-ro"><span>Site</span><b data-ras-a="site">—</b></div>
             <div class="ras-ro"><span>Date d'acquisition</span><b data-ras-a="dacq">—</b></div>
-            <div class="ras-ro"><span>Emplacement</span><b data-ras-a="empl">—</b></div>
+            <div class="ras-ro"><span>Lieu d'affectation</span><b data-ras-a="empl">—</b></div>
             <div class="ras-ro"><span>Responsable</span><b data-ras-a="resp">—</b></div>
             <div class="ras-ro"><span>Valeur d'acquisition</span><b data-ras-a="val">—</b></div>
           </div>
@@ -120,7 +120,7 @@
             <div class="ras-g4">
               <label class="bp-champ"><span>Date de réassignation <b>*</b></span><input class="bp-in" type="date" data-f="date"><span class="ras-er" data-er="date"></span></label>
               <label class="bp-champ"><span>Nouveau site</span><select class="bp-sel" data-f="site"></select></label>
-              <label class="bp-champ"><span>Nouvel emplacement</span><select class="bp-sel" data-f="empl"></select></label>
+              <label class="bp-champ"><span>Nouveau lieu d'affectation</span><select class="bp-sel" data-f="empl"></select></label>
               <label class="bp-champ"><span>Nouveau responsable</span><select class="bp-sel" data-f="resp"></select></label>
             </div>
             <div class="ras-h4" style="margin-top:16px">Ventilation analytique</div>
@@ -145,6 +145,10 @@
   var root = document.querySelector('[data-ras]'); if (!root) return;
   function q(s) { return root.querySelector(s); } function qa(s) { return [].slice.call(root.querySelectorAll(s)); }
   var mvts = [], sel = -1, mode = 'consultation', nextId = 1, fiche = null, ouvert = {}, histoOuvert = false;
+  // persistance locale : les données saisies survivent au rechargement et aux nouvelles publications (localStorage « softcompta.immo.reassignations »)
+  var CLE = 'softcompta.immo.reassignations';
+  try { var sv = JSON.parse(localStorage.getItem(CLE) || 'null'); if (sv && typeof sv === 'object') { if (sv.mvts !== undefined) mvts = sv.mvts; if (sv.nextId !== undefined) nextId = sv.nextId; } } catch (e) {}
+  function sauver() { try { localStorage.setItem(CLE, JSON.stringify({ mvts: mvts, nextId: nextId })); } catch (e) {} }
   function esc(s) { return String(s == null ? '' : s).replace(/[&<>"]/g, function (c) { return { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c]; }); }
   function f(k) { return q('[data-f=' + k + ']'); }
   function toast(m) { var t = q('[data-ras-toast]'); t.textContent = m; t.hidden = false; clearTimeout(toast.t); toast.t = setTimeout(function () { t.hidden = true; }, 3400); }
@@ -237,7 +241,7 @@
   function detailHtml(m) {
     var L = [];
     if (m.a.site !== m.n.site) L.push('Site : ' + esc(nomSite(m.a.site)) + ' → ' + esc(nomSite(m.n.site)));
-    if (m.a.empl !== m.n.empl) L.push('Emplacement : ' + esc(m.a.empl || '—') + ' → ' + esc(m.n.empl || '—'));
+    if (m.a.empl !== m.n.empl) L.push('Lieu d’affectation : ' + esc(m.a.empl || '—') + ' → ' + esc(m.n.empl || '—'));
     if (m.a.resp !== m.n.resp) L.push('Responsable : ' + esc(m.a.resp || '—') + ' → ' + esc(m.n.resp || '—'));
     var codes = {}; Object.keys(m.a.ana || {}).concat(Object.keys(m.n.ana || {})).forEach(function (c) { codes[c] = 1; });
     Object.keys(codes).forEach(function (c) { var o = (m.a.ana || {})[c] || '', n = (m.n.ana || {})[c] || ''; if (o !== n) L.push(esc(libPlan(c)) + ' : ' + esc(o || '—') + ' → ' + esc(n || '—')); });
@@ -247,7 +251,7 @@
   function histoHtml(num) {
     var H = mvts.filter(function (m) { return m.num === num; }).sort(function (a, b) { return a.date < b.date ? 1 : a.date > b.date ? -1 : b.id - a.id; });
     if (!H.length) return '<p class="ras-help" style="text-align:center;margin:12px 0">Aucune réassignation enregistrée pour cette immobilisation.</p>';
-    return '<table class="bp-tb"><thead><tr><th>Date</th><th>Site</th><th>Emplacement</th><th>Responsable</th><th>Analytique</th></tr></thead><tbody>' + H.map(function (m) {
+    return '<table class="bp-tb"><thead><tr><th>Date</th><th>Site</th><th>Lieu d’affectation</th><th>Responsable</th><th>Analytique</th></tr></thead><tbody>' + H.map(function (m) {
       return '<tr data-ras-h="' + m.id + '" style="cursor:pointer"><td>' + dFR(m.date) + '</td><td>' + esc(m.a.site || '—') + ' → ' + esc(m.n.site || '—') + '</td><td>' + esc(m.a.empl || '—') + ' → ' + esc(m.n.empl || '—') + '</td><td>' + esc(m.a.resp || '—') + ' → ' + esc(m.n.resp || '—') + '</td><td>' + esc(nbAna(m)) + '</td></tr>' + (ouvert[m.id] ? '<tr><td colspan="5">' + detailHtml(m) + '</td></tr>' : '');
     }).join('') + '</tbody></table>';
   }
@@ -291,7 +295,7 @@
     a.querySelector('[data-ras-supprimer]').disabled = ed || !m; a.querySelector('[data-ras-historique]').disabled = ed || !m;
     ['imprimer', 'pdf', 'xlsx'].forEach(function (k) { a.querySelector('[data-ras-' + k + ']').disabled = !mvts.length; });
   }
-  function publier() { window.REASSIGNATIONS_IMMOBILISATION = mvts.map(function (m) { return { date: m.date, num: m.num, designation: m.desig, ancien: m.a, nouveau: m.n, motif: m.motif }; }); window.dispatchEvent(new Event('reassignations-immobilisation-changed')); }
+  function publier() { sauver(); window.REASSIGNATIONS_IMMOBILISATION = mvts.map(function (m) { return { date: m.date, num: m.num, designation: m.desig, ancien: m.a, nouveau: m.n, motif: m.motif }; }); window.dispatchEvent(new Event('reassignations-immobilisation-changed')); }
   function reinit() { fiche = null; selection(''); ancienne(null); q('[data-ras-attente]').hidden = false; q('[data-ras-nouvelle]').hidden = true; f('date').value = ''; f('motif').value = ''; err('s_num'); err('date'); err('chg'); histoSaisie(); }
 
   function enregistrer() {
@@ -305,7 +309,7 @@
     else if (dernier && d < dernier) { err('date', 'Une réassignation plus récente existe déjà (' + dFR(dernier) + ').'); ok = false; }
     var a = { site: cur.site, empl: cur.empl, resp: cur.resp, ana: cur.ana || {} }, aa = JSON.stringify(a.ana), na = JSON.stringify(n.ana);
     n.site = n.site || a.site; n.empl = n.empl || a.empl; n.resp = n.resp || a.resp;
-    if (n.site === a.site && n.empl === a.empl && n.resp === a.resp && aa === na) { err('chg', 'Aucun changement : modifiez au moins le site, l’emplacement, le responsable ou une imputation analytique.'); ok = false; }
+    if (n.site === a.site && n.empl === a.empl && n.resp === a.resp && aa === na) { err('chg', 'Aucun changement : modifiez au moins le site, le lieu d’affectation, le responsable ou une imputation analytique.'); ok = false; }
     if (!ok) return;
     if (!window.FICHES_API.reaffecter(cur.num, n)) { toast('La fiche est en cours de modification dans « Liste d’immobilisations » : terminez la saisie puis recommencez.'); return; }
     mvts.push({ id: nextId++, date: d, num: cur.num, desig: cur.desig, a: a, n: n, motif: f('motif').value.trim() });
@@ -323,7 +327,7 @@
   // ---------- exports ----------
   function table() {
     var L = mvts.filter(function (m, i) { var tr = tb.children[i]; return !tr || !tr.hidden; });
-    return { tete: ['Date', 'N° identification', 'Libellé', 'Anc. site', 'Nouv. site', 'Anc. emplacement', 'Nouv. emplacement', 'Anc. resp.', 'Nouv. resp.', 'Analytique'], lignes: L.map(function (m) { return [dFR(m.date), m.num, m.desig, m.a.site || '—', changeTxt(m.a.site, m.n.site), m.a.empl || '—', changeTxt(m.a.empl, m.n.empl), m.a.resp || '—', changeTxt(m.a.resp, m.n.resp), resumeAna(m.n.ana)]; }) };
+    return { tete: ['Date', 'N° identification', 'Libellé', 'Anc. site', 'Nouv. site', 'Anc. lieu d’affectation', 'Nouv. lieu d’affectation', 'Anc. resp.', 'Nouv. resp.', 'Analytique'], lignes: L.map(function (m) { return [dFR(m.date), m.num, m.desig, m.a.site || '—', changeTxt(m.a.site, m.n.site), m.a.empl || '—', changeTxt(m.a.empl, m.n.empl), m.a.resp || '—', changeTxt(m.a.resp, m.n.resp), resumeAna(m.n.ana)]; }) };
   }
   function exporter(k) {
     var X = window.EXPORT_TABLEAU, t = table(); if (!X) { toast('Module d’export indisponible.'); return; } if (!t.lignes.length) { toast('Rien à exporter.'); return; }

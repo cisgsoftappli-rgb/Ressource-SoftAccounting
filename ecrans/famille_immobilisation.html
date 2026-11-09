@@ -22,7 +22,7 @@
 .fi-cols{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:16px;margin-top:16px}
 .fi-stack{display:flex;flex-direction:column;gap:12px}
 .fi-row2{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1fr);gap:12px}
-.fi-taux{display:flex;align-items:center;gap:8px}.fi-taux .bp-in{flex:1}
+.fi-nb{font-size:12px;color:#64748b;margin-top:2px}.fi-nb[hidden]{display:none}.fi-taux{display:flex;align-items:center;gap:8px}.fi-taux .bp-in{flex:1}
 .fi-taux label{display:flex;align-items:center;gap:6px;white-space:nowrap;font-size:13px}
 [data-fi] [hidden]{display:none!important}
 [data-fi] .bp-champ>span:first-child{text-transform:uppercase;letter-spacing:.04em;font-size:12px;font-weight:600}
@@ -39,6 +39,7 @@
     <button type="button" data-fi-supprimer>Supprimer</button>
     <button type="button" data-fi-enregistrer>Enregistrer</button>
     <button type="button" data-fi-annuler>Annuler</button>
+    <button type="button" data-fi-import>Import</button>
     <button type="button" data-fi-imprimer>Imprimer</button>
     <button type="button" data-fi-pdf>PDF</button>
     <button type="button" data-fi-xlsx>Excel (XLSX)</button>
@@ -101,6 +102,7 @@
             <div class="fi-stack">
               <div class="bp-chk"><label><input type="checkbox" data-f="amortissable" checked>Immobilisation amortissable</label></div>
               <label class="bp-champ"><span>Méthode d'amortissement <b>*</b></span><select class="bp-sel" data-f="methode"><option>Linéaire</option><option>Dégressif</option></select></label>
+              <label class="bp-champ" data-fi-coefw hidden><span>Coefficient dégressif</span><input class="bp-in" data-f="coef" readonly aria-label="Coefficient dégressif"><span class="fi-nb">Fixé selon la durée (normes comptables) : 1,25 jusqu'à 4 ans ; 1,75 pour 5 à 6 ans ; 2,25 au-delà.</span></label>
               <div class="bp-champ"><span>Durée d'amortissement <b>*</b></span>
                 <div class="fi-row2"><input class="bp-in" type="number" min="1" step="1" data-f="duree" aria-label="Durée d'amortissement"><select class="bp-sel" data-f="unite" aria-label="Unité de durée"><option>Ans</option><option>Mois</option></select></div>
                 <span class="fi-er" data-er="duree"></span>
@@ -110,7 +112,9 @@
                 <span class="fi-er" data-er="taux"></span>
               </div>
               <label class="bp-champ"><span>Prorata temporis</span><select class="bp-sel" data-f="prorata"><option>Oui</option><option>Non</option></select></label>
-              <label class="bp-champ"><span>Date de début d'amortissement</span><input class="bp-in" type="date" data-f="debut"></label>
+              <label class="bp-champ" data-fi-pbasew><span>Base de calcul du prorata</span><select class="bp-sel" data-f="pbase"><option>Jour réel</option><option>12 mois</option><option>360 jours</option><option>365 jours</option></select></label>
+              <div class="fi-nb" data-fi-pnon hidden>Sans prorata temporis, l'amortissement est calculé sur la période complète.</div>
+              <label class="bp-champ"><span>Date de début d'amortissement</span><select class="bp-sel" data-f="debut"><option>Date d'acquisition</option><option>Modifiable</option></select></label>
               <label class="bp-champ"><span>Périodicité <b>*</b></span><select class="bp-sel" data-f="period"><option>Annuel</option><option>Semestriel</option><option>Trimestriel</option><option>Mensuel</option></select></label>
             </div>
           </div>
@@ -126,9 +130,14 @@
   var root = document.querySelector('[data-fi]'); if (!root) return;
   function q(s) { return root.querySelector(s); } function qa(s) { return [].slice.call(root.querySelectorAll(s)); }
   var data = [], sel = -1, mode = 'consultation';
+  // persistance locale : les données saisies survivent au rechargement et aux nouvelles publications (localStorage « softcompta.immo.familles »)
+  var CLE = 'softcompta.immo.familles';
+  try { var sv = JSON.parse(localStorage.getItem(CLE) || 'null'); if (sv && typeof sv === 'object') { if (sv.data !== undefined) data = sv.data; } } catch (e) {}
+  function sauver() { try { localStorage.setItem(CLE, JSON.stringify({ data: data })); } catch (e) {} }
   var CPT = ['c_immo', 'c_amort', 'c_dot', 'c_sortie', 'c_plus', 'c_moins'];
-  var CHAMPS = ['code', 'lib', 'nature', 'desc', 'c_immo', 'c_amort', 'c_dot', 'c_sortie', 'c_plus', 'c_moins', 'methode', 'duree', 'unite', 'taux', 'prorata', 'debut', 'period'];
-  var AMORT = ['methode', 'duree', 'unite', 'taux', 'auto', 'prorata', 'debut', 'period'];
+  var CHAMPS = ['code', 'lib', 'nature', 'desc', 'c_immo', 'c_amort', 'c_dot', 'c_sortie', 'c_plus', 'c_moins', 'methode', 'duree', 'unite', 'taux', 'prorata', 'pbase', 'debut', 'period', 'coef'];
+  var AMORT = ['methode', 'duree', 'unite', 'taux', 'auto', 'prorata', 'pbase', 'debut', 'period'];
+  function coefNorme(a) { return a <= 4 ? 1.25 : a <= 6 ? 1.75 : 2.25; }
   function esc(s) { return String(s == null ? '' : s).replace(/[&<>"]/g, function (c) { return { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c]; }); }
   function f(k) { return q('[data-f=' + k + ']'); }
   function toast(m) { var t = q('[data-fi-toast]'); t.textContent = m; t.hidden = false; clearTimeout(toast.t); toast.t = setTimeout(function () { t.hidden = true; }, 2500); }
@@ -141,9 +150,10 @@
     var pc = window.PLAN_COMPTABLE || [], parents = {};
     pc.forEach(function (r) { if (r.parent) parents[r.parent] = 1; });
     var det = pc.filter(function (r) { return !parents[r.code]; }); if (!det.length) det = pc;
-    var cl2 = det.filter(function (r) { return /^2/.test(r.code); });   // le compte d'immobilisation est un compte de classe 2 ; les autres comptes restent choisis dans tout le plan (le plan d'un projet n'a pas toujours de 28x / 681)
+    var PREF = { c_immo: /^2(?!8)/, c_amort: /^28/, c_dot: /^681/, c_plus: /^752/, c_moins: /^652/ };   // comptes proposés en priorité ; si le plan n'en contient aucun, tout le plan reste proposé
+    var cl2 = det.filter(function (r) { return /^2(?!8)/.test(r.code); });   // le compte d'immobilisation est un compte de classe 2 ; les autres comptes restent choisis dans tout le plan (le plan d'un projet n'a pas toujours de 28x / 681)
     CPT.forEach(function (k) {
-      var s = f(k), v = s.value, L = k === 'c_immo' && cl2.length ? cl2 : det;
+      var s = f(k), v = s.value, L = PREF[k] ? det.filter(function (r) { return PREF[k].test(r.code); }) : []; if (!L.length) L = k === 'c_immo' && cl2.length ? cl2 : det;
       s.innerHTML = '<option value="">— Sélectionner —</option>' + L.map(function (r) { return '<option value="' + esc(r.code) + '">' + esc(r.code + ' — ' + r.libelle) + '</option>'; }).join('') +
         (v && !L.some(function (r) { return r.code === v; }) ? '<option value="' + esc(v) + '">' + esc(v) + '</option>' : '');
       s.value = v;
@@ -153,8 +163,15 @@
   function tauxAuto() {
     if (!f('auto').checked) return;
     var a = annees(); if (!(a > 0)) { f('taux').value = ''; return; }
-    var t = 100 / a; if (f('methode').value === 'Dégressif') t *= a <= 4 ? 1.25 : a <= 6 ? 1.75 : 2.25;
+    var t = 100 / a; if (f('methode').value === 'Dégressif') t *= coefNorme(a);
     f('taux').value = Math.min(100, Math.round(t * 100) / 100);
+  }
+  function majCoef() {
+    var deg = f('methode').value === 'Dégressif', a = annees();
+    var c = deg && a > 0 ? (f('auto').checked ? coefNorme(a) : (+f('taux').value > 0 ? Math.round(+f('taux').value * a) / 100 : '')) : '';
+    f('coef').value = c === '' ? '' : String(c).replace('.', ',');
+    q('[data-fi-coefw]').hidden = !deg;
+    var pr = f('prorata').value === 'Oui'; q('[data-fi-pbasew]').hidden = !pr; q('[data-fi-pnon]').hidden = pr;
   }
   function filtrer() {
     var F = []; qa('[data-fc]').forEach(function (e) { F[+e.dataset.fc] = e.value.trim().toLowerCase(); });
@@ -171,23 +188,25 @@
     }).join(''); filtrer();
   }
   function form(r) {
-    r = r || { code: '', lib: '', nature: 'Corporel', actif: true, desc: '', c_immo: '', c_amort: '', c_dot: '', c_sortie: '', c_plus: '', c_moins: '', amortissable: true, methode: 'Linéaire', duree: '', unite: 'Ans', taux: '', auto: true, prorata: 'Oui', debut: '', period: 'Annuel' };
+    r = r || { code: '', lib: '', nature: 'Corporel', actif: true, desc: '', c_immo: '', c_amort: '', c_dot: '', c_sortie: '', c_plus: '', c_moins: '', amortissable: true, methode: 'Linéaire', duree: '', unite: 'Ans', taux: '', auto: true, prorata: 'Oui', pbase: 'Jour réel', debut: "Date d'acquisition", period: 'Annuel', coef: '' };
     comptes();
     CHAMPS.forEach(function (k) { f(k).value = r[k] == null ? '' : r[k]; });
+    if (!f('pbase').value) f('pbase').value = 'Jour réel'; if (!f('debut').value) f('debut').value = "Date d'acquisition";
     f('actif').checked = r.actif !== false; f('amortissable').checked = r.amortissable !== false; f('auto').checked = r.auto !== false;
     if (r.auto !== false) tauxAuto();
-    effacerErreurs();
+    majCoef(); effacerErreurs();
   }
   function etat() {
     var ed = mode !== 'consultation', am = f('amortissable').checked;
     qa('[data-fi-form] input,[data-fi-form] select,[data-fi-form] textarea').forEach(function (e) { e.disabled = !ed; });
     f('code').disabled = mode !== 'creation';
     AMORT.forEach(function (k) { f(k).disabled = !ed || !am; });
-    f('taux').disabled = !ed || !am || f('auto').checked;
+    f('taux').disabled = !ed || !am || f('auto').checked; f('coef').disabled = true; f('pbase').disabled = !ed || !am || f('prorata').value !== 'Oui'; majCoef();
     qa('[data-fi-req]').forEach(function (b) { b.style.visibility = am ? '' : 'hidden'; });
     var a = q('[data-fi-actions]');
     a.querySelector('[data-fi-ajouter]').disabled = ed; a.querySelector('[data-fi-modifier]').disabled = ed || sel < 0; a.querySelector('[data-fi-supprimer]').disabled = ed || sel < 0;
     a.querySelector('[data-fi-enregistrer]').disabled = !ed; a.querySelector('[data-fi-annuler]').disabled = !ed;
+    a.querySelector('[data-fi-import]').disabled = ed;
     ['imprimer', 'pdf', 'xlsx'].forEach(function (k) { a.querySelector('[data-fi-' + k + ']').disabled = !data.length; });
   }
   function onglet(n) { qa('[data-fi-pan]').forEach(function (p) { p.hidden = p.dataset.fiPan !== n; }); qa('[data-fi-tab]').forEach(function (t) { var on = t.dataset.fiTab === n; t.classList.toggle('on', on); t.setAttribute('aria-selected', on); }); }
@@ -198,6 +217,7 @@
   tb.addEventListener('dblclick', function (e) { var tr = e.target.closest('tr[data-i]'); if (tr) { choisir(+tr.dataset.i); onglet('saisie'); } });
   f('code').addEventListener('input', function () { this.value = this.value.toUpperCase().replace(/[^A-Z0-9-]/g, ''); });
   ['duree', 'unite', 'methode', 'auto'].forEach(function (k) { f(k).addEventListener('input', function () { tauxAuto(); etat(); }); f(k).addEventListener('change', function () { tauxAuto(); etat(); }); });
+  ['prorata', 'taux'].forEach(function (k) { f(k).addEventListener('change', etat); f(k).addEventListener('input', majCoef); });
   f('amortissable').addEventListener('change', etat);
 
   function lire() {
@@ -206,6 +226,45 @@
     r.duree = r.duree === '' ? '' : +r.duree; r.taux = r.taux === '' ? '' : +r.taux;
     if (!r.amortissable) { r.duree = ''; r.taux = ''; }
     return r;
+  }
+  // importation Excel / CSV : une ligne par famille (étapes communes : voir import_assistant.js)
+  function ouiNon(t, defaut) { t = String(t == null ? '' : t).trim().toLowerCase(); return t === '' ? defaut : t === 'oui' ? true : t === 'non' ? false : null; }
+  function choixImp(t, L, defaut) { t = String(t == null ? '' : t).trim().toLowerCase(); if (!t) return defaut; for (var i = 0; i < L.length; i++) if (L[i].toLowerCase() === t) return L[i]; return null; }
+  function ligneImport(v) {
+    function g(k) { return String(v[k] == null ? '' : v[k]).trim(); }
+    var er = [], c = g('Code').toUpperCase(), lb = g('Libellé'), pc = window.PLAN_COMPTABLE || [];
+    if (!c) er.push('Code obligatoire'); else if (c.length > 12 || /[^A-Z0-9-]/.test(c)) er.push('Code invalide (12 caractères au plus : lettres, chiffres, tiret)');
+    if (!lb) er.push('Libellé obligatoire'); else if (lb.length > 80) er.push('Libellé trop long (80 caractères au plus)');
+    var nature = choixImp(g('Nature'), ['Corporel', 'Incorporel', 'Financier'], 'Corporel'); if (!nature) er.push('Nature « ' + g('Nature') + ' » invalide (Corporel, Incorporel ou Financier)');
+    var am = ouiNon(g('Amortissable'), true); if (am === null) er.push('Amortissable « ' + g('Amortissable') + ' » invalide (Oui ou Non)');
+    var st = choixImp(g('Statut'), ['Actif', 'Inactif'], 'Actif'); if (!st) er.push('Statut « ' + g('Statut') + ' » invalide (Actif ou Inactif)');
+    var cpt = {};
+    [['c_immo', 'Compte d’immobilisation', true], ['c_amort', 'Compte d’amortissement', am !== false], ['c_dot', 'Compte de dotation', am !== false], ['c_sortie', 'Compte de sortie', false], ['c_plus', 'Compte de plus-value', false], ['c_moins', 'Compte de moins-value', false]].forEach(function (d) {
+      var x = g(d[1]); cpt[d[0]] = x;
+      if (!x) { if (d[2]) er.push(d[1] + ' obligatoire'); }
+      else if (pc.length && !pc.some(function (r) { return r.code === x; })) er.push(d[1] + ' « ' + x + ' » absent du plan comptable');
+    });
+    if (am !== false && cpt.c_amort && cpt.c_amort === cpt.c_immo) er.push('Le compte d’amortissement doit différer du compte d’immobilisation');
+    var me = choixImp(g('Méthode'), ['Linéaire', 'Dégressif'], 'Linéaire'); if (!me) er.push('Méthode « ' + g('Méthode') + ' » invalide (Linéaire ou Dégressif)');
+    var un = choixImp(g('Unité'), ['Ans', 'Mois'], 'Ans'); if (!un) er.push('Unité « ' + g('Unité') + ' » invalide (Ans ou Mois)');
+    var pr = choixImp(g('Prorata'), ['Oui', 'Non'], 'Oui'); if (!pr) er.push('Prorata « ' + g('Prorata') + ' » invalide (Oui ou Non)');
+    var pe = choixImp(g('Périodicité'), ['Annuel', 'Semestriel', 'Trimestriel', 'Mensuel'], 'Annuel'); if (!pe) er.push('Périodicité « ' + g('Périodicité') + ' » invalide (Annuel, Semestriel, Trimestriel ou Mensuel)');
+    var du = g('Durée').replace(',', '.'), ta = g('Taux').replace(',', '.').replace('%', '').trim();
+    if (am !== false) {
+      if (!(du !== '' && +du >= 1 && +du === Math.floor(+du))) er.push('Durée : entier supérieur ou égal à 1 obligatoire');
+      if (ta !== '' && !(+ta > 0 && +ta <= 100)) er.push('Taux : nombre compris entre 0 et 100 (vide = calcul automatique)');
+    }
+    var r = { code: c, lib: lb, nature: nature || 'Corporel', desc: g('Description'), actif: st !== 'Inactif', amortissable: am !== false, c_immo: cpt.c_immo, c_amort: am !== false ? cpt.c_amort : '', c_dot: am !== false ? cpt.c_dot : '', c_sortie: cpt.c_sortie, c_plus: cpt.c_plus, c_moins: cpt.c_moins, methode: me || 'Linéaire', unite: un || 'Ans', prorata: pr || 'Oui', pbase: 'Jour réel', debut: "Date d'acquisition", coef: '', period: pe || 'Annuel', duree: '', taux: '', auto: true };
+    if (am !== false && !er.length) {
+      r.duree = +du; r.auto = ta === '';
+      if (r.auto) { var a = r.unite === 'Mois' ? r.duree / 12 : r.duree, t = 100 / a; if (r.methode === 'Dégressif') t *= a <= 4 ? 1.25 : a <= 6 ? 1.75 : 2.25; r.taux = Math.min(100, Math.round(t * 100) / 100); } else r.taux = +ta;
+    }
+    return { cle: c, doublon: !!c && data.some(function (x) { return x.code === c; }), erreurs: er, data: r };
+  }
+  function integrerImport(L) {
+    var cr = 0, mj = 0;
+    L.forEach(function (x) { var i = -1; data.forEach(function (y, k) { if (y.code === x.data.code) i = k; }); if (i >= 0) { data[i] = x.data; mj++; } else { data.push(x.data); cr++; } });
+    sel = -1; liste(); form(null); etat(); publier(); toast(cr + ' ligne(s) ajoutée(s), ' + mj + ' mise(s) à jour.');
   }
   function enregistrer() {
     var r = lire(), ok = true, ancien = mode === 'edition' ? data[sel].code : null;
@@ -227,7 +286,8 @@
     mode = 'consultation'; liste(); form(data[sel]); etat(); onglet('liste'); publier(); toast(ancien ? 'Famille modifiée.' : 'Famille enregistrée.');
   }
   function publier() {
-    window.FAMILLES_IMMOBILISATION = data.filter(function (r) { return r.actif; }).map(function (r) { return { code: r.code, libelle: r.lib, nature: r.nature, compte: r.c_immo, amortissable: r.amortissable, methode: r.methode, duree: r.duree, unite: r.unite, taux: r.taux }; });
+    sauver();
+    window.FAMILLES_IMMOBILISATION = data.filter(function (r) { return r.actif; }).map(function (r) { return { code: r.code, libelle: r.lib, nature: r.nature, compte: r.c_immo, c_amort: r.c_amort, c_dot: r.c_dot, c_sortie: r.c_sortie, c_plus: r.c_plus, c_moins: r.c_moins, amortissable: r.amortissable, methode: r.methode, duree: r.duree, unite: r.unite, taux: r.taux, coef: r.coef, prorata: r.prorata, pbase: r.pbase, debut: r.debut }; });
     window.dispatchEvent(new Event('familles-immobilisation-changed'));
   }
 
@@ -257,6 +317,34 @@
       var r = data[sel]; if (!r) return;
       if (!window.confirm('Supprimer la famille d’immobilisation « ' + r.lib + ' » ? Cette action est définitive.')) return;
       data.splice(sel, 1); sel = -1; liste(); form(null); etat(); publier(); toast('Famille supprimée.'); return;
+    }
+    if (b.hasAttribute('data-fi-import')) {
+      window.IMPORT_ASSISTANT.ouvrir({
+        titre: 'Familles d’immobilisation', fichier: 'modele_familles_immobilisation.xlsx',
+        champs: [
+          { col: 'Code', oblig: true, format: 'Unique, 12 caractères au plus (lettres, chiffres, tiret). Enregistré en majuscules.', exemple: 'IMM-001' },
+          { col: 'Libellé', oblig: true, format: 'Texte, 80 caractères au plus.', exemple: 'Matériel informatique' },
+          { col: 'Nature', oblig: false, format: 'Corporel, Incorporel ou Financier. Par défaut : Corporel.', exemple: 'Corporel' },
+          { col: 'Compte d’immobilisation', oblig: true, format: 'Compte du plan comptable (classe 2).', exemple: '2183' },
+          { col: 'Compte d’amortissement', oblig: false, format: 'Obligatoire si la famille est amortissable ; différent du compte d’immobilisation.', exemple: '28183' },
+          { col: 'Compte de dotation', oblig: false, format: 'Obligatoire si la famille est amortissable.', exemple: '68112' },
+          { col: 'Compte de sortie', oblig: false, format: 'Compte du plan comptable.', exemple: '' },
+          { col: 'Compte de plus-value', oblig: false, format: 'Compte du plan comptable.', exemple: '' },
+          { col: 'Compte de moins-value', oblig: false, format: 'Compte du plan comptable.', exemple: '' },
+          { col: 'Amortissable', oblig: false, format: 'Oui ou Non. Par défaut : Oui.', exemple: 'Oui' },
+          { col: 'Méthode', oblig: false, format: 'Linéaire ou Dégressif. Par défaut : Linéaire.', exemple: 'Linéaire' },
+          { col: 'Durée', oblig: false, format: 'Entier ≥ 1 (obligatoire si amortissable).', exemple: '5' },
+          { col: 'Unité', oblig: false, format: 'Ans ou Mois. Par défaut : Ans.', exemple: 'Ans' },
+          { col: 'Taux', oblig: false, format: 'Entre 0 et 100 ; vide = calcul automatique d’après la durée.', exemple: '20' },
+          { col: 'Prorata', oblig: false, format: 'Oui ou Non. Par défaut : Oui.', exemple: 'Oui' },
+          { col: 'Périodicité', oblig: false, format: 'Annuel, Semestriel, Trimestriel ou Mensuel. Par défaut : Annuel.', exemple: 'Annuel' },
+          { col: 'Statut', oblig: false, format: 'Actif ou Inactif. Par défaut : Actif.', exemple: 'Actif' },
+          { col: 'Description', oblig: false, format: 'Texte libre.', exemple: '' }
+        ],
+        exemples: [['IMM-001', 'Matériel informatique', 'Corporel', '2183', '28183', '68112', '', '', '', 'Oui', 'Linéaire', '5', 'Ans', '20', 'Oui', 'Annuel', 'Actif', '']],
+        ligne: ligneImport, integrer: integrerImport
+      });
+      return;
     }
     if (b.hasAttribute('data-fi-imprimer')) { imprimer(); return; }
     if (b.hasAttribute('data-fi-pdf')) { exporter('pdf'); return; }

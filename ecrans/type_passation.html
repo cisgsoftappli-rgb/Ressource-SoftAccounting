@@ -1,7 +1,8 @@
 <!--
   Écran « Type de passation » (Gestion des contrats › Paramétrages › Type de passation) — onglets Saisie / Liste : liste filtrable (Code, Libellé, Utilisation, Statut),
   saisie (Code *, Libellé *, case « Actif »). Boutons dans la barre d'actions (Ajouter, Modifier, Supprimer, Enregistrer, Annuler, Importer, Imprimer, PDF, Excel).
-  Généré par gen_types.cjs (modèle types_modele.tpl) : ne pas modifier à la main. Données en mémoire ; « Utilisation » = « – » (aucun contrat dans la maquette).
+  ATTENTION : ce fichier a évolué directement (assistant d'import commun, bouton « Synchroniser avec Soft e-Procurement ») et ne correspond plus au modèle types_modele.tpl :
+  ne pas relancer gen_types.cjs sans y avoir reporté ces changements (il les écraserait). Données en mémoire ; « Utilisation » = « – » (aucun contrat dans la maquette).
   S'appuie sur les styles bp-* de l'écran « Paramétrage du bilan ». Ne pas nommer de fonction « $$ » (build.cjs).
 -->
 <style>
@@ -22,6 +23,7 @@
     <button type="button" data-typa-enregistrer>Enregistrer</button>
     <button type="button" data-typa-annuler>Annuler</button>
     <button type="button" data-typa-importer>Importer</button>
+    <button type="button" data-typa-sync><i class="ti ti-refresh"></i>Synchroniser avec Soft e-Procurement</button>
     <button type="button" data-typa-imprimer>Imprimer</button>
     <button type="button" data-typa-pdf>PDF</button>
     <button type="button" data-typa-xlsx>Excel (XLSX)</button>
@@ -90,7 +92,7 @@
     qa('[data-typa-form] input').forEach(function (e) { e.disabled = !ed; });
     q('[data-f=code]').disabled = mode !== 'creation';
     var a = q('[data-typa-actions]');
-    a.querySelector('[data-typa-ajouter]').disabled = ed; a.querySelector('[data-typa-importer]').disabled = ed;
+    a.querySelector('[data-typa-ajouter]').disabled = ed; a.querySelector('[data-typa-importer]').disabled = ed; a.querySelector('[data-typa-sync]').disabled = ed;
     a.querySelector('[data-typa-modifier]').disabled = ed || sel < 0; a.querySelector('[data-typa-supprimer]').disabled = ed || sel < 0;
     a.querySelector('[data-typa-enregistrer]').disabled = !ed; a.querySelector('[data-typa-annuler]').disabled = !ed;
     ['imprimer', 'pdf', 'xlsx'].forEach(function (k) { a.querySelector('[data-typa-' + k + ']').disabled = !data.length; });
@@ -150,8 +152,32 @@
     };
     fr.readAsText(f);
   });
+  // synchronisation avec Soft e-Procurement : référentiel des types de passation (fenêtre partagée ecrans/eprocurement.js ; création par code, mise à jour du libellé et du statut ; rien n'est supprimé)
+  function sansAcc(t) { return String(t == null ? '' : t).normalize('NFD').replace(/[̀-ͯ]/g, '').toLowerCase().replace(/[^a-z0-9]/g, ''); }
+  function synchroniserEproc() {
+    var EP = window.EPROCUREMENT; if (!EP) { toast('Soft e-Procurement indisponible.'); return; }
+    var L = EP.typesPassation().map(function (l) { l.statut = l.actif ? 'Actif' : 'Inactif'; return l; });
+    EP.ouvrir({
+      titre: 'Synchroniser les types de passation', intro: 'Choisissez les éléments du référentiel Soft e-Procurement à créer ou à mettre à jour dans la maquette (rapprochement par le code).',
+      lignes: L, cle: function (l) { return l.code; },
+      colonnes: [{ k: 'code', l: 'Code', mono: true }, { k: 'libelle', l: 'Libellé' }, { k: 'statut', l: 'Statut e-Procurement' }],
+      etat: function (l) { var x = data.filter(function (c) { return c.code === l.code; })[0]; if (!x) return { txt: 'Nouveau' }; return { txt: sansAcc(x.lib) === sansAcc(l.libelle) && x.actif === l.actif ? 'À jour' : 'Mise à jour' }; },
+      ok: 'Synchroniser', note: 'Rien n’est supprimé : les éléments absents d’e-Procurement sont conservés.',
+      onValider: function (S) {
+        var cr = 0, mj = 0, ok = 0;
+        S.forEach(function (l) {
+          var x = data.filter(function (c) { return c.code === l.code; })[0];
+          if (!x) { data.push({ code: l.code, lib: l.libelle, actif: l.actif, usage: 0 }); cr++; }
+          else if (sansAcc(x.lib) !== sansAcc(l.libelle) || x.actif !== l.actif) { x.lib = l.libelle; x.actif = l.actif; mj++; } else ok++;
+        });
+        mode = 'consultation'; sel = -1; liste(); form(null); etat(); onglet('liste');
+        toast('Synchronisation avec Soft e-Procurement terminée : ' + cr + ' créé(s), ' + mj + ' mis à jour' + (ok ? ', ' + ok + ' déjà à jour' : '') + '.');
+      }
+    });
+  }
   root.addEventListener('click', function (e) {
     var b = e.target.closest('button'); if (!b || b.disabled) return;
+    if (b.hasAttribute('data-typa-sync')) { synchroniserEproc(); return; }
     if (b.hasAttribute('data-typa-ajouter')) { onglet('saisie'); mode = 'creation'; sel = -1; liste(); form(null); etat(); q('[data-f=code]').focus(); return; }
     if (b.hasAttribute('data-typa-modifier')) { onglet('saisie'); mode = 'edition'; etat(); q('[data-f=lib]').focus(); return; }
     if (b.hasAttribute('data-typa-annuler')) { mode = 'consultation'; liste(); form(sel >= 0 ? data[sel] : null); etat(); return; }
