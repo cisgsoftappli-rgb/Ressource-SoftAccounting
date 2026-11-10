@@ -1,6 +1,6 @@
 <!--
   Écran « Gestion des contrats › Saisies › Fiche contrat » — onglets Saisie / Liste.
-  Saisie : Informations générales (Site, Tiers (compte général) puis Auxiliaire, dates, Statut, Numéro, Désignation, Type de marché, Type de passation)
+  Saisie : Informations générales (Site, Tiers (compte général) puis Auxiliaire, dates, Statut, Numéro, Désignation, Type de contrat, Type de passation)
   puis quatre onglets : Ventilation des montants (analytique selon les plans activés dans l'entité, montants par devise, Forex, total estimé),
   Modalités de paiement (comptant ou échelonné), Exécution (jalons) et Lettres de garantie (actif une fois le contrat identifié).
   Données : window.CONTRATS, copie localStorage softcompta.contrats. Préfixe fct / data-fct. Lit PLANS_ACTIFS, PLANS_CFG, PLANS_LIGNES, PLANS_REF, PLAN_COMPTABLE, DEVISES.
@@ -55,7 +55,7 @@
   <div class="bp-grid">
     <section class="bp-pan" aria-label="Liste des contrats" data-fct-pan="liste">
       <div class="pf-tablewrap"><table class="pf-table">
-        <thead><tr><th>Numéro</th><th>Désignation</th><th>Tiers</th><th>Type de marché</th><th>Type de passation</th><th>Date de signature</th><th class="r">Montant (MGA)</th><th>Statut</th></tr></thead>
+        <thead><tr><th>Numéro</th><th>Désignation</th><th>Tiers</th><th>Type de contrat</th><th>Type de passation</th><th>Date de signature</th><th class="r">Montant (MGA)</th><th>Statut</th></tr></thead>
         <tbody data-fct-liste></tbody>
       </table></div>
     </section>
@@ -72,7 +72,7 @@
           <label class="bp-champ s2"><span>Statut</span><select class="bp-sel" data-f="statut" disabled><option>Actif</option></select></label>
           <label class="bp-champ s4"><span>Numéro <b>*</b></span><input class="bp-in" data-f="num" maxlength="40"><span class="fct-er" data-er="num"></span></label>
           <label class="bp-champ s8"><span>Désignation <b>*</b></span><input class="bp-in" data-f="designation" maxlength="200"><span class="fct-er" data-er="designation"></span></label>
-          <label class="bp-champ s6"><span>Type de marché <b>*</b></span><select class="bp-sel" data-f="typeMarche"></select><span class="fct-er" data-er="typeMarche"></span></label>
+          <label class="bp-champ s6"><span>Type de contrat <b>*</b></span><select class="bp-sel" data-f="typeMarche"></select><span class="fct-er" data-er="typeMarche"></span></label>
           <label class="bp-champ s6"><span>Type de passation <b>*</b></span><select class="bp-sel" data-f="typePassation"></select><span class="fct-er" data-er="typePassation"></span></label>
         </div>
       </div>
@@ -155,9 +155,9 @@
   var TIERS = [['401000', 'FOURNISSEURS', [['F001', 'FOURNISSEUR A'], ['F002', 'FOURNISSEUR B'], ['F003', 'FOURNISSEUR C']]], ['404000', 'FOURNISSEURS D’IMMOBILISATIONS', [['F101', 'ENTREPRISE DE TRAVAUX 1'], ['F102', 'ENTREPRISE DE TRAVAUX 2']]], ['411000', 'CLIENTS', [['C001', 'CLIENT A']]]];
   var MARCHES = ['Travaux', 'Fournitures', 'Services courants', 'Prestations intellectuelles'], PASSATIONS = ['Appel d’offres ouvert', 'Appel d’offres restreint', 'Consultation de fournisseurs', 'Gré à gré'], MODES = ['Virement', 'Chèque', 'Espèces', 'Mobile money'];
   var data = [
-    { num: 'MP-2026-001', designation: 'Fourniture de matériel informatique', site: '01', compteTiers: '401000', tiers: 'F001', dateNO: '2026-02-10', dateSign: '2026-03-02', statut: 'Actif', typeMarche: 'Fournitures', typePassation: 'Appel d’offres ouvert',
+    { num: 'MP-2026-001', designation: 'Fourniture de matériel informatique', site: '01', compteTiers: '401000', tiers: 'F001', dateNO: '2026-02-10', dateSign: '2026-03-02', statut: 'Actif', typeMarche: 'Fournitures', typePassation: 'AOI',
       vent: [{ desc: 'Ordinateurs portables', pcg: '', avenant: false, ana: {}, mt: { MGA: 48000000 } }], mode: 'comptant', ech: [{ date: '', pct: 100 }], conditions: '', exec: { mode: 'Virement' }, lg: [] },
-    { num: 'MP-2026-002', designation: 'Réhabilitation du bâtiment annexe', site: '01', compteTiers: '404000', tiers: 'F101', dateNO: '', dateSign: '2026-05-18', statut: 'Actif', typeMarche: 'Travaux', typePassation: 'Appel d’offres restreint',
+    { num: 'MP-2026-002', designation: 'Réhabilitation du bâtiment annexe', site: '01', compteTiers: '404000', tiers: 'F101', dateNO: '', dateSign: '2026-05-18', statut: 'Actif', typeMarche: 'Travaux', typePassation: 'CR',
       vent: [{ desc: 'Lot 1 — Gros œuvre', pcg: '', avenant: false, ana: {}, mt: { MGA: 120000000 } }, { desc: 'Lot 2 — Finitions', pcg: '', avenant: false, ana: {}, mt: { MGA: 45000000 } }], mode: 'echelonne', ech: [{ date: '2026-06-30', pct: 40 }, { date: '2026-09-30', pct: 40 }, { date: '2026-12-15', pct: 20 }], conditions: '', exec: { mode: 'Virement' }, lg: [] }
   ];
   try { var sv = JSON.parse(localStorage.getItem(CLE) || 'null'); if (Array.isArray(sv)) data = sv; } catch (e) {}
@@ -168,6 +168,17 @@
   function err(n, m) { var e = q('[data-er="' + n + '"]'); if (e) { e.textContent = m; e.classList.add('show'); } var c = f(n); if (c) c.classList.add('err'); }
   function maj(s) { if (s && s.__combo && s.__combo.maj) s.__combo.maj(); }
   function publier() { window.CONTRATS = data; try { localStorage.setItem(CLE, JSON.stringify(data)); } catch (e) {} window.dispatchEvent(new Event('contrats-changed')); }
+  // type de passation : référentiel Paramétrages › Type de passation (window.TYPES_PASSATION_API) ; le contrat mémorise le CODE du type.
+  // Nouveau contrat : seuls les types actifs sont proposés ; contrat existant : son type reste affiché même s'il est devenu inactif (ou inconnu : anciennes données, contrat e-Procurement).
+  function typeP(v) { var a = window.TYPES_PASSATION_API; return a && v ? a.trouver(v) : null; }
+  function codeP(v) { var t = typeP(v); return t ? t.code : (v || ''); }
+  function libP(v) { var a = window.TYPES_PASSATION_API; return a ? a.lib(v) : (v || ''); }
+  function listeP(v) {
+    var a = window.TYPES_PASSATION_API; if (!a) return PASSATIONS.slice();
+    var L = a.actifs().map(function (t) { return [t.code, t.code + ' — ' + t.lib]; }), t = typeP(v), c = codeP(v);
+    if (v && !L.some(function (x) { return x[0] === c; })) L.push([c, t ? t.code + ' — ' + t.lib + (t.actif ? '' : ' (inactif)') : v]);
+    return L;
+  }
   function opts(l, v, vide) { return (vide ? '<option value="">' + vide + '</option>' : '') + l.map(function (x) { var c = Array.isArray(x) ? x[0] : x, t = Array.isArray(x) ? x[1] : x; return '<option value="' + esc(c) + '"' + (c === v ? ' selected' : '') + '>' + esc(t) + '</option>'; }).join(''); }
 
   // listes de choix
@@ -205,7 +216,7 @@
   // ---------- liste
   function liste() {
     q('[data-fct-liste]').innerHTML = data.length ? data.map(function (c, i) {
-      return '<tr class="fct-row' + (i === sel ? ' fct-sel' : '') + '" data-i="' + i + '"><td>' + esc(c.num) + '</td><td>' + esc(c.designation) + '</td><td>' + esc(nomTiers(c.tiers) || c.tiers) + '</td><td>' + esc(c.typeMarche) + '</td><td>' + esc(c.typePassation) + '</td><td>' + date(c.dateSign) + '</td><td class="r">' + nb(montant(c)) + '</td><td>' + esc(c.statut) + '</td></tr>';
+      return '<tr class="fct-row' + (i === sel ? ' fct-sel' : '') + '" data-i="' + i + '"><td>' + esc(c.num) + '</td><td>' + esc(c.designation) + '</td><td>' + esc(nomTiers(c.tiers) || c.tiers) + '</td><td>' + esc(c.typeMarche) + '</td><td>' + esc(libP(c.typePassation)) + '</td><td>' + date(c.dateSign) + '</td><td class="r">' + nb(montant(c)) + '</td><td>' + esc(c.statut) + '</td></tr>';
     }).join('') : '<tr><td colspan="8" class="fct-vide">Aucun enregistrement trouvé</td></tr>';
     q('[data-fct-compte]').textContent = data.length;
     majBoutons();
@@ -217,7 +228,7 @@
   function listes() {
     f('site').innerHTML = opts(sites(), cur.site); f('compteTiers').innerHTML = opts(TIERS.map(function (t) { return [t[0], t[0] + ' — ' + t[1]]; }), cur.compteTiers, '— Compte général tiers —');
     majAux();
-    f('typeMarche').innerHTML = opts(MARCHES, cur.typeMarche, 'Sélectionner'); f('typePassation').innerHTML = opts(PASSATIONS, cur.typePassation, 'Sélectionner');
+    f('typeMarche').innerHTML = opts(MARCHES, cur.typeMarche, 'Sélectionner'); cur.typePassation = codeP(cur.typePassation); f('typePassation').innerHTML = opts(listeP(cur.typePassation), cur.typePassation, 'Sélectionner');
     q('[data-x="mode"]').innerHTML = opts(MODES, (cur.exec || {}).mode, 'Sélectionner');
     ['site', 'compteTiers', 'tiers', 'typeMarche', 'typePassation'].forEach(function (n) { maj(f(n)); });
   }
@@ -350,7 +361,7 @@
     if (!cur.compteTiers) { err('compteTiers', 'Le compte général tiers est obligatoire.'); ok = false; }
     else if (!cur.tiers) { err('tiers', 'L’auxiliaire est obligatoire.'); ok = false; }
     if (!cur.dateSign) { err('dateSign', 'La date de lancement / signature est obligatoire.'); ok = false; }
-    if (!cur.typeMarche) { err('typeMarche', 'Le type de marché est obligatoire.'); ok = false; }
+    if (!cur.typeMarche) { err('typeMarche', 'Le type de contrat est obligatoire.'); ok = false; }
     if (!cur.typePassation) { err('typePassation', 'Le type de passation est obligatoire.'); ok = false; }
     if (!ok) return;
     cur.num = cur.num.trim(); cur.designation = cur.designation.trim();
@@ -370,21 +381,21 @@
       { col: 'Auxiliaire', oblig: true, format: 'Code du tiers pour ce compte.', exemple: TIERS[0][2][0][0], alias: ['Tiers'] },
       { col: 'Date non objection', oblig: false, format: 'jj/mm/aaaa.', exemple: '' },
       { col: 'Date signature', oblig: true, format: 'jj/mm/aaaa.', exemple: '02/03/2026', alias: ['Date lancement / signature'] },
-      { col: 'Type de marché', oblig: true, format: MARCHES.join(', ') + '.', exemple: MARCHES[1] },
-      { col: 'Type de passation', oblig: true, format: PASSATIONS.join(', ') + '.', exemple: PASSATIONS[0] },
+      { col: 'Type de contrat', oblig: true, format: MARCHES.join(', ') + '.', exemple: MARCHES[1] },
+      { col: 'Type de passation', oblig: true, format: 'Code ou libellé d’un type de passation actif (' + listeP('').map(function (x) { return x[0]; }).join(', ') + ').', exemple: (listeP('')[0] || [''])[0] },
       { col: 'Description ligne', oblig: false, format: 'Libellé de la ligne de ventilation.', exemple: 'Bureaux et chaises', alias: ['Ligne'] },
       { col: 'Compte PCG', oblig: false, format: 'Compte de charge ou d’immobilisation existant.', exemple: '' },
       { col: 'Montant', oblig: true, format: 'Montant de la ligne en MGA, strictement positif.', exemple: '12000000', alias: ['Montant MGA'] }];
     return { titre: 'Importer les contrats', fichier: 'modele_contrats.xlsx', champs: ch, exemples: [ch.map(function (c) { return c.exemple; })],
       ligne: function (v) {
         var er = [], num = String(v['Numéro'] || '').trim(), des = String(v['Désignation'] || '').trim(), site = String(v['Site'] || '').trim() || (st[0] || '01'), ct = String(v['Compte tiers'] || '').trim(), ax = String(v['Auxiliaire'] || '').trim(),
-          dno = dateImp(v['Date non objection']), dsi = dateImp(v['Date signature']), tm = MARCHES.filter(function (x) { return x.toLowerCase() === String(v['Type de marché'] || '').trim().toLowerCase(); })[0], tp = PASSATIONS.filter(function (x) { return x.toLowerCase() === String(v['Type de passation'] || '').trim().toLowerCase(); })[0],
+          dno = dateImp(v['Date non objection']), dsi = dateImp(v['Date signature']), tm = MARCHES.filter(function (x) { return x.toLowerCase() === String(v['Type de contrat'] || '').trim().toLowerCase(); })[0], tp = (function () { var s = String(v['Type de passation'] || '').trim().toLowerCase(), t = typeP(s), L = listeP(''); if (!window.TYPES_PASSATION_API) return PASSATIONS.filter(function (x) { return x.toLowerCase() === s; })[0]; return t && L.some(function (x) { return x[0] === t.code; }) ? t.code : undefined; })(),
           pc = String(v['Compte PCG'] || '').trim(), mt = parseFloat(String(v['Montant'] == null ? '' : v['Montant']).replace(/[\s\u00a0]/g, '').replace(',', '.'));
         if (!num) er.push('Numéro obligatoire'); else if (num.length > 40) er.push('Numéro trop long (40 caractères au plus)'); if (!des) er.push('Désignation obligatoire'); else if (des.length > 200) er.push('Désignation trop longue (200 caractères au plus)');
         if (st.indexOf(site) < 0) er.push('Site « ' + site + ' » inconnu');
         var t = TIERS.filter(function (x) { return x[0] === ct; })[0]; if (!ct) er.push('Compte tiers obligatoire'); else if (!t) er.push('Compte tiers « ' + ct + ' » inconnu'); else if (!ax) er.push('Auxiliaire obligatoire'); else if (!t[2].some(function (x) { return x[0] === ax; })) er.push('Auxiliaire « ' + ax + ' » inconnu pour le compte ' + ct);
         if (String(v['Date non objection'] || '').trim() && !dno) er.push('Date de non-objection invalide (jj/mm/aaaa)'); if (!dsi) er.push('Date de signature obligatoire (jj/mm/aaaa)');
-        if (!tm) er.push('Type de marché « ' + (v['Type de marché'] || '') + ' » invalide (' + MARCHES.join(', ') + ')'); if (!tp) er.push('Type de passation « ' + (v['Type de passation'] || '') + ' » invalide (' + PASSATIONS.join(', ') + ')');
+        if (!tm) er.push('Type de contrat « ' + (v['Type de contrat'] || '') + ' » invalide (' + MARCHES.join(', ') + ')'); if (!tp) er.push('Type de passation « ' + (v['Type de passation'] || '') + ' » inconnu ou inactif (' + listeP('').map(function (x) { return x[0]; }).join(', ') + ')');
         if (pc && pcg.indexOf(pc) < 0) er.push('Compte PCG « ' + pc + ' » inconnu'); if (!(mt > 0)) er.push('Montant invalide (nombre positif)');
         return { cle: num + ' · ' + String(v['Description ligne'] || des), doublon: !er.length && data.some(function (c) { return c.num.toLowerCase() === num.toLowerCase(); }), erreurs: er,
           data: { num: num, designation: des, site: site, compteTiers: ct, tiers: ax, dateNO: dno, dateSign: dsi, typeMarche: tm, typePassation: tp, desc: String(v['Description ligne'] || '').trim() || des, pcg: pc, montant: mt } };
@@ -406,34 +417,34 @@
   q('[data-fct-ajouter]').addEventListener('click', ajouter); q('[data-fct-modifier]').addEventListener('click', modifier); q('[data-fct-supprimer]').addEventListener('click', supprimer);
   q('[data-fct-enregistrer]').addEventListener('click', enregistrer); q('[data-fct-annuler]').addEventListener('click', annuler);
 
-  // ---------- synchronisation avec Soft e-Procurement : récupération d'un marché attribué (window.EPROCUREMENT, fenêtre partagée ecrans/eprocurement.js)
-  // Depuis la liste : ouvre une nouvelle fiche préremplie ; depuis la saisie : remplit la fiche en cours. Numéro, désignation, dates, types de marché et de passation,
-  // attributaire (rapproché des tiers par son nom) et, si la ventilation est vide, une ligne au montant du marché. Les valeurs absentes des listes y sont ajoutées.
+  // ---------- synchronisation avec Soft e-Procurement : récupération d'un contrat attribué (window.EPROCUREMENT, fenêtre partagée ecrans/eprocurement.js)
+  // Depuis la liste : ouvre une nouvelle fiche préremplie ; depuis la saisie : remplit la fiche en cours. Numéro, désignation, dates, types de contrat et de passation,
+  // attributaire (rapproché des tiers par son nom) et, si la ventilation est vide, une ligne au montant du contrat. Les valeurs absentes des listes y sont ajoutées.
   function appliquerEproc(m, saisie) {
     if (!saisie) { cur = vide(); edit = -1; sous('vent'); }
-    else if (cur && (String(cur.num).trim() || String(cur.designation).trim()) && String(cur.num).trim().toLowerCase() !== m.ref.toLowerCase() && !window.confirm('Remplacer les informations déjà saisies par celles du marché « ' + m.ref + ' » ?')) return;
+    else if (cur && (String(cur.num).trim() || String(cur.designation).trim()) && String(cur.num).trim().toLowerCase() !== m.ref.toLowerCase() && !window.confirm('Remplacer les informations déjà saisies par celles du contrat « ' + m.ref + ' » ?')) return;
     cur.num = m.ref; cur.designation = m.objet; cur.dateNO = m.dateNO || ''; cur.dateSign = m.dateSign || '';
     if (m.typeMarche && MARCHES.indexOf(m.typeMarche) < 0) MARCHES.push(m.typeMarche); cur.typeMarche = m.typeMarche || cur.typeMarche;
-    if (m.typePassation && PASSATIONS.indexOf(m.typePassation) < 0) PASSATIONS.push(m.typePassation); cur.typePassation = m.typePassation || cur.typePassation;
+    if (!window.TYPES_PASSATION_API && m.typePassation && PASSATIONS.indexOf(m.typePassation) < 0) PASSATIONS.push(m.typePassation); cur.typePassation = codeP(m.typePassation) || cur.typePassation;
     var trouve = null; TIERS.forEach(function (t) { t[2].forEach(function (x) { if (String(x[1]).toUpperCase() === String(m.attributaire).toUpperCase()) trouve = [t[0], x[0]]; }); });
     if (trouve) { cur.compteTiers = trouve[0]; cur.tiers = trouve[1]; }
     var vent = !(cur.vent || []).length; if (vent) cur.vent = [{ desc: m.objet, pcg: '', avenant: false, ana: {}, mt: { MGA: m.montant } }];
     cur.eproc = { ref: m.ref, date: new Date().toISOString().slice(0, 10) };
     charger(); tab('saisie');
-    msg('Marché ' + m.ref + ' récupéré depuis Soft e-Procurement' + (trouve ? '' : ' — attributaire « ' + m.attributaire + ' » introuvable dans les tiers : sélectionnez-le') + (vent ? ' ; montant ' + nb(m.montant) + ' repris en ventilation (renseignez le PCG)' : '') + '. Vérifiez puis enregistrez.');
+    msg('Contrat ' + m.ref + ' récupéré depuis Soft e-Procurement' + (trouve ? '' : ' — attributaire « ' + m.attributaire + ' » introuvable dans les tiers : sélectionnez-le') + (vent ? ' ; montant ' + nb(m.montant) + ' repris en ventilation (renseignez le PCG)' : '') + '. Vérifiez puis enregistrez.');
   }
   function synchroniserEproc() {
     var EP = window.EPROCUREMENT; if (!EP) { msg('Soft e-Procurement indisponible.'); return; }
     var saisie = !q('[data-fct-pan="saisie"]').hidden, courant = saisie && cur ? String(cur.num || '').trim().toLowerCase() : '';
     EP.ouvrir({
-      titre: 'Récupérer un marché depuis Soft e-Procurement', intro: saisie ? 'Le marché choisi remplit la fiche contrat en cours de saisie.' : 'Le marché choisi ouvre une nouvelle fiche contrat préremplie.',
+      titre: 'Récupérer un contrat depuis Soft e-Procurement', intro: saisie ? 'Le contrat choisi remplit la fiche contrat en cours de saisie.' : 'Le contrat choisi ouvre une nouvelle fiche contrat préremplie.',
       lignes: EP.contrats(), unique: true, cle: function (l) { return l.ref; },
-      colonnes: [{ k: 'ref', l: 'N° de marché', mono: true }, { k: 'objet', l: 'Objet' }, { k: 'attributaire', l: 'Attributaire' }, { k: 'typePassation', l: 'Type de passation' }, { k: 'dateSign', l: 'Signature', fmt: 'date' }, { k: 'montant', l: 'Montant', fmt: 'montant', r: true }],
+      colonnes: [{ k: 'ref', l: 'N° de contrat', mono: true }, { k: 'objet', l: 'Objet' }, { k: 'attributaire', l: 'Attributaire' }, { k: 'typePassation', l: 'Type de passation' }, { k: 'dateSign', l: 'Signature', fmt: 'date' }, { k: 'montant', l: 'Montant', fmt: 'montant', r: true }],
       etat: function (l) {
         var ref = l.ref.toLowerCase(); if (!data.some(function (c) { return String(c.num).toLowerCase() === ref; })) return { txt: 'Nouveau' };
         return courant === ref ? { txt: 'Mise à jour' } : { txt: 'Déjà présent', actif: false };
       },
-      ok: 'Récupérer le marché', note: 'Un marché déjà enregistré dans la maquette n’est pas proposé de nouveau.',
+      ok: 'Récupérer le contrat', note: 'Un contrat déjà enregistré dans la maquette n’est pas proposé de nouveau.',
       onValider: function (S) { appliquerEproc(S[0], saisie); }
     });
   }

@@ -1,7 +1,7 @@
 <!--
   Écran « Gestion des cours › Conversion » (Comptabilité générale) — conversion en devises des montants à partir des cours saisis dans « Gestion des cours › Saisie » (window.COURS).
   Disposition : période du / au, Site et Journaux (sélections multiples de la charte : panneau avec filtres Code et Libellé, case à cocher par ligne et option « Tous » ;
-  pastilles « Tous sélectionnés (n) »), « Choix des fichiers » (écritures comptables, à-nouveaux, immobilisations, marchés : case + zone de synthèse), « Monnaies »
+  pastilles « Tous sélectionnés (n) »), « Choix des fichiers » (écritures comptables, à-nouveaux, immobilisations, contrats : case + zone de synthèse), « Monnaies »
   (monnaie des rapports = Devise 1 de l'entité ; « Convertir uniquement les montants nuls »). Toutes les devises de l'entité (Devise 1 à 3) sont converties.
   « Convertir » (barre d'actions, CFG « conversion ») contrôle la saisie, vérifie qu'un cours existe pour chaque devise à la fin de période, demande confirmation, affiche le résultat
   (volumes simulés) et l'ajoute à l'historique (localStorage softcompta.conversions). Préfixe cv- / data-cv. S'appuie sur les styles bp-* et cb-* (combo_plans.js). Ne pas nommer de fonction « $$ » (build.cjs).
@@ -99,7 +99,7 @@
         <label class="cvn-tile c3"><input type="checkbox" data-cv-el="compta" checked><span class="chk">✓</span><span class="ic"><i class="ti ti-table"></i></span><b>Comptabilité générale</b><span class="d">Écritures de la période sélectionnée</span><div class="meta" data-cv-meta="compta"></div><input type="hidden" data-cv-info="compta"></label>
         <label class="cvn-tile c3"><input type="checkbox" data-cv-el="anouveaux"><span class="chk">✓</span><span class="ic"><i class="ti ti-refresh"></i></span><b>À-nouveaux</b><span class="d">Soldes d’ouverture de l’exercice</span><div class="meta" data-cv-meta="anouveaux"></div><input type="hidden" data-cv-info="anouveaux"></label>
         <label class="cvn-tile c3"><input type="checkbox" data-cv-el="immo"><span class="chk">✓</span><span class="ic"><i class="ti ti-building"></i></span><b>Immobilisations</b><span class="d">Valeurs d’acquisition et amortissements</span><div class="meta" data-cv-meta="immo"></div><input type="hidden" data-cv-info="immo"></label>
-        <label class="cvn-tile c3"><input type="checkbox" data-cv-el="marches"><span class="chk">✓</span><span class="ic"><i class="ti ti-file-text"></i></span><b>Marchés</b><span class="d">Contrats et ventilations des montants</span><div class="meta" data-cv-meta="marches"></div><input type="hidden" data-cv-info="marches"></label>
+        <label class="cvn-tile c3"><input type="checkbox" data-cv-el="marches"><span class="chk">✓</span><span class="ic"><i class="ti ti-file-text"></i></span><b>Contrats</b><span class="d">Ventilations des montants des fiches contrat</span><div class="meta" data-cv-meta="marches"></div><input type="hidden" data-cv-info="marches"></label>
       </div>
     </div>
     <div class="cv-card">
@@ -136,7 +136,7 @@
   var root = document.querySelector('[data-cv]'); if (!root) return;
   function q(s) { return root.querySelector(s); } function qa(s) { return [].slice.call(root.querySelectorAll(s)); }
   function esc(s) { return String(s == null ? '' : s).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;'); }
-  var EL = { compta: 'Comptabilité générale (écritures de la période)', anouveaux: 'À-nouveaux', immo: 'Mouvements des immobilisations', marches: 'Ventilations de fiches marchés' };
+  var EL = { compta: 'Comptabilité générale (écritures de la période)', anouveaux: 'À-nouveaux', immo: 'Mouvements des immobilisations', marches: 'Ventilations de fiches contrat' };
   var CLE = 'softcompta.conversions', hist = [];
   try { var sv = JSON.parse(localStorage.getItem(CLE) || 'null'); if (Array.isArray(sv)) hist = sv; } catch (e) {}
   function nb(v) { return Math.round(v).toLocaleString('fr-FR'); }
@@ -215,7 +215,7 @@
   function infos() {
     var an = Object.keys(window.A_NOUVEAUX || {}).length, du = q('[data-cv-du]').value, au = q('[data-cv-au]').value, txt = {
       compta: MS.journaux ? 'Écritures du ' + date(du) + ' au ' + date(au) + ' · ' + nbSel(MS.journaux) + ' journal(aux)' : '',
-      anouveaux: an + ' jeu(x) d’à-nouveaux en mémoire', immo: 'Mouvements des immobilisations de la période', marches: 'Ventilations des fiches marchés de la période' };
+      anouveaux: an + ' jeu(x) d’à-nouveaux en mémoire', immo: 'Mouvements des immobilisations de la période', marches: 'Ventilations des fiches contrat de la période' };
     qa('[data-cv-info]').forEach(function (i) { var c = q('[data-cv-el="' + i.dataset.cvInfo + '"]'); i.value = c && c.checked ? txt[i.dataset.cvInfo] : ''; });
     q('[data-cv-monrap]').textContent = locale();
     recap();
@@ -229,7 +229,7 @@
     S('per', date(du) + ' → ' + date(au));
     S('sites', nbSel(MS.site) === MS.site.items.length ? 'Tous (' + nbSel(MS.site) + ')' : nbSel(MS.site) + ' / ' + MS.site.items.length);
     S('jnl', nbSel(MS.journaux) === MS.journaux.items.length ? 'Tous (' + nbSel(MS.journaux) + ')' : nbSel(MS.journaux) + ' / ' + MS.journaux.items.length);
-    S('data', els.length ? els.map(function (e) { return { compta: 'Comptabilité générale', anouveaux: 'À-nouveaux', immo: 'Immobilisations', marches: 'Marchés' }[e]; }).join(', ') : '—');
+    S('data', els.length ? els.map(function (e) { return { compta: 'Comptabilité générale', anouveaux: 'À-nouveaux', immo: 'Immobilisations', marches: 'Contrats' }[e]; }).join(', ') : '—');
     S('cur', DS.join(', ') || '—'); S('mode', nuls ? 'Montants nuls uniquement' : 'Tous les montants');
     var ok = du && au && du <= au;
     if (ok) {

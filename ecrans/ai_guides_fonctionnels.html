@@ -225,9 +225,9 @@
       impacts: ['Les états lisent les soldes des comptes : une écriture ou un à nouveau modifie immédiatement les états.', 'Ils alimentent l’analyse financière (ratios) et le tableau emplois ressources du RSF.'],
       erreurs: ['Compte non rattaché à une ligne : l’état est déséquilibré.'], l: [['bilparam', 'Bilan'], ['crparam', 'Compte de résultat'], ['erparam', 'Emplois et ressources'], ['tftparam', 'Flux de trésorerie']] },
     { id: 'contrats', t: 'Gestion des contrats', mod: 'contrats', k: /contrats?|passation|march[ée]|reliquats?/,
-      but: 'Suivre les contrats et marchés : types, fiche, reliquats et exécution.',
+      but: 'Suivre les contrats : types, fiche, reliquats et exécution.',
       roles: 'Gestionnaire projets / Comptable (réalisent) ; Contrôleur de gestion (suit).', pre: ['Produit autorisant le module (absent de SoftAccounting Entreprise).'],
-      etapes: [['Créer les types de passation et de marché.', ['passation', 'Types de passation']], ['Créer la fiche contrat (tiers, montant, dates, rattachement à la convention).', ['fichecontrat', 'Fiche contrat']], ['Porter le numéro de contrat sur les écritures de dépense à la saisie.', null], ['Générer les reliquats puis suivre l’exécution dans Suivi des contrats et Détail d’un contrat.', ['suivicontrats', 'Suivi des contrats']]],
+      etapes: [['Créer les types de passation et de contrat.', ['passation', 'Types de passation']], ['Créer la fiche contrat (tiers, montant, dates, rattachement à la convention).', ['fichecontrat', 'Fiche contrat']], ['Porter le numéro de contrat sur les écritures de dépense à la saisie.', null], ['Générer les reliquats puis suivre l’exécution dans Suivi des contrats et Détail d’un contrat.', ['suivicontrats', 'Suivi des contrats']]],
       impacts: ['L’exécution se calcule à partir des écritures portant le numéro du contrat.', 'Les contrats alimentent les états de dépense des conventions.'],
       erreurs: ['Écriture sans numéro de contrat : non comptée dans l’exécution.'], l: [['fichecontrat', 'Fiche contrat'], ['suivicontrats', 'Suivi des contrats']] },
     { id: 'projets', t: 'Projets et bailleurs : de la convention à l’état de dépense', mod: 'projets', k: /projets?|bailleurs?|conventions?|proc[ée]dures? financi[èe]res?|[ée]tat de d[ée]pense|r[ée]gularisation|\bdrf\b|\brfi\b|\bsoe\b|\bida\b|\bfida\b|budget de la convention|historique des demandes/,
@@ -353,9 +353,9 @@
       util: [{ t: 'Édition du bilan', ecran: 'biledit', etapes: [['Critères', 'choisir l’exercice et la période.'], ['Éditer', 'lancer l’édition puis contrôler l’équilibre.'], ['Exporter', 'imprimer ou exporter.']] }],
       regles: ['Compte non rattaché : l’état est déséquilibré.', 'Les états suivent les soldes : toute écriture les modifie.'] },
     contrats: {
-      def: ['La gestion des contrats suit les marchés et conventions. Elle remplit les fonctions suivantes :', 'Types de passation et de marché.', 'Fiche contrat : tiers, montant, dates, rattachement.', 'Génération des reliquats.', 'Suivi et détail de l’exécution.'],
+      def: ['La gestion des contrats suit les contrats et conventions. Elle remplit les fonctions suivantes :', 'Types de passation et de contrat.', 'Fiche contrat : tiers, montant, dates, rattachement.', 'Génération des reliquats.', 'Suivi et détail de l’exécution.'],
       imp: ['Exécution financière des contrats suivie en temps réel.', 'Alimentation des états de dépense des conventions.'],
-      param: [{ t: 'Types de passation et de marché', ecran: 'passation', etapes: [['Ajouter', 'un type.'], ['Enregistrer', 'le type ; répéter pour les types de marché.']] }],
+      param: [{ t: 'Types de passation et de contrat', ecran: 'passation', etapes: [['Ajouter', 'un type.'], ['Enregistrer', 'le type ; répéter pour les types de contrat.']] }],
       util: [{ t: 'Fiche contrat', ecran: 'fichecontrat', etapes: [['Ajouter', 'une fiche contrat.'], ['Renseigner', 'le tiers, le montant, les dates et la convention.'], ['Enregistrer', 'la fiche.']] }, { t: 'Suivi des contrats', ecran: 'suivicontrats', etapes: [['Critères', 'choisir la période et les contrats.'], ['Lire', 'l’exécution calculée depuis les écritures portant le numéro de contrat.']] }],
       regles: ['Numéro de contrat : à porter sur les écritures de dépense, sinon elles ne sont pas comptées.'] },
     projets: {

@@ -25,10 +25,19 @@
     '.ia-dbl{margin:14px 0 0;padding:12px 14px;border:1px solid #D5DBE5;border-radius:8px}.ia-dbl legend{padding:0 6px;font-size:12px;font-weight:700;color:#0B1332;text-transform:uppercase}.ia-dbl label{display:flex;align-items:flex-start;gap:8px;margin:6px 0;font-size:13px;cursor:pointer}.ia-dbl label span small{display:block;color:#5B606D;font-size:12px}.ia-dbl input{margin-top:3px;accent-color:#2E427B}' +
     '.ia-kpi{display:flex;flex-wrap:wrap;gap:12px;margin-bottom:12px}.ia-kpi div{flex:1 1 140px;padding:10px 14px;border:1px solid #E9EBF0;border-radius:8px;background:#fff}.ia-kpi small{display:block;font-size:11px;text-transform:uppercase;color:#5B606D}.ia-kpi b{font-size:20px;color:#0B1332}.ia-kpi .ko b{color:#B63132}' +
     '.ia-tabs{display:flex;gap:4px;border-bottom:1px solid #E9EBF0;margin-bottom:10px}.ia-tabs button{padding:8px 14px;border:0;border-bottom:3px solid transparent;background:none;color:#5B606D;font-weight:600;font-size:13px;cursor:pointer}.ia-tabs button.on{color:#2E427B;border-bottom-color:#2E427B}.ia-tabs .n{display:inline-block;margin-left:6px;padding:0 8px;border-radius:10px;background:#E9EBF0;font-size:11px}.ia-tabs button.an .n{background:#FDE4E1;color:#B63132}' +
+    '.ia-hf{display:flex;align-items:center;gap:8px;margin:0 0 10px;font-size:13px;color:#0B1332}.ia-s{display:inline-block;padding:1px 8px;border-radius:10px;font-size:11px;font-weight:700;white-space:nowrap}.ia-s.ok{background:#ECFDF5;color:#047857}.ia-s.ko{background:#FFF7ED;color:#9A3412}.ia-t tr.ia-hr{cursor:pointer}.ia-t tr.ia-hr:hover td,.ia-t tr.ia-hr.on td{background:#F4F7FE}.ia-det{margin-top:12px}.ia-det h3{margin:0 0 6px;font-size:13px;color:#2E427B}' +
     '.ia-sc{max-height:340px;overflow:auto;border:1px solid #E9EBF0;border-radius:8px}.ia-vide{padding:22px;text-align:center;color:#5B606D;font-size:13px}.ia-er{margin-top:10px;color:#B63132;font-size:13px}';
   document.head.appendChild(css);
   function esc(s) { return String(s == null ? '' : s).replace(/[&<>"]/g, function (c) { return { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c]; }); }
   function norm(t) { return String(t == null ? '' : t).normalize('NFD').replace(/[̀-ͯ]/g, '').toLowerCase().replace(/[^a-z0-9]/g, ''); }
+
+  // ---------- historique des importations ----------
+  // Chaque importation lancée est enregistrée (date, utilisateur, écran, fichier, gestion des doublons, lignes lues / retenues / rejetées, anomalies, statut « Intégrée » ou « Non intégrée »)
+  // et consultable depuis le bouton « Historique » de la fenêtre d'importation (écran courant ou tous les écrans). Conservé dans le navigateur (softcompta.importhisto), 300 entrées au plus.
+  var HK = 'softcompta.importhisto';
+  function hLire() { try { var a = JSON.parse(localStorage.getItem(HK) || '[]'); return Array.isArray(a) ? a : []; } catch (e) { return []; } }
+  function hEcrire(a) { try { localStorage.setItem(HK, JSON.stringify(a.slice(0, 300))); } catch (e) {} }
+  function hDate(iso) { var d = new Date(iso); return d.toLocaleDateString('fr-FR') + ' ' + d.toLocaleTimeString('fr-FR', { hour: '2-digit', minute: '2-digit' }); }
 
   // ---------- modèle Excel ----------
   function modele(o) {
@@ -119,7 +128,7 @@
   // ---------- fenêtre ----------
   function ouvrir(o) {
     var ov = document.createElement('div'), fichier = null, mode = 'ignorer', res = null, tab = 'ret'; ov.className = 'ia-ov';
-    var corps, pied, titre;
+    var corps, pied, titre, ou = 1, hid = null, nlues = null, tous = false;
     ov.innerHTML = '<div class="ia-md" role="dialog" aria-modal="true" aria-label="Importation"><h2></h2><div class="ia-b"></div><div class="ia-f"></div></div><input type="file" accept=".xlsx,.csv,.txt" style="display:none">';
     titre = ov.querySelector('h2'); corps = ov.querySelector('.ia-b'); pied = ov.querySelector('.ia-f');
     document.body.appendChild(ov);
@@ -128,16 +137,39 @@
     function cl(e) { if (e.key === 'Escape') { e.preventDefault(); fermer(); } }
     function taille(n) { return n > 1048576 ? (n / 1048576).toFixed(1).replace('.', ',') + ' Mo' : Math.max(1, Math.round(n / 1024)) + ' Ko'; }
 
+    // enregistre (ou met à jour, pour une même session d'importation) l'entrée d'historique
+    function enreg(statut, remplacees) {
+      var A = hLire().filter(function (x) { return x.id !== hid; });
+      var e = { id: hid || ('i' + Date.now() + Math.random().toString(36).slice(2, 6)), date: new Date().toISOString(), user: 'Super Administrateur', ecran: o.titre, fichier: fichier.name, taille: fichier.size, doublons: mode,
+        lues: nlues, retenues: res ? res.ret.length : null, rejetees: res ? res.rej.length : null, anomalies: res ? res.ano.length : null, remplacees: remplacees || 0, statut: statut,
+        rejets: res ? res.rej.slice(0, 200).map(function (x) { return { n: x.n, cause: x.cause }; }) : [], anos: res ? res.ano.slice(0, 200).map(function (x) { return { n: x.n, cause: x.cause }; }) : [] };
+      hid = e.id; A.unshift(e); hEcrire(A);
+    }
+    function nbc(x) { return x == null ? '—' : x; }
+    function etapeH(det) {
+      titre.textContent = 'Historique des importations — ' + (tous ? 'tous les écrans' : o.titre);
+      var A = hLire().filter(function (e) { return tous || e.ecran === o.titre; }), D = { ignorer: 'Ignorer', remplacer: 'Remplacer', anomalie: 'Anomalie' };
+      corps.innerHTML = '<label class="ia-hf"><input type="checkbox" data-ia-tous' + (tous ? ' checked' : '') + '> Afficher les importations de tous les écrans</label>' +
+        (A.length ? '<div class="ia-sc"><table class="ia-t"><thead><tr><th>Date</th>' + (tous ? '<th>Écran</th>' : '') + '<th>Fichier</th><th>Doublons</th><th class="c">Lues</th><th class="c">Retenues</th><th class="c">Rejetées</th><th class="c">Anomalies</th><th>Statut</th><th>Utilisateur</th></tr></thead><tbody>' +
+          A.map(function (e) { return '<tr class="ia-hr' + (det === e.id ? ' on' : '') + '" data-ia-hid="' + esc(e.id) + '" title="Cliquer pour afficher le détail"><td>' + esc(hDate(e.date)) + '</td>' + (tous ? '<td>' + esc(e.ecran) + '</td>' : '') + '<td>' + esc(e.fichier) + '</td><td>' + esc(D[e.doublons] || '') + '</td><td class="c">' + nbc(e.lues) + '</td><td class="c">' + nbc(e.retenues) + '</td><td class="c">' + nbc(e.rejetees) + '</td><td class="c">' + nbc(e.anomalies) + '</td><td><span class="ia-s ' + (e.statut === 'Intégrée' ? 'ok' : 'ko') + '">' + esc(e.statut) + '</span></td><td>' + esc(e.user) + '</td></tr>'; }).join('') + '</tbody></table></div>'
+          : '<div class="ia-vide">Aucune importation enregistrée.</div>') +
+        (function () {
+          var e = det && A.filter(function (x) { return x.id === det; })[0]; if (!e) return A.length ? '<p class="ia-det" style="color:#5B606D;font-size:12px">Cliquez sur une ligne pour afficher les lignes rejetées et les anomalies de l’importation.</p>' : '';
+          var R = e.rejets || [];
+          return '<div class="ia-det"><h3>Détail — ' + esc(e.fichier) + ' (' + esc(hDate(e.date)) + ')' + (e.remplacees ? ' · ' + e.remplacees + ' ligne(s) remplacée(s)' : '') + '</h3>' + (R.length ? '<div class="ia-sc" style="max-height:200px"><table class="ia-t"><thead><tr><th style="width:110px">Ligne Excel</th><th>Cause du rejet</th></tr></thead><tbody>' + R.map(function (x) { return '<tr><td class="c">' + x.n + '</td><td class="m">' + esc(x.cause) + '</td></tr>'; }).join('') + '</tbody></table></div>' : '<div class="ia-vide">Aucune ligne rejetée.</div>') + '</div>';
+        })();
+      pied.innerHTML = '<button type="button" data-ia-x>Fermer</button>' + (A.length ? '<button type="button" data-ia-hv><i class="ti ti-trash"></i> Vider l’historique</button>' : '') + '<button type="button" class="p" data-ia-hb><i class="ti ti-arrow-left"></i> Retour</button>';
+    }
     function etape1() {
-      titre.textContent = 'Importer — ' + o.titre;
+      ou = 1; titre.textContent = 'Importer — ' + o.titre;
       corps.innerHTML = '<p>Le fichier (Excel .xlsx ou CSV) doit comporter une première ligne d\'en-têtes avec les colonnes ci-dessous. Téléchargez le modèle pour partir d\'un fichier prêt à remplir.</p>' +
         '<table class="ia-t"><thead><tr><th>Colonne</th><th>Obligatoire</th><th>Format / valeurs acceptées</th><th>Exemple</th></tr></thead><tbody>' +
         o.champs.map(function (c) { return '<tr><td><b>' + esc(c.col) + '</b></td><td><span class="ia-o ' + (c.oblig ? 'oui' : 'non') + '">' + (c.oblig ? 'Oui' : 'Non') + '</span></td><td>' + esc(c.format) + '</td><td>' + esc(c.exemple) + '</td></tr>'; }).join('') + '</tbody></table>';
-      pied.innerHTML = '<button type="button" data-ia-x>Annuler</button><button type="button" data-ia-m><i class="ti ti-download"></i> Télécharger le modèle Excel</button><button type="button" class="p" data-ia-c><i class="ti ti-upload"></i> Choisir un fichier…</button>';
+      pied.innerHTML = '<button type="button" data-ia-x>Annuler</button><button type="button" data-ia-h><i class="ti ti-history"></i> Historique</button><button type="button" data-ia-m><i class="ti ti-download"></i> Télécharger le modèle Excel</button><button type="button" class="p" data-ia-c><i class="ti ti-upload"></i> Choisir un fichier…</button>';
       var b = pied.querySelector('[data-ia-c]'); if (b) b.focus();
     }
     function etape2(err) {
-      titre.textContent = 'Importer — ' + o.titre;
+      ou = 2; titre.textContent = 'Importer — ' + o.titre;
       var D = [['ignorer', 'Ignorer', 'Les lignes déjà existantes ou en double dans le fichier ne sont pas importées.'], ['remplacer', 'Remplacer', 'Les lignes existantes sont mises à jour avec les valeurs du fichier.'], ['anomalie', 'Afficher en tant qu\'anomalie', 'Les doublons sont rejetés et signalés dans l\'onglet Anomalies (intégration bloquée).']];
       corps.innerHTML = '<div class="ia-fic"><i class="ti ti-file-spreadsheet" aria-hidden="true"></i><div><b data-ia-nom>' + esc(fichier.name) + '</b><br><small>' + taille(fichier.size) + '</small></div></div>' +
         '<fieldset class="ia-dbl"><legend>Gestion des doublons</legend>' + D.map(function (d) { return '<label><input type="radio" name="ia-dbl" value="' + d[0] + '"' + (mode === d[0] ? ' checked' : '') + '><span>' + d[1] + '<small>' + d[2] + '</small></span></label>'; }).join('') + '</fieldset>' + (err ? '<div class="ia-er" role="alert">' + esc(err) + '</div>' : '');
@@ -151,7 +183,7 @@
         liste.slice(0, 500).map(function (x) { return '<tr><td class="c">' + x.n + '</td>' + cols.map(function (c) { return '<td>' + esc(x.v[c]) + '</td>'; }).join('') + (avecCause ? '<td class="m">' + esc(x.cause) + '</td>' : '') + '</tr>'; }).join('') + '</tbody></table></div>' + (liste.length > 500 ? '<p>… ' + (liste.length - 500) + ' ligne(s) supplémentaire(s) non affichée(s).</p>' : '');
     }
     function etape3() {
-      titre.textContent = 'Résultat de l\'importation — ' + o.titre;
+      ou = 3; titre.textContent = 'Résultat de l\'importation — ' + o.titre;
       var h = '<div class="ia-fic" style="margin-bottom:12px"><i class="ti ti-file-spreadsheet" aria-hidden="true"></i><div><b>' + esc(fichier.name) + '</b><br><small>Doublons : ' + { ignorer: 'ignorés', remplacer: 'remplacés', anomalie: 'affichés en anomalie' }[mode] + '</small></div></div>';
       h += '<div class="ia-kpi"><div><small>Lignes retenues</small><b>' + res.ret.length + '</b></div><div class="' + (res.rej.length ? 'ko' : '') + '"><small>Lignes rejetées</small><b>' + res.rej.length + '</b></div><div class="' + (res.ano.length ? 'ko' : '') + '"><small>Anomalies</small><b>' + res.ano.length + '</b></div></div>';
       h += '<div class="ia-tabs" role="tablist"><button type="button" role="tab" data-ia-tab="ret" class="' + (tab === 'ret' ? 'on' : '') + '">Lignes retenues <span class="n">' + res.ret.length + '</span></button><button type="button" role="tab" data-ia-tab="rej" class="' + (tab === 'rej' ? 'on' : '') + '">Lignes rejetées <span class="n">' + res.rej.length + '</span></button><button type="button" role="tab" data-ia-tab="ano" class="an ' + (tab === 'ano' ? 'on' : '') + '">Anomalies <span class="n">' + res.ano.length + '</span></button></div>';
@@ -159,7 +191,7 @@
       else if (tab === 'rej') h += tableau(res.rej, true);
       else h += res.ano.length ? '<div class="ia-sc"><table class="ia-t"><thead><tr><th style="width:140px">Ligne Excel</th><th>Cause du rejet</th></tr></thead><tbody>' + res.ano.map(function (a) { return '<tr><td class="c">' + (a.n ? 'Ligne ' + a.n : 'Ensemble du fichier') + '</td><td class="m">' + esc(a.cause) + '</td></tr>'; }).join('') + '</tbody></table></div>' : '<div class="ia-vide">Aucune anomalie : le fichier peut être intégré.</div>';
       corps.innerHTML = h;
-      pied.innerHTML = '<button type="button" data-ia-x>Fermer</button><button type="button" data-ia-ch><i class="ti ti-file-search"></i> Autre fichier</button><button type="button" data-ia-re><i class="ti ti-refresh"></i> Relancer</button><button type="button" class="p" data-ia-int' + (res.ano.length || !res.ret.length ? ' disabled title="' + (res.ano.length ? 'Corrigez les anomalies puis relancez l\'importation.' : 'Aucune ligne retenue.') + '"' : '') + '><i class="ti ti-database-import"></i> Intégration définitive</button>';
+      pied.innerHTML = '<button type="button" data-ia-x>Fermer</button><button type="button" data-ia-h><i class="ti ti-history"></i> Historique</button><button type="button" data-ia-ch><i class="ti ti-file-search"></i> Autre fichier</button><button type="button" data-ia-re><i class="ti ti-refresh"></i> Relancer</button><button type="button" class="p" data-ia-int' + (res.ano.length || !res.ret.length ? ' disabled title="' + (res.ano.length ? 'Corrigez les anomalies puis relancez l\'importation.' : 'Aucune ligne retenue.') + '"' : '') + '><i class="ti ti-database-import"></i> Intégration définitive</button>';
     }
     async function lancer() {
       var r = pied.querySelector('[data-ia-go]'); if (r) r.disabled = true;
@@ -168,24 +200,28 @@
         if (o.ligne) {
           var d = lignesDe(rows, o.champs); if (d.erreur) { etape2(d.erreur); return; }
           if (o.avant) o.avant(d.lignes);
-          res = analyser(o, d.lignes, mode); tab = res.ano.length ? 'ano' : 'ret'; etape3();
-        } else { var f = fichier; fermer(); if (o.onFichier) o.onFichier(f, { doublons: mode }); }
+          nlues = d.lignes.length; res = analyser(o, d.lignes, mode); tab = res.ano.length ? 'ano' : 'ret'; enreg('Non intégrée'); etape3();
+        } else { var f = fichier; res = null; nlues = null; enreg('Transmise'); fermer(); if (o.onFichier) o.onFichier(f, { doublons: mode }); }
       } catch (x) { etape2('Importation impossible : ' + (x && x.message ? x.message : 'fichier illisible') + '.'); }
     }
     document.addEventListener('keydown', cl, true);
     ov.addEventListener('mousedown', function (e) { if (e.target === ov) fermer(); });
-    ov.addEventListener('change', function (e) { if (e.target.name === 'ia-dbl') mode = e.target.value; });
+    ov.addEventListener('change', function (e) { if (e.target.name === 'ia-dbl') mode = e.target.value; else if (e.target.matches('[data-ia-tous]')) { tous = e.target.checked; etapeH(); } });
     ov.addEventListener('click', function (e) {
       var t = e.target, b;
       if (t.closest('[data-ia-x]')) fermer();
       else if (t.closest('[data-ia-m]')) modele(o);
+      else if (t.closest('[data-ia-h]')) etapeH();
+      else if (t.closest('[data-ia-hb]')) { if (ou === 3 && res) etape3(); else if (ou === 2 && fichier) etape2(); else etape1(); }
+      else if (t.closest('[data-ia-hv]')) { if (window.confirm('Vider l’historique ' + (tous ? 'de tous les écrans' : 'de « ' + o.titre + ' »') + ' ? Cette action est définitive.')) { hEcrire(hLire().filter(function (x) { return !tous && x.ecran !== o.titre; })); etapeH(); } }
+      else if ((b = t.closest('[data-ia-hid]'))) etapeH(b.getAttribute('data-ia-hid'));
       else if (t.closest('[data-ia-c]') || t.closest('[data-ia-ch]')) { inp.value = ''; inp.click(); }
       else if (t.closest('[data-ia-go]') || t.closest('[data-ia-re]')) lancer();
       else if ((b = t.closest('[data-ia-tab]'))) { tab = b.getAttribute('data-ia-tab'); etape3(); }
-      else if ((b = t.closest('[data-ia-int]')) && !b.disabled) { var ok = res.ret; fermer(); if (o.integrer) o.integrer(ok, { doublons: mode }); }
+      else if ((b = t.closest('[data-ia-int]')) && !b.disabled) { var ok = res.ret; enreg('Intégrée', ok.filter(function (x) { return x.remplace; }).length); fermer(); if (o.integrer) o.integrer(ok, { doublons: mode }); }
     });
-    inp.addEventListener('change', function () { var f = inp.files[0]; if (!f) return; fichier = f; res = null; etape2(); });
+    inp.addEventListener('change', function () { var f = inp.files[0]; if (!f) return; fichier = f; res = null; hid = null; etape2(); });
     etape1();
   }
-  window.IMPORT_ASSISTANT = { ouvrir: ouvrir, lireFichier: lireFichier, modele: modele };
+  window.IMPORT_ASSISTANT = { ouvrir: ouvrir, lireFichier: lireFichier, modele: modele, historique: function (ecran) { return hLire().filter(function (e) { return !ecran || e.ecran === ecran; }); } };
 })();

@@ -1,6 +1,6 @@
 // Connecteur « Soft e-Procurement » (maquette) : source de données simulée + fenêtre de synchronisation partagée.
 // Utilisé par Gestion des contrats › Paramétrages › Type de passation (bouton « Synchroniser avec Soft e-Procurement » : référentiel des types de passation)
-// et par Gestion des contrats › Saisies › Fiche contrat (même bouton : récupération d'un marché attribué dans e-Procurement pour préremplir la fiche).
+// et par Gestion des contrats › Saisies › Fiche contrat (même bouton : récupération d'un contrat attribué dans e-Procurement pour préremplir la fiche).
 // Même principe que la récupération Soft e-Payment de la liste des banques : la fenêtre liste les éléments d'e-Procurement avec leur situation par rapport à la
 // maquette (Nouveau / Mise à jour / À jour / Déjà présent), l'utilisateur coche ce qu'il veut synchroniser, l'écran appelant applique la sélection.
 // Les données d'e-Procurement ci-dessous sont FICTIVES (aucun appel réseau). window.EPROCUREMENT.ouvrir(options) :
@@ -15,11 +15,13 @@
     { code: 'CF', libelle: 'Consultation de fournisseurs', actif: true },
     { code: 'DC', libelle: 'Demande de cotation', actif: true },
     { code: 'DP', libelle: 'Demande de Proposition', actif: true },
-    { code: 'GG', libelle: 'Gré à gré (entente directe)', actif: true },
+    { code: 'GG', ancienCode: 'ED', libelle: 'Gré à gré (entente directe)', actif: true },   // code modifié côté source : ED -> GG
+    { code: 'DP', libelle: 'Demande de proposition (saisie en double)', actif: true },   // doublon de code dans la source
+    { code: 'MC', libelle: 'Sélection sur le moindre coût', actif: true },   // libellé identique à un type existant sous un autre code (SMC)
     { code: 'SQC', libelle: 'Sélection fondée sur la qualité et le coût', actif: true },
     { code: 'SMC', libelle: 'Sélection au moindre coût', actif: false }
   ];
-  // Marchés attribués dans e-Procurement (fictifs). typeMarche / typePassation : libellés ; attributaire : nom du tiers.
+  // Contrats attribués dans e-Procurement (fictifs). typeMarche / typePassation : libellés ; attributaire : nom du tiers.
   var CONTRATS = [
     { ref: 'MP-2026-001', objet: 'Fourniture de matériel informatique', attributaire: 'FOURNISSEUR A', typeMarche: 'Fournitures', typePassation: 'Appel d’offres ouvert', dateNO: '2026-02-10', dateSign: '2026-03-02', montant: 48000000, devise: 'MGA' },
     { ref: 'MP-2026-003', objet: 'Acquisition de véhicules de service', attributaire: 'FOURNISSEUR B', typeMarche: 'Fournitures', typePassation: 'Appel d’offres ouvert', dateNO: '2026-06-02', dateSign: '2026-06-20', montant: 185000000, devise: 'MGA' },
@@ -75,7 +77,7 @@
     });
   }
   function rendre() {
-    var L = filtre(), nbSel = Object.keys(rsel).filter(function (k) { return rsel[k]; }).length, cls = { 'Nouveau': 'n', 'Mise à jour': 'm' };
+    var L = filtre(), nbSel = Object.keys(rsel).filter(function (k) { return rsel[k]; }).length, cls = { 'Nouveau': 'n', 'Mise à jour': 'm', 'Code modifié': 'm' };
     ov.querySelector('[data-epr-thead]').innerHTML = '<tr><th style="width:36px">' + (O.unique ? '' : '<input type="checkbox" data-epr-all aria-label="Tout sélectionner">') + '</th>' + O.colonnes.map(function (c) { return '<th' + (c.r ? ' class="r"' : '') + '>' + esc(c.l) + '</th>'; }).join('') + '<th>Situation</th></tr>';
     ov.querySelector('[data-epr-tbody]').innerHTML = L.length ? L.map(function (x) {
       return '<tr' + (x.actif ? '' : ' class="off"') + '><td><input type="' + (O.unique ? 'radio' : 'checkbox') + '" name="epr-sel" data-epr-k="' + esc(x.cle) + '"' + (rsel[x.cle] ? ' checked' : '') + (x.actif ? '' : ' disabled') + ' aria-label="Sélectionner"></td>' +
