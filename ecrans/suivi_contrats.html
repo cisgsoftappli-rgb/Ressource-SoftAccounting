@@ -1,9 +1,9 @@
 <!--
-  Écran « Gestion des contrats › Suivi et historique › Suivi des contrats » — état de suivi des marchés, présenté comme les états comptables (charte) :
-  barre d'actions (Critères, PDF, Excel), critères d'édition dans une pop-up (Critères de sélection : Exercices, Code marché, Site en choix multiples, Axe de rupture, Date d'état,
-  Type de passation, Type de marché, Compte fournisseur ; Choix de la monnaie ; Axes analytiques Du / Au selon les plans activés dans l'entité et PCG), puis l'état :
-  Site, Code marché, Libellé, Bénéficiaire, Statut, Montant du marché, Montant facturé, Solde, % Facturé, Montant payé, % Payé, % (Payé/Facturé), avec sous-totaux par axe de rupture et total.
-  Données : contrats de « Fiche contrat » (window.CONTRATS) et marchés d'exemple fictifs ; facturé / payé simulés. Préfixe sc / data-sc. Ne pas nommer de fonction « $$ » (build.cjs).
+  Écran « Gestion des contrats › Suivi et historique › Suivi des contrats » — état de suivi des contrats, présenté comme les états comptables (charte) :
+  barre d'actions (Critères, PDF, Excel), critères d'édition dans une pop-up (Critères de sélection : Exercices, Code contrat, Site en choix multiples, Axe de rupture, Date d'état,
+  Type de passation, Type de contrat, Compte fournisseur ; Choix de la monnaie ; Axes analytiques Du / Au selon les plans activés dans l'entité et PCG), puis l'état :
+  Site, Code contrat, Libellé, Bénéficiaire, Statut, Montant du contrat, Montant facturé, Solde, % Facturé, Montant payé, % Payé, % (Payé/Facturé), avec sous-totaux par axe de rupture et total.
+  Données : contrats de « Fiche contrat » (window.CONTRATS) et contrats d'exemple fictifs ; facturé / payé simulés. Préfixe sc / data-sc. Ne pas nommer de fonction « $$ » (build.cjs).
 -->
 <style>
 [data-sc]{width:100%;color:#353944;font-size:12px}
@@ -68,12 +68,12 @@
         <section class="sc-pan" aria-label="Critères de sélection"><h2>Critères de sélection</h2>
           <div class="sc-g">
             <div class="w"><span class="sc-lab">Exercices</span><div class="sc-ms" data-ms="exercices" data-ph="Tous les exercices"></div></div>
-            <div class="w"><span class="sc-lab">Code marché</span><div class="sc-ms" data-ms="marches" data-ph="Tous les marchés"></div></div>
+            <div class="w"><span class="sc-lab">Code contrat</span><div class="sc-ms" data-ms="marches" data-ph="Tous les contrats"></div></div>
             <div class="w"><span class="sc-lab">Site</span><div class="sc-ms" data-ms="sites" data-ph="Tous les sites"></div></div>
             <label class="sc-c"><span>Axe de rupture</span><select class="sc-sel" data-c="rupture"></select></label>
             <label class="sc-c"><span>Date d'état</span><input class="sc-in" type="date" data-c="dateEtat"></label>
             <label class="sc-c"><span>Type de passation</span><select class="sc-sel" data-c="passation"></select></label>
-            <label class="sc-c"><span>Type de marché</span><select class="sc-sel" data-c="typeMarche"></select></label>
+            <label class="sc-c"><span>Type de contrat</span><select class="sc-sel" data-c="typeMarche"></select></label>
             <label class="sc-c w"><span>Compte fournisseur</span><select class="sc-sel" data-c="compte"></select></label>
           </div></section>
         <section class="sc-pan" aria-label="Choix de la monnaie">          <div class="sc-g"><label class="sc-c"><span>Monnaie d'édition</span><select class="sc-sel" data-c="monnaie"></select></label></div></section>
@@ -166,7 +166,7 @@
   function aujourdhui() { var d = new Date(); return d.getFullYear() + '-' + ('0' + (d.getMonth() + 1)).slice(-2) + '-' + ('0' + d.getDate()).slice(-2); }
   function init() {
     ['exercices', 'marches', 'sites'].forEach(msDessin);
-    var rup = [['site', 'Site'], ['typeMarche', 'Type de marché'], ['passation', 'Type de passation'], ['benef', 'Bénéficiaire']];
+    var rup = [['site', 'Site'], ['typeMarche', 'Type de contrat'], ['passation', 'Type de passation'], ['benef', 'Bénéficiaire']];
     q('[data-c="rupture"]').innerHTML = opts(rup, 'Aucun');
     q('[data-c="passation"]').innerHTML = opts(PASSATIONS, 'Tous'); q('[data-c="typeMarche"]').innerHTML = opts(MARCHES, 'Tous');
     var cf = {}; Object.keys(TIERS).forEach(function (k) { cf[TIERS[k][0]] = 1; });
@@ -188,7 +188,7 @@
   root.addEventListener('keydown', function (e) { if (e.key === 'Escape' && !ov.hidden) fermer(); });
 
   // ---------- résultat
-  var resultat = null, TETE = ['Site', 'Code marché', 'Libellé', 'Bénéficiaire', 'Statut', 'Montant du marché', 'Montant facturé', 'Solde', '% Facturé', 'Montant payé', '% Payé', '% (Payé/Facturé)'];
+  var resultat = null, TETE = ['Site', 'Code contrat', 'Libellé', 'Bénéficiaire', 'Statut', 'Montant du contrat', 'Montant facturé', 'Solde', '% Facturé', 'Montant payé', '% Payé', '% (Payé/Facturé)'];
   function c(n) { return q('[data-c="' + n + '"]').value; }
   function filtrer() {
     var de = c('dateEtat'), axes = {};
@@ -220,9 +220,9 @@
     if (L.length) rows.push({ t: 't', v: cumul('Total général', somme(L)) });
     resultat = { rows: rows, nb: L.length };
     dessiner(); fermer(); q('[data-sc-vide]').hidden = true; q('[data-sc-res]').hidden = false;
-    q('[data-sc-info]').textContent = L.length + ' marché(s)';
+    q('[data-sc-info]').textContent = L.length + ' contrat(s)';
     q('[data-sc-meta]').textContent = 'État au ' + c('dateEtat').split('-').reverse().join('/') + ' — Monnaie : MGA' + (rup ? ' — Rupture : ' + q('[data-c="rupture"] option:checked').textContent : '');
-    msg(L.length + ' marché(s).');
+    msg(L.length + ' contrat(s).');
   }
   function fmt(v, i) { return typeof v === 'number' ? (i === 8 || i === 10 || i === 11 ? pc(v) : nb(v)) : esc(v); }
   function dessiner() {
@@ -234,8 +234,8 @@
     if (!resultat) { ouvrir(); msg('Lancez d\u2019abord l\u2019édition (Critères).'); return; } if (!resultat.nb) { msg('Rien à exporter.'); return; }
     var X = window.EXPORT_TABLEAU; if (!X) { msg('Module d’export indisponible.'); return; }
     var lignes = resultat.rows.map(function (r) { return r.v.map(function (x, i) { return typeof x === 'number' ? (i === 8 || i === 10 || i === 11 ? pc(x) : nb(x)) : x; }); });
-    if (k === 'pdf') X.pdf('suivi_des_contrats.pdf', 'Suivi des contrats', resultat.nb + ' marché(s) — état au ' + c('dateEtat').split('-').reverse().join('/'), TETE, lignes); else X.xlsx('suivi_des_contrats.xlsx', 'Suivi des contrats', TETE, lignes);
-    msg('Export ' + (k === 'pdf' ? 'PDF' : 'Excel (XLSX)') + ' généré : ' + resultat.nb + ' marché(s).');
+    if (k === 'pdf') X.pdf('suivi_des_contrats.pdf', 'Suivi des contrats', resultat.nb + ' contrat(s) — état au ' + c('dateEtat').split('-').reverse().join('/'), TETE, lignes); else X.xlsx('suivi_des_contrats.xlsx', 'Suivi des contrats', TETE, lignes);
+    msg('Export ' + (k === 'pdf' ? 'PDF' : 'Excel (XLSX)') + ' généré : ' + resultat.nb + ' contrat(s).');
   }
   q('[data-sc-consulter]').addEventListener('click', consulter);
   q('[data-sc-pdf]').addEventListener('click', function () { exporter('pdf'); }); q('[data-sc-xlsx]').addEventListener('click', function () { exporter('xlsx'); });

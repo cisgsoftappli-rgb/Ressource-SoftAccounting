@@ -1,5 +1,5 @@
 <!--
-  Écran « Type de marché » (Gestion des contrats › Paramétrages › Type de marché) — onglets Saisie / Liste : liste filtrable (Code, Libellé, Utilisation, Statut),
+  Écran « Type de contrat » (Gestion des contrats › Paramétrages › Type de contrat) — onglets Saisie / Liste : liste filtrable (Code, Libellé, Utilisation, Statut),
   saisie (Code *, Libellé *, case « Actif »). Boutons dans la barre d'actions (Ajouter, Modifier, Supprimer, Enregistrer, Annuler, Importer, Imprimer, PDF, Excel).
   Généré par gen_types.cjs (modèle types_modele.tpl) : ne pas modifier à la main. Données en mémoire ; « Utilisation » = « – » (aucun contrat dans la maquette).
   S'appuie sur les styles bp-* de l'écran « Paramétrage du bilan ». Ne pas nommer de fonction « $$ » (build.cjs).
@@ -13,7 +13,7 @@
 </style>
 
 <div class="bp-root" data-typm>
-  <h1 style="position:absolute;width:1px;height:1px;overflow:hidden;clip-path:inset(50%);margin:0">Type de marché</h1>
+  <h1 style="position:absolute;width:1px;height:1px;overflow:hidden;clip-path:inset(50%);margin:0">Type de contrat</h1>
 
   <div class="no-print" data-typm-actions>
     <button type="button" data-typm-ajouter>Ajouter</button>
@@ -34,8 +34,8 @@
   </div>
 
   <div class="bp-grid">
-    <section class="bp-pan" aria-label="Liste des types de marché" data-typm-pan="liste" hidden>
-      <h2>Types de marché <small>Double-clic ou « Modifier » pour ouvrir la ligne en saisie</small></h2>
+    <section class="bp-pan" aria-label="Liste des types de contrat" data-typm-pan="liste" hidden>
+      <h2>Types de contrat <small>Double-clic ou « Modifier » pour ouvrir la ligne en saisie</small></h2>
       <div style="overflow:auto;max-height:560px">
         <table class="bp-tb" style="min-width:640px"><thead>
           <tr><th>Code</th><th>Libellé</th><th>Utilisation</th><th>Statut</th></tr>
@@ -43,15 +43,15 @@
             <th><select class="bp-sel" data-fc="3" aria-label="Filtrer Statut"><option value=""></option><option value="actif">Actif</option><option value="inactif">Inactif</option></select></th></tr>
         </thead><tbody data-typm-lignes></tbody></table>
       </div>
-      <div class="bp-vide" data-typm-vide hidden>Aucun type de marché : utilisez « Ajouter ».</div>
+      <div class="bp-vide" data-typm-vide hidden>Aucun type de contrat : utilisez « Ajouter ».</div>
     </section>
 
-    <section class="bp-pan" aria-label="Saisie d'un type de marché" data-typm-pan="saisie">
+    <section class="bp-pan" aria-label="Saisie d'un type de contrat" data-typm-pan="saisie">
       <form class="bp-form" data-typm-form onsubmit="return false" novalidate>
         <div style="display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:12px">
           <label class="bp-champ"><span>Code <b>*</b></span><input class="bp-in" data-f="code" maxlength="50" autocomplete="off" placeholder="Ex : FS"><span class="typm-help">Unique, enregistré en majuscules. Non modifiable après création.</span><span class="typm-er" data-er="code"></span></label>
           <label class="bp-champ"><span>Libellé <b>*</b></span><input class="bp-in" data-f="lib" maxlength="150" autocomplete="off" placeholder="Ex : Fournitures et services"><span class="typm-er" data-er="lib"></span></label>
-          <div class="bp-chk" style="align-self:end"><label><input type="checkbox" data-f="actif" checked>Actif</label><span class="typm-help" style="display:block">Un type de marché inactif n'est plus proposé dans les contrats.</span></div>
+          <div class="bp-chk" style="align-self:end"><label><input type="checkbox" data-f="actif" checked>Actif</label><span class="typm-help" style="display:block">Un type de contrat inactif n'est plus proposé dans les contrats.</span></div>
         </div>
       </form>
     </section>
@@ -64,7 +64,7 @@
   var root = document.querySelector('[data-typm]'); if (!root) return;
   function q(s) { return root.querySelector(s); } function qa(s) { return [].slice.call(root.querySelectorAll(s)); }
   var data = window.typesMarche = window.typesMarche || [["FS","FOURNITURES ET SERVICES"],["PI","PRESTATIONS INTELLECTUELLES"],["TR","TRAVAUX"]].map(function (r) { return { code: r[0], lib: r[1], actif: true, usage: 0 }; });
-  var sel = -1, mode = 'consultation', NOM = 'Type de marché', LC = 'type de marché', FICHIER = 'types_marche';
+  var sel = -1, mode = 'consultation', NOM = 'Type de contrat', LC = 'type de contrat', FICHIER = 'types_marche';
   function esc(s) { return String(s == null ? '' : s).replace(/[&<>"]/g, function (c) { return { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c]; }); }
   function toast(m) { var t = q('[data-typm-toast]'); t.textContent = m; t.hidden = false; clearTimeout(toast.t); toast.t = setTimeout(function () { t.hidden = true; }, 2500); }
   function err(k, m) { var e = q('[data-er="' + k + '"]'); e.textContent = m || ''; e.classList.toggle('show', !!m); }
@@ -111,7 +111,7 @@
     if (!ok) return;
     var rec = { code: code, lib: lib, actif: q('[data-f=actif]').checked, usage: mode === 'edition' ? data[sel].usage : 0 };
     if (mode === 'creation') { data.push(rec); sel = data.length - 1; } else data[sel] = rec;
-    mode = 'consultation'; liste(); form(data[sel]); etat(); onglet('liste'); toast(ancien ? 'Type de marché modifié.' : 'Type de marché enregistré.');
+    mode = 'consultation'; liste(); form(data[sel]); etat(); onglet('liste'); toast(ancien ? 'Type de contrat modifié.' : 'Type de contrat enregistré.');
   }
   function table() { var L = data.filter(function (s, i) { var tr = tb.children[i]; return !tr || !tr.hidden; }); return { tete: ['Code', 'Libellé', 'Utilisation', 'Statut'], lignes: L.map(function (s) { return [s.code, s.lib, s.usage ? s.usage + ' contrat(s)' : '–', s.actif ? 'Actif' : 'Inactif']; }) }; }
   function exporter(k) {
@@ -159,7 +159,7 @@
     if (b.hasAttribute('data-typm-supprimer')) {
       var s = data[sel]; if (!s) return;
       if (!window.confirm('Supprimer le ' + LC + ' « ' + s.lib + ' » (' + s.code + ') ? Cette action est définitive.')) return;
-      data.splice(sel, 1); sel = -1; liste(); form(null); etat(); toast('Type de marché supprimé.'); return;
+      data.splice(sel, 1); sel = -1; liste(); form(null); etat(); toast('Type de contrat supprimé.'); return;
     }
     if (b.hasAttribute('data-typm-importer')) {
       window.IMPORT_ASSISTANT.ouvrir({

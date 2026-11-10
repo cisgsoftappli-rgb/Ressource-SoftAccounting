@@ -1,6 +1,6 @@
 <!--
   Écran « Gestion des contrats › Suivi et historique › Détail d'un contrat » — pop-up de critères (Centre de saisie, Code du contrat, Période du … et …, Choix de la monnaie : locale ou de rapport),
-  puis le détail du contrat : identification (centre de saisie, numéro, désignation, adjudicataire, types de marché et de passation, dates de signature et d'ordre de service, RC, NIF, N° statistique,
+  puis le détail du contrat : identification (centre de saisie, numéro, désignation, adjudicataire, types de contrat et de passation, dates de signature et d'ordre de service, RC, NIF, N° statistique,
   domiciliation bancaire), montants (initial, avenant, total) en monnaie locale et de rapport, total payé / facturé et soldes, puis la liste des décomptes (Site, Numéro, N° décompte, dates,
   libellé comptable, Travaux, Avances, Retenues de garantie, Primes, Pénalités) avec total, recherche, export Excel et pagination. Contrats : window.CONTRATS (« Fiche contrat ») ; décomptes simulés ;
   conversion par window.COURS_API. Préfixe dc / data-dc. Ne pas nommer de fonction « $$ » (build.cjs).
@@ -114,7 +114,7 @@
       <div class="dc-top">
         <div class="dc-id">
           <div class="dc-f"><span>Centre de saisie</span><div class="sc-ro" data-r="site"></div></div><div class="dc-f"><span>Numéro du contrat</span><div class="sc-ro" data-r="num"></div></div><div class="dc-f"><span>Désignation</span><div class="sc-ro" data-r="designation"></div></div>
-          <div class="dc-f"><span>Adjudicataire</span><div class="sc-ro" data-r="tiers"></div></div><div class="dc-f"><span>Type de marché</span><div class="sc-ro" data-r="typeMarche"></div></div><div class="dc-f"><span>Type de passation</span><div class="sc-ro" data-r="typePassation"></div></div>
+          <div class="dc-f"><span>Adjudicataire</span><div class="sc-ro" data-r="tiers"></div></div><div class="dc-f"><span>Type de contrat</span><div class="sc-ro" data-r="typeMarche"></div></div><div class="dc-f"><span>Type de passation</span><div class="sc-ro" data-r="typePassation"></div></div>
           <div class="dc-f"><span>Date signature</span><div class="sc-ro" data-r="dateSign"></div></div><div class="dc-f"><span>Date ordre de service</span><div class="sc-ro" data-r="dateOS"></div></div><div class="dc-f"><span>Numéro R.C.</span><div class="sc-ro" data-r="rc"></div></div>
           <div class="dc-f"><span>N.I.F.</span><div class="sc-ro" data-r="nif"></div></div><div class="dc-f"><span>N° statistique</span><div class="sc-ro" data-r="stat"></div></div><div class="dc-f"><span>Dom. bancaire</span><div class="sc-ro" data-r="banque"></div></div>
         </div>

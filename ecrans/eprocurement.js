@@ -1,6 +1,6 @@
 // Connecteur « Soft e-Procurement » (maquette) : source de données simulée + fenêtre de synchronisation partagée.
 // Utilisé par Gestion des contrats › Paramétrages › Type de passation (bouton « Synchroniser avec Soft e-Procurement » : référentiel des types de passation)
-// et par Gestion des contrats › Saisies › Fiche contrat (même bouton : récupération d'un marché attribué dans e-Procurement pour préremplir la fiche).
+// et par Gestion des contrats › Saisies › Fiche contrat (même bouton : récupération d'un contrat attribué dans e-Procurement pour préremplir la fiche).
 // Même principe que la récupération Soft e-Payment de la liste des banques : la fenêtre liste les éléments d'e-Procurement avec leur situation par rapport à la
 // maquette (Nouveau / Mise à jour / À jour / Déjà présent), l'utilisateur coche ce qu'il veut synchroniser, l'écran appelant applique la sélection.
 // Les données d'e-Procurement ci-dessous sont FICTIVES (aucun appel réseau). window.EPROCUREMENT.ouvrir(options) :
@@ -19,7 +19,7 @@
     { code: 'SQC', libelle: 'Sélection fondée sur la qualité et le coût', actif: true },
     { code: 'SMC', libelle: 'Sélection au moindre coût', actif: false }
   ];
-  // Marchés attribués dans e-Procurement (fictifs). typeMarche / typePassation : libellés ; attributaire : nom du tiers.
+  // Contrats attribués dans e-Procurement (fictifs). typeMarche / typePassation : libellés ; attributaire : nom du tiers.
   var CONTRATS = [
     { ref: 'MP-2026-001', objet: 'Fourniture de matériel informatique', attributaire: 'FOURNISSEUR A', typeMarche: 'Fournitures', typePassation: 'Appel d’offres ouvert', dateNO: '2026-02-10', dateSign: '2026-03-02', montant: 48000000, devise: 'MGA' },
     { ref: 'MP-2026-003', objet: 'Acquisition de véhicules de service', attributaire: 'FOURNISSEUR B', typeMarche: 'Fournitures', typePassation: 'Appel d’offres ouvert', dateNO: '2026-06-02', dateSign: '2026-06-20', montant: 185000000, devise: 'MGA' },

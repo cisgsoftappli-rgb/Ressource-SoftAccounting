@@ -506,7 +506,7 @@
     }).join('');
     var sg = function (s) { return '<td>' + L(s.titre) + '<br><br><br><b>' + L(s.nom) + '</b></td>'; };
     return '<div class="fi"><div class="ent">' + esc(entite()) + '</div>' +
-      '<table class="t0"><tr><th>Site</th><th>Journal</th><th>Marché</th><th>Date compta</th><th>N° pièce</th><th>Date pièce</th><th>Réf. facture</th><th>Réf. paiement</th><th>Bénéf. paiement</th><th>Commentaire</th></tr>' +
+      '<table class="t0"><tr><th>Site</th><th>Journal</th><th>Contrat</th><th>Date compta</th><th>N° pièce</th><th>Date pièce</th><th>Réf. facture</th><th>Réf. paiement</th><th>Bénéf. paiement</th><th>Commentaire</th></tr>' +
       '<tr><td>' + L(e.siteCode + ' - ' + e.site) + '</td><td>' + L(e.journal) + '</td><td>' + L(e.contrat) + '</td><td>' + dt(e.date) + '</td><td>' + L(e.piece) + '</td><td>' + dt(e.datePiece) + '</td><td>' + L(e.reference || e.facture) + '</td><td>' + L(e.mode) + '</td><td>' + L(e.tiers) + '</td><td>' + L(e.libelle) + '</td></tr></table>' +
       '<table class="t1"><tr><th>Compte</th><th>Acti</th><th>Ss cpte</th><th>Fin.</th><th>CR</th><th>N° ligne bud</th><th>Libellé</th><th class="r">Débit<br>MGA</th><th class="r">Crédit<br>MGA</th></tr>' + rows +
       '<tr class="tot"><td colspan="7" class="r">Totaux</td><td class="r">' + nb(td) + '</td><td class="r">' + nb(tc) + '</td></tr></table>' +
