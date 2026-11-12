@@ -279,7 +279,7 @@
 
   // ---------- Rapprochement avec la compta : montant comptabilisé / montant des fiches, par site et compte d'immobilisation ----------
   // Principe : chaque immobilisation comptabilisée doit avoir une fiche et inversement. Compta = écritures des comptes d'immobilisation (classes 20 à 25) jusqu'à la date de situation
-  // (à-nouveau et grand livre de démonstration + écritures saisies ou générées) ; Immo = valeur d'acquisition des fiches acquises à cette date et non sorties.
+  // (mouvements du grand livre de démonstration + écritures saisies ou générées ; les à-nouveaux sont exclus) ; Immo = valeur d'acquisition des fiches acquises à cette date et non sorties.
   var CPTE = /^2[0-5]/;
   function m2(n) { return (Math.round((+n || 0) * 100) / 100).toLocaleString('fr-FR', { minimumFractionDigits: 2, maximumFractionDigits: 2 }); }
   function pm(s) { return s ? parseFloat(String(s).replace(/[\s\u00a0\u202f]/g, '').replace(',', '.')) || 0 : 0; }
@@ -291,7 +291,7 @@
   function axeDe(x, i) { var A = (window.ECRITURES_SAISIES && window.ECRITURES_SAISIES.AXES) || []; return (x && x.axes && (x.axes[A[i]] || x.axes['PLAN' + (i + 1)])) || ''; }
   var AXL = ['Activité', 'Budget', 'Financement', 'Géographique'];
   function comptaDe(au) {
-    var M = {}, an = au.slice(0, 4) + '-01-01', fin = au.slice(0, 4) + '-12-31', dejaGlg = {};
+    var M = {}, fin = au.slice(0, 4) + '-12-31', dejaGlg = {};
     function add(site, compte, l) { var k = site + '|' + compte; (M[k] = M[k] || []).push(l); }
     (window.GLG_COMPTES || []).forEach(function (c) {
       if (!CPTE.test(c.c)) return; dejaGlg[c.c] = true;
@@ -302,11 +302,11 @@
     });
     (window.BALANCE_BASE || []).forEach(function (b) {
       if (!CPTE.test(b.code)) return;
-      var a = ((b.anD || 0) - (b.anC || 0)) / 100; if (a && an <= au) add('01', b.code, { date: an, piece: 'AN', journal: '', libelle: 'À-nouveau (reprise de la balance)', montant: a, axes: [], b: null });
+      // les à-nouveaux (soldes repris à l'ouverture) sont exclus : seuls les mouvements et écritures de la période sont rapprochés
       var m = ((b.mvD || 0) - (b.mvC || 0)) / 100; if (m && !dejaGlg[b.code] && fin <= au) add('01', b.code, { date: fin, piece: 'MVT', journal: '', libelle: 'Mouvements de l’exercice (reprise de la balance)', montant: m, axes: [], b: null });
     });
     if (window.ECRITURES_SAISIES) window.ECRITURES_SAISIES({ au: au }).forEach(function (x) {
-      if (!CPTE.test(x.compte)) return;
+      if (!CPTE.test(x.compte) || /^(AN|RAN)$/i.test(x.journal || '') || /[àa]s*-?nouveau/i.test(x.libelle || '')) return;
       add(x.site || '01', x.compte, { date: x.date, piece: x.piece, journal: x.journal, libelle: x.libelle, montant: (x.debit || 0) - (x.credit || 0), axes: [0, 1, 2, 3].map(function (i) { return axeDe(x, i); }), b: { j: x.journal, p: x.piece, d: x.date } });
     });
     Object.keys(M).forEach(function (k) { M[k].sort(function (a, b) { return a.date < b.date ? -1 : a.date > b.date ? 1 : (a.piece < b.piece ? -1 : 1); }); });
