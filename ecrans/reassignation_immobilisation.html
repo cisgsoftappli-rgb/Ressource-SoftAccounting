@@ -20,23 +20,30 @@
 .bp-in.err,.bp-sel.err{border-color:#B63132}
 .ras-card{border:1px solid #D6D9E0;border-radius:12px;padding:16px;background:#fff;margin-top:12px}
 .ras-card:first-child{margin-top:0}
-.ras-card h3{margin:0 0 12px;font-size:14px;font-weight:600;color:#18244F;display:flex;align-items:center;gap:8px;text-transform:uppercase;letter-spacing:.04em}
+.ras-card h3{margin:0 0 12px;font-size:14px;font-weight:600;color:#18244F;display:flex;align-items:center;gap:8px}
 .ras-card h3 small{margin-left:auto;font-size:12px;font-weight:400;text-transform:none;letter-spacing:0;color:#5B606D}
 .ras-g2{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:12px}
 .ras-g4{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:12px}
 .ras-g5{display:grid;grid-template-columns:repeat(5,minmax(0,1fr));gap:12px}
-.ras-ro{display:flex;flex-direction:column;gap:2px}
+.ras-ro{display:flex;flex-direction:column;gap:2px;justify-content:center;min-height:62px;padding:8px 12px;border:1px solid #E9EBF0;border-radius:8px;background:#F9FAFB}
 .ras-ro span{font-size:12px;font-weight:600;letter-spacing:.04em;text-transform:uppercase;color:#5B606D}
-.ras-ro b{font-weight:600;color:#18244F;min-height:20px}
+.ras-ro b{font-weight:600;color:#18244F;min-height:20px;overflow-wrap:anywhere}
+.ras-g3{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:12px}
+.ras-col{display:grid;gap:12px}
+.ras-strip{display:grid;grid-template-columns:1fr 2fr 1fr 1fr;gap:12px;margin-top:14px}
+.ras-duo{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:12px;margin-top:12px;align-items:start}
+.ras-duo>.ras-card{margin-top:0}
+.ras-duo .bp-champ{margin:0}
+.ras-duo .ras-col>.bp-champ{min-height:62px}
 .ras-sep{border:0;border-top:1px solid #D6D9E0;margin:12px 0}
 .ras-h4{margin:0 0 8px;font-size:12px;font-weight:600;color:#2E427B;text-transform:uppercase;letter-spacing:.04em}
-.ras-info{display:flex;gap:8px;align-items:flex-start;padding:10px 12px;border:1px solid #FDE68A;background:#FFFBEB;border-radius:8px;color:#78350F;font-size:13px}
+.ras-info{display:flex;gap:8px;align-items:flex-start;padding:10px 12px;border:1px solid #D6D9E0;background:#F4F7FE;border-radius:8px;color:#18244F;font-size:13px}
 .ras-chg{background:#FFF7ED!important;border-color:#FDBA74!important}
 .ras-det{margin:6px 0 0;padding:8px 12px;background:#F5F7F9;border-radius:8px;font-size:12px;color:#18244F}
 .ras-det div+div{margin-top:2px}
 [data-ras] [hidden]{display:none!important}
 [data-ras] .bp-champ>span:first-child{text-transform:uppercase;letter-spacing:.04em;font-size:12px;font-weight:600}
-@media (max-width:1100px){.ras-g4,.ras-g5{grid-template-columns:repeat(2,minmax(0,1fr))}}
+@media (max-width:1100px){.ras-g4,.ras-g5{grid-template-columns:repeat(2,minmax(0,1fr))}.ras-duo{grid-template-columns:1fr}.ras-strip{grid-template-columns:repeat(2,minmax(0,1fr))}}
 </style>
 
 <div class="bp-root" data-ras>
@@ -87,51 +94,56 @@
     <section class="bp-pan" aria-label="Saisie d'une réassignation" data-ras-pan="saisie">
       <form data-ras-form onsubmit="return false" novalidate>
         <div class="ras-card">
-          <h3><i class="ti ti-search" aria-hidden="true"></i> Sélection de l'immobilisation</h3>
+          <h3>Sélection de l'immobilisation</h3>
           <div class="ras-g2">
             <label class="bp-champ"><span>Numéro d'identification <b>*</b></span><select class="bp-sel" data-f="s_num"></select><span class="ras-er" data-er="s_num"></span></label>
             <label class="bp-champ"><span>Nom</span><select class="bp-sel" data-f="s_nom"></select></label>
           </div>
           <p class="ras-help" data-ras-aide-sel style="margin:8px 0 0"></p>
-        </div>
-
-        <div class="ras-card">
-          <h3><i class="ti ti-history" aria-hidden="true"></i> Ancienne affectation <small>Lecture seule</small></h3>
-          <div class="ras-g4">
+          <div class="ras-strip">
             <div class="ras-ro"><span>N° identification</span><b data-ras-a="num">—</b></div>
             <div class="ras-ro"><span>Désignation</span><b data-ras-a="desig">—</b></div>
             <div class="ras-ro"><span>Compte général</span><b data-ras-a="compte">—</b></div>
-            <div class="ras-ro"><span>Site</span><b data-ras-a="site">—</b></div>
-            <div class="ras-ro"><span>Date d'acquisition</span><b data-ras-a="dacq">—</b></div>
-            <div class="ras-ro"><span>Lieu d'affectation</span><b data-ras-a="empl">—</b></div>
-            <div class="ras-ro"><span>Responsable</span><b data-ras-a="resp">—</b></div>
             <div class="ras-ro"><span>Valeur d'acquisition</span><b data-ras-a="val">—</b></div>
           </div>
-          <hr class="ras-sep">
-          <div class="ras-h4">Autres monnaies / plans analytiques</div>
-          <div class="ras-g4" data-ras-a-ana></div>
-          <p class="ras-help" style="margin:8px 0 0">Seuls les plans analytiques activés et renseignés dans l'onglet Écritures de la fiche d'immobilisation sont affichés ci-dessus.</p>
         </div>
 
-        <div class="ras-card">
-          <h3><i class="ti ti-pencil" aria-hidden="true"></i> Nouvelle affectation</h3>
-          <div class="ras-info" data-ras-attente><i class="ti ti-info-circle" aria-hidden="true"></i><span>Sélectionnez une immobilisation dans la carte ci-dessus pour saisir la nouvelle affectation.</span></div>
-          <div data-ras-nouvelle hidden>
-            <div class="ras-g4">
-              <label class="bp-champ"><span>Date de réassignation <b>*</b></span><input class="bp-in" type="date" data-f="date"><span class="ras-er" data-er="date"></span></label>
-              <label class="bp-champ"><span>Nouveau site</span><select class="bp-sel" data-f="site"></select></label>
-              <label class="bp-champ"><span>Nouveau lieu d'affectation</span><select class="bp-sel" data-f="empl"></select></label>
-              <label class="bp-champ"><span>Nouveau responsable</span><select class="bp-sel" data-f="resp"></select></label>
+        <div class="ras-duo">
+          <div class="ras-card">
+            <h3>Affectation actuelle <small>Lecture seule</small></h3>
+            <div class="ras-col">
+              <div class="ras-ro"><span>Date d'acquisition</span><b data-ras-a="dacq">—</b></div>
+              <div class="ras-ro"><span>Site</span><b data-ras-a="site">—</b></div>
+              <div class="ras-ro"><span>Lieu d'affectation</span><b data-ras-a="empl">—</b></div>
+              <div class="ras-ro"><span>Responsable</span><b data-ras-a="resp">—</b></div>
             </div>
-            <div class="ras-h4" style="margin-top:16px">Ventilation analytique</div>
-            <div class="ras-g5" data-ras-ana></div>
-            <label class="bp-champ" style="margin-top:12px"><span>Motif / observations</span><input class="bp-in" data-f="motif" maxlength="200" autocomplete="off" placeholder="Transfert de service, réorganisation…"></label>
-            <span class="ras-er" data-er="chg"></span>
+            <hr class="ras-sep">
+            <div class="ras-h4">Ventilation analytique et autres monnaies</div>
+            <div class="ras-g2" data-ras-a-ana></div>
+            <p class="ras-help" style="margin:8px 0 0">Seuls les plans analytiques activés et renseignés dans l'onglet Écritures de la fiche d'immobilisation sont affichés ci-dessus.</p>
+          </div>
+
+          <div class="ras-card">
+            <h3>Nouvelle affectation</h3>
+            <div class="ras-info" data-ras-attente><i class="ti ti-info-circle" aria-hidden="true"></i><span>Sélectionnez une immobilisation dans la carte ci-dessus pour saisir la nouvelle affectation.</span></div>
+            <div data-ras-nouvelle hidden>
+              <div class="ras-col">
+                <label class="bp-champ"><span>Date de réassignation <b>*</b></span><input class="bp-in" type="date" data-f="date"><span class="ras-er" data-er="date"></span></label>
+                <label class="bp-champ"><span>Nouveau site</span><select class="bp-sel" data-f="site"></select></label>
+                <label class="bp-champ"><span>Nouveau lieu d'affectation</span><select class="bp-sel" data-f="empl"></select></label>
+                <label class="bp-champ"><span>Nouveau responsable</span><select class="bp-sel" data-f="resp"></select></label>
+              </div>
+              <hr class="ras-sep">
+              <div class="ras-h4">Ventilation analytique</div>
+              <div class="ras-g2" data-ras-ana></div>
+              <label class="bp-champ" style="margin-top:12px"><span>Motif / observations</span><input class="bp-in" data-f="motif" maxlength="200" autocomplete="off" placeholder="Transfert de service, réorganisation…"></label>
+              <span class="ras-er" data-er="chg"></span>
+            </div>
           </div>
         </div>
 
         <div class="ras-card">
-          <h3><i class="ti ti-clock" aria-hidden="true"></i> Historique des réassignations <small>Cliquez sur une ligne pour afficher le détail (plans analytiques réassignés)</small></h3>
+          <h3>Historique des réassignations <small>Cliquez sur une ligne pour afficher le détail (plans analytiques réassignés)</small></h3>
           <div data-ras-histo-saisie><p class="ras-help" style="text-align:center;margin:12px 0">Sélectionnez une immobilisation pour afficher son historique.</p></div>
         </div>
       </form>
