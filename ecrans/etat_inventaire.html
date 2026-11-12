@@ -93,8 +93,8 @@
 .eiv-bt tbody tr:nth-child(even) td{background:#FAFBFD}.eiv-gr tbody tr.on td{background:#DCE6F8}
 .eiv-bf{display:grid;grid-template-columns:minmax(0,1fr) auto;gap:18px;align-items:start;padding:10px 20px 12px;border-top:1px solid #E9EBF0;background:#F9FAFB;border-radius:0 0 12px 12px}
 .eiv-bf h4{margin:0 0 6px;font-size:11px;text-transform:uppercase;letter-spacing:.04em;color:#2E427B}
-.eiv-sel{display:flex;flex-wrap:wrap;gap:6px 8px;font-size:13px;font-weight:600;color:#0B1332}
-.eiv-sel>span{background:#fff;border:1px solid #E9EBF0;border-radius:6px;padding:4px 10px}.eiv-sel small{font-weight:500;color:#5B606D;font-size:10.5px;text-transform:uppercase;letter-spacing:.04em;margin-right:4px}
+.eiv-pas{display:flex;flex-wrap:wrap;align-content:flex-start;gap:6px 8px;height:96px;overflow:auto;font-size:13px;font-weight:600;color:#0B1332}
+.eiv-pas>span{background:#fff;border:1px solid #E9EBF0;border-radius:6px;padding:4px 10px}.eiv-pas small{font-weight:500;color:#5B606D;font-size:10.5px;text-transform:uppercase;letter-spacing:.04em;margin-right:4px}
 .eiv-tt{border-collapse:collapse;font-size:13px;white-space:nowrap}.eiv-tt th,.eiv-tt td{padding:3px 14px;text-align:right}.eiv-tt th{font-size:11px;text-transform:uppercase;color:#2E427B}.eiv-tt th:first-child,.eiv-tt td:first-child{text-align:left}.eiv-tt tr:nth-child(2) td{font-weight:700}
 @media (max-width:800px){.eiv-bf{grid-template-columns:1fr}}
 [data-eiv] [hidden]{display:none!important}
@@ -436,7 +436,7 @@
         (B.L.length ? B.L.map(function (l, i) { return '<tr data-bd-i="' + i + '"><td class="eiv-cpt">' + esc(l.compte) + '</td><td>' + esc(l.aux) + '</td>' + [0, 1, 2, 3].map(function (j) { return '<td>' + esc(l.axes[j] || '') + '</td>'; }).join('') + '<td class="eiv-lib">' + esc(l.lib) + '</td><td class="r">' + (l.d ? m2(l.d) : '') + '</td><td class="r">' + (l.c ? m2(l.c) : '') + '</td><td class="r">' + rep(l.d) + '</td><td class="r">' + rep(l.c) + '</td></tr>'; }).join('') : '<tr><td colspan="11" class="eiv-vide">Aucune ligne pour ce bordereau.</td></tr>') +
         '</tbody></table></div></div>' +
       '</div>' +
-      '<div class="eiv-bf"><div><h4>Ligne sélectionnée</h4><div class="eiv-sel" data-bd-det></div></div>' +
+      '<div class="eiv-bf"><div><h4>Ligne sélectionnée</h4><div class="eiv-pas" data-bd-det></div></div>' +
         '<table class="eiv-tt"><thead><tr><th>Totaux</th><th>Débit</th><th>Crédit</th></tr></thead><tbody><tr><td>' + esc(loc) + '</td><td>' + m2(sd) + '</td><td>' + m2(sc) + '</td></tr><tr><td>Solde</td><td>' + m2(sd - sc > 0 ? sd - sc : 0) + '</td><td>' + m2(sc - sd > 0 ? sc - sd : 0) + '</td></tr><tr><td>Rap. ' + esc(rap) + '</td><td>' + (ok ? m2(sd / cours) : '—') + '</td><td>' + (ok ? m2(sc / cours) : '—') + '</td></tr></tbody></table></div></div>';
     fermerMv(m);
     function detail(i) {
