@@ -50,21 +50,21 @@
 .eiv-tb tr.eiv-ec td.r:last-child{color:#B63132;font-weight:600}.eiv-tb tr:not(.eiv-ec) td.r:last-child{color:#047857}
 .eiv-note{padding:8px 20px;font-size:12px;color:#5B606D;border-bottom:1px solid #E9EBF0;background:#F9FAFB}
 .eiv-mv{position:fixed;inset:0;z-index:3200;background:rgba(11,19,50,.55);display:flex;align-items:center;justify-content:center;padding:16px}
-.eiv-md{background:#fff;border-radius:12px;box-shadow:0 28px 70px rgba(11,19,50,.35);width:min(1180px,100%);max-height:calc(100vh - 32px);display:flex;flex-direction:column}
-.eiv-md.m{width:min(860px,100%)}
+.eiv-md{background:#fff;border-radius:12px;box-shadow:0 28px 70px rgba(11,19,50,.35);width:min(1480px,96vw);min-height:min(78vh,760px);max-height:calc(100vh - 32px);display:flex;flex-direction:column}
+.eiv-md.m{width:min(980px,96vw);min-height:0}
 .eiv-mh{display:flex;justify-content:space-between;align-items:center;gap:12px;padding:12px 20px;background:#2E427B;color:#fff;border-radius:12px 12px 0 0;font-size:15px;font-weight:600}
 .eiv-x{border:0;background:none;color:#fff;font-size:20px;cursor:pointer;line-height:1}
 .eiv-mb{padding:14px 20px 18px;overflow:auto}
-.eiv-h3{margin:0 0 10px;padding-bottom:6px;border-bottom:1px solid #E9EBF0;font-size:22px;font-weight:500;color:#2E6AA8}
+.eiv-h3{margin:0 0 12px;padding-bottom:8px;border-bottom:1px solid #E9EBF0;font-size:24px;font-weight:500;color:#2E6AA8}
 .eiv-cart{display:inline-block;min-width:260px;margin:0 0 14px;padding:12px 18px;border:1px solid #E9EBF0;border-left:4px solid #2E6AA8;border-radius:4px;box-shadow:0 1px 4px rgba(11,19,50,.1);font-size:13px;line-height:2}
 .eiv-tabs{display:flex;gap:2px;border-bottom:3px solid #E9EBF0;margin-bottom:10px}
 .eiv-tabs button{padding:8px 14px;border:0;border-bottom:3px solid transparent;margin-bottom:-3px;background:none;color:#5B606D;font-weight:600;font-size:13px;cursor:pointer}
 .eiv-tabs button.on{color:#0B1332;border-bottom-color:#2E427B}
 .eiv-gr{border:1px solid #E9EBF0;border-radius:8px;overflow:hidden}
-.eiv-sc{max-height:380px;overflow:auto}
+.eiv-sc{max-height:calc(100vh - 430px);min-height:260px;overflow:auto}
 .eiv-gr th{background:#fff;text-align:center;padding:9px 10px;font-size:12px;color:#18244F;border-bottom:1px solid #E9EBF0;white-space:nowrap;position:sticky;top:0}
 .eiv-gr .flt th{padding:4px 6px;top:34px}.eiv-gr .flt input{width:100%;min-height:28px;border:1px solid #D6D9E0;border-radius:3px;padding:0 6px;font:inherit;font-size:12px}
-.eiv-gr td{padding:7px 10px;border-top:1px solid #E9EBF0;font-size:13px}.eiv-gr td.r{text-align:right;white-space:nowrap}.eiv-gr td.c{text-align:center}
+.eiv-gr td{padding:9px 12px;border-top:1px solid #E9EBF0;font-size:14px}.eiv-gr td.r{text-align:right;white-space:nowrap}.eiv-gr td.c{text-align:center}
 .eiv-gr tbody tr{cursor:pointer}.eiv-gr tbody tr.on td{background:#DCE6F8}
 .eiv-gr tfoot td{background:#EEF2FB;font-weight:700;color:#18244F;border-top:2px solid #2E427B}
 .eiv-ic{border:0;background:none;cursor:pointer;color:#18244F;font-size:18px;padding:2px 6px;border-radius:4px}.eiv-ic:hover{background:#E9EBF0}.eiv-ic:disabled{opacity:.3;cursor:default}
@@ -409,7 +409,7 @@
     m.innerHTML = '<div class="eiv-md" role="dialog" aria-modal="true" aria-label="Bordereau"><div class="eiv-mh"><span>Bordereau N°' + esc(b.d.replace(/-/g, '') + b.p) + '</span><button type="button" class="eiv-x" data-mv-x aria-label="Fermer">×</button></div><div class="eiv-mb">' +
       '<div class="eiv-fg">' + champ('Centre de saisie', B.meta.site) + champ('Exercice', b.d.slice(0, 4)) + champ('Monnaie transaction', 'Locale (' + loc + ')') + champ('Code du journal', b.j) + champ('Date comptable', dFR(b.d)) + champ('Cours Rap. ' + rap, ok ? m2(cours) : '') +
         champ('Numéro de pièce', b.p) + champ('Date de la pièce', dFR(B.meta.datePiece)) + champ('N° de facture', B.meta.facture || '') + '</div>' +
-      '<div class="eiv-gr"><div class="eiv-sc" style="max-height:230px"><table class="eiv-tb eiv-bt" style="width:100%"><thead><tr><th>SS compte</th><th>Auxiliaire</th>' + AXL.map(function (a) { return '<th>' + esc(a) + '</th>'; }).join('') + '<th>Libellé</th><th>Débit</th><th>Crédit</th><th>Débit(Rep)</th><th>Crédit(Rep)</th></tr></thead><tbody data-bd-lignes>' +
+      '<div class="eiv-gr"><div class="eiv-sc" style="max-height:calc(100vh - 560px);min-height:150px"><table class="eiv-tb eiv-bt" style="width:100%"><thead><tr><th>SS compte</th><th>Auxiliaire</th>' + AXL.map(function (a) { return '<th>' + esc(a) + '</th>'; }).join('') + '<th>Libellé</th><th>Débit</th><th>Crédit</th><th>Débit(Rep)</th><th>Crédit(Rep)</th></tr></thead><tbody data-bd-lignes>' +
         (B.L.length ? B.L.map(function (l, i) { return '<tr data-bd-i="' + i + '"><td>' + esc(l.compte) + '</td><td>' + esc(l.aux) + '</td>' + [0, 1, 2, 3].map(function (j) { return '<td>' + esc(l.axes[j] || '') + '</td>'; }).join('') + '<td>' + esc(l.lib) + '</td><td class="r">' + (l.d ? m2(l.d) : '') + '</td><td class="r">' + (l.c ? m2(l.c) : '') + '</td><td class="r">' + rep(l.d) + '</td><td class="r">' + rep(l.c) + '</td></tr>'; }).join('') : '<tr><td colspan="11" class="eiv-vide">Aucune ligne pour ce bordereau.</td></tr>') + '</tbody></table></div></div>' +
       '<div class="eiv-bd"><div><h4>Ligne sélectionnée</h4><div class="eiv-fg" data-bd-det style="grid-template-columns:repeat(2,minmax(0,1fr))"></div></div>' +
         '<div><h4>Totaux</h4><table class="eiv-tb" style="width:100%"><thead><tr><th></th><th class="r">Débit</th><th class="r">Crédit</th></tr></thead><tbody><tr><td>' + esc(loc) + '</td><td class="r">' + m2(sd) + '</td><td class="r">' + m2(sc) + '</td></tr><tr><td>Solde</td><td class="r">' + m2(sd - sc > 0 ? sd - sc : 0) + '</td><td class="r">' + m2(sc - sd > 0 ? sc - sd : 0) + '</td></tr><tr><td>Rap. ' + esc(rap) + '</td><td class="r">' + (ok ? m2(sd / cours) : '—') + '</td><td class="r">' + (ok ? m2(sc / cours) : '—') + '</td></tr></tbody></table></div></div></div></div>';
