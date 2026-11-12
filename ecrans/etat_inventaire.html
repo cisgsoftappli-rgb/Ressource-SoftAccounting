@@ -7,6 +7,8 @@
   - des filtres facultatifs : lieu d'affectation, responsable, famille.
   Inventaire par lieu et responsable : les affectations sont prises en compte et la situation est celle de la date « Au » : lieu et responsable sont ceux en vigueur à
   cette date d'après l'historique de « Réassignation » (colonne « Affectée depuis » = date d'affectation) ; VNC calculée à cette date d'après la famille.
+  - « Rapprochement avec la compta » : par site et compte d'immobilisation, montant comptabilisé (écritures) et montant des fiches ; double-clic = fenêtre des écritures (onglets Immo / Compta),
+    bordereau (Compta) ou fiche (Immo) depuis l'icône de la 1re colonne. Principe : chaque immobilisation comptabilisée doit avoir une fiche et inversement.
   Barre d'actions : Filtre (rouvre la fenêtre), Imprimer, PDF, Excel. Données lues dans « Liste d'immobilisations » (window.FICHES_API), « Réassignation »
   (window.REASSIGNATIONS_IMMOBILISATION), les familles, lieux et responsables. Rien n'est stocké. Pas de fonction « $$ » (build.cjs).
 -->
@@ -43,6 +45,38 @@
 .eiv-b{display:inline-flex;align-items:center;gap:6px;min-height:44px;padding:0 16px;border:1px solid #D6D9E0;border-radius:8px;background:#fff;color:#18244F;font-weight:600;font-size:14px;cursor:pointer}
 .eiv-b:hover{background:#F4F7FE;border-color:#2E427B}
 .eiv-b.p{background:#2E427B;border-color:#2E427B;color:#fff}.eiv-b.p:hover{background:#243569}
+/* rapprochement avec la compta */
+.eiv-tb tr[data-k]{cursor:pointer}.eiv-tb tr[data-k]:hover td{background:#F4F7FE}.eiv-tb tr.eiv-sel td{background:#DCE6F8}
+.eiv-tb tr.eiv-ec td.r:last-child{color:#B63132;font-weight:600}.eiv-tb tr:not(.eiv-ec) td.r:last-child{color:#047857}
+.eiv-note{padding:8px 20px;font-size:12px;color:#5B606D;border-bottom:1px solid #E9EBF0;background:#F9FAFB}
+.eiv-mv{position:fixed;inset:0;z-index:3200;background:rgba(11,19,50,.55);display:flex;align-items:center;justify-content:center;padding:16px}
+.eiv-md{background:#fff;border-radius:12px;box-shadow:0 28px 70px rgba(11,19,50,.35);width:min(1180px,100%);max-height:calc(100vh - 32px);display:flex;flex-direction:column}
+.eiv-md.m{width:min(860px,100%)}
+.eiv-mh{display:flex;justify-content:space-between;align-items:center;gap:12px;padding:12px 20px;background:#2E427B;color:#fff;border-radius:12px 12px 0 0;font-size:15px;font-weight:600}
+.eiv-x{border:0;background:none;color:#fff;font-size:20px;cursor:pointer;line-height:1}
+.eiv-mb{padding:14px 20px 18px;overflow:auto}
+.eiv-h3{margin:0 0 10px;padding-bottom:6px;border-bottom:1px solid #E9EBF0;font-size:22px;font-weight:500;color:#2E6AA8}
+.eiv-cart{display:inline-block;min-width:260px;margin:0 0 14px;padding:12px 18px;border:1px solid #E9EBF0;border-left:4px solid #2E6AA8;border-radius:4px;box-shadow:0 1px 4px rgba(11,19,50,.1);font-size:13px;line-height:2}
+.eiv-tabs{display:flex;gap:2px;border-bottom:3px solid #E9EBF0;margin-bottom:10px}
+.eiv-tabs button{padding:8px 14px;border:0;border-bottom:3px solid transparent;margin-bottom:-3px;background:none;color:#5B606D;font-weight:600;font-size:13px;cursor:pointer}
+.eiv-tabs button.on{color:#0B1332;border-bottom-color:#2E427B}
+.eiv-gr{border:1px solid #E9EBF0;border-radius:8px;overflow:hidden}
+.eiv-sc{max-height:380px;overflow:auto}
+.eiv-gr th{background:#fff;text-align:center;padding:9px 10px;font-size:12px;color:#18244F;border-bottom:1px solid #E9EBF0;white-space:nowrap;position:sticky;top:0}
+.eiv-gr .flt th{padding:4px 6px;top:34px}.eiv-gr .flt input{width:100%;min-height:28px;border:1px solid #D6D9E0;border-radius:3px;padding:0 6px;font:inherit;font-size:12px}
+.eiv-gr td{padding:7px 10px;border-top:1px solid #E9EBF0;font-size:13px}.eiv-gr td.r{text-align:right;white-space:nowrap}.eiv-gr td.c{text-align:center}
+.eiv-gr tbody tr{cursor:pointer}.eiv-gr tbody tr.on td{background:#DCE6F8}
+.eiv-gr tfoot td{background:#EEF2FB;font-weight:700;color:#18244F;border-top:2px solid #2E427B}
+.eiv-ic{border:0;background:none;cursor:pointer;color:#18244F;font-size:18px;padding:2px 6px;border-radius:4px}.eiv-ic:hover{background:#E9EBF0}.eiv-ic:disabled{opacity:.3;cursor:default}
+.eiv-pg{display:flex;justify-content:space-between;align-items:center;gap:12px;padding:8px 12px;background:#F5F7F9;font-size:12px;color:#5B606D}
+.eiv-pg button{width:26px;height:26px;border:0;border-radius:50%;background:none;cursor:pointer;color:#5B606D}.eiv-pg button.on{background:#2E6AA8;color:#fff}.eiv-pg button:disabled{opacity:.35;cursor:default}
+.eiv-pg select{margin-left:6px;border:0;background:none;font:inherit;font-weight:600}
+.eiv-fg{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:8px 12px;margin:0 0 12px}
+.eiv-fg>div{border:1px solid #E9EBF0;border-radius:6px;background:#F9FAFB;padding:7px 10px}.eiv-fg small{display:block;font-size:11px;color:#5B606D;text-transform:uppercase;letter-spacing:.04em}.eiv-fg span{display:block;font-size:13px;font-weight:600;color:#0B1332;overflow-wrap:anywhere}
+.eiv-bd{display:grid;grid-template-columns:minmax(0,1fr) 340px;gap:14px;margin-top:12px}
+.eiv-bd h4{margin:0 0 6px;font-size:12px;text-transform:uppercase;letter-spacing:.04em;color:#2E427B}
+.eiv-bt td:nth-child(n+8),.eiv-bt th:nth-child(n+8){text-align:right}
+@media (max-width:800px){.eiv-fg{grid-template-columns:1fr 1fr}.eiv-bd{grid-template-columns:1fr}}
 [data-eiv] [hidden]{display:none!important}
 [data-eiv] .bp-champ>span:first-child{text-transform:uppercase;letter-spacing:.04em;font-size:12px;font-weight:600}
 @media (max-width:700px){.eiv-crit,.eiv-etats{grid-template-columns:1fr}}
@@ -83,10 +117,13 @@
           <div class="eiv-etats">
             <label class="eiv-etat"><input type="radio" name="eiv-etat" value="amort" checked><span><b>Tableau des amortissements</b><small>Amortissements antérieurs, dotation de la période, cumul et VNC de chaque immobilisation.</small></span></label>
             <label class="eiv-etat"><input type="radio" name="eiv-etat" value="inv"><span><b>Inventaire des immobilisations</b><small>Par lieu et responsable à la date de situation : acquises, cédées ou autres.</small></span></label>
+            <label class="eiv-etat"><input type="radio" name="eiv-etat" value="rapp"><span><b>Rapprochement avec la compta</b><small>Par compte d’immobilisation : montant comptabilisé et montant des fiches, avec l’écart à justifier.</small></span></label>
           </div>
           <div class="eiv-crit" style="margin-top:16px">
             <label class="bp-champ"><span>Exercice</span><select class="bp-sel" data-f="exo"></select></label>
-            <div class="bp-champ"><span>Période</span><div style="display:grid;grid-template-columns:1fr 1fr;gap:8px"><input class="bp-in" type="date" data-f="du" aria-label="Du"><input class="bp-in" type="date" data-f="au" aria-label="Au (date de situation)"></div><span class="eiv-er" data-er="periode"></span></div>
+            <div class="bp-champ" data-eiv-periode><span>Période</span><div style="display:grid;grid-template-columns:1fr 1fr;gap:8px"><input class="bp-in" type="date" data-f="du" aria-label="Du"><input class="bp-in" type="date" data-f="au" aria-label="Au (date de situation)"></div><span class="eiv-er" data-er="periode"></span></div>
+            <label class="bp-champ" data-eiv-rapp hidden><span>Date de situation</span><input class="bp-in" type="date" data-f="sit"></label>
+            <label class="bp-champ" data-eiv-rapp hidden><span>Site</span><select class="bp-sel" data-f="site"></select></label>
             <div class="eiv-full" data-eiv-perimetre hidden>
               <p class="eiv-sec" style="margin-top:4px">Périmètre de l'inventaire</p>
               <div class="eiv-per">
@@ -97,9 +134,9 @@
               <span class="eiv-er" data-er="perimetre"></span>
               <p class="bp-note" style="margin:6px 0 0;font-size:12px;color:#5B606D">Lieu et responsable sont ceux en vigueur à la date « Au », d'après les réassignations ; la VNC est calculée à cette date.</p>
             </div>
-            <label class="bp-champ"><span>Lieu d'affectation</span><select class="bp-sel" data-f="lieu"></select></label>
-            <label class="bp-champ"><span>Responsable</span><select class="bp-sel" data-f="resp"></select></label>
-            <label class="bp-champ eiv-full"><span>Famille d'immobilisation</span><select class="bp-sel" data-f="fam"></select></label>
+            <label class="bp-champ" data-eiv-filtres><span>Lieu d'affectation</span><select class="bp-sel" data-f="lieu"></select></label>
+            <label class="bp-champ" data-eiv-filtres><span>Responsable</span><select class="bp-sel" data-f="resp"></select></label>
+            <label class="bp-champ eiv-full" data-eiv-filtres><span>Famille d'immobilisation</span><select class="bp-sel" data-f="fam"></select></label>
           </div>
         </form>
       </div>
@@ -141,21 +178,22 @@
     optsListe('lieu', (window.LIEUX_AFFECTATION || []).map(function (x) { return [x.code, x.libelle]; }), 'Tous');
     optsListe('resp', (window.COLLABORATEURS_RESPONSABLES || []).map(function (x) { return [x.code, x.libelle]; }), 'Tous');
     optsListe('fam', (window.FAMILLES_IMMOBILISATION || []).map(function (x) { return [x.code, x.libelle]; }), 'Toutes');
+    optsListe('site', ((window.PLANS_REF || {}).sites || []).filter(function (s) { return s[0] !== '00'; }).map(function (s) { return [s[0], s[1]]; }), 'Tous');
   }
   function periodeExercice() {
     var r = exercices().filter(function (x) { return x.annee === f('exo').value; })[0]; if (!r) return;
     var d = iso(r.debut), fin = iso(r.fin), t = aujourdhui();
-    f('du').value = d; f('au').value = t >= d && t <= fin ? t : fin;
+    f('du').value = d; f('au').value = t >= d && t <= fin ? t : fin; f('sit').value = fin;
   }
   function reinitialiser() {
     qa('[name=eiv-etat]')[0].checked = true; ['p_acq', 'p_ced', 'p_aut'].forEach(function (k) { f(k).checked = true; });
     listes(); var en = exercices().filter(function (x) { return x.cours; })[0] || exercices().slice(-1)[0]; f('exo').value = en ? en.annee : ''; f('lieu').value = ''; f('resp').value = ''; f('fam').value = '';
-    if (en) periodeExercice(); else { f('du').value = aujourdhui().slice(0, 4) + '-01-01'; f('au').value = aujourdhui(); }
+    if (en) periodeExercice(); else { f('du').value = aujourdhui().slice(0, 4) + '-01-01'; f('au').value = aujourdhui(); f('sit').value = aujourdhui(); }
     erreurs(); majEtat();
   }
   function erreurs(p, per) { var a = q('[data-er=periode]'), b = q('[data-er=perimetre]'); a.textContent = p || ''; a.classList.toggle('show', !!p); b.textContent = per || ''; b.classList.toggle('show', !!per); }
   function etatChoisi() { return q('[name=eiv-etat]:checked').value; }
-  function majEtat() { q('[data-eiv-perimetre]').hidden = etatChoisi() !== 'inv'; }
+  function majEtat() { var e = etatChoisi(), rapp = e === 'rapp'; q('[data-eiv-perimetre]').hidden = e !== 'inv'; q('[data-eiv-periode]').hidden = rapp; qa('[data-eiv-rapp]').forEach(function (x) { x.hidden = !rapp; }); qa('[data-eiv-filtres]').forEach(function (x) { x.hidden = rapp; }); }
   qa('[name=eiv-etat]').forEach(function (r) { r.addEventListener('change', majEtat); });
   f('exo').addEventListener('change', periodeExercice);
 
@@ -188,7 +226,7 @@
   }
   function filtres(x, aff, P) { return (!P.lieu || aff.empl === P.lieu) && (!P.resp || aff.resp === P.resp) && (!P.fam || x.famille === P.fam); }
 
-  function lire() { return { etat: etatChoisi(), du: f('du').value, au: f('au').value, acq: f('p_acq').checked, ced: f('p_ced').checked, aut: f('p_aut').checked, lieu: f('lieu').value, resp: f('resp').value, fam: f('fam').value, exo: f('exo').value }; }
+  function lire() { return { etat: etatChoisi(), du: f('du').value, au: f('au').value, acq: f('p_acq').checked, ced: f('p_ced').checked, aut: f('p_aut').checked, lieu: f('lieu').value, resp: f('resp').value, fam: f('fam').value, exo: f('exo').value, sit: f('sit').value, site: f('site').value }; }
 
   function etatAmort(P) {
     var rows = [], T = { val: 0, ant: 0, dot: 0, cum: 0, vnc: 0 };
@@ -238,17 +276,182 @@
     return { titre: 'Inventaire par lieu et responsable', sous: 'Situation au ' + dFR(P.au) + ' — période du ' + dFR(P.du) + ' au ' + dFR(P.au) + ' — immobilisations ' + per, tete: tete, num: [5, 6], html: html, brut: brut, total: rows.length ? ['TOTAL', '', '', '', '', nb(T.val), nb(T.vnc), ''] : null, n: rows.length };
   }
 
+
+  // ---------- Rapprochement avec la compta : montant comptabilisé / montant des fiches, par site et compte d'immobilisation ----------
+  // Principe : chaque immobilisation comptabilisée doit avoir une fiche et inversement. Compta = écritures des comptes d'immobilisation (classes 20 à 25) jusqu'à la date de situation
+  // (à-nouveau et grand livre de démonstration + écritures saisies ou générées) ; Immo = valeur d'acquisition des fiches acquises à cette date et non sorties.
+  var CPTE = /^2[0-5]/;
+  function m2(n) { return (Math.round((+n || 0) * 100) / 100).toLocaleString('fr-FR', { minimumFractionDigits: 2, maximumFractionDigits: 2 }); }
+  function pm(s) { return s ? parseFloat(String(s).replace(/[\s\u00a0\u202f]/g, '').replace(',', '.')) || 0 : 0; }
+  function libCpt(c) {
+    var S = window.ECRITURES_SAISIES, l = S && S.libCompte ? S.libCompte(c) : ''; if (l) return l;
+    var g = (window.GLG_COMPTES || []).filter(function (x) { return x.c === c; })[0]; if (g) return g.l;
+    var b = (window.BALANCE_BASE || []).filter(function (x) { return x.code === c; })[0]; return b ? b.libelle : '';
+  }
+  function axeDe(x, i) { var A = (window.ECRITURES_SAISIES && window.ECRITURES_SAISIES.AXES) || []; return (x && x.axes && (x.axes[A[i]] || x.axes['PLAN' + (i + 1)])) || ''; }
+  var AXL = ['Activité', 'Budget', 'Financement', 'Géographique'];
+  function comptaDe(au) {
+    var M = {}, an = au.slice(0, 4) + '-01-01', fin = au.slice(0, 4) + '-12-31', dejaGlg = {};
+    function add(site, compte, l) { var k = site + '|' + compte; (M[k] = M[k] || []).push(l); }
+    (window.GLG_COMPTES || []).forEach(function (c) {
+      if (!CPTE.test(c.c)) return; dejaGlg[c.c] = true;
+      (c.L || []).forEach(function (s) {
+        var p = s.split('\t'), d = iso(p[0]); if (!d || d > au) return;
+        add('01', c.c, { date: d, piece: p[6] || '', journal: p[5] || '', libelle: p[8] || '', montant: pm(p[9]) - pm(p[10]), axes: (p[11] || '').split('|').slice(0, 4), b: { j: p[5] || '', p: p[6] || '', d: d } });
+      });
+    });
+    (window.BALANCE_BASE || []).forEach(function (b) {
+      if (!CPTE.test(b.code)) return;
+      var a = ((b.anD || 0) - (b.anC || 0)) / 100; if (a && an <= au) add('01', b.code, { date: an, piece: 'AN', journal: '', libelle: 'À-nouveau (reprise de la balance)', montant: a, axes: [], b: null });
+      var m = ((b.mvD || 0) - (b.mvC || 0)) / 100; if (m && !dejaGlg[b.code] && fin <= au) add('01', b.code, { date: fin, piece: 'MVT', journal: '', libelle: 'Mouvements de l’exercice (reprise de la balance)', montant: m, axes: [], b: null });
+    });
+    if (window.ECRITURES_SAISIES) window.ECRITURES_SAISIES({ au: au }).forEach(function (x) {
+      if (!CPTE.test(x.compte)) return;
+      add(x.site || '01', x.compte, { date: x.date, piece: x.piece, journal: x.journal, libelle: x.libelle, montant: (x.debit || 0) - (x.credit || 0), axes: [0, 1, 2, 3].map(function (i) { return axeDe(x, i); }), b: { j: x.journal, p: x.piece, d: x.date } });
+    });
+    Object.keys(M).forEach(function (k) { M[k].sort(function (a, b) { return a.date < b.date ? -1 : a.date > b.date ? 1 : (a.piece < b.piece ? -1 : 1); }); });
+    return M;
+  }
+  function immoDe(au) {
+    var M = {};
+    fiches().forEach(function (x) {
+      if (!x.compte || x.dacq > au) return; if (x.cede && x.c_date && x.c_date <= au) return;
+      var k = (x.site || '01') + '|' + x.compte; (M[k] = M[k] || []).push({ num: x.num, desig: x.desig, dacq: x.dacq, famille: x.famille || '', montant: Math.round(x.qte * x.pu * 100) / 100 });
+    });
+    return M;
+  }
+  function etatRapp(P) {
+    var C = comptaDe(P.au), I = immoDe(P.au), cles = {}, rows = [], T = { i: 0, c: 0 };
+    Object.keys(C).concat(Object.keys(I)).forEach(function (k) { cles[k] = 1; });
+    Object.keys(cles).sort().forEach(function (k) {
+      var s = k.split('|'); if (P.site && s[0] !== P.site) return;
+      var li = I[k] || [], lc = C[k] || [], vi = Math.round(li.reduce(function (a, x) { return a + x.montant; }, 0) * 100) / 100, vc = Math.round(lc.reduce(function (a, x) { return a + x.montant; }, 0) * 100) / 100;
+      rows.push({ k: k, site: s[0], compte: s[1], lib: libCpt(s[1]), vi: vi, vc: vc, ni: li.length, nc: lc.length, d: Math.round((vi - vc) * 100) / 100 });
+      T.i += vi; T.c += vc;
+    });
+    var ecarts = rows.filter(function (r) { return r.d !== 0; }).length;
+    var tete = ['Site', 'Compte', 'Libellé', 'Montant Immo', 'Montant Compta', 'Différence (Immo - Compta)'];
+    var brut = rows.map(function (r) { return [r.site, r.compte, r.lib, r.ni ? m2(r.vi) : '', r.nc ? m2(r.vc) : '', m2(r.d)]; });
+    var html = rows.map(function (r) {
+      return '<tr data-k="' + esc(r.k) + '" class="' + (r.d ? 'eiv-ec' : '') + '"><td>' + esc(r.site) + '</td><td><span class="eiv-code">' + esc(r.compte) + '</span></td><td>' + esc(r.lib) + '</td><td class="r" data-col="immo">' + (r.ni ? m2(r.vi) : '') + '</td><td class="r" data-col="compta">' + (r.nc ? m2(r.vc) : '') + '</td><td class="r" data-col="diff">' + m2(r.d) + '</td></tr>';
+    }).join('') + (rows.length ? '<tr class="eiv-tot"><td colspan="3">TOTAL (' + rows.length + ' compte(s), ' + ecarts + ' écart(s))</td><td class="r">' + m2(T.i) + '</td><td class="r">' + m2(T.c) + '</td><td class="r">' + m2(T.i - T.c) + '</td></tr>' : '');
+    return { titre: 'Rapprochement avec la compta Au ' + dFR(P.au), sous: 'Comptes d’immobilisation : montant comptabilisé et montant des fiches' + (P.site ? ' — site ' + P.site : ''), cls: 'eiv-rapp',
+      note: 'Double-clic sur une ligne : écritures composant les colonnes Immo et Compta ; dans la fenêtre, l’icône de la 1re colonne affiche le bordereau (Compta) ou la fiche (Immo).',
+      tete: tete, num: [3, 4, 5], html: html, brut: brut, total: rows.length ? ['TOTAL', '', '', m2(T.i), m2(T.c), m2(T.i - T.c)] : null, n: rows.length, rapp: { rows: rows, C: C, I: I, au: P.au } };
+  }
+  function mv() { var m = document.createElement('div'); m.className = 'eiv-mv'; m.setAttribute('data-eiv-mv', ''); root.appendChild(m); m.addEventListener('mousedown', function (e) { if (e.target === m) m.remove(); }); return m; }
+  function fermerMv(m) { m.addEventListener('click', function (e) { if (e.target.closest('[data-mv-x]')) m.remove(); }); }
+  document.addEventListener('keydown', function (e) { if (e.key !== 'Escape') return; var m = root.querySelectorAll('.eiv-mv'); if (m.length) { m[m.length - 1].remove(); e.stopPropagation(); e.preventDefault(); } }, true);
+
+  // fenêtre « Rapprochement avec la compta » d'un compte : onglets Immo (fiches) et Compta (écritures), filtres par colonne, pagination
+  function ouvrirRapp(k, tab) {
+    var R = res && res.rapp, row = R && R.rows.filter(function (r) { return r.k === k; })[0]; if (!row) return;
+    var S = { tab: tab || 'compta', filtres: {}, page: 1, size: 25, sel: -1 }, m = mv();
+    m.innerHTML = '<div class="eiv-md" role="dialog" aria-modal="true" aria-label="Rapprochement avec la compta"><div class="eiv-mh"><span>Rapprochement avec la compta</span><button type="button" class="eiv-x" data-mv-x aria-label="Fermer">×</button></div><div class="eiv-mb">' +
+      '<h3 class="eiv-h3">Rapprochement avec la compta Au ' + dFR(R.au) + '</h3><div class="eiv-cart">Site : ' + esc(row.site) + '<br>Compte : ' + esc(row.compte) + (row.lib ? ' — ' + esc(row.lib) : '') + '</div>' +
+      '<div class="eiv-tabs"><button type="button" data-mv-tab="immo">Immo (' + row.ni + ')</button><button type="button" data-mv-tab="compta">Compta (' + row.nc + ')</button></div><div class="eiv-gr" data-mv-gr></div></div></div>';
+    fermerMv(m);
+    function cols() { return S.tab === 'compta' ? [['b', 'Bordereau'], ['dn', 'Date - N° Ordre'], ['lib', 'Libellé'], ['mt', 'Montant'], ['a0', AXL[0]], ['a1', AXL[1]], ['a2', AXL[2]], ['a3', AXL[3]]] : [['b', 'Fiche'], ['num', 'N° identification'], ['lib', 'Désignation'], ['dacq', 'Date d’acquisition'], ['fam', 'Famille'], ['mt', 'Montant']]; }
+    function lignes() {
+      var L = S.tab === 'compta' ? (R.C[k] || []).map(function (l, i) { return { i: i, b: l.b, dn: dFR(l.date) + ' - ' + l.piece, lib: l.libelle, mt: m2(l.montant), v: l.montant, a0: l.axes[0] || '', a1: l.axes[1] || '', a2: l.axes[2] || '', a3: l.axes[3] || '' }; })
+        : (R.I[k] || []).map(function (x, i) { return { i: i, b: x.num, num: x.num, lib: x.desig, dacq: dFR(x.dacq), fam: x.famille, mt: m2(x.montant), v: x.montant }; });
+      return L.filter(function (l) { return Object.keys(S.filtres).every(function (c) { var f = S.filtres[c]; return !f || String(l[c] == null ? '' : l[c]).toLowerCase().indexOf(f.toLowerCase()) >= 0; }); });
+    }
+    function corps() {
+      var L = lignes(), n = L.length, pages = Math.max(1, Math.ceil(n / S.size)), C = cols(), tot = L.reduce(function (a, l) { return a + l.v; }, 0); if (S.page > pages) S.page = pages;
+      var P = L.slice((S.page - 1) * S.size, S.page * S.size), iMt = C.map(function (c) { return c[0]; }).indexOf('mt');
+      m.querySelector('[data-mv-body]').innerHTML = n ? P.map(function (l) {
+        var ic = S.tab === 'compta' ? '<button type="button" class="eiv-ic" data-mv-bd="' + l.i + '" title="Afficher le bordereau"' + (l.b ? '' : ' disabled') + '><i class="ti ti-file-description"></i></button>' : '<button type="button" class="eiv-ic" data-mv-fi="' + esc(l.b) + '" title="Afficher la fiche"><i class="ti ti-file-description"></i></button>';
+        return '<tr data-mv-i="' + l.i + '" class="' + (S.sel === l.i ? 'on' : '') + '">' + C.map(function (c) { return c[0] === 'b' ? '<td class="c">' + ic + '</td>' : '<td class="' + (c[0] === 'mt' ? 'r' : '') + '">' + esc(l[c[0]]) + '</td>'; }).join('') + '</tr>';
+      }).join('') : '<tr><td colspan="' + C.length + '" class="eiv-vide">Aucune ligne.</td></tr>';
+      m.querySelector('[data-mv-tot]').innerHTML = '<tr><td colspan="' + iMt + '">Total</td><td class="r">' + m2(tot) + '</td><td colspan="' + (C.length - iMt - 1) + '"></td></tr>';
+      var pg = '<span>Page ' + S.page + ' sur ' + pages + ' (' + n + ' élément(s)) <button type="button" data-mv-p="-1"' + (S.page <= 1 ? ' disabled' : '') + '>‹</button><button type="button" class="on">' + S.page + '</button><button type="button" data-mv-p="1"' + (S.page >= pages ? ' disabled' : '') + '>›</button></span>' +
+        '<span>Taille de la page :<select data-mv-size>' + [10, 25, 50, 100].map(function (z) { return '<option' + (z === S.size ? ' selected' : '') + '>' + z + '</option>'; }).join('') + '</select></span>';
+      m.querySelector('[data-mv-pg]').innerHTML = pg;
+    }
+    function grille() {
+      var C = cols();
+      m.querySelectorAll('[data-mv-tab]').forEach(function (b) { b.classList.toggle('on', b.getAttribute('data-mv-tab') === S.tab); });
+      m.querySelector('[data-mv-gr]').innerHTML = '<div class="eiv-sc"><table class="eiv-tb" style="width:100%"><thead><tr>' + C.map(function (c) { return '<th>' + esc(c[1]) + '</th>'; }).join('') + '</tr><tr class="flt">' +
+        C.map(function (c) { return c[0] === 'b' ? '<th></th>' : '<th><input data-mv-f="' + c[0] + '" value="' + esc(S.filtres[c[0]] || '') + '" aria-label="Filtrer ' + esc(c[1]) + '"></th>'; }).join('') + '</tr></thead><tbody data-mv-body></tbody><tfoot data-mv-tot></tfoot></table></div><div class="eiv-pg" data-mv-pg></div>';
+      corps();
+    }
+    m.addEventListener('click', function (e) {
+      var t = e.target, b;
+      if ((b = t.closest('[data-mv-tab]'))) { S.tab = b.getAttribute('data-mv-tab'); S.filtres = {}; S.page = 1; S.sel = -1; grille(); return; }
+      if ((b = t.closest('[data-mv-bd]')) && !b.disabled) { S.sel = +b.getAttribute('data-mv-bd'); corps(); var l = (R.C[k] || [])[S.sel]; if (l && l.b) ouvrirBordereau(l.b); return; }
+      if ((b = t.closest('[data-mv-fi]'))) { var tr0 = b.closest('tr'); S.sel = +tr0.getAttribute('data-mv-i'); corps(); ouvrirFiche(b.getAttribute('data-mv-fi')); return; }
+      if ((b = t.closest('[data-mv-p]'))) { S.page += +b.getAttribute('data-mv-p'); corps(); return; }
+      if ((b = t.closest('tr[data-mv-i]'))) { S.sel = +b.getAttribute('data-mv-i'); corps(); }
+    });
+    m.addEventListener('input', function (e) { var f0 = e.target.getAttribute && e.target.getAttribute('data-mv-f'); if (f0) { S.filtres[f0] = e.target.value; S.page = 1; corps(); } });
+    m.addEventListener('change', function (e) { if (e.target.hasAttribute('data-mv-size')) { S.size = +e.target.value; S.page = 1; corps(); } });
+    grille();
+  }
+
+  // bordereau (lecture seule) : pièce saisie / générée (window.ECRITURES_PIECES) ou pièce du grand livre de démonstration
+  function bordereauDe(b) {
+    var P = (window.ECRITURES_PIECES || []).filter(function (p) { return p.journal === b.j && p.piece === b.p && p.date === b.d; })[0], L = [], meta = { site: '01', datePiece: b.d };
+    if (P) {
+      (P.lignes || []).forEach(function (l) { var d = l.sens === 'DEBIT' || l.sens === 'D'; L.push({ compte: String(l.compte || ''), aux: l.tiers || '', axes: [0, 1, 2, 3].map(function (i) { return axeDe({ axes: l.axes }, i); }), lib: l.libelle || '', d: d ? (+l.montant || 0) : 0, c: d ? 0 : (+l.montant || 0) }); });
+      meta.site = P.site || '01'; meta.datePiece = P.datePiece || P.date; meta.facture = P.facture || '';
+    } else (window.GLG_COMPTES || []).forEach(function (c) {
+      (c.L || []).forEach(function (s) { var p = s.split('\t'); if (p[5] === b.j && p[6] === b.p && iso(p[0]) === b.d) { L.push({ compte: c.c, aux: '', axes: (p[11] || '').split('|').slice(0, 4), lib: p[8] || '', d: pm(p[9]), c: pm(p[10]) }); if (p[1]) meta.datePiece = iso(p[1]) || b.d; } });
+    });
+    return { L: L, meta: meta };
+  }
+  function monnaies() { return window.ENTITE_MONNAIES ? window.ENTITE_MONNAIES() : null; }
+  function ouvrirBordereau(b) {
+    var B = bordereauDe(b), mo = monnaies() || {}, loc = mo.m1 || 'MGA', rap = mo.m2 || 'USD', cours = window.COURS_API && window.COURS_API.taux ? window.COURS_API.taux(rap, b.d) : null, ok = cours && cours > 0;
+    function rep(v) { return ok && v ? m2(v / cours) : ''; }
+    var sd = B.L.reduce(function (a, l) { return a + l.d; }, 0), sc = B.L.reduce(function (a, l) { return a + l.c; }, 0), m = mv();
+    function champ(l, v) { return '<div><small>' + esc(l) + '</small><span>' + (v === '' || v == null ? '—' : esc(v)) + '</span></div>'; }
+    m.innerHTML = '<div class="eiv-md" role="dialog" aria-modal="true" aria-label="Bordereau"><div class="eiv-mh"><span>Bordereau N°' + esc(b.d.replace(/-/g, '') + b.p) + '</span><button type="button" class="eiv-x" data-mv-x aria-label="Fermer">×</button></div><div class="eiv-mb">' +
+      '<div class="eiv-fg">' + champ('Centre de saisie', B.meta.site) + champ('Exercice', b.d.slice(0, 4)) + champ('Monnaie transaction', 'Locale (' + loc + ')') + champ('Code du journal', b.j) + champ('Date comptable', dFR(b.d)) + champ('Cours Rap. ' + rap, ok ? m2(cours) : '') +
+        champ('Numéro de pièce', b.p) + champ('Date de la pièce', dFR(B.meta.datePiece)) + champ('N° de facture', B.meta.facture || '') + '</div>' +
+      '<div class="eiv-gr"><div class="eiv-sc" style="max-height:230px"><table class="eiv-tb eiv-bt" style="width:100%"><thead><tr><th>SS compte</th><th>Auxiliaire</th>' + AXL.map(function (a) { return '<th>' + esc(a) + '</th>'; }).join('') + '<th>Libellé</th><th>Débit</th><th>Crédit</th><th>Débit(Rep)</th><th>Crédit(Rep)</th></tr></thead><tbody data-bd-lignes>' +
+        (B.L.length ? B.L.map(function (l, i) { return '<tr data-bd-i="' + i + '"><td>' + esc(l.compte) + '</td><td>' + esc(l.aux) + '</td>' + [0, 1, 2, 3].map(function (j) { return '<td>' + esc(l.axes[j] || '') + '</td>'; }).join('') + '<td>' + esc(l.lib) + '</td><td class="r">' + (l.d ? m2(l.d) : '') + '</td><td class="r">' + (l.c ? m2(l.c) : '') + '</td><td class="r">' + rep(l.d) + '</td><td class="r">' + rep(l.c) + '</td></tr>'; }).join('') : '<tr><td colspan="11" class="eiv-vide">Aucune ligne pour ce bordereau.</td></tr>') + '</tbody></table></div></div>' +
+      '<div class="eiv-bd"><div><h4>Ligne sélectionnée</h4><div class="eiv-fg" data-bd-det style="grid-template-columns:repeat(2,minmax(0,1fr))"></div></div>' +
+        '<div><h4>Totaux</h4><table class="eiv-tb" style="width:100%"><thead><tr><th></th><th class="r">Débit</th><th class="r">Crédit</th></tr></thead><tbody><tr><td>' + esc(loc) + '</td><td class="r">' + m2(sd) + '</td><td class="r">' + m2(sc) + '</td></tr><tr><td>Solde</td><td class="r">' + m2(sd - sc > 0 ? sd - sc : 0) + '</td><td class="r">' + m2(sc - sd > 0 ? sc - sd : 0) + '</td></tr><tr><td>Rap. ' + esc(rap) + '</td><td class="r">' + (ok ? m2(sd / cours) : '—') + '</td><td class="r">' + (ok ? m2(sc / cours) : '—') + '</td></tr></tbody></table></div></div></div></div>';
+    fermerMv(m);
+    function detail(i) {
+      var l = B.L[i]; if (!l) return; m.querySelectorAll('[data-bd-i]').forEach(function (r) { r.classList.toggle('on', +r.getAttribute('data-bd-i') === i); });
+      m.querySelector('[data-bd-det]').innerHTML = champ('SS compte', l.compte) + champ('Auxiliaire', l.aux) + AXL.map(function (a, j) { return champ(a, l.axes[j] || ''); }).join('') + champ('Libellé', l.lib) + champ('Montant en ' + loc, m2(l.d || l.c)) + champ('Sens', l.d ? 'Débit' : 'Crédit') + champ('Montant Rap. ' + rap, rep(l.d || l.c));
+    }
+    m.addEventListener('click', function (e) { var tr = e.target.closest('tr[data-bd-i]'); if (tr) detail(+tr.getAttribute('data-bd-i')); });
+    if (B.L.length) detail(0);
+  }
+
+  // fiche d'immobilisation (lecture seule)
+  function ouvrirFiche(num) {
+    var r = window.FICHES_API && window.FICHES_API.fiche ? window.FICHES_API.fiche(num) : null; if (!r) { toast('Fiche introuvable.'); return; }
+    var m = mv(), fam = famille(r.famille), ana = Object.keys(r.ana || {}).map(function (p) { return p + ' : ' + r.ana[p]; }).join(' · ');
+    function champ(l, v) { return '<div><small>' + esc(l) + '</small><span>' + (v === '' || v == null ? '—' : esc(v)) + '</span></div>'; }
+    m.innerHTML = '<div class="eiv-md m" role="dialog" aria-modal="true" aria-label="Fiche d’immobilisation"><div class="eiv-mh"><span>Fiche d’immobilisation — ' + esc(r.num) + '</span><button type="button" class="eiv-x" data-mv-x aria-label="Fermer">×</button></div><div class="eiv-mb">' +
+      '<p class="eiv-sec">Informations générales</p><div class="eiv-fg">' + champ('Année', r.annee) + champ('Site', r.site) + champ('Référence facture / pièce', r.ref) + champ('Désignation du bien', r.desig) + champ('Compte général', r.compte) + champ('Quantité', r.qte) +
+        champ('Prix unitaire', m2(r.pu)) + champ('Valeur d’acquisition', m2(r.qte * r.pu)) + champ('Date d’acquisition', dFR(r.dacq)) + champ('Date de mise en service', dFR(r.dms)) + champ('Début d’amortissement', dFR(r.damort)) + '</div>' +
+      '<p class="eiv-sec">Informations complémentaires</p><div class="eiv-fg">' + champ('N° d’identification', r.num) + champ('État du bien', r.etat) + champ('Famille', r.famille ? r.famille + (fam ? ' — ' + fam.libelle : '') : '') + champ('Lieu d’affectation', r.empl ? r.empl + (libLieu(r.empl) ? ' — ' + libLieu(r.empl) : '') : '') + champ('Responsable', r.resp ? libResp(r.resp) : '') + '</div>' +
+      '<p class="eiv-sec">Imputations comptables</p><div class="eiv-fg">' + champ('Fournisseur (collectif / auxiliaire)', [r.coll, r.aux].filter(Boolean).join(' / ')) + champ('Imputations analytiques', ana) + champ('Écriture d’acquisition', r.genere ? 'Générée — pièce ' + (r.e_piece || '') + ', journal ' + (r.e_journal || '') : 'Non générée') + '</div>' +
+      (r.cede ? '<p class="eiv-sec">Cession / sortie</p><div class="eiv-fg">' + champ('Type', r.c_type) + champ('Date', dFR(r.c_date)) + champ('Valeur de cession', r.c_val === '' ? '' : m2(r.c_val)) + '</div>' : '') + '</div></div>';
+    fermerMv(m);
+  }
+  root.addEventListener('click', function (e) { var tr = e.target.closest('[data-eiv-res] tr[data-k]'); if (!tr) return; qa('[data-eiv-res] tr.eiv-sel').forEach(function (x) { x.classList.remove('eiv-sel'); }); tr.classList.add('eiv-sel'); });
+  root.addEventListener('dblclick', function (e) { var tr = e.target.closest('[data-eiv-res] tr[data-k]'); if (!tr) return; var td = e.target.closest('td'); ouvrirRapp(tr.getAttribute('data-k'), td && td.getAttribute('data-col') === 'immo' ? 'immo' : 'compta'); });
+
   // ---------- édition de l'état ----------
   function editer() {
     var P = lire(); erreurs();
-    if (!P.du || !P.au) { erreurs('Renseignez la période (Du et Au).'); return; }
-    if (P.du > P.au) { erreurs('La date de début doit précéder la date de fin.'); return; }
-    if (P.etat === 'inv' && !(P.acq || P.ced || P.aut)) { erreurs(null, 'Choisissez au moins un périmètre : acquises, cédées ou autres.'); return; }
-    var e = P.etat === 'inv' ? etatInv(P) : etatAmort(P), now = new Date();
+    if (P.etat === 'rapp') { if (!P.sit) { toast('Renseignez la date de situation.'); return; } P.au = P.sit; P.du = ''; }
+    else {
+      if (!P.du || !P.au) { erreurs('Renseignez la période (Du et Au).'); return; }
+      if (P.du > P.au) { erreurs('La date de début doit précéder la date de fin.'); return; }
+      if (P.etat === 'inv' && !(P.acq || P.ced || P.aut)) { erreurs(null, 'Choisissez au moins un périmètre : acquises, cédées ou autres.'); return; }
+    }
+    var e = P.etat === 'rapp' ? etatRapp(P) : P.etat === 'inv' ? etatInv(P) : etatAmort(P), now = new Date();
     res = e; res.P = P; res.edite = now.toLocaleDateString('fr-FR') + ' ' + now.toLocaleTimeString('fr-FR', { hour: '2-digit', minute: '2-digit' });
-    var filtresTxt = [P.lieu ? 'Lieu ' + P.lieu : '', P.resp ? 'Responsable ' + P.resp : '', P.fam ? 'Famille ' + P.fam : ''].filter(Boolean).join(' · ');
+    var filtresTxt = P.etat === 'rapp' ? '' : [P.lieu ? 'Lieu ' + P.lieu : '', P.resp ? 'Responsable ' + P.resp : '', P.fam ? 'Famille ' + P.fam : ''].filter(Boolean).join(' · ');
     q('[data-eiv-res]').innerHTML = '<div class="eiv-res-h"><div><h2>' + esc(e.titre) + '</h2><p>' + esc(e.sous) + (filtresTxt ? '<br>' + esc(filtresTxt) : '') + '</p></div><div class="eiv-ed">Édité le ' + esc(res.edite) + '</div></div>' +
-      (e.n ? '<div style="overflow:auto"><table class="eiv-tb"><thead><tr>' + e.tete.map(function (h, i) { return '<th class="' + (e.num.indexOf(i) >= 0 ? 'r' : '') + '">' + esc(h) + '</th>'; }).join('') + '</tr></thead><tbody>' + e.html + '</tbody></table></div>'
+      (e.note ? '<div class="eiv-note">' + esc(e.note) + '</div>' : '') + (e.n ? '<div style="overflow:auto"><table class="eiv-tb' + (e.cls ? ' ' + e.cls : '') + '"><thead><tr>' + e.tete.map(function (h, i) { return '<th class="' + (e.num.indexOf(i) >= 0 ? 'r' : '') + '">' + esc(h) + '</th>'; }).join('') + '</tr></thead><tbody>' + e.html + '</tbody></table></div>'
         : '<div class="eiv-vide">' + (fiches().length ? 'Aucune immobilisation ne correspond aux critères.' : 'Aucune immobilisation : créez des fiches dans Immobilisations › Saisies › Liste d’immobilisations.') + '</div>');
     q('[data-eiv-res]').hidden = false; q('[data-eiv-fond]').hidden = true; fermer(); etat();
     toast(e.n ? e.titre + ' : ' + e.n + ' ligne(s).' : 'Aucune ligne pour ces critères.');
@@ -260,7 +463,7 @@
   function tableauExport() { var l = res.brut.slice(); if (res.total) l.push(res.total); return l; }
   function exporter(k) {
     var X = window.EXPORT_TABLEAU; if (!res || !res.n) { toast('Aucun état à exporter : éditez d’abord un état.'); return; } if (!X) { toast('Module d’export indisponible.'); return; }
-    var nom = res.P.etat === 'inv' ? 'inventaire_immobilisations' : 'tableau_amortissements', l = tableauExport();
+    var nom = res.P.etat === 'rapp' ? 'rapprochement_compta' : res.P.etat === 'inv' ? 'inventaire_immobilisations' : 'tableau_amortissements', l = tableauExport();
     if (k === 'pdf') X.pdf(nom + '.pdf', res.titre, res.sous, res.tete, l); else X.xlsx(nom + '.xlsx', res.titre, res.tete, l);
     toast('Export ' + (k === 'pdf' ? 'PDF' : 'Excel (XLSX)') + ' généré : ' + res.n + ' ligne(s).');
   }

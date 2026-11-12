@@ -631,6 +631,7 @@
   // ---------- API pour l'écran « Réassignation » (Immobilisations › Saisies) ----------
   // liste() : copie des fiches ; reaffecter(num, { site, empl, resp, ana }) : applique une nouvelle affectation (refusé pour une fiche cédée ou pendant une saisie).
   window.FICHES_API = {
+    fiche: function (num) { var r = data.filter(function (x) { return x.num === num; })[0]; return r ? JSON.parse(JSON.stringify(r)) : null; },   // fiche complète (lecture seule : état « Rapprochement avec la compta »)
     liste: function () { return data.map(function (r) { return { num: r.num, desig: r.desig, compte: r.compte, site: r.site, dacq: r.dacq, empl: r.empl, resp: r.resp, qte: r.qte, pu: r.pu, famille: r.famille, ana: JSON.parse(JSON.stringify(r.ana || {})), cede: !!r.cede, genere: !!r.genere, dms: r.dms, damort: r.damort || r.dacq, c_type: r.cede ? r.c_type : '', c_date: r.cede ? r.c_date : '', c_val: r.cede ? r.c_val : '' }; }); },
     reaffecter: function (num, v) {
       var r = data.filter(function (x) { return x.num === num; })[0]; if (!r || r.cede || mode !== 'consultation') return false;
