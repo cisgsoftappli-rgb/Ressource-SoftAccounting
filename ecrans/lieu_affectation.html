@@ -122,6 +122,18 @@
   // persistance locale : les données saisies survivent au rechargement et aux nouvelles publications (localStorage « softcompta.immo.lieux »)
   var CLE = 'softcompta.immo.lieux';
   try { var sv = JSON.parse(localStorage.getItem(CLE) || 'null'); if (sv && typeof sv === 'object') { if (sv.niveaux !== undefined) niveaux = sv.niveaux; if (sv.data !== undefined) data = sv.data; if (sv.nextId !== undefined) nextId = sv.nextId; } } catch (e) {}
+  // jeu de données de démonstration (première ouverture seulement) : sites et locaux
+  try {
+    if (!data.length && !niveaux.length && !localStorage.getItem('softcompta.immo.demo.lieux')) {
+      niveaux = [{ lib: 'Site', fmt: 'Numérique', lg: 2 }, { lib: 'Local', fmt: 'Numérique', lg: 2 }];
+      data = [
+        { id: 1, n: 1, p: 0, seg: '01', lib: 'Siège — Antananarivo', actif: true }, { id: 2, n: 2, p: 1, seg: '01', lib: 'Direction générale', actif: true },
+        { id: 3, n: 2, p: 1, seg: '02', lib: 'Service comptabilité et finances', actif: true }, { id: 4, n: 2, p: 1, seg: '03', lib: 'Salle informatique', actif: true },
+        { id: 5, n: 1, p: 0, seg: '02', lib: 'Agence — Toamasina', actif: true }, { id: 6, n: 2, p: 5, seg: '01', lib: 'Accueil et vente', actif: true }, { id: 7, n: 2, p: 5, seg: '02', lib: 'Entrepôt', actif: true }
+      ];
+      nextId = 8; localStorage.setItem('softcompta.immo.demo.lieux', '1');
+    }
+  } catch (e) {}
   function sauver() { try { localStorage.setItem(CLE, JSON.stringify({ niveaux: niveaux, data: data, nextId: nextId })); } catch (e) {} }
   function esc(s) { return String(s == null ? '' : s).replace(/[&<>"]/g, function (c) { return { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c]; }); }
   function toast(m) { var t = q('[data-la-toast]'); t.textContent = m; t.hidden = false; clearTimeout(toast.t); toast.t = setTimeout(function () { t.hidden = true; }, 2500); }

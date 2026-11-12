@@ -133,6 +133,18 @@
   // persistance locale : les données saisies survivent au rechargement et aux nouvelles publications (localStorage « softcompta.immo.familles »)
   var CLE = 'softcompta.immo.familles';
   try { var sv = JSON.parse(localStorage.getItem(CLE) || 'null'); if (sv && typeof sv === 'object') { if (sv.data !== undefined) data = sv.data; } } catch (e) {}
+  // jeu de données de démonstration (première ouverture seulement)
+  try {
+    if (!data.length && !localStorage.getItem('softcompta.immo.demo.familles')) {
+      var base = { nature: 'Corporel', actif: true, amortissable: true, auto: true, c_sortie: '', c_plus: '7522', c_moins: '6522', methode: 'Linéaire', unite: 'Ans', prorata: 'Oui', pbase: 'Jour réel', debut: 'Date d\'acquisition', period: 'Annuel', coef: '' };
+      data = [
+        Object.assign({}, base, { code: 'INFO', lib: 'Matériel informatique', desc: 'Ordinateurs, imprimantes, serveurs et périphériques', c_immo: '225', c_amort: '2825', c_dot: '6816', duree: 3, taux: 33.33 }),
+        Object.assign({}, base, { code: 'MOBI', lib: 'Mobilier et matériel de bureau', desc: 'Bureaux, sièges, armoires et agencements mobiles', c_immo: '226', c_amort: '2826', c_dot: '6816', duree: 10, taux: 10 }),
+        Object.assign({}, base, { code: 'VEHI', lib: 'Matériel de transport', desc: 'Véhicules de service et de livraison', c_immo: '224', c_amort: '2824', c_dot: '6815', duree: 5, taux: 20 })
+      ];
+      localStorage.setItem('softcompta.immo.demo.familles', '1');
+    }
+  } catch (e) {}
   function sauver() { try { localStorage.setItem(CLE, JSON.stringify({ data: data })); } catch (e) {} }
   var CPT = ['c_immo', 'c_amort', 'c_dot', 'c_sortie', 'c_plus', 'c_moins'];
   var CHAMPS = ['code', 'lib', 'nature', 'desc', 'c_immo', 'c_amort', 'c_dot', 'c_sortie', 'c_plus', 'c_moins', 'methode', 'duree', 'unite', 'taux', 'prorata', 'pbase', 'debut', 'period', 'coef'];

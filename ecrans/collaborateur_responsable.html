@@ -122,6 +122,19 @@
   // persistance locale : les données saisies survivent au rechargement et aux nouvelles publications (localStorage « softcompta.immo.collaborateurs »)
   var CLE = 'softcompta.immo.collaborateurs';
   try { var sv = JSON.parse(localStorage.getItem(CLE) || 'null'); if (sv && typeof sv === 'object') { if (sv.niveaux !== undefined) niveaux = sv.niveaux; if (sv.data !== undefined) data = sv.data; if (sv.nextId !== undefined) nextId = sv.nextId; } } catch (e) {}
+  // jeu de données de démonstration (première ouverture seulement) : services et responsables
+  try {
+    if (!data.length && !niveaux.length && !localStorage.getItem('softcompta.immo.demo.collaborateurs')) {
+      niveaux = [{ lib: 'Service', fmt: 'Numérique', lg: 2 }, { lib: 'Collaborateur', fmt: 'Numérique', lg: 2 }];
+      data = [
+        { id: 1, n: 1, p: 0, seg: '01', lib: 'Direction', actif: true }, { id: 2, n: 2, p: 1, seg: '01', lib: 'RAKOTOARISOA Hery — Directeur général', actif: true },
+        { id: 3, n: 1, p: 0, seg: '02', lib: 'Comptabilité et finances', actif: true }, { id: 4, n: 2, p: 3, seg: '01', lib: 'RAZAFINDRAKOTO Miora — Comptable principale', actif: true },
+        { id: 5, n: 1, p: 0, seg: '03', lib: 'Informatique', actif: true }, { id: 6, n: 2, p: 5, seg: '01', lib: 'ANDRIAMAHEFA Tovo — Responsable informatique', actif: true },
+        { id: 7, n: 1, p: 0, seg: '04', lib: 'Agence de Toamasina', actif: true }, { id: 8, n: 2, p: 7, seg: '01', lib: 'RABEMANANJARA Fanja — Responsable d\'agence', actif: true }
+      ];
+      nextId = 9; localStorage.setItem('softcompta.immo.demo.collaborateurs', '1');
+    }
+  } catch (e) {}
   function sauver() { try { localStorage.setItem(CLE, JSON.stringify({ niveaux: niveaux, data: data, nextId: nextId })); } catch (e) {} }
   function esc(s) { return String(s == null ? '' : s).replace(/[&<>"]/g, function (c) { return { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c]; }); }
   function toast(m) { var t = q('[data-cor-toast]'); t.textContent = m; t.hidden = false; clearTimeout(toast.t); toast.t = setTimeout(function () { t.hidden = true; }, 2500); }

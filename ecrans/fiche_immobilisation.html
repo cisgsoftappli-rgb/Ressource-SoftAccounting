@@ -926,7 +926,7 @@
     var P = window.ECRITURES_PIECES = window.ECRITURES_PIECES || [];
     if (P.some(function (x) { return x.journal === ge.journal && x.piece === ge.piece; })) return;
     var f0 = data.filter(function (x) { return x.num === ge.fiche; })[0] || {};
-    P.push({ journal: ge.journal, piece: ge.piece, date: ge.dateComptable, datePiece: ge.date, facture: f0.ref || '', reference: ge.fiches ? ge.fiches.join(', ') : ge.fiche, source: 'immobilisations', type: ge.type,
+    P.push({ journal: ge.journal, piece: ge.piece, date: ge.dateComptable, datePiece: ge.date, facture: f0.ref || ge.facture || '', reference: ge.fiches ? ge.fiches.join(', ') : ge.fiche, source: ge.source || 'immobilisations', type: ge.type,
       lignes: ge.lignes.map(function (l) { return { compte: l.compte, tiers: l.auxiliaire || '', libelle: l.libelle, sens: l.debit > 0 ? 'DEBIT' : 'CREDIT', montant: l.debit > 0 ? l.debit : l.credit, montant1: 0, montant2: 0, axes: JSON.parse(JSON.stringify(l.imputations || {})), auto: true, regle: 0 }; }) });
   }
   function generer() { gOuvrir(); }
@@ -1127,6 +1127,60 @@
   });
   ['familles-immobilisation-changed', 'lieux-affectation-changed', 'collaborateurs-responsables-changed', 'plans-changed', 'plans-actifs'].forEach(function (ev) { window.addEventListener(ev, function () { if (mode === 'consultation') { form(sel >= 0 ? data[sel] : null); etat(); } }); });
   window.addEventListener('hashchange', function () { if (mode === 'consultation' && location.hash === '#immolist') { form(sel >= 0 ? data[sel] : null); etat(); } });
+  // ---------- jeu de données de démonstration (première ouverture seulement) ----------
+  // Fiches d'un exercice courant : ordinateurs (une facture, trois fiches, une seule écriture), imprimante, mobilier ; une fiche pas encore comptabilisée ; une écriture d'acquisition
+  // de véhicule passée directement en comptabilité, sans fiche. Écritures : débit du compte d'immobilisation (classe 2), crédit du compte fournisseur (401…).
+  function demo(tard) {
+    try { if (data.length || genere.length || localStorage.getItem('softcompta.immo.demo.fiches')) return false; } catch (e) { return false; }
+    var T = ((window.PLANS_REF || {}).tiers || []).filter(function (t) { return /^401/.test(t[2] || ''); }), n = T.length;
+    if (!n && !tard) return false;   // les plans (tiers, axes) ne sont pas encore chargés : nouvel essai à la fin du chargement de la page
+    try { localStorage.setItem('softcompta.immo.demo.fiches', '1'); } catch (e) { return false; }
+    // fournisseurs : de préférence des tiers dont le nom correspond à l'achat (informatique, mobilier, véhicule), sinon des tiers de la liste
+    function pick(re, k, rang) { var M = T.filter(function (t) { return re.test(t[1] || ''); }), t = M[k] || M[0] || (n ? T[Math.min(n - 1, Math.floor(n * (rang + 1) / 5))] : null); return t ? { coll: t[2], aux: t[0], nom: t[1] } : { coll: '401100', aux: '', nom: 'Fournisseur' }; }
+    var FOUR = [pick(/INFO|MICRO|DATA|TECH|SYST|DIGIT|ELECTRO|COMPUT|ORDI|NUMER/i, 0, 0), pick(/INFO|MICRO|DATA|TECH|SYST|DIGIT|ELECTRO|COMPUT|ORDI|NUMER/i, 1, 1), pick(/MEUBLE|MOBIL|BUREAU|DECOR|AMEUBL/i, 0, 2), pick(/MOTORS|AUTO|GARAGE|TOYOTA|VEHIC|CAR\b/i, 0, 3)];
+    function sup(i) { return FOUR[i] || FOUR[0]; }
+    function ana(i) { var o = {}; plansVent().filter(function (p) { return p.actif && p.rows.length; }).forEach(function (p) { o[p.code] = p.rows[i % p.rows.length][0]; }); return o; }
+    var an = '2026', exo = (window.EXERCICES_API ? window.EXERCICES_API.liste() : []).filter(function (x) { return x.cours; })[0]; if (exo) an = exo.annee;
+    function d(m, j) { return an + '-' + ('0' + m).slice(-2) + '-' + ('0' + j).slice(-2); }
+    // [n° , désignation, compte, qté, prix unitaire, acquisition, mise en service, famille, lieu, responsable, facture, fournisseur, comptabilisée]
+    var L = [
+      ['IMM-' + an + '-001', 'Ordinateur portable Dell Latitude 5440', '225', 1, 3450000, d(2, 10), d(2, 12), 'INFO', '01.02', '02.01', 'FAC-' + an + '-0112', 0, 1],
+      ['IMM-' + an + '-002', 'Ordinateur portable HP ProBook 450 G10', '225', 1, 2980000, d(3, 18), d(3, 20), 'INFO', '01.03', '03.01', 'FAC-' + an + '-0187', 1, 1],
+      ['IMM-' + an + '-003', 'Ordinateur portable HP ProBook 450 G10', '225', 1, 2980000, d(3, 18), d(3, 20), 'INFO', '01.03', '03.01', 'FAC-' + an + '-0187', 1, 1],
+      ['IMM-' + an + '-004', 'Ordinateur portable HP ProBook 450 G10', '225', 1, 2980000, d(3, 18), d(3, 20), 'INFO', '02.01', '04.01', 'FAC-' + an + '-0187', 1, 1],
+      ['IMM-' + an + '-005', 'Imprimante multifonction Canon iR 1643i', '225', 1, 1850000, d(4, 22), d(4, 25), 'INFO', '01.02', '02.01', 'FAC-' + an + '-0233', 0, 1],
+      ['IMM-' + an + '-006', 'Bureau de direction et fauteuil', '226', 1, 4200000, d(5, 6), d(5, 8), 'MOBI', '01.01', '01.01', 'FAC-' + an + '-0268', 2, 1],
+      ['IMM-' + an + '-007', 'Armoire métallique à rideaux', '226', 4, 450000, d(9, 14), d(9, 16), 'MOBI', '02.02', '04.01', 'FAC-' + an + '-0391', 2, 0]
+    ];
+    L.forEach(function (x, i) {
+      var f = sup(x[11]);
+      data.push({ annee: an, site: '01', ref: x[10], desig: x[1], compte: x[2], qte: x[3], pu: x[4], dacq: x[5], dms: x[6], damort: x[5], num: x[0], etat: 'Neuf', famille: x[7], empl: x[8], resp: x[9], coll: f.coll, aux: f.aux,
+        ana: ana(i), cede: false, c_type: '', c_date: '', c_val: '', c_ref: '', c_tcoll: '', c_taux: '', c_motif: '', id: i + 1, genere: false });
+    });
+    nextId = data.length + 1;
+    function ecriture(fiches, lib, ref, i, dat, S) {
+      var tot = 0, lignes = fiches.map(function (r) { var v = Math.round(r.qte * r.pu * 100) / 100; tot += v; return { compte: r.compte, libelle: 'Acquisition ' + r.desig + ' — ' + ref, debit: v, credit: 0, imputations: JSON.parse(JSON.stringify(r.ana)) }; });
+      lignes.push({ compte: S.coll, auxiliaire: S.aux, libelle: 'Acquisition ' + lib + ' — ' + ref + (S.nom ? ' — ' + S.nom : ''), debit: 0, credit: tot });
+      return { total: tot, e: { fiche: fiches[0] ? fiches[0].num : '', fiches: fiches.map(function (r) { return r.num; }), type: 'Acquisition', journal: '01ACHAT', annee: an, site: '01', date: dat, dateComptable: dat, piece: ref, libelle: 'Acquisition ' + lib + ' — ' + ref, total: tot, lignes: lignes } };
+    }
+    var groupes = {};
+    data.forEach(function (r, i) { if (L[i][12]) (groupes[r.ref] = groupes[r.ref] || []).push(r); });
+    Object.keys(groupes).forEach(function (ref, k) {
+      var F = groupes[ref], S = sup(L[F[0].id - 1][11]), E = ecriture(F, F[0].desig, ref, k, F[0].dacq, S);
+      genere.push(E.e); F.forEach(function (r) { r.e_piece = ref; r.e_journal = '01ACHAT'; r.genere = true; });
+    });
+    // acquisition de véhicule saisie directement en comptabilité (aucune fiche) : écart à justifier dans le rapprochement avec la compta
+    var V = sup(3), v = { num: '', qte: 1, pu: 92500000, compte: '224', desig: 'Véhicule Toyota Hilux double cabine', ana: ana(5) }, EV = ecriture([v], v.desig, 'FAC-' + an + '-0301', 5, d(6, 30), V);
+    EV.e.fiche = ''; EV.e.fiches = []; EV.e.source = 'saisie'; EV.e.facture = 'FAC-' + an + '-0301'; genere.push(EV.e);
+    return true;
+  }
+  // si les plans ne sont pas encore chargés à l'initialisation de l'écran, le jeu de données est créé à la fin du chargement de la page
+  window.addEventListener('load', function () {
+    if (!demo(true)) return;
+    genere.forEach(registre); window.ECRITURES_IMMOBILISATIONS = genere.slice(); window.dispatchEvent(new Event('ecritures-immobilisation-generees'));
+    liste(); form(null); etat(); publier();
+  });
+  demo(false);
   genere.forEach(registre); window.ECRITURES_IMMOBILISATIONS = genere.slice(); if (genere.length) window.dispatchEvent(new Event('ecritures-immobilisation-generees'));
   liste(); form(null); etat(); onglet('liste'); songlet('general'); publier();
 })();
