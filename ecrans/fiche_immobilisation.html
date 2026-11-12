@@ -83,6 +83,7 @@
 /* quantité > 1 : choix fiche groupée / fiches individuelles, éclatement */
 .fim-md.m{width:min(720px,100%)}
 .fim-mt.deux{grid-template-columns:repeat(2,minmax(0,1fr))}
+.fim-mtb2 tr[data-r-id]{cursor:pointer}.fim-mtb2 tr[data-r-id]:hover td{background:#F4F7FE}.fim-mtb2 tr[data-r-id].on td{background:#DCE6F8}
 .fim-ecg{display:grid;grid-template-columns:repeat(auto-fill,minmax(520px,1fr));gap:12px}
 .fim-ecu{border:1px solid #D6D9E0;border-radius:12px;padding:12px 14px;background:#fff}
 .fim-ecu h4{margin:0 0 8px;font-size:13px;color:#2E427B;text-transform:uppercase;letter-spacing:.04em}
@@ -111,6 +112,7 @@
     <button type="button" data-fim-enregistrer>Enregistrer</button>
     <button type="button" data-fim-annuler>Annuler</button>
     <button type="button" data-fim-generer>Générer écriture</button>
+    <button type="button" data-fim-recuperer>Récupérer</button>
     <button type="button" data-fim-calculer>Calculer les dotations</button>
     <button type="button" data-fim-imprimer>Imprimer</button>
     <button type="button" data-fim-pdf>PDF</button>
@@ -171,6 +173,7 @@
             </div>
             <div class="fim-g4" data-fim-devs style="margin-top:12px"></div>
             <div class="fim-info" data-fim-qinfo hidden style="margin-top:12px"><i class="ti ti-info-circle" aria-hidden="true"></i><span data-fim-qinfo-t></span></div>
+            <div class="fim-info" data-fim-pec hidden style="margin-top:12px;border-color:#A7F3D0;background:#ECFDF5"><i class="ti ti-link" aria-hidden="true"></i><span data-fim-pec-t></span></div>
           </div>
 
           <div class="fim-card">
@@ -449,11 +452,14 @@
     var act = window.PLANS_ACTIFS ? window.PLANS_ACTIFS() : [];
     qa('[data-ana]').forEach(function (s) { if (act.indexOf(s.dataset.ana) < 0) s.disabled = true; });
     f('aux').disabled = !ed || gen || !f('coll').value; majAmort();
-    majQinfo();
+    if (mode !== 'creation') PEC = null;
+    majQinfo(); majPec();
     var a = q('[data-fim-actions]'), peutGen = !ed && (!!cur || cochees().length > 0);   // une fiche affichée ou des fiches cochées (génération en masse)
     a.querySelector('[data-fim-ajouter]').disabled = ed; a.querySelector('[data-fim-modifier]').disabled = ed || sel < 0; a.querySelector('[data-fim-supprimer]').disabled = ed || sel < 0 || gen || !!(cur && cur.cede);
     a.querySelector('[data-fim-enregistrer]').disabled = !ed; a.querySelector('[data-fim-annuler]').disabled = !ed;
     a.querySelector('[data-fim-generer]').disabled = !peutGen;
+    var nrec = ed ? 0 : recupEligibles().length; a.querySelector('[data-fim-recuperer]').disabled = ed || !nrec;   // grisé : en saisie, ou plus aucune écriture d’acquisition à rattacher
+    a.querySelector('[data-fim-recuperer]').title = nrec ? nrec + ' écriture(s) d’acquisition non rattachée(s) à une fiche' : 'Aucune écriture d’acquisition à récupérer : toutes sont déjà rattachées à une fiche';
     a.querySelector('[data-fim-calculer]').disabled = ed || (!cochees().length && sel < 0);
     q('[data-fim-gen2]').disabled = !peutGen;
     q('[data-fim-gen-aide]').textContent = gen ? 'Écriture d’acquisition déjà générée (n° ' + cur.e_piece + ') : seules les écritures de dotation et de cession restent disponibles.' : (peutGen ? 'Prête : la génération utilise la fiche et les imputations ci-dessus.' : 'Enregistrez la fiche avant d’exécuter la génération.');
@@ -518,17 +524,103 @@
         if (r.c_tcoll && !r.c_taux) { err('c_taux', 'Le compte auxiliaire du cessionnaire est obligatoire pour une cession.'); ok = false; }
       }
     }
+    if (mode === 'creation' && PEC) {   // fiche issue d’une écriture : la valeur doit être celle de l’écriture ; une écriture ne crée qu’une fiche
+      if (Math.abs(r.qte * r.pu - PEC.montant) > 0.005) { err('pu', 'La valeur de la fiche (quantité × prix unitaire) doit correspondre au montant de l’écriture : ' + nb(PEC.montant) + '.'); ok = false; }
+      if (lie(PEC.id)) { toast('Cette écriture est déjà rattachée à une fiche : récupération impossible (doublon).'); return; }
+    }
     if (!ok) { songlet('general'); return; }
-    if (mode === 'creation' && r.qte > 1 && !QTE_OK) { qChoix(r); return; }   // quantité > 1 : fiche groupée ou fiches individuelles
+    if (mode === 'creation' && r.qte > 1 && !QTE_OK && !PEC) { qChoix(r); return; }   // quantité > 1 : fiche groupée ou fiches individuelles
     var prec = mode === 'edition' ? data[sel] : null;
     r.id = mode === 'creation' ? nextId++ : prec.id; r.genere = !!(prec && prec.genere);
     if (prec && prec.genere) { r.e_piece = prec.e_piece; r.e_journal = prec.e_journal; }
+    if (prec && prec.nordPec) r.nordPec = prec.nordPec;
+    if (mode === 'creation' && PEC) { r.nordPec = PEC.id; r.genere = true; r.e_piece = PEC.piece; r.e_journal = PEC.journal; }   // rattachée à l’écriture d’acquisition : plus de génération possible
     if (prec && prec.sortieCompta) r.sortieCompta = prec.sortieCompta;
     var planPerdu = false;
     if (prec && prec.plan && prec.plan.length) { if (prec.planSig === sigPlan(r)) { r.plan = prec.plan; r.planSig = prec.planSig; } else planPerdu = true; }
     if (mode === 'creation') { data.push(r); sel = data.length - 1; } else data[sel] = r;
     mode = 'consultation'; liste(); form(data[sel]); etat(); onglet('liste'); publier(); toast((ancien ? 'Fiche modifiée.' : 'Fiche enregistrée.') + (planPerdu ? ' Le plan d’amortissement n’est plus valable (valeur, dates ou famille modifiées) : recalculez les dotations.' : ''));
   }
+  // ---------- récupération d'une écriture comptable : création d'une fiche à partir d'une écriture d'acquisition non rattachée ----------
+  // NORD de prise en charge = identifiant de la ligne d'écriture (fiche.nordPec) ; NORD immobilisation = fiche rattachée à cette ligne (retrouvée par nordPec). Une écriture ne crée qu'une fiche,
+  // une fiche ne se génère ni ne se récupère deux fois. Identifiants : « S|journal|pièce|date|n° de ligne » (pièces saisies ou générées), « G|journal|pièce|date|compte|n° » (grand livre de démonstration).
+  var PEC = null, RV = null, RS = { compte: '', q: '', sel: '' }, CPT_IMMO = /^2[0-5]/;
+  function pmn(s) { return s ? parseFloat(String(s).replace(/[\s\u00a0\u202f]/g, '').replace(',', '.')) || 0 : 0; }
+  function libCpt(c) { var l = libCompte(c); if (l) return l; var g = (window.GLG_COMPTES || []).filter(function (x) { return x.c === c; })[0]; return g ? g.l : ''; }
+  function lignesCompta() {
+    var out = [], S = window.ECRITURES_SAISIES, A = (S && S.AXES) || [];
+    if (S) S({}).forEach(function (x) {
+      if (!CPT_IMMO.test(x.compte) || !(x.debit > 0)) return;
+      var P = (window.ECRITURES_PIECES || []).filter(function (p) { return p.journal === x.journal && p.piece === x.piece && p.date === x.date; })[0], cp = null;
+      if (P) (P.lignes || []).forEach(function (l) { if (!cp && /^40/.test(String(l.compte || '')) && (l.sens === 'CREDIT' || l.sens === 'C')) cp = l; });
+      out.push({ id: x.id, date: x.date, journal: x.journal, piece: x.piece, compte: x.compte, libelle: x.libelle, montant: x.debit, facture: x.facture || '', site: x.site || '01', coll: cp ? String(cp.compte) : '', aux: cp ? (cp.tiers || '') : '',
+        axes: [0, 1, 2, 3, 4, 5, 6, 7, 8, 9].map(function (i) { return (x.axes && (x.axes[A[i]] || x.axes['PLAN' + (i + 1)])) || ''; }) });
+    });
+    (window.GLG_COMPTES || []).forEach(function (c) {
+      if (!CPT_IMMO.test(c.c)) return;
+      (c.L || []).forEach(function (s, k) {
+        var p = s.split('\t'), d = iso(p[0]), deb = pmn(p[9]); if (!d || !(deb > 0) || /^(REPRISE|MVT|AN$)/i.test(p[6] || '')) return;   // les reprises de balance ne sont pas des acquisitions
+        out.push({ id: 'G|' + (p[5] || '') + '|' + (p[6] || '') + '|' + d + '|' + c.c + '|' + k, date: d, journal: p[5] || '', piece: p[6] || '', compte: c.c, libelle: p[8] || '', montant: deb, facture: '', site: '01', coll: /^40/.test(p[7] || '') ? p[7] : '', aux: '', axes: (p[11] || '').split('|') });
+      });
+    });
+    return out;
+  }
+  function lie(id) { return data.some(function (r) { return r.nordPec === id; }); }
+  function recupEligibles() { return lignesCompta().filter(function (l) { return !lie(l.id); }); }
+  function raisonRecup(id) {
+    var l = lignesCompta().filter(function (x) { return x.id === id; })[0]; if (!l) return 'Seules les écritures d’acquisition (débit d’un compte d’immobilisation) peuvent être récupérées.';
+    var r = data.filter(function (x) { return x.nordPec === id; })[0]; return r ? 'Écriture déjà rattachée à la fiche ' + r.num + ' : elle ne peut plus créer de fiche.' : '';
+  }
+  function majPec() {
+    var b = q('[data-fim-pec]'); b.hidden = !PEC;
+    if (PEC) q('[data-fim-pec-t]').textContent = 'Fiche créée à partir de l’écriture ' + PEC.journal + ' ' + PEC.piece + ' du ' + dFR(PEC.date) + ' (compte ' + PEC.compte + ', ' + nb(PEC.montant) + ' ' + locale() + ') — NORD de prise en charge : ' + PEC.id + '. Complétez le lieu, le responsable et l’état ; à l’enregistrement, la fiche est rattachée à cette écriture.';
+  }
+  function commencerRecup(l) {
+    if (mode !== 'consultation') return false;
+    var rr = raisonRecup(l.id); if (rr) { toast(rr); return false; }
+    PEC = l; onglet('saisie'); songlet('general'); mode = 'creation'; sel = -1; liste();
+    var ana = {}; l.axes.forEach(function (v, i) { if (v) ana['PLAN' + (i + 1)] = v; });
+    var fam = (window.FAMILLES_IMMOBILISATION || []).filter(function (x) { return x.compte === l.compte; })[0];
+    form({ annee: l.date.slice(0, 4), site: l.site || '01', ref: l.facture || l.piece, desig: String(l.libelle || '').slice(0, 100), compte: l.compte, qte: 1, pu: l.montant, dacq: l.date, dms: l.date, damort: l.date, num: '', etat: 'Neuf', famille: fam ? fam.code : '', empl: '', resp: '', coll: l.coll, aux: l.aux, ana: ana });
+    f('num').value = proposerNum(); etat(); f('empl').focus();
+    toast('Fiche préremplie à partir de l’écriture ' + l.piece + ' : complétez le lieu et le responsable, puis enregistrez.');
+    return true;
+  }
+  function rFermer() { if (RV) { RV.remove(); RV = null; } }
+  function rCorps() {
+    var L = recupEligibles(), F = L.filter(function (l) { return (!RS.compte || l.compte === RS.compte) && (!RS.q || [l.piece, l.libelle, l.journal, l.facture, l.aux, l.coll, l.compte].join(' ').toLowerCase().indexOf(RS.q.toLowerCase()) >= 0); });
+    if (RS.sel && !F.some(function (l) { return l.id === RS.sel; })) RS.sel = '';
+    RV.querySelector('[data-r-body]').innerHTML = F.length ? F.map(function (l) {
+      return '<tr data-r-id="' + esc(l.id) + '" class="' + (RS.sel === l.id ? 'on' : '') + '"><td class="c"><input type="radio" name="fim-r" ' + (RS.sel === l.id ? 'checked ' : '') + 'aria-label="Choisir l’écriture ' + esc(l.piece) + '"></td><td>' + esc(dFR(l.date)) + '</td><td>' + esc(l.journal) + '</td><td class="fim-code">' + esc(l.piece) + '</td><td class="fim-code">' + esc(l.compte) + '</td><td>' + esc(l.libelle) + '</td><td>' + esc(l.aux || l.coll || '—') + '</td><td class="r">' + nb(l.montant) + '</td></tr>';
+    }).join('') : '<tr><td colspan="8"><div class="fim-mvd">Aucune écriture ne correspond aux critères.</div></td></tr>';
+    RV.querySelector('[data-r-n]').textContent = F.length + ' écriture(s) proposée(s) sur ' + L.length;
+    RV.querySelector('[data-r-ok]').disabled = !RS.sel;
+  }
+  function rOuvrir() {
+    if (mode !== 'consultation') return;
+    var L = recupEligibles(); if (!L.length) { toast('Aucune écriture à récupérer : toutes les écritures d’acquisition sont déjà rattachées à une fiche.'); return; }
+    RS = { compte: '', q: '', sel: '' }; var cpts = {}; L.forEach(function (l) { cpts[l.compte] = (cpts[l.compte] || 0) + 1; });
+    RV = document.createElement('div'); RV.className = 'fim-mv'; root.insertBefore(RV, q('[data-fim-toast]'));
+    RV.innerHTML = '<div class="fim-md l" role="dialog" aria-modal="true" aria-label="Récupérer une écriture comptable"><div class="fim-mh"><h2>Récupérer une écriture comptable</h2><p>Écritures d’acquisition (débit d’un compte d’immobilisation) de la comptabilité générale qui ne sont rattachées à aucune fiche. Choisissez-en une : la fiche d’immobilisation est préremplie à partir de l’écriture.</p></div>' +
+      '<div class="fim-mb"><div class="fim-g2" style="margin-bottom:12px"><label class="bp-champ"><span>Compte d’immobilisation</span><select class="bp-sel" data-r-compte><option value="">Tous les comptes</option>' +
+        Object.keys(cpts).sort().map(function (c) { return '<option value="' + esc(c) + '">' + esc(c + (libCpt(c) ? ' — ' + libCpt(c) : '') + ' (' + cpts[c] + ')') + '</option>'; }).join('') + '</select></label>' +
+        '<label class="bp-champ"><span>Recherche</span><input class="bp-in" data-r-q autocomplete="off" placeholder="N° de pièce, libellé, fournisseur…"></label></div>' +
+      '<div class="fim-mscroll"><table class="fim-mtb2"><thead><tr><th></th><th>Date</th><th>Journal</th><th>N° pièce</th><th>Compte</th><th>Libellé</th><th>Fournisseur</th><th class="r">Montant (' + esc(locale()) + ')</th></tr></thead><tbody data-r-body></tbody></table></div>' +
+      '<p class="fim-help" style="margin:8px 0 0" data-r-n></p></div><div class="fim-mf"><button type="button" class="fim-mbt" data-r-annuler>Annuler</button><button type="button" class="fim-mbt pri" data-r-ok disabled><i class="ti ti-download" aria-hidden="true"></i> Récupérer</button></div></div>';
+    RV.addEventListener('keydown', function (e) { if (e.key === 'Escape') rFermer(); });
+    RV.addEventListener('mousedown', function (e) { if (e.target === RV) rFermer(); });
+    RV.addEventListener('input', function (e) { if (e.target.hasAttribute('data-r-q')) { RS.q = e.target.value; rCorps(); } });
+    RV.addEventListener('change', function (e) { if (e.target.hasAttribute('data-r-compte')) { RS.compte = e.target.value; rCorps(); } });
+    RV.addEventListener('click', function (e) {
+      var tr = e.target.closest('tr[data-r-id]'); if (tr) { RS.sel = tr.getAttribute('data-r-id'); rCorps(); return; }
+      var b = e.target.closest('button'); if (!b || b.disabled) return;
+      if (b.hasAttribute('data-r-annuler')) rFermer();
+      else if (b.hasAttribute('data-r-ok')) { var l = lignesCompta().filter(function (x) { return x.id === RS.sel; })[0], rr = raisonRecup(RS.sel); if (!l || rr) { toast(rr || 'Écriture introuvable.'); rCorps(); return; } rFermer(); commencerRecup(l); }
+    });
+    rCorps(); RV.querySelector('[data-r-compte]').focus();
+  }
+  window.addEventListener('ecritures-pieces-changed', function () { if (mode === 'consultation') etat(); });
+  window.addEventListener('load', function () { if (mode === 'consultation') etat(); });
   // ---------- quantité supérieure à 1 (création) : 1) choix fiche groupée / fiches individuelles, 2) éclatement unité par unité ----------
   var QTE_OK = false, QV = null, EC = null;
   function qFermer() { if (QV) { QV.remove(); QV = null; } EC = null; }
@@ -631,8 +723,13 @@
   // ---------- API pour l'écran « Réassignation » (Immobilisations › Saisies) ----------
   // liste() : copie des fiches ; reaffecter(num, { site, empl, resp, ana }) : applique une nouvelle affectation (refusé pour une fiche cédée ou pendant une saisie).
   window.FICHES_API = {
+    nord: function (id) { var r = data.filter(function (x) { return x.nordPec === id; })[0]; return r ? r.num : null; },   // NORD immobilisation : fiche rattachée à la ligne d'écriture
+    peutRecuperer: function (id) { return raisonRecup(id); },   // '' si l'écriture peut créer une fiche, sinon le motif
+    peutGenerer: function (num) { var r = data.filter(function (x) { return x.num === num; })[0]; return !r ? 'Fiche introuvable.' : (r.genere || r.nordPec) ? 'Fiche déjà rattachée à une écriture d’acquisition' + (r.e_piece ? ' (pièce ' + r.e_piece + ')' : '') + ' : elle ne peut pas être générée deux fois.' : ''; },
+    recuperer: function (id) { var l = lignesCompta().filter(function (x) { return x.id === id; })[0]; if (!l || mode !== 'consultation') return false; location.hash = '#immolist'; return commencerRecup(l); },
+    generer: function (num) { var i = -1; data.forEach(function (r, k) { if (r.num === num) i = k; }); if (i < 0 || mode !== 'consultation' || data[i].genere || data[i].nordPec) return false; location.hash = '#immolist'; onglet('liste'); coches = {}; coches[num] = 1; choisir(i); gOuvrir('acq'); return true; },
     fiche: function (num) { var r = data.filter(function (x) { return x.num === num; })[0]; return r ? JSON.parse(JSON.stringify(r)) : null; },   // fiche complète (lecture seule : état « Rapprochement avec la compta »)
-    liste: function () { return data.map(function (r) { return { num: r.num, desig: r.desig, compte: r.compte, site: r.site, dacq: r.dacq, empl: r.empl, resp: r.resp, qte: r.qte, pu: r.pu, famille: r.famille, ana: JSON.parse(JSON.stringify(r.ana || {})), cede: !!r.cede, genere: !!r.genere, dms: r.dms, damort: r.damort || r.dacq, c_type: r.cede ? r.c_type : '', c_date: r.cede ? r.c_date : '', c_val: r.cede ? r.c_val : '' }; }); },
+    liste: function () { return data.map(function (r) { return { num: r.num, desig: r.desig, compte: r.compte, site: r.site, dacq: r.dacq, empl: r.empl, resp: r.resp, qte: r.qte, pu: r.pu, famille: r.famille, ana: JSON.parse(JSON.stringify(r.ana || {})), cede: !!r.cede, genere: !!r.genere, nordPec: r.nordPec || '', e_piece: r.e_piece || '', dms: r.dms, damort: r.damort || r.dacq, c_type: r.cede ? r.c_type : '', c_date: r.cede ? r.c_date : '', c_val: r.cede ? r.c_val : '' }; }); },
     reaffecter: function (num, v) {
       var r = data.filter(function (x) { return x.num === num; })[0]; if (!r || r.cede || mode !== 'consultation') return false;
       r.site = v.site; r.empl = v.empl; r.resp = v.resp; r.ana = JSON.parse(JSON.stringify(v.ana || {}));
@@ -652,7 +749,7 @@
   // motif d'exclusion d'une fiche pour un type d'écriture ('' = éligible) ; contrôles de façade, recontrôlés côté service à la comptabilisation
   function motif(type, r) {
     if (type === 'acq') {
-      if (r.genere) return 'Écriture déjà générée (pièce ' + r.e_piece + ', journal ' + r.e_journal + ').';
+      if (r.genere || r.nordPec) return 'Fiche déjà rattachée à une écriture d’acquisition' + (r.e_piece ? ' (pièce ' + r.e_piece + ', journal ' + r.e_journal + ')' : '') + (r.nordPec ? ' — NORD de prise en charge ' + r.nordPec : '') + ' : elle ne peut pas être générée deux fois.';
       if (!r.coll || !r.aux) return 'La fiche doit être complétée avant de générer l’écriture comptable (compte tiers manquant).';
       if (!/^2/.test(r.compte || '')) return 'Le compte d’immobilisation (classe 2) est absent ou invalide.';
       if (!(r.qte * r.pu > 0)) return 'La valeur d’acquisition est nulle.';
@@ -821,7 +918,7 @@
       var lib = 'Acquisition ' + e.ref;
       genere.push({ fiche: e.fiches[0].num, fiches: e.fiches.map(function (x) { return x.num; }), type: 'Acquisition', journal: pj.code, annee: e.annee, site: e.site, date: e.dc, dateComptable: e.dc, piece: pieces[i], libelle: lib, total: e.total,
         lignes: e.fiches.map(function (x) { return { compte: x.compte, libelle: 'Acquisition ' + x.desig + ' — ' + x.ref, debit: r2(x.qte * x.pu), credit: 0, imputations: JSON.parse(JSON.stringify(x.ana || {})) }; }).concat([{ compte: e.coll, auxiliaire: e.aux, libelle: lib + ' — ' + (libAux(e.aux, e.coll) || e.aux || e.coll), debit: 0, credit: e.total }]) });
-      e.fiches.forEach(function (x) { x.e_piece = pieces[i]; x.e_journal = pj.code; x.genere = true; });
+      e.fiches.forEach(function (x, k) { x.e_piece = pieces[i]; x.e_journal = pj.code; x.genere = true; x.nordPec = 'S|' + pj.code + '|' + pieces[i] + '|' + e.dc + '|' + k; });
       registre(genere[genere.length - 1]);
     });
     window.ECRITURES_IMMOBILISATIONS = genere.slice(); window.dispatchEvent(new Event('ecritures-immobilisation-generees'));
@@ -901,7 +998,7 @@
     if (gMulti()) { gGenererM(); return; }
     var r = data[sel], er = GV.querySelector('[data-g-er]'), P = gPiece(), pj = P.pj, piece = P.piece, dot = GEN.type === 'dot', ces = GEN.type === 'ces', LG = dot ? r.plan[GEN.ligne] : null, fam = famDe(r.famille) || {}, S = ces ? sortieSchema(r) : null, v = ces ? S.lignes.reduce(function (s, l) { return s + l.d; }, 0) : dot ? LG.dot : Math.round(r.qte * r.pu * 100) / 100;
     function ko(m) { er.textContent = m; er.classList.add('show'); }
-    if (GEN.type === 'acq' && r.genere) { ko('Écriture déjà générée (pièce ' + r.e_piece + ', journal ' + r.e_journal + ').'); return; }
+    if (GEN.type === 'acq' && (r.genere || r.nordPec)) { ko(motif('acq', r)); return; }
     if (dot) syncPlan(r);
     if (dot && (!LG || LG.statut === 'Comptabilisé')) { ko('Une écriture de dotation est déjà comptabilisée pour la période ' + (LG ? dFR(LG.debut) + ' – ' + dFR(LG.fin) : '') + ' : elle ne peut pas être générée deux fois.'); return; }
     var m = motif(GEN.type, r); if (m) { ko(m); return; }
@@ -910,7 +1007,7 @@
     if (pj.auto && piece === P.auto) { if (window.JOURNAUX_AVANCER) window.JOURNAUX_AVANCER(pj, P.ctx); else pj.dernier = (+pj.dernier || 0) + 1; window.dispatchEvent(new Event('journaux-changed')); }
     var imp = JSON.parse(JSON.stringify(GEN.imp));
     if (ces) r.sortieCompta = { type: r.c_type, date: r.c_date, piece: piece, journal: pj.code };
-    else if (dot) { LG.statut = 'Comptabilisé'; LG.piece = piece; LG.journal = pj.code; } else { r.e_piece = piece; r.e_journal = pj.code; r.genere = true; }
+    else if (dot) { LG.statut = 'Comptabilisé'; LG.piece = piece; LG.journal = pj.code; } else { r.e_piece = piece; r.e_journal = pj.code; r.genere = true; r.nordPec = 'S|' + pj.code + '|' + piece + '|' + GEN.dc + '|0'; }
     genere.push({ fiche: r.num, dotAnnee: dot ? LG.annee : undefined, type: ces ? (r.c_type === 'Cession' ? 'Cession' : r.c_type === 'Mise au rebut' ? 'Mise au rebut' : 'Sortie') : dot ? 'Dotation' : 'Acquisition', journal: pj.code, annee: GEN.annee, site: GEN.site, date: GEN.dp, dateComptable: GEN.dc, piece: piece, libelle: GEN.l1, total: v, lignes: ces ? S.lignes.map(function (l, i) { return { compte: l.compte, libelle: GEN['l' + (i + 1)], auxiliaire: l.aux || undefined, debit: l.d, credit: l.c, imputations: JSON.parse(JSON.stringify(imp)) }; }) : dot ? [
       { compte: fam.c_dot, libelle: GEN.l1, debit: v, credit: 0, imputations: imp },
       { compte: fam.c_amort, libelle: GEN.l2, debit: 0, credit: v, imputations: JSON.parse(JSON.stringify(imp)) }] : [
@@ -1112,6 +1209,7 @@
       return;
     }
     if (b.hasAttribute('data-fim-gen2') || b.hasAttribute('data-fim-generer')) { generer(); return; }
+    if (b.hasAttribute('data-fim-recuperer')) { rOuvrir(); return; }
     if (b.hasAttribute('data-fim-ajouter')) { onglet('saisie'); songlet('general'); mode = 'creation'; sel = -1; liste(); form(null); f('num').value = proposerNum(); etat(); f('ref').focus(); return; }
     if (b.hasAttribute('data-fim-modifier')) { onglet('saisie'); mode = 'edition'; etat(); f('desig').focus(); return; }
     if (b.hasAttribute('data-fim-annuler')) { mode = 'consultation'; liste(); form(sel >= 0 ? data[sel] : null); etat(); return; }
@@ -1167,7 +1265,7 @@
     data.forEach(function (r, i) { if (L[i][12]) (groupes[r.ref] = groupes[r.ref] || []).push(r); });
     Object.keys(groupes).forEach(function (ref, k) {
       var F = groupes[ref], S = sup(L[F[0].id - 1][11]), E = ecriture(F, F[0].desig, ref, k, F[0].dacq, S);
-      genere.push(E.e); F.forEach(function (r) { r.e_piece = ref; r.e_journal = '01ACHAT'; r.genere = true; });
+      genere.push(E.e); F.forEach(function (r, k) { r.e_piece = ref; r.e_journal = '01ACHAT'; r.genere = true; r.nordPec = 'S|01ACHAT|' + ref + '|' + F[0].dacq + '|' + k; });
     });
     // acquisition de véhicule saisie directement en comptabilité (aucune fiche) : écart à justifier dans le rapprochement avec la compta
     var V = sup(3), v = { num: '', qte: 1, pu: 92500000, compte: '224', desig: 'Véhicule Toyota Hilux double cabine', ana: ana(5) }, EV = ecriture([v], v.desig, 'FAC-' + an + '-0301', 5, d(6, 30), V);

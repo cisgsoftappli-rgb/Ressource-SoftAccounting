@@ -89,6 +89,7 @@
 .eiv-mb.bd .eiv-gr{flex:1;min-height:0;display:flex;flex-direction:column;border:2px solid #2E427B;border-radius:10px;box-shadow:0 4px 16px rgba(46,66,123,.12)}
 .eiv-mb.bd .eiv-sc{flex:1;max-height:none;min-height:220px}
 .eiv-bt th{background:#2E427B;color:#fff;padding:10px 12px;font-size:12px}.eiv-bt td{padding:11px 12px;font-size:14px}
+.eiv-bf2{display:flex;justify-content:flex-end;align-items:center;gap:10px;padding:10px 20px 14px;border-top:1px solid #E9EBF0;background:#F9FAFB;border-radius:0 0 12px 12px}.eiv-hint{margin-right:auto;font-size:12px;color:#5B606D}.eiv-b:disabled{opacity:.45;cursor:not-allowed}
 .eiv-bt .eiv-cpt{font-family:ui-monospace,Consolas,monospace;font-weight:700;color:#18244F}.eiv-bt .eiv-lib{min-width:240px}
 .eiv-bt tbody tr:nth-child(even) td{background:#FAFBFD}.eiv-gr tbody tr.on td{background:#DCE6F8}
 .eiv-bf{display:grid;grid-template-columns:minmax(0,1fr) auto;gap:18px;align-items:start;padding:10px 20px 12px;border-top:1px solid #E9EBF0;background:#F9FAFB;border-radius:0 0 12px 12px}
@@ -315,9 +316,9 @@
     function add(site, compte, l) { var k = site + '|' + compte; (M[k] = M[k] || []).push(l); }
     (window.GLG_COMPTES || []).forEach(function (c) {
       if (!CPTE.test(c.c)) return; dejaGlg[c.c] = true;
-      (c.L || []).forEach(function (s) {
+      (c.L || []).forEach(function (s, k) {
         var p = s.split('\t'), d = iso(p[0]); if (!d || d > au) return;
-        add('01', c.c, { date: d, piece: p[6] || '', journal: p[5] || '', libelle: p[8] || '', montant: pm(p[9]) - pm(p[10]), axes: (p[11] || '').split('|').slice(0, 4), b: { j: p[5] || '', p: p[6] || '', d: d } });
+        add('01', c.c, { id: 'G|' + (p[5] || '') + '|' + (p[6] || '') + '|' + d + '|' + c.c + '|' + k, date: d, piece: p[6] || '', journal: p[5] || '', libelle: p[8] || '', montant: pm(p[9]) - pm(p[10]), axes: (p[11] || '').split('|').slice(0, 4), b: { j: p[5] || '', p: p[6] || '', d: d } });
       });
     });
     (window.BALANCE_BASE || []).forEach(function (b) {
@@ -327,7 +328,7 @@
     });
     if (window.ECRITURES_SAISIES) window.ECRITURES_SAISIES({ au: au }).forEach(function (x) {
       if (!CPTE.test(x.compte) || /^(AN|RAN)$/i.test(x.journal || '') || /[àa]s*-?nouveau/i.test(x.libelle || '')) return;
-      add(x.site || '01', x.compte, { date: x.date, piece: x.piece, journal: x.journal, libelle: x.libelle, montant: (x.debit || 0) - (x.credit || 0), axes: [0, 1, 2, 3].map(function (i) { return axeDe(x, i); }), b: { j: x.journal, p: x.piece, d: x.date } });
+      add(x.site || '01', x.compte, { id: x.id, date: x.date, piece: x.piece, journal: x.journal, libelle: x.libelle, montant: (x.debit || 0) - (x.credit || 0), axes: [0, 1, 2, 3].map(function (i) { return axeDe(x, i); }), b: { j: x.journal, p: x.piece, d: x.date } });
     });
     Object.keys(M).forEach(function (k) { M[k].sort(function (a, b) { return a.date < b.date ? -1 : a.date > b.date ? 1 : (a.piece < b.piece ? -1 : 1); }); });
     return M;
@@ -359,6 +360,8 @@
       note: 'Double-clic sur une ligne : écritures composant les colonnes Immo et Compta ; dans la fenêtre, l’icône de la 1re colonne affiche le bordereau (Compta) ou la fiche (Immo).',
       tete: tete, num: [3, 4, 5], html: html, brut: brut, total: rows.length ? ['TOTAL', '', '', m2(T.i), m2(T.c), m2(T.i - T.c)] : null, n: rows.length, rapp: { rows: rows, C: C, I: I, au: P.au } };
   }
+  function ficDe(id) { return window.FICHES_API && window.FICHES_API.nord && id ? (window.FICHES_API.nord(id) || '') : ''; }
+  function ecrDe(num) { var x = fiches().filter(function (y) { return y.num === num; })[0]; return x && x.e_piece ? 'Pièce ' + x.e_piece : 'Non comptabilisée'; }
   function mv() { var m = document.createElement('div'); m.className = 'eiv-mv'; m.setAttribute('data-eiv-mv', ''); root.appendChild(m); m.addEventListener('mousedown', function (e) { if (e.target === m) m.remove(); }); return m; }
   function fermerMv(m) { m.addEventListener('click', function (e) { if (e.target.closest('[data-mv-x]')) m.remove(); }); }
   document.addEventListener('keydown', function (e) { if (e.key !== 'Escape') return; var m = root.querySelectorAll('.eiv-mv'); if (m.length) { m[m.length - 1].remove(); e.stopPropagation(); e.preventDefault(); } }, true);
@@ -369,12 +372,12 @@
     var S = { tab: tab || 'compta', filtres: {}, page: 1, size: 25, sel: -1 }, m = mv();
     m.innerHTML = '<div class="eiv-md" role="dialog" aria-modal="true" aria-label="Rapprochement avec la compta"><div class="eiv-mh"><span>Rapprochement avec la compta</span><button type="button" class="eiv-x" data-mv-x aria-label="Fermer">×</button></div><div class="eiv-mb">' +
       '<h3 class="eiv-h3">Rapprochement avec la compta Au ' + dFR(R.au) + '</h3><div class="eiv-cart">Site : ' + esc(row.site) + '<br>Compte : ' + esc(row.compte) + (row.lib ? ' — ' + esc(row.lib) : '') + '</div>' +
-      '<div class="eiv-tabs"><button type="button" data-mv-tab="immo">Immo (' + row.ni + ')</button><button type="button" data-mv-tab="compta">Compta (' + row.nc + ')</button></div><div class="eiv-gr" data-mv-gr></div></div></div>';
+      '<div class="eiv-tabs"><button type="button" data-mv-tab="immo">Immo (' + row.ni + ')</button><button type="button" data-mv-tab="compta">Compta (' + row.nc + ')</button></div><div class="eiv-gr" data-mv-gr></div></div><div class="eiv-bf2"><span class="eiv-hint" data-mv-hint></span><button type="button" class="eiv-b" data-mv-gen><i class="ti ti-wand" aria-hidden="true"></i> Générer écriture</button><button type="button" class="eiv-b p" data-mv-rec><i class="ti ti-download" aria-hidden="true"></i> Récupérer</button></div></div>';
     fermerMv(m);
-    function cols() { return S.tab === 'compta' ? [['b', 'Bordereau'], ['dn', 'Date - N° Ordre'], ['lib', 'Libellé'], ['mt', 'Montant'], ['a0', AXL[0]], ['a1', AXL[1]], ['a2', AXL[2]], ['a3', AXL[3]]] : [['b', 'Fiche'], ['num', 'N° identification'], ['lib', 'Désignation'], ['dacq', 'Date d’acquisition'], ['fam', 'Famille'], ['mt', 'Montant']]; }
+    function cols() { return S.tab === 'compta' ? [['b', 'Bordereau'], ['dn', 'Date - N° Ordre'], ['lib', 'Libellé'], ['mt', 'Montant'], ['fic', 'Fiche rattachée'], ['a0', AXL[0]], ['a1', AXL[1]], ['a2', AXL[2]], ['a3', AXL[3]]] : [['b', 'Fiche'], ['num', 'N° identification'], ['lib', 'Désignation'], ['dacq', 'Date d’acquisition'], ['fam', 'Famille'], ['ecr', 'Écriture'], ['mt', 'Montant']]; }
     function lignes() {
-      var L = S.tab === 'compta' ? (R.C[k] || []).map(function (l, i) { return { i: i, b: l.b, dn: dFR(l.date) + ' - ' + l.piece, lib: l.libelle, mt: m2(l.montant), v: l.montant, a0: l.axes[0] || '', a1: l.axes[1] || '', a2: l.axes[2] || '', a3: l.axes[3] || '' }; })
-        : (R.I[k] || []).map(function (x, i) { return { i: i, b: x.num, num: x.num, lib: x.desig, dacq: dFR(x.dacq), fam: x.famille, mt: m2(x.montant), v: x.montant }; });
+      var L = S.tab === 'compta' ? (R.C[k] || []).map(function (l, i) { return { i: i, b: l.b, dn: dFR(l.date) + ' - ' + l.piece, lib: l.libelle, mt: m2(l.montant), v: l.montant, fic: ficDe(l.id), a0: l.axes[0] || '', a1: l.axes[1] || '', a2: l.axes[2] || '', a3: l.axes[3] || '' }; })
+        : (R.I[k] || []).map(function (x, i) { return { i: i, b: x.num, num: x.num, lib: x.desig, dacq: dFR(x.dacq), fam: x.famille, ecr: ecrDe(x.num), mt: m2(x.montant), v: x.montant }; });
       return L.filter(function (l) { return Object.keys(S.filtres).every(function (c) { var f = S.filtres[c]; return !f || String(l[c] == null ? '' : l[c]).toLowerCase().indexOf(f.toLowerCase()) >= 0; }); });
     }
     function corps() {
@@ -387,7 +390,21 @@
       m.querySelector('[data-mv-tot]').innerHTML = '<tr><td colspan="' + iMt + '">Total</td><td class="r">' + m2(tot) + '</td><td colspan="' + (C.length - iMt - 1) + '"></td></tr>';
       var pg = '<span>Page ' + S.page + ' sur ' + pages + ' (' + n + ' élément(s)) <button type="button" data-mv-p="-1"' + (S.page <= 1 ? ' disabled' : '') + '>‹</button><button type="button" class="on">' + S.page + '</button><button type="button" data-mv-p="1"' + (S.page >= pages ? ' disabled' : '') + '>›</button></span>' +
         '<span>Taille de la page :<select data-mv-size>' + [10, 25, 50, 100].map(function (z) { return '<option' + (z === S.size ? ' selected' : '') + '>' + z + '</option>'; }).join('') + '</select></span>';
-      m.querySelector('[data-mv-pg]').innerHTML = pg;
+      m.querySelector('[data-mv-pg]').innerHTML = pg; boutons();
+    }
+    // Récupérer (onglet Compta : ligne d'écriture sans fiche) / Générer écriture (onglet Immo : fiche sans écriture) ; grisés dans les situations de doublon (écriture déjà rattachée, fiche déjà rattachée)
+    function boutons() {
+      var rec = m.querySelector('[data-mv-rec]'), gen = m.querySelector('[data-mv-gen]'), A = window.FICHES_API || {}, why = '';
+      if (S.tab === 'compta') {
+        var l = (R.C[k] || [])[S.sel];
+        why = !l ? 'Sélectionnez une ligne de l’onglet Compta pour la récupérer.' : !l.id ? 'Ligne de reprise de balance : elle ne peut pas être récupérée.' : (A.peutRecuperer ? A.peutRecuperer(l.id) : 'Fonction indisponible.');
+        rec.disabled = !!why; gen.disabled = true; rec.title = why || 'Créer une fiche d’immobilisation à partir de cette écriture'; gen.title = 'Choisissez une ligne de l’onglet Immo.';
+      } else {
+        var x = (R.I[k] || [])[S.sel];
+        why = !x ? 'Sélectionnez une ligne de l’onglet Immo pour générer son écriture.' : (A.peutGenerer ? A.peutGenerer(x.num) : 'Fonction indisponible.');
+        gen.disabled = !!why; rec.disabled = true; gen.title = why || 'Générer l’écriture d’acquisition de cette fiche'; rec.title = 'Choisissez une ligne de l’onglet Compta.';
+      }
+      m.querySelector('[data-mv-hint]').textContent = why;
     }
     function grille() {
       var C = cols();
@@ -398,6 +415,8 @@
     }
     m.addEventListener('click', function (e) {
       var t = e.target, b;
+      if ((b = t.closest('[data-mv-rec]')) && !b.disabled) { var lr = (R.C[k] || [])[S.sel]; if (!lr) return; root.querySelectorAll('.eiv-mv').forEach(function (x) { x.remove(); }); if (!(window.FICHES_API && window.FICHES_API.recuperer(lr.id))) toast('Récupération impossible : écriture déjà rattachée ou saisie en cours dans la liste d’immobilisations.'); return; }
+      if ((b = t.closest('[data-mv-gen]')) && !b.disabled) { var xr = (R.I[k] || [])[S.sel]; if (!xr) return; root.querySelectorAll('.eiv-mv').forEach(function (x) { x.remove(); }); if (!(window.FICHES_API && window.FICHES_API.generer(xr.num))) toast('Génération impossible : fiche déjà rattachée ou saisie en cours dans la liste d’immobilisations.'); return; }
       if ((b = t.closest('[data-mv-tab]'))) { S.tab = b.getAttribute('data-mv-tab'); S.filtres = {}; S.page = 1; S.sel = -1; grille(); return; }
       if ((b = t.closest('[data-mv-bd]')) && !b.disabled) { S.sel = +b.getAttribute('data-mv-bd'); corps(); var l = (R.C[k] || [])[S.sel]; if (l && l.b) ouvrirBordereau(l.b); return; }
       if ((b = t.closest('[data-mv-fi]'))) { var tr0 = b.closest('tr'); S.sel = +tr0.getAttribute('data-mv-i'); corps(); ouvrirFiche(b.getAttribute('data-mv-fi')); return; }
@@ -464,7 +483,7 @@
   root.addEventListener('dblclick', function (e) { var tr = e.target.closest('[data-eiv-res] tr[data-k]'); if (!tr) return; var td = e.target.closest('td'); ouvrirRapp(tr.getAttribute('data-k'), td && td.getAttribute('data-col') === 'immo' ? 'immo' : 'compta'); });
 
   // ---------- édition de l'état ----------
-  function editer() {
+  function editer(silencieux) {
     var P = lire(); erreurs();
     if (P.etat === 'rapp') { if (!P.sit) { toast('Renseignez la date de situation.'); return; } P.au = P.sit; P.du = ''; }
     else {
@@ -479,9 +498,11 @@
       (e.note ? '<div class="eiv-note">' + esc(e.note) + '</div>' : '') + (e.n ? '<div style="overflow:auto"><table class="eiv-tb' + (e.cls ? ' ' + e.cls : '') + '"><thead><tr>' + e.tete.map(function (h, i) { return '<th class="' + (e.num.indexOf(i) >= 0 ? 'r' : '') + '">' + esc(h) + '</th>'; }).join('') + '</tr></thead><tbody>' + e.html + '</tbody></table></div>'
         : '<div class="eiv-vide">' + (fiches().length ? 'Aucune immobilisation ne correspond aux critères.' : 'Aucune immobilisation : créez des fiches dans Immobilisations › Saisies › Liste d’immobilisations.') + '</div>');
     q('[data-eiv-res]').hidden = false; q('[data-eiv-fond]').hidden = true; fermer(); etat();
-    toast(e.n ? e.titre + ' : ' + e.n + ' ligne(s).' : 'Aucune ligne pour ces critères.');
+    if (!silencieux) toast(e.n ? e.titre + ' : ' + e.n + ' ligne(s).' : 'Aucune ligne pour ces critères.');
   }
-  q('[data-eiv-editer]').addEventListener('click', editer);
+  q('[data-eiv-editer]').addEventListener('click', function () { editer(); });
+  // le rapprochement se recalcule quand une fiche est créée, rattachée ou générée (récupération / génération depuis la fenêtre)
+  window.addEventListener('fiches-immobilisation-changed', function () { if (res && res.P && res.P.etat === 'rapp') editer(true); });
 
   // ---------- barre d'actions, exports ----------
   function etat() { var a = q('[data-eiv-actions]'); ['imprimer', 'pdf', 'xlsx'].forEach(function (k) { a.querySelector('[data-eiv-' + k + ']').disabled = !(res && res.n); }); }
