@@ -124,7 +124,7 @@
   }
   function imprimer() {
     var l = cur; if (!l) return; lire(); var M = window.CAISSE_MODELES, f = document.createElement('iframe'); f.style.cssText = 'position:fixed;right:0;bottom:0;width:0;height:0;border:0'; document.body.appendChild(f);
-    var d = f.contentWindow.document; d.open(); d.write(M && M.document ? M.document([html(l)]) : html(l)); d.close();
+    var d = f.contentWindow.document; d.open(); d.write((window.CHARTE_IMPRESSION ? window.CHARTE_IMPRESSION.habiller((M && M.document ? M.document([html(l)]) : html(l))) : (M && M.document ? M.document([html(l)]) : html(l)))); d.close();
     setTimeout(function () { try { f.contentWindow.focus(); f.contentWindow.print(); } catch (e) {} setTimeout(function () { f.remove(); }, 1500); }, 250);
   }
   q('[data-pv-lot]').addEventListener('change', dessiner);

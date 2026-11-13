@@ -535,7 +535,7 @@
     w.f.querySelector('[data-fs-p]').addEventListener('click', function () {
       var s = sig(); if (Q('s1').value && Q('s1').value === Q('s2').value) { Q('er').innerHTML = '<div class="fo-ko">Les deux signataires doivent être différents.</div>'; return; }
       var f = document.createElement('iframe'); f.style.cssText = 'position:fixed;right:0;bottom:0;width:0;height:0;border:0'; document.body.appendChild(f);
-      var d = f.contentWindow.document; d.open(); d.write(docFiche(PP.map(function (P) { return ficheHtml(P, s); }))); d.close();
+      var d = f.contentWindow.document; d.open(); d.write((window.CHARTE_IMPRESSION ? window.CHARTE_IMPRESSION.habiller(docFiche(PP.map(function (P) { return ficheHtml(P, s); }))) : docFiche(PP.map(function (P) { return ficheHtml(P, s); })))); d.close();
       setTimeout(function () { try { f.contentWindow.focus(); f.contentWindow.print(); } catch (x) {} setTimeout(function () { f.remove(); }, 1500); }, 300);
       O.fermer(); toast(PP.length + ' fiche(s) d’imputation envoyée(s) à l’impression.');
     });

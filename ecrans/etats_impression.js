@@ -64,7 +64,7 @@
   }
   function imprimer(html) {
     var f = document.createElement('iframe'); f.style.cssText = 'position:fixed;right:0;bottom:0;width:0;height:0;border:0'; document.body.appendChild(f);
-    var d = f.contentWindow.document; d.open(); d.write(html); d.close();
+    var d = f.contentWindow.document; d.open(); d.write((window.CHARTE_IMPRESSION ? window.CHARTE_IMPRESSION.habiller(html) : html)); d.close();
     setTimeout(function () { try { f.contentWindow.focus(); f.contentWindow.print(); } catch (e) {} setTimeout(function () { if (f.parentNode) f.parentNode.removeChild(f); }, 60000); }, 300);
   }
   window.ETAT_IMPRESSION = { html: function (k, o) { return k === 'bilan' ? bilan(o) : cr(o); }, bilan: function (o) { imprimer(bilan(o)); }, cr: function (o) { imprimer(cr(o)); } };
