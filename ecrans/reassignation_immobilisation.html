@@ -25,16 +25,18 @@
 .ras-g2{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:12px}
 .ras-g4{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:12px}
 .ras-g5{display:grid;grid-template-columns:repeat(5,minmax(0,1fr));gap:12px}
-.ras-ro{display:flex;flex-direction:column;gap:2px;justify-content:center;min-height:62px;padding:8px 12px;border:1px solid #E9EBF0;border-radius:8px;background:#F9FAFB}
+.ras-ro{display:flex;flex-direction:column;gap:2px;justify-content:center;min-height:70px;padding:8px 12px;border:1px solid #E9EBF0;border-radius:8px;background:#F9FAFB}
 .ras-ro span{font-size:12px;font-weight:600;letter-spacing:.04em;text-transform:uppercase;color:#5B606D}
 .ras-ro b{font-weight:600;color:#18244F;min-height:20px;overflow-wrap:anywhere}
 .ras-g3{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:12px}
 .ras-col{display:grid;gap:12px}
 .ras-strip{display:grid;grid-template-columns:1fr 2fr 1fr 1fr;gap:12px;margin-top:14px}
-.ras-duo{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:12px;margin-top:12px;align-items:start}
+.ras-duo{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:12px;margin-top:12px;align-items:stretch}
 .ras-duo>.ras-card{margin-top:0}
 .ras-duo .bp-champ{margin:0}
-.ras-duo .ras-col>.bp-champ{min-height:62px}
+.ras-duo .ras-col>.bp-champ,.ras-duo [data-ras-ana]>.bp-champ{min-height:70px;justify-content:flex-start}
+.ras-duo .ras-h4{margin-top:16px}
+.ras-duo .ras-h4:first-of-type{margin-top:0}
 .ras-sep{border:0;border-top:1px solid #D6D9E0;margin:12px 0}
 .ras-h4{margin:0 0 8px;font-size:12px;font-weight:600;color:#2E427B;text-transform:uppercase;letter-spacing:.04em}
 .ras-info{display:flex;gap:8px;align-items:flex-start;padding:10px 12px;border:1px solid #D6D9E0;background:#F4F7FE;border-radius:8px;color:#18244F;font-size:13px}
@@ -118,8 +120,10 @@
               <div class="ras-ro"><span>Responsable</span><b data-ras-a="resp">—</b></div>
             </div>
             <hr class="ras-sep">
-            <div class="ras-h4">Ventilation analytique et autres monnaies</div>
+            <div class="ras-h4">Ventilation analytique</div>
             <div class="ras-g2" data-ras-a-ana></div>
+            <div class="ras-h4">Autres monnaies</div>
+            <div class="ras-g4" data-ras-a-dev></div>
             <p class="ras-help" style="margin:8px 0 0">Seuls les plans analytiques activés et renseignés dans l'onglet Écritures de la fiche d'immobilisation sont affichés ci-dessus.</p>
           </div>
 
@@ -136,7 +140,8 @@
               <hr class="ras-sep">
               <div class="ras-h4">Ventilation analytique</div>
               <div class="ras-g2" data-ras-ana></div>
-              <label class="bp-champ" style="margin-top:12px"><span>Motif / observations</span><input class="bp-in" data-f="motif" maxlength="200" autocomplete="off" placeholder="Transfert de service, réorganisation…"></label>
+              <div class="ras-h4">Motif / observations</div>
+              <div class="bp-champ" style="min-height:70px;justify-content:flex-start"><input class="bp-in" data-f="motif" maxlength="200" autocomplete="off" placeholder="Transfert de service, réorganisation…" aria-label="Motif / observations"></div>
               <span class="ras-er" data-er="chg"></span>
             </div>
           </div>
@@ -226,14 +231,15 @@
     A('num', x && x.num); A('desig', x && x.desig); A('compte', x && x.compte); A('site', x && nomSite(x.site)); A('dacq', x && dFR(x.dacq));
     A('empl', x && nomListe(window.LIEUX_AFFECTATION, x.empl)); A('resp', x && nomListe(window.COLLABORATEURS_RESPONSABLES, x.resp));
     A('val', x && nb(x.qte * x.pu) + ' MGA');
-    var blocs = [];
+    var blocs = [], devs = [];
     if (x) {
       var D = (window.DEVISES || []).filter(function (d) { return d.code !== 'MGA' && d.actif !== false; });
       Object.keys(x.ana || {}).forEach(function (c) { blocs.push('<div class="ras-ro"><span>' + esc(libPlan(c)) + '</span><b>' + esc(x.ana[c]) + '</b></div>'); });
-      if (!D.length) blocs.push('<div class="ras-ro"><span>Autres monnaies</span><b>Aucune devise active</b></div>');
-      D.forEach(function (d) { var p = window.COURS_API ? window.COURS_API.taux(d.code, x.dacq) : null; blocs.push('<div class="ras-ro"><span>Valeur (' + esc(d.code) + ')</span><b>' + (p ? nb(x.qte * x.pu / p) : '—') + '</b></div>'); });
+      if (!D.length) devs.push('<div class="ras-ro"><span>Autres monnaies</span><b>Aucune devise active</b></div>');
+      D.forEach(function (d) { var p = window.COURS_API ? window.COURS_API.taux(d.code, x.dacq) : null; devs.push('<div class="ras-ro"><span>Valeur (' + esc(d.code) + ')</span><b>' + (p ? nb(x.qte * x.pu / p) : '—') + '</b></div>'); });
     }
-    q('[data-ras-a-ana]').innerHTML = x ? blocs.join('') : '<div class="ras-ro"><span>Plan géographique</span><b>—</b></div><div class="ras-ro"><span>Autres monnaies</span><b>Aucune devise active</b></div>';
+    q('[data-ras-a-ana]').innerHTML = x ? (blocs.length ? blocs.join('') : '<div class="ras-ro"><span>Plans analytiques</span><b>Aucune ventilation renseignée</b></div>') : '<div class="ras-ro"><span>Plans analytiques</span><b>—</b></div>';
+    q('[data-ras-a-dev]').innerHTML = x ? devs.join('') : '<div class="ras-ro"><span>Autres monnaies</span><b>—</b></div>';
   }
   function choisirFiche(num) {
     fiche = num ? ficheDe(num) : null;
